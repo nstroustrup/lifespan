@@ -2941,7 +2941,10 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 				model_building_and_testing_info[p->first] += "Warning: These results will not be meaningful until more worms are annotated by hand.\n";
 			else model_building_and_testing_info[p->first] += "The model file was written to \"" + model_filenames[p->first] + "\"\n";
 			ns_acquire_for_scope<ostream>  performance_stats_output(image_server.results_storage.time_path_image_analysis_quantification(sub, std::string("hmm_performance=") + p->first, true, sql()).output());
-			p->second.all_vs_all().results.write_error_header(performance_stats_output());
+			std::vector<std::string > measurement_names;
+			if (p->second.all_vs_all().results.animals.size() > 0)
+				measurement_names = p->second.all_vs_all().results.animals[0].state_info_variable_names;
+			p->second.all_vs_all().results.write_error_header(performance_stats_output(), measurement_names);
 			for (unsigned int e = 0; e < p->second.estimators.size(); e++) {
 				p->second.estimators[e].results.write_error_data(performance_stats_output(), p->second.estimators[e].description, p->second.estimators[e].replicate_id,metadata_cache);
 			}

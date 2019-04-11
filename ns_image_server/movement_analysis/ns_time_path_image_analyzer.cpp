@@ -1455,10 +1455,12 @@ void ns_time_path_image_movement_analyzer::calculate_optimzation_stats_for_curre
 
 			
 			
-
+			//cerr << "<m\n";
 			hmm_solver.probability_of_path_solution(groups[g].paths[p], *e, groups[g].paths[p].machine_movement_state_solution, s.animals.rbegin()->machine_state_info, generate_path_info);
+			//cerr << "m>\n";
+			//cerr << "<h\n";
 			hmm_solver.probability_of_path_solution(groups[g].paths[p], *e, by_hand_posture_movement_solution, s.animals.rbegin()->by_hand_state_info, generate_path_info);
-			
+			//cerr << "h>\n";
 			s.animals.rbegin()->solution_loglikelihood = groups[g].paths[p].machine_movement_state_solution.loglikelihood_of_solution;
 			//std::cout << s.animals.rbegin()->solution_loglikelihood << "\n";
 			
@@ -3812,14 +3814,17 @@ void ns_output_subimage(const ns_image_standard & im,const long offset,ns_image_
 			out[y][x] = im[y+offset][x/prop_i.components];
 }
 
-void ns_hmm_movement_analysis_optimizatiom_stats::write_error_header(std::ostream & o) {
+void ns_hmm_movement_analysis_optimizatiom_stats::write_error_header(std::ostream & o,const std::vector<std::string> & extra_columns) {
 	o << "Experiment,Device,Plate Name,Animal Details,Group ID,Path ID,Excluded,Censored,Number of Worms, Cross Validation Info,Cross Validation Replicate ID";
 	for (unsigned int j = 0; j < ns_hmm_movement_analysis_optimizatiom_stats_record::number_of_states; j++) {
 		const std::string state = ns_movement_event_to_string(ns_hmm_movement_analysis_optimizatiom_stats_record::states[j]);
 		o << "," << state << " identified by hand?, " << state << " identified by machine?," <<
 			state << " time by hand (days)," << state << " time by machine (days), " << state << " Difference Between Machine and By Hand Event Times (Days), " << state << " Difference Squared (Days)";
 	}
-	o << ", Solution log-likelihood\n";
+	o << ", Solution log-likelihood, Path length";
+	for (unsigned int i = 0; i < extra_columns.size(); i++)
+		o << "," << extra_columns[i];
+	o << "\n";
 }
 
 void ns_hmm_movement_analysis_optimizatiom_stats::write_error_data(std::ostream & o, const std::string & cross_validation_info, const unsigned long & replicate_id,const std::map<ns_64_bit,ns_region_metadata> & metadata_cache) const{
@@ -3851,6 +3856,20 @@ void ns_hmm_movement_analysis_optimizatiom_stats::write_error_data(std::ostream 
 			else o << ",";
 		}
 		o << "," << animals[k].solution_loglikelihood;
+		o << "," << animals[k].machine_state_info.path.size();
+		if (animals[k].machine_state_info.path.size() > 0) {
+			std::vector<double> measurement_averages(animals[k].state_info_variable_names.size(),0);
+			for (int i = 0; i < animals[k].machine_state_info.path.size(); i++) {
+				for (unsigned int j = 0; j < animals[k].machine_state_info.path[i].sub_measurements.size(); j++) {
+					measurement_averages[j] += animals[k].machine_state_info.path[i].sub_measurements[j];
+					if (!std::isfinite(animals[k].machine_state_info.path[i].sub_measurements[j]) || !std::isfinite(measurement_averages[j]))
+						std::cerr << "Yikes";
+				}
+			}
+			for (unsigned int i = 0; i < animals[k].state_info_variable_names.size(); i++) {
+				o << "," << measurement_averages[i] / animals[k].machine_state_info.path.size();
+			}
+		}
 		o << "\n";
 	}
 }
@@ -4482,6 +4501,8 @@ void ns_analyzed_image_time_path::denoise_movement_series_and_calculate_intensit
 		//Here, ns_movement_data_accessor calculates the movement score and stores it.
 		for (unsigned int i = 0; i < elements.size(); i++) {
 			elements[i].measurements.movement_score = acc.raw(i);
+			if (elements[i].measurements.movement_score < -1e300)
+				cerr << "YIKES";
 			//elements[i].measurements.spatial_averaged_movement_score = acc_spatial.raw(i);
 
 		}

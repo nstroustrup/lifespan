@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <iostream>
 #include "ns_analyzed_image_time_path_element_measurements.h"
+#include <set>
 
 class ns_analyzed_image_time_path;
 struct ns_hmm_emission {
@@ -53,6 +54,10 @@ public:
 	ns_hmm_observed_values_list observed_values;
 	std::map<ns_stationary_path_id, ns_hmm_emission_normalization_stats > normalization_stats;
 	const ns_states_permitted & states_permitted() const { return states_permitted_int; }
+	void defined_states(std::set<ns_hmm_movement_state> & s) const{ 
+		for (auto p = emission_probability_models.begin(); p != emission_probability_models.end(); p++)
+			s.emplace(p->first);
+	}
 private:
 	void write_visualization(std::ostream & o,const std::string & experiment_name="") const;
 	std::map<ns_hmm_movement_state, ns_emission_probabiliy_model *> emission_probability_models;

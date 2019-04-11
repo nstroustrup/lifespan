@@ -422,6 +422,7 @@ void GMM::Init(double *data, int N)
 		else
 		{
 			memcpy(m_vars[i], m_minVars, sizeof(double) * m_dimNum);
+			if (i == 0)
 			cout << "[WARNING] Gaussian " << i << " of GMM is not used!\n";
 		}
 	}

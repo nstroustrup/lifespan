@@ -657,7 +657,7 @@ public:
 		//load images for the worm.
 
 		//data_cache.load_images_for_worm(properties_for_all_animals.stationary_path_id,current_timepoint_id+10,sql);
-		current_region_data->clear_images_for_worm(properties_for_all_animals.stationary_path_id,local_image_cache);
+		//current_region_data->clear_images_for_worm(properties_for_all_animals.stationary_path_id,local_image_cache);
 
 		current_region_data->load_images_for_worm(properties_for_all_animals.stationary_path_id,current_timepoint_id+10,sql(),local_image_cache);
 

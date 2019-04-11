@@ -20,11 +20,15 @@ struct ns_hmm_emission_normalization_stats {
 };
 class ns_emission_probabiliy_model;
 
-struct ns_emperical_posture_quantification_value_estimator{
+class ns_emperical_posture_quantification_value_estimator{
+public:
+	typedef enum { ns_all_states, ns_no_post_expansion_contraction, ns_no_expansion_while_alive, no_expansion_while_alive_nor_contraction,ns_no_expansion_nor_contraction,ns_number_of_state_settings} ns_states_permitted;
+	static std::string state_permissions_to_string(const ns_states_permitted & s);
+	static ns_states_permitted state_permissions_from_string(const std::string & s);
 	~ns_emperical_posture_quantification_value_estimator();
 	friend class ns_time_path_movement_markov_solver;
 	bool add_observation(const std::string &software_version, const ns_death_time_annotation & properties, const ns_analyzed_image_time_path * path, const unsigned long device_id );
-	void build_estimator_from_observations(std::string & output);
+	void build_estimator_from_observations(std::string & output, const ns_states_permitted & states_permitted);
 
 	void probability_for_each_state(const ns_analyzed_image_time_path_element_measurements & e,std::vector<double> & p) const;
 	void read_observation_data(std::istream & in);
@@ -36,6 +40,9 @@ struct ns_emperical_posture_quantification_value_estimator{
 	ns_emperical_posture_quantification_value_estimator();
 	ns_emperical_posture_quantification_value_estimator(const ns_emperical_posture_quantification_value_estimator&); 
 	ns_emperical_posture_quantification_value_estimator& operator=(const ns_emperical_posture_quantification_value_estimator&); 
+
+
+	void output_debug_info(const ns_analyzed_image_time_path_element_measurements & e, std::ostream & o) const;
 	bool state_specified_by_model(const ns_hmm_movement_state s) const;
 	//useful for debugging
 	void provide_measurements_and_sub_probabilities(const ns_hmm_movement_state & state, const ns_analyzed_image_time_path_element_measurements & e, std::vector<double> & measurement, std::vector<double> & sub_probabilitiy ) const;
@@ -45,9 +52,11 @@ struct ns_emperical_posture_quantification_value_estimator{
 	typedef std::map<ns_hmm_movement_state, std::vector<ns_hmm_emission> > ns_hmm_observed_values_list;
 	ns_hmm_observed_values_list observed_values;
 	std::map<ns_stationary_path_id, ns_hmm_emission_normalization_stats > normalization_stats;
+	const ns_states_permitted & states_permitted() const { return states_permitted_int; }
 private:
 	void write_visualization(std::ostream & o,const std::string & experiment_name="") const;
 	std::map<ns_hmm_movement_state, ns_emission_probabiliy_model *> emission_probability_models;
+	ns_states_permitted states_permitted_int;
 };
 
 struct ns_threshold_movement_posture_analyzer_parameters{

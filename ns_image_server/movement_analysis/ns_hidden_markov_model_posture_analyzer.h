@@ -52,6 +52,7 @@ struct ns_hmm_movement_analysis_optimizatiom_stats {
 class ns_hmm_solver {
 public:
 
+
 	typedef std::pair<ns_hmm_movement_state, unsigned long> ns_hmm_state_transition_time_path_index;
 
 	ns_time_path_posture_movement_solution movement_state_solution;
@@ -73,6 +74,7 @@ private:
 	static void build_state_transition_matrix(const ns_emperical_posture_quantification_value_estimator & estimator, std::vector<std::vector<double> > & m);
 
 	static ns_hmm_movement_state most_probable_state(const std::vector<double> & d);
+
 
 };
 

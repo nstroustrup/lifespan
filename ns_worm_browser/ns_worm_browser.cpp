@@ -2294,7 +2294,7 @@ struct ns_hmm_subject_list {
 };
 class  ns_cross_validation_run {
 public:
-	ns_cross_validation_run() :model_building_completed(false), generate_detailed_path_info(false){}
+	ns_cross_validation_run() :model_building_completed(false), generate_detailed_path_info(false),states_permitted(ns_emperical_posture_quantification_value_estimator::ns_all_states){}
 	ns_hmm_subject_list training_set, test_set;
 	ns_emperical_posture_quantification_value_estimator estimator;
 	ns_hmm_movement_analysis_optimizatiom_stats results;
@@ -2302,7 +2302,7 @@ public:
 	bool generate_detailed_path_info;
 	unsigned long replicate_id;
 	bool model_building_completed;
-	
+	ns_emperical_posture_quantification_value_estimator::ns_states_permitted states_permitted;
 	void build_model(std::string & output, const ns_emperical_posture_quantification_value_estimator & source_estimator) {
 		model_building_completed = false;
 		estimator.normalization_stats = source_estimator.normalization_stats;
@@ -2320,7 +2320,7 @@ public:
 		if (estimator.observed_values.size() == 0)
 			throw ns_ex("No valid training data was specified for the model");
 		output += "= Cross Validation strategy: " + description + " =\n";
-		estimator.build_estimator_from_observations(output);
+		estimator.build_estimator_from_observations(output,states_permitted);
 		model_building_completed = true;
 		//free up memory
 		estimator.observed_values.clear();
@@ -2372,21 +2372,31 @@ struct ns_hmm_cross_validation_set {
 		}
 	}
 	const ns_cross_validation_run & all_vs_all() const { return estimators[0]; }
-	void generate_cross_validations_to_test(double frac_to_drop, const ns_hmm_subject_list & subject_list, const std::map<unsigned long, std::string> & device_name_lookup){
+	void generate_cross_validations_to_test(double frac_to_drop, const ns_hmm_subject_list & subject_list, const std::map<unsigned long, std::string> & device_name_lookup, bool try_different_states){
 		int mmin(round(1 / frac_to_drop));
 		estimators.resize(0);
 		if (frac_to_drop != 0)
 		estimators.reserve(3 * (mmin + 1) + 1);
 
-		estimators.resize(1);
+		if (try_different_states)
+			estimators.resize((int)ns_emperical_posture_quantification_value_estimator::ns_number_of_state_settings);
+		else estimators.resize(1);
 		estimators[0].training_set = subject_list;
 		estimators[0].test_set = subject_list;
 		estimators[0].description = "Testing on all";
 		estimators[0].replicate_id = 0;
 		estimators[0].generate_detailed_path_info = true;
+
+		if (try_different_states) {
+			for (unsigned int i = 1; i < (int)ns_emperical_posture_quantification_value_estimator::ns_number_of_state_settings; i++) {
+				estimators[i] = estimators[0];
+				estimators[i].description += "(" + ns_emperical_posture_quantification_value_estimator::state_permissions_to_string((ns_emperical_posture_quantification_value_estimator::ns_states_permitted)i) + ")";
+				estimators[i].states_permitted = (ns_emperical_posture_quantification_value_estimator::ns_states_permitted)i;
+				}
+		}
 		if (frac_to_drop == 0)
 			return;
-		//if there are not many devices, systematically remove each device
+		//if there are many devices, systematically remove each device
 		if (subject_list.device_ids.size() > 1 && subject_list.device_ids.size() <= mmin) {
 			unsigned long replicate_id = 0;
 			for (auto p = subject_list.device_ids.begin(); p != subject_list.device_ids.end(); p++) {
@@ -2813,7 +2823,7 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 			p->second.write_observation_data(all_observations(), experiment_name);
 			all_observations.release();
 		}
-
+		bool test_different_state_restrictions_on_viterbi_algorithm = true;
 		cout << "\nPrepping for Cross Validation...\n";
 		//set up models for cross validation
 		estimators_compiled = 0;
@@ -2822,7 +2832,7 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 			estimators_compiled++;
 			auto v = hmm_observation_storage_and_model_generators.insert(std::pair<std::string, ns_hmm_cross_validation_set>(p->first,ns_hmm_cross_validation_set())).first;
 			double fraction_to_drop = run_hmm_cross_validation ? 0.2 : 1.0;
-			v->second.generate_cross_validations_to_test(fraction_to_drop, subjects_for_cross_validation[p->first], device_id_reverse_lookup);
+			v->second.generate_cross_validations_to_test(fraction_to_drop, subjects_for_cross_validation[p->first], device_id_reverse_lookup, test_different_state_restrictions_on_viterbi_algorithm);
 		}
 
 		cout << "\nBuilding HMM Models...\n";
@@ -2992,12 +3002,19 @@ void ns_worm_learner::calculate_hmm_from_files(const std::string & path) {
 
 	results_text += "=== Automated Animal Death Time Identification Calibration Results === \n";
 	results_text += "Calculated at " + ns_format_time_string_for_human(ns_current_time()) + "\n\n";
-	estimator.build_estimator_from_observations(results_text);
-	std::ofstream o(path + DIR_CHAR_STR + "hmm_model_file.csv");
-	estimator.write(o);
-	o.close();
+
 	ofstream summary(path + DIR_CHAR_STR + "hmm_optimization_summary.txt");
-	summary << results_text;
+
+	for (unsigned int s = 0; s < (int)ns_emperical_posture_quantification_value_estimator::ns_number_of_state_settings; s++) {
+		ns_emperical_posture_quantification_value_estimator::ns_states_permitted state = (ns_emperical_posture_quantification_value_estimator::ns_states_permitted)s;
+		std::string str(ns_emperical_posture_quantification_value_estimator::state_permissions_to_string(state));
+		results_text += "== State Permissions: " + str + "\n";
+		estimator.build_estimator_from_observations(results_text,state);
+		std::ofstream o(path + DIR_CHAR_STR + "hmm_model_file=" + str + ".csv");
+		estimator.write(o);
+		o.close();
+		summary << results_text;
+	}
 	summary.close();
 	ns_text_dialog td;
 	td.grid_text.push_back(results_text);

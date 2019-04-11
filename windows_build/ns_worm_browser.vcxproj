@@ -563,7 +563,6 @@
     <ClInclude Include="..\ns_image_server\job_scheduling\ns_processing_job_scheduler.h" />
     <ClInclude Include="..\ns_image_server\job_scheduling\ns_processing_tasks.h" />
     <ClInclude Include="..\ns_image_server\movement_analysis\ns_experiment_storyboard.h" />
-    <ClInclude Include="..\ns_image_server\movement_analysis\ns_hidden_markov_model.h" />
     <ClInclude Include="..\ns_image_server\movement_analysis\ns_hidden_markov_model_posture_analyzer.h" />
     <ClInclude Include="..\ns_image_server\movement_analysis\ns_image_server_time_path_inferred_worm_aggregator.h" />
     <ClInclude Include="..\ns_image_server\movement_analysis\ns_machine_learning_training_set.h" />

@@ -43,7 +43,7 @@ public:
 	}
 	void load_images_for_worm(const ns_stationary_path_id & path_id, const unsigned long number_of_images_to_load, ns_sql & sql,ns_simple_local_image_cache & image_cache) {
 		const unsigned long current_time(ns_current_time());
-		const unsigned long max_number_of_cached_worms(2);
+		const unsigned long max_number_of_cached_worms(4);
 		//don't allow more than 2 paths to be loaded (to prevent memory overflow). Delete animals that have been in the cache for longest.
 		if (image_loading_times_for_groups.size() >= max_number_of_cached_worms) {
 

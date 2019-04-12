@@ -77,7 +77,7 @@ public:
 			image_loading_times_for_groups.erase(p);
 	}
 
-	ns_time_path_image_movement_analyzer movement_analyzer;
+	ns_time_path_image_movement_analyzer<ns_wasteful_overallocation_resizer> movement_analyzer;
 
 	std::vector<ns_animal_list_at_position> by_hand_timing_data; //organized by group.  that is movement_analyzer.group(4) is timing_data(4)
 	std::vector<ns_animal_list_at_position> machine_timing_data; //organized by group.  that is movement_analyzer.group(4) is timing_data(4)

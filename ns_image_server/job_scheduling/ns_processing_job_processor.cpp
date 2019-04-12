@@ -759,7 +759,7 @@ ns_64_bit ns_processing_job_maintenance_processor::run_job(ns_sql & sql) {
 			//
 			image_server_const.add_subtext_to_current_event("Loading data from disk...", &sql);
 			solution.load_from_db(job.region_id, sql, true);
-			ns_time_path_image_movement_analyzer analyzer;
+			ns_time_path_image_movement_analyzer<ns_overallocation_resizer> analyzer;
 			const ns_time_series_denoising_parameters time_series_denoising_parameters(ns_time_series_denoising_parameters::load_from_db(job.region_id,sql));
 
 			ns_image_server::ns_posture_analysis_model_cache::const_handle_t posture_analysis_model_handle;

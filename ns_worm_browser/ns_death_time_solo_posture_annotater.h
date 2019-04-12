@@ -31,7 +31,7 @@ public:
 		}
 	}
 	const ns_analyzed_image_time_path_element * path_timepoint_element;
-	ns_time_path_image_movement_analyzer * movement_analyzer;
+	ns_time_path_image_movement_analyzer<ns_wasteful_overallocation_resizer> * movement_analyzer;
 	unsigned long element_id;
 	unsigned long group_id;
 	ns_vector_2i image_pane_area;
@@ -103,7 +103,7 @@ public:
 					if (registered_images.get_stabilized_worm_neighborhood_threshold(y / ns_resolution_increase_factor, x)) {
 						long sum, count;
 
-						ns_analyzed_image_time_path::spatially_average_movement(y / ns_resolution_increase_factor, x, ns_time_path_image_movement_analyzer::ns_spatially_averaged_movement_kernal_half_size, movement_image, sum, count);
+						ns_analyzed_image_time_path::spatially_average_movement(y / ns_resolution_increase_factor, x, ns_time_path_image_movement_analyzer<ns_wasteful_overallocation_resizer>::ns_spatially_averaged_movement_kernal_half_size, movement_image, sum, count);
 
 						if (count == 0) t = 0;
 						else {
@@ -130,9 +130,9 @@ public:
 					ns_8_bit t;
 					if (registered_images.get_stabilized_worm_neighborhood_threshold(y / ns_resolution_increase_factor, x)) {
 						long sum, count;
-						ns_analyzed_image_time_path::spatially_average_movement(y / ns_resolution_increase_factor, x, ns_time_path_image_movement_analyzer::ns_spatially_averaged_movement_kernal_half_size, movement_image, sum, count);
+						ns_analyzed_image_time_path::spatially_average_movement(y / ns_resolution_increase_factor, x, ns_time_path_image_movement_analyzer<ns_wasteful_overallocation_resizer>::ns_spatially_averaged_movement_kernal_half_size, movement_image, sum, count);
 
-						if (abs(sum) < count*ns_time_path_image_movement_analyzer::ns_spatially_averaged_movement_threshold)
+						if (abs(sum) < count*ns_time_path_image_movement_analyzer<ns_wasteful_overallocation_resizer>::ns_spatially_averaged_movement_threshold)
 							t = 0;
 						else {
 							t = 255 * ((abs(sum / count) - min_mov) / mov_r);
@@ -158,7 +158,7 @@ public:
 					float f;
 					if (registered_images.get_stabilized_worm_neighborhood_threshold(y/ ns_resolution_increase_factor, x)) {
 						long sum, count;
-						ns_analyzed_image_time_path::spatially_average_movement(y/ ns_resolution_increase_factor, x, ns_time_path_image_movement_analyzer::ns_spatially_averaged_movement_kernal_half_size, movement_image, sum, count);
+						ns_analyzed_image_time_path::spatially_average_movement(y/ ns_resolution_increase_factor, x, ns_time_path_image_movement_analyzer<ns_wasteful_overallocation_resizer>::ns_spatially_averaged_movement_kernal_half_size, movement_image, sum, count);
 
 						if (count == 0)
 							f = 0;
@@ -188,8 +188,8 @@ public:
 					float f;
 					if (registered_images.get_stabilized_worm_neighborhood_threshold(y/ ns_resolution_increase_factor, x)) {
 						long sum, count;
-						ns_analyzed_image_time_path::spatially_average_movement(y/ ns_resolution_increase_factor, x, ns_time_path_image_movement_analyzer::ns_spatially_averaged_movement_kernal_half_size, movement_image, sum, count);
-						if (count == 0 || abs(sum) < count* ns_time_path_image_movement_analyzer::ns_spatially_averaged_movement_threshold)
+						ns_analyzed_image_time_path::spatially_average_movement(y/ ns_resolution_increase_factor, x, ns_time_path_image_movement_analyzer<ns_wasteful_overallocation_resizer>::ns_spatially_averaged_movement_kernal_half_size, movement_image, sum, count);
+						if (count == 0 || abs(sum) < count* ns_time_path_image_movement_analyzer<ns_wasteful_overallocation_resizer>::ns_spatially_averaged_movement_threshold)
 							f = 0;
 						else {
 							f = ((abs(sum / count) - min_mov) / mov_r);

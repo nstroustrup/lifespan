@@ -14,7 +14,7 @@ public:
 	
 	typedef enum {ns_load_all,ns_exclude_fast_moving_animals} ns_loading_details;
 
-	ns_machine_analysis_region_data():summary_series_generated_(false), censored(false),excluded(false),time_path_image_analyzer(new ns_time_path_image_movement_analyzer), contains_a_by_hand_death_time_annotation(false){}
+	ns_machine_analysis_region_data():summary_series_generated_(false), censored(false),excluded(false),time_path_image_analyzer(new ns_time_path_image_movement_analyzer<ns_wasteful_overallocation_resizer>), contains_a_by_hand_death_time_annotation(false){}
 	~ns_machine_analysis_region_data() {
 		ns_safe_delete(time_path_image_analyzer);
 	}
@@ -41,7 +41,7 @@ public:
 		const ns_64_bit region_id,ns_sql & sql);
 	
 	ns_time_path_solution time_path_solution;
-	ns_time_path_image_movement_analyzer * time_path_image_analyzer;
+	ns_time_path_image_movement_analyzer<ns_wasteful_overallocation_resizer> * time_path_image_analyzer;
 	bool censored, excluded;
 
 private:

@@ -33,14 +33,16 @@ const bool ns_skip_low_density_paths(false);
 
 
 
+template<class allocator_T>
+void release_images(ns_time_path_image_movement_analysis_memory_pool<allocator_T> & pool) {
+	for (unsigned int i = 0; i < elements.size(); i++) {
+		elements[i].clear_movement_images(pool);
+		elements[i].clear_path_aligned_images(pool);
+	}
+}
 ns_analyzed_image_time_path::~ns_analyzed_image_time_path(){
 		ns_safe_delete(output_reciever);
 		ns_safe_delete(flow_output_reciever);
-		for (unsigned int i = 0; i < elements.size(); i++){
-			elements[i].clear_movement_images();
-			elements[i].clear_path_aligned_images();
-		}
-		
 		#ifdef NS_CALCULATE_OPTICAL_FLOW
 		ns_safe_delete(flow);
 		#endif
@@ -143,7 +145,8 @@ private:
 	const ns_64_bit group_id;
 
 };
-void ns_time_path_image_movement_analyzer::delete_from_db(const ns_64_bit region_id,ns_sql & sql){
+template<class allocator_T>
+void ns_time_path_image_movement_analyzer<allocator_T>::delete_from_db(const ns_64_bit region_id,ns_sql & sql){
 	sql << "DELETE FROM path_data WHERE region_id = " << region_id;
 	sql.send_query();
 	sql << "UPDATE sample_region_image_info SET path_movement_images_are_cached=0 WHERE id = " << region_id;
@@ -255,7 +258,8 @@ ns_64_bit ns_largest_delta_subdivision(const std::vector<ns_64_bit> & v,const in
 	}
 	return largest_delta;
 }
-ns_64_bit ns_time_path_image_movement_analyzer::calculate_division_size_that_fits_in_specified_memory_size(const ns_64_bit & mem_size, const int multiplicity_of_images)const{
+template<class allocator_T>
+ns_64_bit ns_time_path_image_movement_analyzer<allocator_T>::calculate_division_size_that_fits_in_specified_memory_size(const ns_64_bit & mem_size, const int multiplicity_of_images)const{
 //	std::vector<ns_64_bit> image_size(groups.size());
 	
 	//generate the cumulative memory allocation needed to run the entire set;
@@ -277,7 +281,8 @@ ns_64_bit ns_time_path_image_movement_analyzer::calculate_division_size_that_fit
 		return final_round_id;
 	return final_round_id +1;
 }
-void ns_time_path_image_movement_analyzer::calculate_memory_pool_maximum_image_size(const unsigned int start_group,const unsigned int stop_group){
+template<class allocator_T>
+void ns_time_path_image_movement_analyzer<allocator_T>::calculate_memory_pool_maximum_image_size(const unsigned int start_group,const unsigned int stop_group){
 	
 	bool largest_found(false);
 	ns_image_properties largest_image_in_set(0,0,0,0);
@@ -318,7 +323,8 @@ void ns_alignment_state::clear() {
 #ifdef NS_OUTPUT_ALGINMENT_DEBUG
 string debug_path_name;
 #endif
-void ns_time_path_image_movement_analyzer::output_allocation_state(const std::string & stage, long timepoint,std::ostream & out) const {
+template<class allocator_T>
+void ns_time_path_image_movement_analyzer<allocator_T>::output_allocation_state(const std::string & stage, long timepoint,std::ostream & out) const {
 	for (unsigned int i = 0; i < groups.size(); i++) {
 		for (unsigned int j = 0; j < groups[i].paths.size(); j++) {
 			for (unsigned int k = 0; k < groups[i].paths[j].elements.size(); k++) {
@@ -331,7 +337,8 @@ void ns_time_path_image_movement_analyzer::output_allocation_state(const std::st
 		}
 	}
 }
-void ns_time_path_image_movement_analyzer::output_allocation_state_header(std::ostream & out) const {
+template<class allocator_T>
+void ns_time_path_image_movement_analyzer<allocator_T>::output_allocation_state_header(std::ostream & out) const {
 	out << "stage,timepoint,group,path,element,absolute time,path aligned image loaded, registered image loaded\n";
 }
 
@@ -373,7 +380,8 @@ public:
 	ns_image_bitmap temp_storage;
 };
 
-void ns_time_path_image_movement_analyzer::run_group_for_current_backwards_round(unsigned int group_id, unsigned int path_id, ns_time_path_image_movement_analyzer_thread_pool_persistant_data * persistant_data,ns_movement_analysis_shared_state * shared_state) {
+template<class allocator_T>
+void ns_time_path_image_movement_analyzer<allocator_T>::run_group_for_current_backwards_round(unsigned int group_id, unsigned int path_id, ns_time_path_image_movement_analyzer_thread_pool_persistant_data * persistant_data,ns_movement_analysis_shared_state * shared_state) {
 	const unsigned int & i(group_id), &j(path_id);
 	ns_analyzed_time_image_chunk chunk;
 
@@ -397,7 +405,7 @@ void ns_time_path_image_movement_analyzer::run_group_for_current_backwards_round
 	//we make that chunk here.
 	if (chunk.start_i < groups[i].paths[j].first_stationary_timepoint()) {
 		//	cerr << "T" << i << "(" << chunk.start_i << "-" << chunk.stop_i << ")";
-		groups[i].paths[j].copy_aligned_path_to_registered_image(chunk, persistant_data->temporary_image);
+		groups[i].paths[j].copy_aligned_path_to_registered_image(chunk, persistant_data->temporary_image,memory_pool);
 	}
 
 	//also, we /register/ backwards but calculate movement /forwards/
@@ -421,12 +429,12 @@ void ns_time_path_image_movement_analyzer::run_group_for_current_backwards_round
 	//cerr << "Cp" << i << "(" << chunk.start_i + path_aligned_image_clear_lag << "-" << groups[i].paths[j].elements.size() << ")";
 
 	for (long k = chunk.start_i + shared_state->path_aligned_image_clear_lag; k < groups[i].paths[j].elements.size(); k++) {
-		if (groups[i].paths[j].elements[k].clear_path_aligned_images())
+		if (groups[i].paths[j].elements[k].clear_path_aligned_images(memory_pool.aligned_image_pool))
 			shared_state->deallocated_aligned_count++;
 	}
 	//cerr << "Cr" << i << "(" << chunk.start_i + registered_image_clear_lag << "-" << groups[i].paths[j].elements.size() << ")";
 	for (long k = chunk.start_i + shared_state->registered_image_clear_lag; k < groups[i].paths[j].elements.size(); k++)
-		groups[i].paths[j].elements[k].clear_movement_images();
+		groups[i].paths[j].elements[k].clear_movement_images(memory_pool.registered_image_pool);
 
 	if (shared_state->chunk_generators[i][j].no_more_chunks_backward()) {
 		//output the last (e.g first)
@@ -446,12 +454,12 @@ void ns_time_path_image_movement_analyzer::run_group_for_current_backwards_round
 
 		//	cerr << "FCp" << i << "(0-" << groups[i].paths[j].elements.size() << ")";
 		for (long k = 0; k < groups[i].paths[j].elements.size(); k++) {
-			if (groups[i].paths[j].elements[k].clear_path_aligned_images())
+			if (groups[i].paths[j].elements[k].clear_path_aligned_images(memory_pool.aligned_image_pool))
 				shared_state->deallocated_aligned_count++;
 		}
 		//cerr << "FCr" << i << "(0-" << groups[i].paths[j].elements.size() << ")";
 		for (long k = 0; k < groups[i].paths[j].elements.size(); k++)
-			groups[i].paths[j].elements[k].clear_movement_images();
+			groups[i].paths[j].elements[k].clear_movement_images(memory_pool.registered_image_pool);
 
 		groups[i].paths[j].reset_movement_image_saving();
 		//shared_state->path_reset[i]++;
@@ -460,19 +468,20 @@ void ns_time_path_image_movement_analyzer::run_group_for_current_backwards_round
 	}
 }
 
+template<class allocator_T>
+using ns_time_path_image_analysis_thread_job_pointer =  void (ns_time_path_image_movement_analyzer<allocator_T>::*)(unsigned int group_id, unsigned int path_id, ns_time_path_image_movement_analyzer_thread_pool_persistant_data *,ns_movement_analysis_shared_state *);
 
-typedef void (ns_time_path_image_movement_analyzer::*ns_time_path_image_analysis_thread_job_pointer)(unsigned int group_id, unsigned int path_id, ns_time_path_image_movement_analyzer_thread_pool_persistant_data *,ns_movement_analysis_shared_state *);
-
+template<class allocator_T>
 struct ns_time_path_image_movement_analyzer_thread_pool_job {
 	ns_time_path_image_movement_analyzer_thread_pool_job() {}
 	ns_time_path_image_movement_analyzer_thread_pool_job(unsigned long g_id,
 		unsigned long p_id,
-		ns_time_path_image_analysis_thread_job_pointer f,
-		ns_time_path_image_movement_analyzer * m,
+		ns_time_path_image_analysis_thread_job_pointer<allocator_T> f,
+		ns_time_path_image_movement_analyzer<allocator_T> * m,
 		ns_movement_analysis_shared_state * ss) :group_id(g_id), path_id(p_id), function_to_call(f), ma(m), shared_state(ss) {}
 	unsigned long group_id, path_id;
-	ns_time_path_image_analysis_thread_job_pointer function_to_call;
-	ns_time_path_image_movement_analyzer * ma;
+	ns_time_path_image_analysis_thread_job_pointer<allocator_T> function_to_call;
+	ns_time_path_image_movement_analyzer<allocator_T> * ma;
 	ns_movement_analysis_shared_state * shared_state;
 
 	void operator()(ns_time_path_image_movement_analyzer_thread_pool_persistant_data & persistant_data){
@@ -482,7 +491,8 @@ struct ns_time_path_image_movement_analyzer_thread_pool_job {
 
 typedef std::pair<unsigned int, unsigned int> ns_tpiatp_job;
 
-void ns_time_path_image_movement_analyzer::finish_up_and_write_to_long_term_storage(unsigned int group_id, unsigned int path_id, ns_time_path_image_movement_analyzer_thread_pool_persistant_data * persistant_data, ns_movement_analysis_shared_state * shared_state) {
+template<class allocator_T>
+void ns_time_path_image_movement_analyzer<allocator_T>::finish_up_and_write_to_long_term_storage(unsigned int group_id, unsigned int path_id, ns_time_path_image_movement_analyzer_thread_pool_persistant_data * persistant_data, ns_movement_analysis_shared_state * shared_state) {
 
 	persistant_data->temp_storage.use_more_memory_to_avoid_reallocations();
 	//using the data stored in each path during the previous steps (specifically, when calculate_movement_images() is called
@@ -499,7 +509,7 @@ void ns_time_path_image_movement_analyzer::finish_up_and_write_to_long_term_stor
 		ns_analyzed_time_image_chunk chunk;
 		chunk.start_i = i;
 		chunk.stop_i = i + 1;
-		groups[group_id].paths[path_id].load_movement_images_no_flow(chunk, in);
+		groups[group_id].paths[path_id].load_movement_images_no_flow(chunk, in, memory_pool);
 
 		//set stabilized worm neighborhood region
 		for (unsigned int j = chunk.start_i; j < chunk.stop_i; j++)
@@ -525,11 +535,13 @@ void ns_time_path_image_movement_analyzer::finish_up_and_write_to_long_term_stor
 		int s(chunk.start_i - (long)ns_analyzed_image_time_path::movement_time_kernel_width);
 		if (s < 0) s = 0;
 		for (long j = s; j < chunk.stop_i- (long)ns_analyzed_image_time_path::movement_time_kernel_width; j++)
-			groups[group_id].paths[path_id].elements[j].clear_movement_images();
+			groups[group_id].paths[path_id].elements[j].clear_movement_images(memory_pool.registered_image_pool);
 	}
 	groups[group_id].paths[path_id].denoise_movement_series_and_calculate_intensity_slopes(0, *shared_state->time_series_denoising_parameters);
 }
-void ns_time_path_image_movement_analyzer::run_group_for_current_forwards_round(unsigned int group_id, unsigned int path_id, ns_time_path_image_movement_analyzer_thread_pool_persistant_data * persistant_data,ns_movement_analysis_shared_state * shared_state) {
+
+template<class allocator_T>
+void ns_time_path_image_movement_analyzer<allocator_T>::run_group_for_current_forwards_round(unsigned int group_id, unsigned int path_id, ns_time_path_image_movement_analyzer_thread_pool_persistant_data * persistant_data,ns_movement_analysis_shared_state * shared_state) {
 	const unsigned int &i(group_id), &j(path_id);
 #ifdef NS_OUTPUT_ALGINMENT_DEBUG
 	if (i != 1)	//xxx
@@ -547,7 +559,7 @@ void ns_time_path_image_movement_analyzer::run_group_for_current_forwards_round(
 #endif			
 	//cerr << "R" << i << "(" << chunk.start_i << "-" << chunk.stop_i << ")";
 	groups[i].paths[j].calculate_image_registration(chunk, shared_state->alignment_states[i][j], shared_state->chunk_generators[i][j].first_chunk(), persistant_data->fast_aligner);
-	groups[i].paths[j].copy_aligned_path_to_registered_image(chunk, persistant_data->temporary_image);
+	groups[i].paths[j].copy_aligned_path_to_registered_image(chunk, persistant_data->temporary_image,memory_pool);
 	groups[i].paths[j].calculate_movement_images(chunk);
 
 	///	cerr << total_flow_time / 1000;
@@ -574,15 +586,15 @@ void ns_time_path_image_movement_analyzer::run_group_for_current_forwards_round(
 	//cerr << "Cr" << i << "(0-" << chunk.start_i - (long)registered_image_clear_lag+1 << ")";
 
 	for (long k = 0; k < (long)chunk.start_i - (long)shared_state->path_aligned_image_clear_lag + 1; k++)
-		groups[i].paths[j].elements[k].clear_path_aligned_images();
+		groups[i].paths[j].elements[k].clear_path_aligned_images(memory_pool.aligned_image_pool);
 	for (long k = 0; k < (long)chunk.start_i - (long)shared_state->registered_image_clear_lag + 1; k++)
-		groups[i].paths[j].elements[k].clear_movement_images();
+		groups[i].paths[j].elements[k].clear_movement_images(memory_pool.registered_image_pool);
 
 	if (shared_state->chunk_generators[i][j].no_more_chunks_forward()) {
 
 		for (long k = 0; k < groups[i].paths[j].elements.size(); k++) {
-			groups[i].paths[j].elements[k].clear_path_aligned_images();
-			groups[i].paths[j].elements[k].clear_movement_images();
+			groups[i].paths[j].elements[k].clear_path_aligned_images(memory_pool.aligned_image_pool);
+			groups[i].paths[j].elements[k].clear_movement_images(memory_pool.registered_image_pool);
 		}
 		groups[i].paths[j].reset_movement_image_saving();
 	//	shared_state->path_reset[i]++;
@@ -590,25 +602,29 @@ void ns_time_path_image_movement_analyzer::run_group_for_current_forwards_round(
 	//		cerr << "YIKES!";
 	}
 }
-void throw_pool_errors(
-	ns_thread_pool<ns_time_path_image_movement_analyzer_thread_pool_job,
-	ns_time_path_image_movement_analyzer_thread_pool_persistant_data> & thread_pool,ns_sql & sql) {
+template<class allocator_T>
+class ns_throw_pool_errors {
+public:
+	void operator()(
+		ns_thread_pool<ns_time_path_image_movement_analyzer_thread_pool_job<allocator_T>,
+			ns_time_path_image_movement_analyzer_thread_pool_persistant_data> & thread_pool, ns_sql & sql) {
 
-	ns_time_path_image_movement_analyzer_thread_pool_job job;
-	ns_ex ex;
-	bool found_error(false);
-	while (true) {
-		long errors = thread_pool.get_next_error(job, ex);
-		if (errors == 0)
-			break;
-		found_error = true;
-		//register all but the last error
-		if (errors > 1) image_server_const.add_subtext_to_current_event(ns_image_server_event(ex.text()) << "\n", &sql);
-	}
-	//throw the last error
-	if (found_error)
-		throw ex;
-}
+			ns_time_path_image_movement_analyzer_thread_pool_job<allocator_T> job;
+			ns_ex ex;
+			bool found_error(false);
+			while (true) {
+				long errors = thread_pool.get_next_error(job, ex);
+				if (errors == 0)
+					break;
+				found_error = true;
+				//register all but the last error
+				if (errors > 1) image_server_const.add_subtext_to_current_event(ns_image_server_event(ex.text()) << "\n", &sql);
+			}
+			//throw the last error
+			if (found_error)
+				throw ex;
+		}
+};
 
 void ns_analyzed_image_time_path::calculate_stabilized_worm_neighborhood(ns_image_bitmap & stabilized_neighborhood) {
 
@@ -631,10 +647,12 @@ void ns_analyzed_image_time_path::calculate_stabilized_worm_neighborhood(ns_imag
 
 
 
-bool ns_time_path_image_movement_analyzer::try_to_rebuild_after_failure() const {return  _number_of_invalid_images_encountered*10 <= number_of_timepoints_in_analysis_; }
+template<class allocator_T>
+bool ns_time_path_image_movement_analyzer<allocator_T>::try_to_rebuild_after_failure() const {return  _number_of_invalid_images_encountered*10 <= number_of_timepoints_in_analysis_; }
 
 
-void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit region_id,const ns_time_path_solution & solution_, const ns_time_series_denoising_parameters & times_series_denoising_parameters,
+template<class allocator_T>
+void ns_time_path_image_movement_analyzer<allocator_T>::process_raw_images(const ns_64_bit region_id,const ns_time_path_solution & solution_, const ns_time_series_denoising_parameters & times_series_denoising_parameters,
 																const ns_analyzed_image_time_path_death_time_estimator * e,ns_sql & sql, const long group_number,const bool write_status_to_db,
 																const ns_analysis_db_options &id_reanalysis_options){
 	if (e->software_version_number() != NS_CURRENT_POSTURE_MODEL_VERSION)
@@ -665,7 +683,7 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 		//to speed movement analysis up.  Doing it this way (within a process) is important because
 		//rather than running multiple processes each with their own region to analyze
 		//we can limit memory usage to just one region (and miminize paging and disk thrashing)
-		ns_thread_pool<ns_time_path_image_movement_analyzer_thread_pool_job, 
+		ns_thread_pool<ns_time_path_image_movement_analyzer_thread_pool_job<allocator_T>,
 					   ns_time_path_image_movement_analyzer_thread_pool_persistant_data> thread_pool;
 		thread_pool.set_number_of_threads(image_server_const.maximum_number_of_processing_threads());
 		thread_pool.prepare_pool_to_run();
@@ -840,8 +858,8 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 							//this is a very paralellizeable step; we schedule each path to be analyzed individually and run them 
 							//on all cores.
 							thread_pool.add_job_while_pool_is_not_running(
-								ns_time_path_image_movement_analyzer_thread_pool_job(i, j,
-									&ns_time_path_image_movement_analyzer::run_group_for_current_backwards_round,
+								ns_time_path_image_movement_analyzer_thread_pool_job<allocator_T>(i, j,
+									&ns_time_path_image_movement_analyzer<allocator_T>::run_group_for_current_backwards_round,
 									this, &shared_state));
 
 							//	run_group_for_current_backwards_round(i, j, &shared_state);
@@ -857,8 +875,9 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 					thread_pool.wait_for_all_threads_to_become_idle();
 					//now that all the worker threads are done, this thread holds the thread pool job lock again.
 					//we keep it until we need to run more jobs in the next round.
-
-					throw_pool_errors(thread_pool, sql);
+					
+					ns_throw_pool_errors<allocator_T> throw_errors;
+					throw_errors(thread_pool, sql);
 				}
 				ns_ex still_open_errors("Paths still open: ");
 				bool paths_still_open(false);
@@ -926,7 +945,7 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 #ifdef NS_CALCULATE_OPTICAL_FLOW
 						groups[i].paths[j].load_movement_images(chunk, storage, flow_storage);
 #else
-						groups[i].paths[j].load_movement_images_no_flow(chunk, storage);
+						groups[i].paths[j].load_movement_images_no_flow(chunk, storage,memory_pool);
 #endif
 						groups[i].paths[j].end_movement_image_loading();
 						image_server_const.image_storage.delete_from_local_cache(groups[i].paths[j].volatile_storage_name(0,true));
@@ -952,7 +971,7 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 
 						//deallocate all before first time point.
 						for (long k = 0; k <= groups[i].paths[j].first_stationary_timepoint(); k++) {
-							groups[i].paths[j].elements[k].clear_movement_images();
+							groups[i].paths[j].elements[k].clear_movement_images(memory_pool.registered_image_pool);
 						}
 					}
 				}
@@ -1022,8 +1041,8 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 								continue;
 
 							thread_pool.add_job_while_pool_is_not_running(
-								ns_time_path_image_movement_analyzer_thread_pool_job(i, j,
-									&ns_time_path_image_movement_analyzer::run_group_for_current_forwards_round,
+								ns_time_path_image_movement_analyzer_thread_pool_job<allocator_T>(i, j,
+									&ns_time_path_image_movement_analyzer<allocator_T>::run_group_for_current_forwards_round,
 									this, &shared_state));
 							//run_group_for_current_backwards_round(i, j, &shared_state);
 						}
@@ -1035,7 +1054,8 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 					thread_pool.wait_for_all_threads_to_become_idle();
 					//now that all the worker threads are done, this thread holds the thread pool job lock again
 					//and we keep it until we need to run more jobs, below.
-					throw_pool_errors(thread_pool, sql);
+					ns_throw_pool_errors<allocator_T> throw_errors;
+					throw_errors(thread_pool, sql);
 				}
 
 
@@ -1066,8 +1086,8 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 			for (unsigned int j = 0; j < groups[i].paths.size(); j++) {
 
 				thread_pool.add_job_while_pool_is_not_running(
-					ns_time_path_image_movement_analyzer_thread_pool_job(i, j,
-						&ns_time_path_image_movement_analyzer::finish_up_and_write_to_long_term_storage,
+					ns_time_path_image_movement_analyzer_thread_pool_job<allocator_T>(i, j,
+						&ns_time_path_image_movement_analyzer<allocator_T>::finish_up_and_write_to_long_term_storage,
 						this, &shared_state));
 			}
 		}
@@ -1092,7 +1112,8 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 		}
 
 		thread_pool.wait_for_all_threads_to_become_idle();
-		throw_pool_errors(thread_pool, sql);
+		ns_throw_pool_errors<allocator_T> throw_errors;
+		throw_errors(thread_pool, sql);
 		thread_pool.shutdown();
 
 		//OK! Now we have /everything/ finished with the images.
@@ -1160,8 +1181,11 @@ unsigned long ns_analyzed_image_time_path::number_of_elements_not_processed_corr
 		o << i << "," << (unsigned long)stationary_histogram[i] << "," << (unsigned long)movement_histogram[i] << "\n";
 }*/
 
-void ns_time_path_image_movement_analyzer::load_from_solution(const ns_time_path_solution & solution_, const long group_number){
+template<class allocator_T>
+void ns_time_path_image_movement_analyzer<allocator_T>::load_from_solution(const ns_time_path_solution & solution_, const long group_number){
 	solution = &solution_;
+	for (unsigned int i = 0; i < groups.size(); i++)
+		groups[i].clear_images(memory_pool);
 	groups.clear();
 	extra_non_path_events.clear();
 	_number_of_invalid_images_encountered = 0;
@@ -1177,10 +1201,10 @@ void ns_time_path_image_movement_analyzer::load_from_solution(const ns_time_path
 	number_of_timepoints_in_analysis_ = solution_.timepoints.size();
 	groups.reserve(solution_.path_groups.size());
 	if (group_number != -1){
-		groups.push_back(ns_analyzed_image_time_path_group(ns_stationary_path_id(group_number,0,analysis_id),region_info_id,solution_,externally_specified_plate_observation_interval,extra_non_path_events,memory_pool));
+		groups.push_back(ns_analyzed_image_time_path_group<allocator_T>(ns_stationary_path_id(group_number,0,analysis_id),region_info_id,solution_,externally_specified_plate_observation_interval,extra_non_path_events,memory_pool));
 		for (unsigned int i = 0; i < groups.rbegin()->paths.size(); i++){
 			if (groups.rbegin()->paths[i].elements.size() < ns_analyzed_image_time_path::alignment_time_kernel_width)
-				throw ns_ex("ns_time_path_image_movement_analyzer::load_from_solution::Path loaded that is too short.");
+				throw ns_ex("ns_time_path_image_movement_analyzer<allocator_T>::load_from_solution::Path loaded that is too short.");
 		}
 		if (groups.rbegin()->paths.size() == 0)
 			groups.pop_back();
@@ -1188,10 +1212,10 @@ void ns_time_path_image_movement_analyzer::load_from_solution(const ns_time_path
 	else{
 		for (unsigned int i = 0; i < solution_.path_groups.size(); i++){
 			
-			groups.push_back(ns_analyzed_image_time_path_group(ns_stationary_path_id(i, 0, analysis_id),region_info_id,solution_,externally_specified_plate_observation_interval,extra_non_path_events,memory_pool));
+			groups.push_back(ns_analyzed_image_time_path_group<allocator_T>(ns_stationary_path_id(i, 0, analysis_id),region_info_id,solution_,externally_specified_plate_observation_interval,extra_non_path_events,memory_pool));
 			for (unsigned int j = 0; j < groups.rbegin()->paths.size(); j++){
 				if (groups.rbegin()->paths[j].elements.size() < ns_analyzed_image_time_path::alignment_time_kernel_width)
-					throw ns_ex("ns_time_path_image_movement_analyzer::load_from_solution::Path loaded that is too short.");
+					throw ns_ex("ns_time_path_image_movement_analyzer<allocator_T>::load_from_solution::Path loaded that is too short.");
 			}
 			if (groups.rbegin()->paths.size() == 0)
 				groups.pop_back();
@@ -1231,7 +1255,8 @@ void ns_time_path_image_movement_analyzer::load_from_solution(const ns_time_path
 }
 
 
-void ns_time_path_image_movement_analyzer::get_output_image_storage_locations(const ns_64_bit region_id,ns_sql & sql,const bool create_only_flow){
+template<class allocator_T>
+void ns_time_path_image_movement_analyzer<allocator_T>::get_output_image_storage_locations(const ns_64_bit region_id,ns_sql & sql,const bool create_only_flow){
 
 	string region_name,sample_name,experiment_name;
 	ns_64_bit sample_id,experiment_id;
@@ -1324,7 +1349,8 @@ void ns_time_path_image_movement_analyzer::get_output_image_storage_locations(co
 		}
 	}
 }
-ns_death_time_annotation_time_interval ns_time_path_image_movement_analyzer::get_externally_specified_last_measurement(const ns_64_bit region_id, ns_sql & sql){
+template<class allocator_T>
+ns_death_time_annotation_time_interval ns_time_path_image_movement_analyzer<allocator_T>::get_externally_specified_last_measurement(const ns_64_bit region_id, ns_sql & sql){
 	sql << "SELECT time_of_last_valid_sample FROM sample_region_image_info WHERE id = " << region_id;
 	ns_sql_result res;
 	sql.get_rows(res);
@@ -1335,7 +1361,8 @@ ns_death_time_annotation_time_interval ns_time_path_image_movement_analyzer::get
 		stop_time = UINT_MAX;
 	return ns_death_time_annotation_time_interval(0,stop_time);
 }
-void ns_time_path_image_movement_analyzer::crop_path_observation_times(const ns_death_time_annotation_time_interval & val){
+template<class allocator_T>
+void ns_time_path_image_movement_analyzer<allocator_T>::crop_path_observation_times(const ns_death_time_annotation_time_interval & val){
 	
 	for (unsigned int i = 0; i < groups.size(); i++){
 		for (unsigned int j = 0; j < groups[i].paths.size(); j++){
@@ -1368,18 +1395,7 @@ void ns_time_path_image_movement_analyzer::crop_path_observation_times(const ns_
 		else ++p;
 	}
 }
-ns_image_server_image ns_time_path_image_movement_analyzer::get_movement_quantification_id(const ns_64_bit reg_info_id, ns_sql & sql) {
-	sql << "SELECT movement_image_analysis_quantification_id FROM sample_region_image_info WHERE id = " << reg_info_id;
-	ns_sql_result res;
-	sql.get_rows(res);
-	if (res.size() == 0)
-		throw ns_ex("ns_time_path_image_movement_analyzer::load_movement_data_from_db():Could not load info from db");
-	ns_image_server_image im;
-	im.id = ns_atoi64(res[0][0].c_str());
-	if (im.id == 0)
-		throw ns_ex("Movement quantification data has not been stored in db");
-	return im;
-}
+
 
 const ns_movement_event ns_hmm_movement_analysis_optimizatiom_stats_record::states[ns_hmm_movement_analysis_optimizatiom_stats_record::number_of_states] = { ns_translation_cessation,
 															ns_fast_movement_cessation,
@@ -1387,7 +1403,8 @@ const ns_movement_event ns_hmm_movement_analysis_optimizatiom_stats_record::stat
 															ns_death_associated_expansion_start,
 															ns_death_associated_post_expansion_contraction_start};
 
-void ns_time_path_image_movement_analyzer::populate_movement_quantification_from_file(ns_sql & sql,const bool skip_movement_data){
+template<class allocator_T>
+void ns_time_path_image_movement_analyzer<allocator_T>::populate_movement_quantification_from_file(ns_sql & sql,const bool skip_movement_data){
 	
 	ns_image_server_image im = get_movement_quantification_id(this->region_info_id,sql);
 	ifstream * i(image_server_const.image_storage.request_metadata_from_disk(im,false,&sql));
@@ -1420,7 +1437,8 @@ void ns_time_path_image_movement_analyzer::populate_movement_quantification_from
 	}
 };
 
-void ns_time_path_image_movement_analyzer::calculate_optimzation_stats_for_current_hmm_estimator(ns_hmm_movement_analysis_optimizatiom_stats & s, const ns_emperical_posture_quantification_value_estimator * e, std::set<ns_stationary_path_id> & paths_to_test, bool generate_path_info) {
+template<class allocator_T>
+void ns_time_path_image_movement_analyzer<allocator_T>::calculate_optimzation_stats_for_current_hmm_estimator(ns_hmm_movement_analysis_optimizatiom_stats & s, const ns_emperical_posture_quantification_value_estimator * e, std::set<ns_stationary_path_id> & paths_to_test, bool generate_path_info) {
 	for (unsigned long g = 0; g < groups.size(); g++)
 		for (unsigned long p = 0; p < groups[g].paths.size(); p++) {
 			if (ns_skip_low_density_paths && groups[g].paths[p].is_low_density_path() || !groups[g].paths[p].by_hand_data_specified() ||
@@ -1490,7 +1508,8 @@ void ns_time_path_image_movement_analyzer::calculate_optimzation_stats_for_curre
 
 		}
 }
-void ns_time_path_image_movement_analyzer::reanalyze_with_different_movement_estimator(const ns_time_series_denoising_parameters &, const ns_analyzed_image_time_path_death_time_estimator * e) {
+template<class allocator_T>
+void ns_time_path_image_movement_analyzer<allocator_T>::reanalyze_with_different_movement_estimator(const ns_time_series_denoising_parameters &, const ns_analyzed_image_time_path_death_time_estimator * e) {
 	if (region_info_id == 0)
 		throw ns_ex("Attempting to reanalyze an unloaded image!");
 
@@ -1509,7 +1528,8 @@ void ns_time_path_image_movement_analyzer::reanalyze_with_different_movement_est
 	}
 }
 
-bool ns_time_path_image_movement_analyzer::load_completed_analysis(const ns_64_bit region_id,const ns_time_path_solution & solution_,  const ns_time_series_denoising_parameters & times_series_denoising_parameters, 
+template<class allocator_T>
+bool ns_time_path_image_movement_analyzer<allocator_T>::load_completed_analysis(const ns_64_bit region_id,const ns_time_path_solution & solution_,  const ns_time_series_denoising_parameters & times_series_denoising_parameters, 
 															const ns_analyzed_image_time_path_death_time_estimator * e,ns_sql & sql, bool exclude_movement_quantification){
 	region_info_id = region_id;
 	externally_specified_plate_observation_interval = get_externally_specified_last_measurement(region_id,sql);
@@ -1602,7 +1622,8 @@ bool ns_time_path_image_movement_analyzer::load_completed_analysis(const ns_64_b
 	return found_path_info_in_db;
 }
 
-void ns_time_path_image_movement_analyzer::obtain_analysis_id_and_save_movement_data(const ns_64_bit region_id, ns_sql & sql, ns_analysis_db_options id_options, ns_data_write_options write_options){
+template<class allocator_T>
+void ns_time_path_image_movement_analyzer<allocator_T>::obtain_analysis_id_and_save_movement_data(const ns_64_bit region_id, ns_sql & sql, ns_analysis_db_options id_options, ns_data_write_options write_options){
 
 	
 	sql << "SELECT movement_image_analysis_quantification_id FROM sample_region_image_info WHERE id = " << region_id;
@@ -1801,7 +1822,8 @@ void ns_analyzed_image_time_path_element_measurements::read(istream & in, ns_vec
 			throw ns_ex("Invalid Specification");
 	}
 }
-void ns_time_path_image_movement_analyzer::load_movement_data_from_disk(istream & in, bool skip_movement_data){
+template<class allocator_T>
+void ns_time_path_image_movement_analyzer<allocator_T>::load_movement_data_from_disk(istream & in, bool skip_movement_data){
 
 	ns_get_int get_int;
 	ns_get_double get_double;
@@ -1870,7 +1892,8 @@ void ns_time_path_image_movement_analyzer::load_movement_data_from_disk(istream 
 		}
 	}
 }
-void ns_time_path_image_movement_analyzer::get_processing_stats_from_solution(const ns_time_path_solution & solution_){
+template<class allocator_T>
+void ns_time_path_image_movement_analyzer<allocator_T>::get_processing_stats_from_solution(const ns_time_path_solution & solution_){
 	number_of_timepoints_in_analysis_ = solution_.timepoints.size();
 	
 	last_timepoint_in_analysis_ = 0;
@@ -1956,7 +1979,8 @@ void ns_analyzed_image_time_path_element_measurements::write(ostream & out,const
 	for (unsigned int i = 0; i < 7; i++)
 		out << ",";
 }
-void ns_time_path_image_movement_analyzer::save_movement_data_to_disk(ostream & o) const{
+template<class allocator_T>
+void ns_time_path_image_movement_analyzer<allocator_T>::save_movement_data_to_disk(ostream & o) const{
 	o << this->analysis_id << ",v:,"<< posture_model_version_used<<"\n";
 	for (unsigned long i = 0; i < groups.size(); i++){
 		for (unsigned long j = 0; j < groups[i].paths.size(); j++){
@@ -2464,7 +2488,8 @@ void ns_time_path_image_movement_analyzer::write_summary_movement_quantification
 }*/
 
 
-void ns_time_path_image_movement_analyzer::write_posture_analysis_optimization_data(const std::string & software_version,const std::vector<double> & thresholds, const std::vector<unsigned long> & hold_times, const ns_region_metadata & m,std::ostream & o, ns_parameter_optimization_results & results, ns_parameter_optimization_results * results_2) const{
+template<class allocator_T>
+void ns_time_path_image_movement_analyzer<allocator_T>::write_posture_analysis_optimization_data(const std::string & software_version,const std::vector<double> & thresholds, const std::vector<unsigned long> & hold_times, const ns_region_metadata & m,std::ostream & o, ns_parameter_optimization_results & results, ns_parameter_optimization_results * results_2) const{
 	srand(0);
 	for (unsigned int i = 0; i < groups.size(); i++){
 		for (unsigned int j = 0; j < groups[i].paths.size(); j++){	
@@ -2479,7 +2504,8 @@ void ns_time_path_image_movement_analyzer::write_posture_analysis_optimization_d
 	}
 }
 
-void ns_time_path_image_movement_analyzer::write_expansion_analysis_optimization_data(const std::vector<double> & thresholds, const std::vector<unsigned long> & hold_times, const ns_region_metadata & m, std::ostream & o, ns_parameter_optimization_results & results, ns_parameter_optimization_results * results_2) const {
+template<class allocator_T>
+void ns_time_path_image_movement_analyzer<allocator_T>::write_expansion_analysis_optimization_data(const std::vector<double> & thresholds, const std::vector<unsigned long> & hold_times, const ns_region_metadata & m, std::ostream & o, ns_parameter_optimization_results & results, ns_parameter_optimization_results * results_2) const {
 	for (unsigned int i = 0; i < groups.size(); i++) {
 		for (unsigned int j = 0; j < groups[i].paths.size(); j++) {
 			if (ns_skip_low_density_paths && groups[i].paths[j].is_low_density_path() || groups[i].paths[j].excluded() || !groups[i].paths[j].by_hand_data_specified())
@@ -2489,7 +2515,8 @@ void ns_time_path_image_movement_analyzer::write_expansion_analysis_optimization
 	}
 }
 
-void ns_time_path_image_movement_analyzer::write_detailed_movement_quantification_analysis_data(const ns_region_metadata & m, std::ostream & o, const bool only_output_elements_with_by_hand_data, const long specific_animal_id, const bool abbreviated_time_series)const{
+template<class allocator_T>
+void ns_time_path_image_movement_analyzer<allocator_T>::write_detailed_movement_quantification_analysis_data(const ns_region_metadata & m, std::ostream & o, const bool only_output_elements_with_by_hand_data, const long specific_animal_id, const bool abbreviated_time_series)const{
 	 
 	for (unsigned long i = 0; i < groups.size(); i++){
 		for (unsigned long j = 0; j < groups[i].paths.size(); j++){
@@ -3583,7 +3610,8 @@ ns_movement_state ns_analyzed_image_time_path::by_hand_movement_state( const uns
 
 	return ns_movement_not_calculated;
 }
-void ns_time_path_image_movement_analyzer::produce_death_time_annotations(ns_death_time_annotation_set & set) const{
+template<class allocator_T>
+void ns_time_path_image_movement_analyzer<allocator_T>::produce_death_time_annotations(ns_death_time_annotation_set & set) const{
 	
 	set.clear();
 	for (unsigned long j = 0; j < groups.size(); j++){
@@ -3596,12 +3624,12 @@ void ns_time_path_image_movement_analyzer::produce_death_time_annotations(ns_dea
 	set.add(extra_non_path_events);
 	
 }
-
-void ns_analyzed_image_time_path_group::clear_images(){
+template<class allocator_T>
+void ns_analyzed_image_time_path_group<allocator_T>::clear_images(ns_time_path_image_movement_analysis_memory_pool<allocator_T> & pool){
 	for (unsigned int i = 0; i < paths.size(); i++)
 		for (unsigned int j = 0; j < paths[i].elements.size(); j++){
-			paths[i].elements[j].clear_movement_images();
-			paths[i].elements[j].clear_path_aligned_images();
+			paths[i].elements[j].clear_movement_images(pool.registered_image_pool);
+			paths[i].elements[j].clear_path_aligned_images(pool.aligned_image_pool);
 
 		}
 
@@ -3665,7 +3693,8 @@ bool ns_analyzed_image_time_path::region_image_is_required(const unsigned long t
 
 //generates path_aligned_images->image from region visualiation
 //note that the region images contain context images (ie. the extra boundary around the region_image)
-bool ns_analyzed_image_time_path::populate_images_from_region_visualization(const unsigned long time,const ns_image_standard &region_visualization,const ns_image_standard & interpolated_region_visualization,bool just_do_a_consistancy_check, ns_analyzed_image_time_path::ns_load_type load_type){
+template<class allocator_T>
+bool ns_analyzed_image_time_path::populate_images_from_region_visualization(const unsigned long time,const ns_image_standard &region_visualization,const ns_image_standard & interpolated_region_visualization,bool just_do_a_consistancy_check, ns_analyzed_image_time_path::ns_load_type load_type, ns_time_path_image_movement_analysis_memory_pool<allocator_T> & memory_pool_){
 	//region visualization is all worms detected at that time point.
 	ns_image_properties path_aligned_image_image_properties(region_visualization.properties());
 	if (region_visualization.properties().width == 0){
@@ -3689,7 +3718,7 @@ bool ns_analyzed_image_time_path::populate_images_from_region_visualization(cons
 		const bool was_previously_loaded(e.path_aligned_image_is_loaded());
 		try{
 			if (!just_flag_elements_as_loaded && !just_do_a_consistancy_check && !was_previously_loaded) //don't do the check for double initilaizing if we're running a consistancy check 
-				e.initialize_path_aligned_images(path_aligned_image_image_properties,memory_pool->aligned_image_pool); // These allocations take a lot of time, so we pool them.  This speeds things up on machines with enough RAM to keep it all in memory.
+				e.initialize_path_aligned_images(path_aligned_image_image_properties,memory_pool_.aligned_image_pool); // These allocations take a lot of time, so we pool them.  This speeds things up on machines with enough RAM to keep it all in memory.
 	
 			//offset_from_path is the distance the region image is from the bounding box around the path
 			const ns_vector_2i tl_worm_context_position_in_pa(ns_analyzed_image_time_path::maximum_alignment_offset()+e.offset_from_path);
@@ -3786,18 +3815,18 @@ bool ns_analyzed_image_time_path::populate_images_from_region_visualization(cons
 			}
 		
 			if (!just_flag_elements_as_loaded  && just_do_a_consistancy_check && !was_previously_loaded){
-				e.release_path_aligned_images(memory_pool->aligned_image_pool);
+				e.release_path_aligned_images(memory_pool_.aligned_image_pool);
 			}
 		}
 		catch (ns_ex & ex) {
 			if (!just_do_a_consistancy_check && !was_previously_loaded) {
-				e.release_path_aligned_images(memory_pool->aligned_image_pool);
+				e.release_path_aligned_images(memory_pool_.aligned_image_pool);
 			}
 			throw ex;
 		}
 		catch(...){
 			if (!just_do_a_consistancy_check && !was_previously_loaded){
-				e.release_path_aligned_images(memory_pool->aligned_image_pool);
+				e.release_path_aligned_images(memory_pool_.aligned_image_pool);
 			}
 			throw;
 		}
@@ -3937,7 +3966,8 @@ void ns_hmm_movement_analysis_optimizatiom_stats::write_hmm_path_data(std::ostre
 	}
 }
 
-void ns_time_path_image_movement_analyzer::add_by_hand_annotations(const ns_death_time_annotation_compiler & annotations){
+template<class allocator_T>
+void ns_time_path_image_movement_analyzer<allocator_T>::add_by_hand_annotations(const ns_death_time_annotation_compiler & annotations){
 	ns_death_time_annotation_compiler compiler;
 	//load all paths into a compiler to do the merge
 	for (unsigned int i = 0; i < groups.size(); i++){
@@ -4114,7 +4144,8 @@ void ns_analyzed_image_time_path::add_by_hand_annotations(const ns_death_time_an
 	}
 }
 
-void ns_time_path_image_movement_analyzer::output_visualization(const string & base_directory) const{
+template<class allocator_T>
+void ns_time_path_image_movement_analyzer<allocator_T>::output_visualization(const string & base_directory) const{
 
 	ns_dir::create_directory_recursive(base_directory);
 	unsigned long p(0);
@@ -4756,11 +4787,11 @@ void ns_analyzed_image_time_path::quantify_movement(const ns_analyzed_time_image
 				//there is a lot of low-level pixel noise that can average out even with a small 5x5 kernal.
 				if (worm_threshold) {
 					long averaged_sum, count;
-					spatially_average_movement(y, x, ns_time_path_image_movement_analyzer::ns_spatially_averaged_movement_kernal_half_size,elements[i].registered_images->movement_image_, averaged_sum, count);
+					spatially_average_movement(y, x, ns_time_path_image_movement_analyzer<ns_overallocation_resizer>::ns_spatially_averaged_movement_kernal_half_size,elements[i].registered_images->movement_image_, averaged_sum, count);
 					long averaged_sum_cropped = averaged_sum;
-					if (abs(averaged_sum) < count*ns_time_path_image_movement_analyzer::ns_spatially_averaged_movement_threshold)
+					if (abs(averaged_sum) < count*ns_time_path_image_movement_analyzer<ns_overallocation_resizer>::ns_spatially_averaged_movement_threshold)
 						averaged_sum_cropped = 0; 
-					if (abs(averaged_sum) < count*(ns_time_path_image_movement_analyzer::ns_spatially_averaged_movement_threshold/2))
+					if (abs(averaged_sum) < count*(ns_time_path_image_movement_analyzer<ns_overallocation_resizer>::ns_spatially_averaged_movement_threshold/2))
 						averaged_sum = 0;
 					if (count > 0) {
 						elements[i].measurements.spatial_averaged_movement_sum_uncropped += abs(averaged_sum / (float)count);
@@ -4789,10 +4820,9 @@ void ns_analyzed_image_time_path::quantify_movement(const ns_analyzed_time_image
 		elements[i].measurements.movement_alternate_worm_sum = (unsigned long)alternate_movement_sum;
 	}
 }
-//xxx 
-//ofstream * tmp_cmp = 0;
-void ns_analyzed_image_time_path::copy_aligned_path_to_registered_image(const ns_analyzed_time_image_chunk & chunk, std::vector < ns_image_standard> & temporary_images) {
-	
+template<class allocator_T>
+void ns_analyzed_image_time_path::copy_aligned_path_to_registered_image(const ns_analyzed_time_image_chunk & chunk, std::vector < ns_image_standard> & temporary_images, ns_time_path_image_movement_analysis_memory_pool<allocator_T> & memory_pool_){
+
 	const unsigned long C(256);
 	const unsigned long C_sqrt(16);
 
@@ -4831,7 +4861,7 @@ void ns_analyzed_image_time_path::copy_aligned_path_to_registered_image(const ns
 		//		cerr << "Initializing registered images for " << i << "\n";
 
 		if (!chunk.forward() || !elements[i].registered_image_is_loaded() || (i > ns_analyzed_image_time_path::alignment_time_kernel_width && i > this->first_stationary_timepoint()))
-			elements[i].initialize_registered_images(prop, memory_pool->registered_image_pool);
+			elements[i].initialize_registered_images(prop, memory_pool_.registered_image_pool);
 		//else cerr << "Skipping reg im init";
 
 		if (elements[i].path_aligned_images == 0)
@@ -5403,7 +5433,8 @@ struct ns_index_orderer{
 	unsigned long index;
 	const T * data;
 };
-ns_analyzed_image_time_path_group::ns_analyzed_image_time_path_group(const ns_stationary_path_id group_id, const ns_64_bit region_info_id,const ns_time_path_solution & solution_, const ns_death_time_annotation_time_interval & observation_time_interval,ns_death_time_annotation_set & rejected_annotations,ns_time_path_image_movement_analysis_memory_pool & memory_pool){
+template<class allocator_T>
+ns_analyzed_image_time_path_group<allocator_T>::ns_analyzed_image_time_path_group(const ns_stationary_path_id group_id, const ns_64_bit region_info_id,const ns_time_path_solution & solution_, const ns_death_time_annotation_time_interval & observation_time_interval,ns_death_time_annotation_set & rejected_annotations,ns_time_path_image_movement_analysis_memory_pool<allocator_T> & memory_pool){
 	
 	paths.reserve(solution_.path_groups[group_id.group_id].path_ids.size());
 	unsigned long current_path_id(0);
@@ -5437,7 +5468,7 @@ ns_analyzed_image_time_path_group::ns_analyzed_image_time_path_group(const ns_st
 	for (unsigned int i = 0; i < solution_.path_groups[group_id.group_id].path_ids.size(); i++){
 		const unsigned long & path_id(solution_.path_groups[group_id.group_id].path_ids[i]);
 		const ns_time_path & source_path(solution_.paths[path_id]);
-		paths.resize(current_path_id+1,ns_analyzed_image_time_path(memory_pool,0));
+		paths.resize(current_path_id+1,ns_analyzed_image_time_path(0));
 		ns_analyzed_image_time_path &path(paths[current_path_id]);
 
 		path.path = &source_path;
@@ -6017,8 +6048,8 @@ void ns_analyzed_image_time_path::end_movement_image_loading(){
 		ns_safe_delete(output_reciever);
 		ns_safe_delete(flow_output_reciever);
 }
-
-void ns_analyzed_image_time_path::load_movement_images(const ns_analyzed_time_image_chunk & chunk,ns_image_storage_source_handle<ns_8_bit> & in,ns_image_storage_source_handle<float> & flow_in){
+template<class allocator_T>
+void ns_analyzed_image_time_path::load_movement_images(const ns_analyzed_time_image_chunk & chunk,ns_image_storage_source_handle<ns_8_bit> & in,ns_image_storage_source_handle<float> & flow_in, ns_time_path_image_movement_analysis_memory_pool<allocator_T> & memory_pool_){
 	
 	ns_image_stream_buffer_properties p(movement_loading_buffer.properties());
 	const unsigned long h(p.height);
@@ -6026,7 +6057,7 @@ void ns_analyzed_image_time_path::load_movement_images(const ns_analyzed_time_im
 	for (unsigned int i = chunk.start_i; i < chunk.stop_i; i++){
 		ns_image_properties pr(in.input_stream().properties());
 		set_path_alignment_image_dimensions(pr);
-		elements[i].initialize_registered_images(pr,memory_pool->registered_image_pool);
+		elements[i].initialize_registered_images(pr,memory_pool_.registered_image_pool);
 	}
 
 	unsigned long start_y(movement_loading_collage_info.frame_dimensions.y*(chunk.start_i/movement_loading_collage_info.grid_dimensions.x));
@@ -6322,7 +6353,9 @@ void ns_analyzed_image_time_path::calc_flow_images_from_registered_images(const 
 		throw ns_ex("Attempting to calculate flow with NS_CALCULATE_OPTICAL_FLOW set to false. (2)");
 	#endif
 }
-void ns_analyzed_image_time_path::load_movement_images_no_flow(const ns_analyzed_time_image_chunk & chunk,ns_image_storage_source_handle<ns_8_bit> & in){
+
+template<class allocator_T>
+void ns_analyzed_image_time_path::load_movement_images_no_flow(const ns_analyzed_time_image_chunk & chunk, ns_image_storage_source_handle<ns_8_bit> & in, ns_time_path_image_movement_analysis_memory_pool<allocator_T> & pool){
 	
 	ns_image_stream_buffer_properties p(movement_loading_buffer.properties());
 	const unsigned long h(p.height);
@@ -6330,7 +6363,7 @@ void ns_analyzed_image_time_path::load_movement_images_no_flow(const ns_analyzed
 	for (unsigned int i = chunk.start_i; i < chunk.stop_i; i++){
 		ns_image_properties pr(in.input_stream().properties());
 		set_path_alignment_image_dimensions(pr);
-		elements[i].initialize_registered_images(pr,memory_pool->registered_image_pool);
+		elements[i].initialize_registered_images(pr,pool.registered_image_pool);
 	}
 
 	unsigned long start_y(movement_loading_collage_info.frame_dimensions.y*(chunk.start_i/movement_loading_collage_info.grid_dimensions.x));
@@ -6376,7 +6409,8 @@ void ns_analyzed_image_time_path::load_movement_images_no_flow(const ns_analyzed
 	}
 }
 
-bool ns_time_path_image_movement_analyzer::load_movement_image_db_info(const ns_64_bit region_id,ns_sql & sql){
+template<class allocator_T>
+bool ns_time_path_image_movement_analyzer<allocator_T>::load_movement_image_db_info(const ns_64_bit region_id,ns_sql & sql){
 	if (image_db_info_loaded)
 		return true;
 	sql << "SELECT group_id,path_id,image_id, id,flow_image_id FROM path_data WHERE region_id = " << region_id;
@@ -6411,8 +6445,8 @@ bool ns_time_path_image_movement_analyzer::load_movement_image_db_info(const ns_
 	image_db_info_loaded = true;
 	return true;
 }
-
-void ns_time_path_image_movement_analyzer::load_images_for_group(const unsigned long group_id, unsigned long number_of_images_to_load,ns_sql & sql, const bool load_images_after_last_valid_sample, const bool load_flow_images, ns_simple_local_image_cache & image_cache){
+template<class allocator_T>
+void ns_time_path_image_movement_analyzer<allocator_T>::load_images_for_group(const unsigned long group_id, unsigned long number_of_images_to_load,ns_sql & sql, const bool load_images_after_last_valid_sample, const bool load_flow_images, ns_simple_local_image_cache & image_cache){
 	#ifdef NS_CALCULATE_OPTICAL_FLOW
 	if (load_flow_images)
 		throw ns_ex("Attempting to load flow images with NS_CALCULATE_OPTICAL_FLOW set to false");
@@ -6485,9 +6519,9 @@ void ns_time_path_image_movement_analyzer::load_images_for_group(const unsigned 
 			chunk.stop_i+=number_of_images_loaded;
 
 			if (!load_flow_images)
-				groups[group_id].paths[j].load_movement_images_no_flow(chunk, groups[group_id].paths[j].movement_image_storage);
+				groups[group_id].paths[j].load_movement_images_no_flow(chunk, groups[group_id].paths[j].movement_image_storage,memory_pool);
 			else
-				groups[group_id].paths[j].load_movement_images(chunk,groups[group_id].paths[j].movement_image_storage,groups[group_id].paths[j].flow_movement_image_storage);
+				groups[group_id].paths[j].load_movement_images(chunk,groups[group_id].paths[j].movement_image_storage,groups[group_id].paths[j].flow_movement_image_storage,memory_pool);
 //			
 		}
 		if (number_of_images_to_load == number_of_valid_elements){
@@ -6504,18 +6538,20 @@ void ns_time_path_image_movement_analyzer::load_images_for_group(const unsigned 
 	}
 }
 
-void ns_time_path_image_movement_analyzer::clear_images_for_group(const unsigned long group_id, ns_simple_local_image_cache & image_cache){
+template<class allocator_T>
+void ns_time_path_image_movement_analyzer<allocator_T>::clear_images_for_group(const unsigned long group_id, ns_simple_local_image_cache & image_cache){
 	if (groups.size() <= group_id)
 		return;
 	for (unsigned int j = 0; j < groups[group_id].paths.size(); j++){
 		for (unsigned int k = 0; k < groups[group_id].paths[j].elements.size(); k++){
-			groups[group_id].paths[j].elements[k].clear_movement_images();
+			groups[group_id].paths[j].elements[k].clear_movement_images(memory_pool.registered_image_pool);
 		}
 		groups[group_id].paths[j].number_of_images_loaded = 0;
 	}
 }
 
-void ns_time_path_image_movement_analyzer::back_port_by_hand_annotations_to_solution_elements(ns_time_path_solution & sol) {
+template<class allocator_T>
+void ns_time_path_image_movement_analyzer<allocator_T>::back_port_by_hand_annotations_to_solution_elements(ns_time_path_solution & sol) {
 	for (unsigned int i = 0; i < groups.size(); i++) {
 		for (unsigned int j = 0; j < groups[i].paths.size(); j++) {
 			if (i >= sol.path_groups.size() || j >= sol.path_groups[i].path_ids.size())
@@ -6528,7 +6564,8 @@ void ns_time_path_image_movement_analyzer::back_port_by_hand_annotations_to_solu
 
 }
 
-void ns_time_path_image_movement_analyzer::reanalyze_stored_aligned_images(const ns_64_bit region_id,const ns_time_path_solution & solution_,const ns_time_series_denoising_parameters & times_series_denoising_parameters,const ns_analyzed_image_time_path_death_time_estimator * e,ns_sql & sql,const bool load_images_after_last_valid_sample,const bool recalculate_flow_images){
+template<class allocator_T>
+void ns_time_path_image_movement_analyzer<allocator_T>::reanalyze_stored_aligned_images(const ns_64_bit region_id,const ns_time_path_solution & solution_,const ns_time_series_denoising_parameters & times_series_denoising_parameters,const ns_analyzed_image_time_path_death_time_estimator * e,ns_sql & sql,const bool load_images_after_last_valid_sample,const bool recalculate_flow_images){
 
 	if (e->software_version_number() != NS_CURRENT_POSTURE_MODEL_VERSION)
 		throw ns_ex("This software, which is running posture analysis version ") << NS_CURRENT_POSTURE_MODEL_VERSION << ", cannot use the incompatible posture analysis parameter set " << e->name << ", which is version " << e->software_version_number();
@@ -6632,14 +6669,14 @@ void ns_time_path_image_movement_analyzer::reanalyze_stored_aligned_images(const
 					ns_analyzed_time_image_chunk chunk(0,number_of_valid_elements);
 					
 					if (flow_handling_approach  == ns_ignore || flow_handling_approach == ns_create) {
-						groups[i].paths[j].load_movement_images_no_flow(chunk, storage);
+						groups[i].paths[j].load_movement_images_no_flow(chunk, storage,memory_pool);
 						if (flow_handling_approach == ns_create) {
 							groups[i].paths[j].calc_flow_images_from_registered_images(chunk);
 							groups[i].paths[j].save_movement_images(chunk, sql, ns_analyzed_image_time_path::ns_save_flow, ns_analyzed_image_time_path::ns_output_all_images, ns_analyzed_image_time_path::ns_long_term);
 						}
 					}
 					else {
-						groups[i].paths[j].load_movement_images(chunk, storage,flow_storage);
+						groups[i].paths[j].load_movement_images(chunk, storage,flow_storage,memory_pool);
 					}
 					//groups[i].paths[j].calculate_stabilized_worm_neighborhood(temp_storage);
 					//groups[i].paths[j].save_movement_images(chunk, sql, ns_analyzed_image_time_path::ns_save_simple, ns_analyzed_image_time_path::ns_output_all_images, ns_analyzed_image_time_path::ns_long_term);
@@ -6687,11 +6724,13 @@ void ns_time_path_image_movement_analyzer::reanalyze_stored_aligned_images(const
 		throw;
 	}
 }
-void ns_time_path_image_movement_analyzer::mark_path_images_as_cached_in_db(const ns_64_bit region_id, ns_sql & sql){
+template<class allocator_T>
+void ns_time_path_image_movement_analyzer<allocator_T>::mark_path_images_as_cached_in_db(const ns_64_bit region_id, ns_sql & sql){
 	sql << "UPDATE sample_region_image_info SET path_movement_images_are_cached = 1 WHERE id = " << region_id;
 	sql.send_query();
 }
-void ns_time_path_image_movement_analyzer::acquire_region_image_specifications(const ns_64_bit region_id,ns_sql & sql){
+template<class allocator_T>
+void ns_time_path_image_movement_analyzer<allocator_T>::acquire_region_image_specifications(const ns_64_bit region_id,ns_sql & sql){
 	const string col(ns_processing_step_db_column_name(ns_process_region_vis));
 	const string col2(ns_processing_step_db_column_name(ns_process_region_interpolation_vis));
 	sql << "SELECT " << col << "," << col2 << ",capture_time, worm_detection_results_id, worm_interpolation_results_id, id "
@@ -6721,7 +6760,8 @@ void ns_time_path_image_movement_analyzer::acquire_region_image_specifications(c
 	}
 }
 
-void ns_time_path_image_movement_analyzer::normalize_movement_scores_over_all_paths(const std::string & software_version, const ns_time_series_denoising_parameters & param, ns_sql & sql){
+template<class allocator_T>
+void ns_time_path_image_movement_analyzer<allocator_T>::normalize_movement_scores_over_all_paths(const std::string & software_version, const ns_time_series_denoising_parameters & param, ns_sql & sql){
 	if (param.movement_score_normalization == ns_time_series_denoising_parameters::ns_none)
 		return;
 	image_server.register_server_event(ns_image_server_event("Ignoring depreciated denosing parameter specification."),&sql);
@@ -6816,7 +6856,8 @@ void ns_time_path_image_movement_analyzer::normalize_movement_scores_over_all_pa
 }
 
 
-void ns_time_path_image_movement_analyzer::match_plat_areas_to_paths(std::vector<ns_region_area> & areas) {
+template<class allocator_T>
+void ns_time_path_image_movement_analyzer<allocator_T>::match_plat_areas_to_paths(std::vector<ns_region_area> & areas) {
 	for (unsigned int i = 0; i < areas.size(); i++) {
 		areas[i].worm_id = 0;
 		areas[i].movement_state = ns_movement_fast;
@@ -6865,7 +6906,8 @@ void ns_time_path_image_movement_analyzer::match_plat_areas_to_paths(std::vector
 		areas[i].average_annotation_time_for_region = average_path_duration;
 }
 
-void ns_time_path_image_movement_analyzer::generate_movement_description_series(){
+template<class allocator_T>
+void ns_time_path_image_movement_analyzer<allocator_T>::generate_movement_description_series(){
 	//group sizes and position
 	
 	description_series.items.resize(groups.size());
@@ -6959,7 +7001,8 @@ ns_analyzed_image_time_path_event_index ns_analyzed_image_time_path::find_event_
 };
 
 
-void ns_time_path_image_movement_analyzer::generate_death_aligned_movement_posture_visualizations(const bool include_motion_graphs,const ns_64_bit region_id,const ns_movement_event & event_to_align,const ns_time_path_solution & solution,ns_sql & sql){
+template<class allocator_T>
+void ns_time_path_image_movement_analyzer<allocator_T>::generate_death_aligned_movement_posture_visualizations(const bool include_motion_graphs,const ns_64_bit region_id,const ns_movement_event & event_to_align,const ns_time_path_solution & solution,ns_sql & sql){
 	/*
 	ns_64_bit sample_id(0),experiment_id(0);
 	string region_name,sample_name,experiment_name;
@@ -7216,7 +7259,8 @@ void ns_time_path_image_movement_analyzer::generate_death_aligned_movement_postu
 	*/
 }
 
-void ns_time_path_image_movement_analyzer::generate_movement_posture_visualizations(const bool include_graphs,const ns_64_bit region_id, const ns_time_path_solution & solution, bool generate_plate_worm_composite_images, ns_sql & sql ){
+template<class allocator_T>
+void ns_time_path_image_movement_analyzer<allocator_T>::generate_movement_posture_visualizations(const bool include_graphs,const ns_64_bit region_id, const ns_time_path_solution & solution, bool generate_plate_worm_composite_images, ns_sql & sql ){
 	const unsigned long thickness(3);
 
 	ns_marker_manager marker_manager;
@@ -7286,14 +7330,14 @@ void ns_time_path_image_movement_analyzer::generate_movement_posture_visualizati
 		if (scale_images) {
 			//find lightest and darkest picture in all images, to get normalization factors for the visualization
 			for (unsigned int j = 0; j < groups[g].paths[0].elements.size(); j++) {
-				groups[g].paths[0].load_movement_images_no_flow(ns_analyzed_time_image_chunk(j, j + 1), path_image_source[g]);
+				groups[g].paths[0].load_movement_images_no_flow(ns_analyzed_time_image_chunk(j, j + 1), path_image_source[g],memory_pool);
 				const ns_image_standard &image(groups[g].paths[0].element(j).registered_images->image);
 				for (unsigned int y = 0; y < image.properties().height; y++) {
 					for (unsigned int x = 0; x < image.properties().width; x++) {
 						pixel_ranges[g].increment(image[y][x]);
 					}
 				}
-				groups[g].paths[0].elements[j].clear_movement_images();
+				groups[g].paths[0].elements[j].clear_movement_images(memory_pool.registered_image_pool);
 			}
 			pixel_scale_factors[g].first = pixel_ranges[g].average_of_ntile(1,100,true);
 			ns_8_bit top = pixel_ranges[g].average_of_ntile(99, 100,true);
@@ -7349,7 +7393,7 @@ void ns_time_path_image_movement_analyzer::generate_movement_posture_visualizati
 	//load first frame of all paths
 	for (unsigned int g = 0; g < groups.size(); g++){
 		if (!series.items[g].should_be_displayed) continue;
-		groups[g].paths[0].load_movement_images_no_flow(ns_analyzed_time_image_chunk(0,1),path_image_source[g]);
+		groups[g].paths[0].load_movement_images_no_flow(ns_analyzed_time_image_chunk(0,1),path_image_source[g],memory_pool);
 	}
 	vector<unsigned long> current_path_timepoint_i(groups.size(), 0);
 
@@ -7418,11 +7462,11 @@ void ns_time_path_image_movement_analyzer::generate_movement_posture_visualizati
 				 for (; i < best_frame;) {
 					 //	cerr << "Clearing p"<<g<< " " << i << "\n";
 					 if (i != 0)
-						 path.elements[i - 1].clear_movement_images();
+						 path.elements[i - 1].clear_movement_images(memory_pool.registered_image_pool);
 					 ++i;
 					 ns_analyzed_time_image_chunk chunk(i, i + 1);
 					 //	cerr << "loading p"<<g<< " " << i << "\n";
-					 path.load_movement_images_no_flow(chunk, path_image_source[g]);
+					 path.load_movement_images_no_flow(chunk, path_image_source[g],memory_pool);
 				 }
 			 }
 			 //transfer over movement visualzation to the correct place on the grid.
@@ -7583,7 +7627,8 @@ void ns_time_path_image_movement_analyzer::generate_movement_posture_visualizati
 
 //we step through all region visualizations between start_i and stop_i, ordered by time in region_image_specifications
 //and populate any worm images that are needed from each region image.
-void ns_time_path_image_movement_analyzer::load_region_visualization_images(const unsigned long start_i, const unsigned long stop_i,const unsigned int start_group, const unsigned int stop_group,ns_sql & sql, bool just_do_a_consistancy_check, bool running_backwards, ns_analyzed_image_time_path::ns_load_type load_type){
+template<class allocator_T>
+void ns_time_path_image_movement_analyzer<allocator_T>::load_region_visualization_images(const unsigned long start_i, const unsigned long stop_i,const unsigned int start_group, const unsigned int stop_group,ns_sql & sql, bool just_do_a_consistancy_check, bool running_backwards, ns_analyzed_image_time_path::ns_load_type load_type){
 	if (stop_group > groups.size())
 		throw ns_ex("ns_time_path_image_movement_analyzer::load_region_visualization_images()::An invalid group was specified: ") << stop_group << " (there are only " << groups.size() << " groups)";
 //	cerr << "Looking for region images from time point " << start_i << " until " << stop_i;
@@ -7716,7 +7761,7 @@ void ns_time_path_image_movement_analyzer::load_region_visualization_images(cons
 					//	cout << "P[" << g << "]";
 						//ns_movement_image_collage_info m(&groups[g].paths[p]);
 					if (!just_do_a_consistancy_check) {
-						if (groups[g].paths[p].populate_images_from_region_visualization(region_image_specifications[i].time, image_loading_temp, image_loading_temp2, just_do_a_consistancy_check, load_type))
+						if (groups[g].paths[p].populate_images_from_region_visualization(region_image_specifications[i].time, image_loading_temp, image_loading_temp2, just_do_a_consistancy_check, load_type, memory_pool))
 							new_data_allocated = true;
 					}
 				}
@@ -8058,3 +8103,9 @@ ns_analyzed_image_time_path_death_time_estimator * ns_get_death_time_estimator_f
 	p->name = m.name;
 	return p;
 }
+
+template class ns_time_path_image_movement_analyzer< ns_wasteful_overallocation_resizer>;
+template class ns_time_path_image_movement_analyzer< ns_overallocation_resizer>;
+template class ns_analyzed_image_time_path_group< ns_wasteful_overallocation_resizer>;
+
+template class ns_analyzed_image_time_path_group< ns_overallocation_resizer>;

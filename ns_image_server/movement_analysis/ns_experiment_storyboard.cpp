@@ -650,7 +650,7 @@ void ns_experiment_storyboard::check_that_all_time_path_information_is_valid(ns_
 		if (p == worm_detection_id_lookup.end())
 			throw ns_ex("Could not find region id ") << *id << " in worm detection table.";*/
 		try {
-			ns_image_server_image im = ns_time_path_image_movement_analyzer::get_movement_quantification_id(*id, sql);
+			ns_image_server_image im = ns_time_path_image_movement_analyzer<ns_overallocation_resizer>::get_movement_quantification_id(*id, sql);
 			ns_acquire_for_scope<ifstream> i(image_server_const.image_storage.request_metadata_from_disk(im, false, &sql));
 			i().close();
 			i.release();

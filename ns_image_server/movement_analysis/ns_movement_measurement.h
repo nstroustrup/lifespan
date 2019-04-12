@@ -325,7 +325,7 @@ struct ns_worm_movement_description_series{
 	mutable ns_vector_2i visualization_grid_dimensions;
 	mutable ns_vector_2i metadata_dimensions;
 	friend class ns_movement_summarizer;
-	friend class ns_time_path_image_movement_analyzer;
+	template<class T> friend class ns_time_path_image_movement_analyzer;
 };
 
 class ns_movement_series_summary_producer{

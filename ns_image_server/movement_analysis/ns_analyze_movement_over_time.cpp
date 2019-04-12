@@ -11,8 +11,10 @@
 #include "ns_worm_morphology_data_integrator.h"
 
 
-
-
+template class ns_time_path_image_movement_analyzer< ns_wasteful_overallocation_resizer>;
+template class ns_analyzed_image_time_path_group< ns_wasteful_overallocation_resizer>;
+template class ns_time_path_image_movement_analyzer< ns_overallocation_resizer>;
+template class ns_analyzed_image_time_path_group< ns_overallocation_resizer>;
 
 
 void invalidate_stored_data_depending_on_movement_analysis(const ns_processing_job & job,ns_sql & sql,bool & already_performed) {
@@ -137,7 +139,7 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 	if (time_path_solution.timepoints.empty())
 		throw ns_ex("The specified region does not appear to have any valid timepoints.  Has worm detection been run on any images?");
 
-	ns_time_path_image_movement_analyzer time_path_image_analyzer;
+	ns_time_path_image_movement_analyzer<ns_overallocation_resizer> time_path_image_analyzer;
 	ns_image_server::ns_posture_analysis_model_cache::const_handle_t posture_analysis_model_handle;
 	image_server->get_posture_analysis_model_for_region(job.region_id, posture_analysis_model_handle, sql);
 	ns_acquire_for_scope<ns_analyzed_image_time_path_death_time_estimator> death_time_estimator(
@@ -152,10 +154,10 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 		unsigned long attempt_count(0);
 		while (true) {
 			try {
-				ns_time_path_image_movement_analyzer::ns_analysis_db_options analysis_options =
-					ns_time_path_image_movement_analyzer::ns_force_creation_of_new_db_record;  //the default behavior is to create a new id and invalidate all previous data.
+				ns_time_path_image_movement_analyzer<ns_overallocation_resizer>::ns_analysis_db_options analysis_options =
+					ns_time_path_image_movement_analyzer<ns_overallocation_resizer>::ns_force_creation_of_new_db_record;  //the default behavior is to create a new id and invalidate all previous data.
 				if (job.maintenance_task == ns_maintenance_rebuild_movement_data_from_stored_solution)
-					analysis_options = ns_time_path_image_movement_analyzer::ns_require_existing_record;
+					analysis_options = ns_time_path_image_movement_analyzer<ns_overallocation_resizer>::ns_require_existing_record;
 				time_path_image_analyzer.process_raw_images(job.region_id, time_path_solution, time_series_denoising_parameters, &death_time_estimator(), sql, -1, true,analysis_options);
 				break;
 			}
@@ -194,8 +196,8 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 			}
 		}
 		time_path_image_analyzer.ns_time_path_image_movement_analyzer::obtain_analysis_id_and_save_movement_data(job.region_id, sql,
-																			ns_time_path_image_movement_analyzer::ns_require_existing_record,
-																			ns_time_path_image_movement_analyzer::ns_write_data );
+																			ns_time_path_image_movement_analyzer<ns_overallocation_resizer>::ns_require_existing_record,
+																			ns_time_path_image_movement_analyzer<ns_overallocation_resizer>::ns_write_data );
 	}
 	else if (job.maintenance_task == ns_maintenance_rebuild_movement_from_stored_images) {
 		//load in previously calculated image quantification from disk for re-analysis
@@ -209,8 +211,8 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 #endif
 		time_path_image_analyzer.reanalyze_stored_aligned_images(job.region_id, time_path_solution, time_series_denoising_parameters, &death_time_estimator(), sql, true, reanalyze_optical_flow);
 		time_path_image_analyzer.obtain_analysis_id_and_save_movement_data(job.region_id, sql,
-			ns_time_path_image_movement_analyzer::ns_require_existing_record,
-			ns_time_path_image_movement_analyzer::ns_write_data);
+			ns_time_path_image_movement_analyzer<ns_overallocation_resizer>::ns_require_existing_record,
+			ns_time_path_image_movement_analyzer<ns_overallocation_resizer>::ns_write_data);
 
 		invalidate_stored_data_depending_on_movement_analysis(job, sql, invalidated_old_data);
 	}
@@ -223,8 +225,8 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 			image_server->register_server_event(ns_image_server_event("Analyzing stored animal posture quantification."), &sql);
 		time_path_image_analyzer.load_completed_analysis(job.region_id, time_path_solution, time_series_denoising_parameters, &death_time_estimator(), sql);
 		time_path_image_analyzer.obtain_analysis_id_and_save_movement_data(job.region_id, sql,
-			ns_time_path_image_movement_analyzer::ns_require_existing_record,
-			ns_time_path_image_movement_analyzer::ns_write_data);
+			ns_time_path_image_movement_analyzer<ns_overallocation_resizer>::ns_require_existing_record,
+			ns_time_path_image_movement_analyzer<ns_overallocation_resizer>::ns_write_data);
 	}
 	death_time_estimator.release();
 
@@ -817,3 +819,5 @@ void ns_process_inferred_worms_for_timepoint(ns_time_path_timepoint * timepoint,
 	}
 	lock.release();
 }
+
+

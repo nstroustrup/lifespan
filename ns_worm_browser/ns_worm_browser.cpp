@@ -19,6 +19,12 @@
 #include <set>
 using namespace std;
 
+template class ns_time_path_image_movement_analyzer< ns_wasteful_overallocation_resizer>;
+template class ns_analyzed_image_time_path_group< ns_wasteful_overallocation_resizer>;
+template class ns_time_path_image_movement_analyzer< ns_overallocation_resizer>;
+template class ns_analyzed_image_time_path_group< ns_overallocation_resizer>;
+
+
 void ns_to_lower(std::string & s) {
 	for (unsigned int i = 0; i < s.size(); i++)
 		s[i] = tolower(s[i]);
@@ -1988,7 +1994,7 @@ void ns_worm_learner::output_movement_analysis_optimization_data(const ns_optimi
 					ns_time_series_denoising_parameters denoising_parameters(ns_time_series_denoising_parameters::load_from_db(region_id, sql));
 					denoising_parameters.movement_score_normalization = norm_type[k];
 
-					ns_time_path_image_movement_analyzer time_path_image_analyzer;
+					ns_time_path_image_movement_analyzer<ns_overallocation_resizer> time_path_image_analyzer;
 					ns_image_server::ns_posture_analysis_model_cache::const_handle_t handle;
 					image_server.get_posture_analysis_model_for_region(region_id, handle, sql);
 
@@ -2248,7 +2254,7 @@ void ns_worm_learner::output_movement_analysis_optimization_data(const ns_optimi
 void ns_test_parameter_set_on_region(const ns_64_bit region_id,
 	const ns_emperical_posture_quantification_value_estimator & estimator,
 	const ns_death_time_annotation_compiler & by_hand_annotations,
-	const ns_time_series_denoising_parameters & time_series_denoising_parameters, ns_time_path_image_movement_analyzer & time_path_image_analyzer, ns_time_path_solution & time_path_solution, ns_sql & sql,
+	const ns_time_series_denoising_parameters & time_series_denoising_parameters, ns_time_path_image_movement_analyzer<ns_wasteful_overallocation_resizer> & time_path_image_analyzer, ns_time_path_solution & time_path_solution, ns_sql & sql,
 	ns_hmm_movement_analysis_optimizatiom_stats & output_stats,std::set<ns_stationary_path_id> & animals_to_test, bool generate_detailed_path_info) {
 
 	ns_time_path_movement_markov_solver markov_solver(estimator);
@@ -4415,7 +4421,6 @@ void ns_worm_learner::generate_single_frame_posture_image_pixel_data(const bool 
 						}
 					}
 			
-					movement_results.samples[i].regions[j]->time_path_image_analyzer->group(w).clear_images();
 
 				}
 			}
@@ -9074,3 +9079,9 @@ void ns_experiment_storyboard_annotater::register_click(const ns_vector_2i & ima
 
 	lock.release();
 }
+
+
+template class ns_time_path_image_movement_analyzer< ns_wasteful_overallocation_resizer>;
+template class ns_analyzed_image_time_path_group< ns_wasteful_overallocation_resizer>;
+template class ns_time_path_image_movement_analyzer< ns_overallocation_resizer>;
+template class ns_analyzed_image_time_path_group< ns_overallocation_resizer>;

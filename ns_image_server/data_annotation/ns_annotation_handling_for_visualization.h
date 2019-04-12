@@ -784,7 +784,8 @@ public:
 };
 class ns_timing_data_configurator{
 public:
-	void operator()(const ns_64_bit region_id,ns_time_path_image_movement_analyzer & movement_analyzer, std::vector<ns_animal_list_at_position> & machine_timing_data, std::vector < ns_animal_list_at_position> & by_hand_timing_data) {
+	template<class allocator_T>
+	void operator()(const ns_64_bit region_id,ns_time_path_image_movement_analyzer<allocator_T> & movement_analyzer, std::vector<ns_animal_list_at_position> & machine_timing_data, std::vector < ns_animal_list_at_position> & by_hand_timing_data) {
 		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Setting timing"));
 		by_hand_timing_data.resize(0);
 		machine_timing_data.resize(0);

@@ -236,7 +236,7 @@ public:
 	std::vector<ns_image_server_captured_image_region> region_image_records;
 
 
-	ns_time_path_image_movement_analyzer analyzer;
+	ns_time_path_image_movement_analyzer<ns_overallocation_resizer> analyzer;
 
 	ns_region_metadata metadata;
 

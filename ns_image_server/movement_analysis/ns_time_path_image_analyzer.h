@@ -751,18 +751,7 @@ public:
 	unsigned long number_of_timepoints_in_analysis()const { return number_of_timepoints_in_analysis_;}
 	ns_64_bit db_analysis_id() const{return analysis_id;}
 	bool try_to_rebuild_after_failure() const;
-	static ns_image_server_image get_movement_quantification_id(const ns_64_bit region_info_id,ns_sql & sql){
-		sql << "SELECT movement_image_analysis_quantification_id FROM sample_region_image_info WHERE id = " << region_info_id;
-		ns_sql_result res;
-		sql.get_rows(res);
-		if (res.size() == 0)
-			throw ns_ex("ns_time_path_image_movement_analyzer::load_movement_data_from_db():Could not load info from db");
-		ns_image_server_image im;
-		im.id = ns_atoi64(res[0][0].c_str());
-		if (im.id == 0)
-			throw ns_ex("Movement quantification data has not been stored in db");
-		return im;
-	}
+	static ns_image_server_image get_movement_quantification_id(const ns_64_bit region_info_id, ns_sql & sql);
 
 	void match_plat_areas_to_paths(std::vector<ns_region_area> & areas);
 	friend class ns_worm_morphology_data_integrator;

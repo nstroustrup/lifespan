@@ -1395,7 +1395,19 @@ void ns_time_path_image_movement_analyzer<allocator_T>::crop_path_observation_ti
 		else ++p;
 	}
 }
-
+template<class allocator_T>
+static ns_time_path_image_movement_analyzer<allocator_T>::ns_image_server_image get_movement_quantification_id(const ns_64_bit region_info_id,ns_sql & sql){
+		sql << "SELECT movement_image_analysis_quantification_id FROM sample_region_image_info WHERE id = " << region_info_id;
+		ns_sql_result res;
+		sql.get_rows(res);
+		if (res.size() == 0)
+			throw ns_ex("ns_time_path_image_movement_analyzer::load_movement_data_from_db():Could not load info from db");
+		ns_image_server_image im;
+		im.id = ns_atoi64(res[0][0].c_str());
+		if (im.id == 0)
+			throw ns_ex("Movement quantification data has not been stored in db");
+		return im;
+	}
 
 const ns_movement_event ns_hmm_movement_analysis_optimizatiom_stats_record::states[ns_hmm_movement_analysis_optimizatiom_stats_record::number_of_states] = { ns_translation_cessation,
 															ns_fast_movement_cessation,

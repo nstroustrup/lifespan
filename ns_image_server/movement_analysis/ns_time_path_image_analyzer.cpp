@@ -1396,7 +1396,7 @@ void ns_time_path_image_movement_analyzer<allocator_T>::crop_path_observation_ti
 	}
 }
 template<class allocator_T>
-static ns_time_path_image_movement_analyzer<allocator_T>::ns_image_server_image get_movement_quantification_id(const ns_64_bit region_info_id,ns_sql & sql){
+ns_image_server_image ns_time_path_image_movement_analyzer<allocator_T>::get_movement_quantification_id(const ns_64_bit region_info_id,ns_sql & sql){
 		sql << "SELECT movement_image_analysis_quantification_id FROM sample_region_image_info WHERE id = " << region_info_id;
 		ns_sql_result res;
 		sql.get_rows(res);

@@ -538,6 +538,7 @@ private:
 
 	unsigned long number_of_images_loaded;
 	ns_image_storage_source_handle<ns_8_bit> movement_image_storage;
+	ns_simple_local_image_cache::const_handle_t movement_image_storage_handle;
 	unsigned long movement_image_storage_internal_state;
 	ns_image_storage_source_handle<float> flow_movement_image_storage;
 	unsigned long flow_movement_image_storage_internal_state;
@@ -625,7 +626,7 @@ private:
 	friend class ns_size_data_accessor;
 	friend class ns_intensity_data_accessor;
 	friend class ns_movement_data_accessor;
-	friend class ns_worm_morphology_data_integrator;
+	template<class T>friend class ns_worm_morphology_data_integrator;
 
 	ns_image_stream_static_buffer<ns_8_bit> save_image_buffer;
 	ns_image_stream_static_buffer<float> save_flow_image_buffer;
@@ -664,7 +665,7 @@ public:
 	ns_time_path_image_movement_analyzer(ns_time_path_image_movement_analysis_memory_pool<allocator_T> & memory_pool_):paths_loaded_from_solution(false),
 		movement_analyzed(false),region_info_id(0),last_timepoint_in_analysis_(0), _number_of_invalid_images_encountered(0),image_cache(1024*1024*64),
 		number_of_timepoints_in_analysis_(0),image_db_info_loaded(false),externally_specified_plate_observation_interval(0,ULONG_MAX),posture_model_version_used(NS_CURRENT_POSTURE_MODEL_VERSION),
-		memory_pool(&memory_pool_){}
+		memory_pool(memory_pool_), pre_cache_image_lock("pcil"){}
 
 	~ns_time_path_image_movement_analyzer(){
 		for (unsigned int i = 0; i < groups.size(); i++)
@@ -698,6 +699,7 @@ public:
 
 	//provide access to group images
 	void load_images_for_group(const unsigned long group_id, const unsigned long number_of_images_to_load,ns_sql & sql,const bool load_images_after_last_valid_sample,const bool load_flow_images,ns_simple_local_image_cache & image_cache);
+	void precache_group_images_locally(const unsigned long group_id, const unsigned long path_id,ns_sql & sql);
 	void clear_images_for_group(const unsigned long group_id, ns_simple_local_image_cache & image_cache);
 
 	void clear(){
@@ -755,7 +757,7 @@ public:
 	static ns_image_server_image get_movement_quantification_id(const ns_64_bit region_info_id, ns_sql & sql);
 
 	void match_plat_areas_to_paths(std::vector<ns_region_area> & areas);
-	friend class ns_worm_morphology_data_integrator;
+	template<class allocator_T>friend class ns_worm_morphology_data_integrator;
 	std::string posture_model_version_used;
 
 	void calculate_optimzation_stats_for_current_hmm_estimator(ns_hmm_movement_analysis_optimizatiom_stats & s, const ns_emperical_posture_quantification_value_estimator * e, std::set<ns_stationary_path_id> & paths_to_test, bool generate_path_info);
@@ -813,6 +815,8 @@ private:
 
 	void calculate_memory_pool_maximum_image_size(const unsigned int start_group,const unsigned int stop_group);
 	ns_simple_local_image_cache image_cache;
+
+	ns_lock pre_cache_image_lock;
 };
 
 struct ns_position_info{

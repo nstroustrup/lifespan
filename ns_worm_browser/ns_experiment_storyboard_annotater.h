@@ -66,7 +66,7 @@ public:
 		return 0;
 	}
 
-	void load_image(const unsigned long bottom_height,ns_annotater_image_buffer_entry & im,ns_sql & sql,ns_image_standard & temp_buffer, ns_simple_local_image_cache & image_cache, const unsigned long resize_factor_);
+	void load_image(const unsigned long bottom_height,ns_annotater_image_buffer_entry & im,ns_sql & sql, ns_simple_local_image_cache & image_cache, ns_annotater_memory_pool & memory_pool, const unsigned long resize_factor_);
 	std::vector<char> has_had_extra_worms_annotated;
 };
 
@@ -463,6 +463,8 @@ private:
 	typedef std::map<ns_64_bit,bool> ns_event_display_spec_list;
 	ns_event_display_spec_list display_events_from_region;
 	std::map<ns_64_bit,bool> excluded_regions;
+
+	static ns_thread_return_type precache_worm_images_asynch_internal(void *);
 public:
 	void set_resize_factor(const unsigned long resize_factor_){
 		resize_factor = resize_factor_;
@@ -491,6 +493,7 @@ public:
 	}
 	void overlay_worm_ids() { draw_group_ids = true; }
 
+	void precache_worm_images_asynch();
 	void specifiy_worm_details(const ns_64_bit region_id,const ns_stationary_path_id & worm, const ns_death_time_annotation & sticky_properties, std::vector<ns_death_time_annotation> & movement_event_times){
 		if (!worm.specified())
 			throw ns_ex("ns_experiment_storyboard_annotater::specifiy_worm_details()::Requesting specification with unspecified path id");

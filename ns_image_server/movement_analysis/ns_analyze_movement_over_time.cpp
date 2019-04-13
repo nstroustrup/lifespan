@@ -384,7 +384,9 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 //2)  Recalculates the movement state data including by hand annotations of worm death times and /importantly/ excluding objects excluded by the worm browser.
 void ns_refine_image_statistics(const ns_64_bit region_id, const bool recalculate_worm_morphology_from_images, std::ostream & out, ns_sql & sql) {
 
-	ns_worm_morphology_data_integrator morphology_data_integrator;
+
+	ns_time_path_image_movement_analysis_memory_pool<ns_overallocation_resizer> memory_pool;
+	ns_worm_morphology_data_integrator<ns_overallocation_resizer> morphology_data_integrator(memory_pool);
 
 	image_server.add_subtext_to_current_event("Loading metadata...", &sql);
 	morphology_data_integrator.load_data_and_annotations_from_db(region_id, sql);

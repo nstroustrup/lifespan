@@ -14,6 +14,7 @@
 #include "ns_annotation_handling_for_visualization.h"
 void ns_hide_worm_window();
 
+
 void ns_specify_worm_details(const ns_64_bit region_info_id,const ns_stationary_path_id & worm, const ns_death_time_annotation & sticky_properties, std::vector<ns_death_time_annotation> & event_times,double external_rescale_factor);
 
 class ns_death_time_solo_posture_annotater_timepoint : public ns_annotater_timepoint{
@@ -239,9 +240,12 @@ public:
 
 	}
 	
-	void load_image(const unsigned long buffer_height,ns_annotater_image_buffer_entry & im,ns_sql & sql,ns_image_standard & temp_buffer, ns_simple_local_image_cache & image_cache, const unsigned long resize_factor_=1){
+	void load_image(const unsigned long buffer_height,ns_annotater_image_buffer_entry & im,
+		ns_sql & sql,
+		ns_simple_local_image_cache & image_cache,
+		ns_annotater_memory_pool & memory_pool, const unsigned long resize_factor_=1){
+
 		movement_analyzer->load_images_for_group(group_id,element_id+10,sql,false,false,image_cache);
-	//	ns_annotater_timepoint::load_image(buffer_height,im,sql,temp_buffer,resize_factor_);
 		if (path_timepoint_element == 0){
 		  cerr << "Path timepoint element not specified";
 		  return;
@@ -259,6 +263,10 @@ public:
 		prop.width *= ns_resolution_increase_factor;
 		prop.height *= ns_resolution_increase_factor;
 		prop.components = 3;
+		if (im.im == 0) {
+			im.im = memory_pool.get(prop);
+			im.im->use_more_memory_to_avoid_reallocations(true);
+		}
 		im.loaded = true;
 		im.im->init(prop);
 
@@ -536,13 +544,11 @@ private:
 		lock.release();
 	}
 
-
-
 	ns_worm_learner * worm_learner;
 
-
-
 	mutable bool saved_;
+
+	void precache_images_for_group(const unsigned long region_id,const unsigned long group_id, ns_sql & sql);
 public:
 
 	enum { default_resize_factor = 1, max_buffer_size = 15, max_zoom_factor = 40 };
@@ -578,8 +584,7 @@ public:
 			next_images[i].loaded = false;
 		}
 
-		ns_image_standard temp_buffer;
-		timepoints[current_timepoint_id].load_image(1024, current_image, sql(), temp_buffer,local_image_cache, 1);
+		timepoints[current_timepoint_id].load_image(1024, current_image, sql(),local_image_cache, memory_pool, 1);
 
 		draw_metadata(&timepoints[current_timepoint_id], *current_image.im, external_rescale_factor);
 		lock.release();
@@ -597,7 +602,7 @@ public:
 	void set_resize_factor(const unsigned long resize_factor_) { resize_factor = resize_factor_; }
 	bool data_saved()const { return saved_; }
 	ns_death_time_solo_posture_annotater() :ns_image_series_annotater(default_resize_factor, ns_death_time_posture_annotater_timepoint::ns_bottom_border_height),
-		saved_(true), graph_contents(ns_animal_telemetry::ns_movement_intensity), worm_image_offset_due_to_telemetry_graph_spacing(0,0),current_visualization_type(ns_death_time_solo_posture_annotater_timepoint::ns_image), current_region_data(0), telemetry_zoom_factor(1), current_worm(0), current_machine_timing_data(0) {}
+		saved_(true), graph_contents(ns_animal_telemetry::ns_movement_intensity), worm_image_offset_due_to_telemetry_graph_spacing(0,0),current_visualization_type(ns_death_time_solo_posture_annotater_timepoint::ns_image), current_region_data(0), telemetry_zoom_factor(1), current_worm(0), current_machine_timing_data(0) {	}
 
 	typedef enum { ns_time_aligned_images, ns_death_aligned_images } ns_alignment_type;
 
@@ -919,8 +924,6 @@ public:
 			
 			
 			
-			if (current_image.im == 0)
-				current_image.im = new ns_image_standard();
 
 			
 			set_current_timepoint(current_time,current_time!=0, true);
@@ -961,18 +964,23 @@ public:
 					telemetry_zoom_factor = 1;
 			}
 
+
 			{
-				ns_image_standard temp_buffer;
 
 				if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Loading first image."));
-				timepoints[current_timepoint_id].load_image(1024,current_image,sql(),temp_buffer,local_image_cache,1);
+				timepoints[current_timepoint_id].load_image(1024,current_image,sql(),local_image_cache, memory_pool,1);
 			}
+			const ns_image_properties current_prop = current_image.im->properties();
 			if (previous_images.size() != max_buffer_size || next_images.size() != max_buffer_size) {
 				previous_images.resize(max_buffer_size);
 				next_images.resize(max_buffer_size);
 				for (unsigned int i = 0; i < max_buffer_size; i++) {
-					previous_images[i].im = new ns_image_standard();
-					next_images[i].im = new ns_image_standard();
+					if (previous_images[i].im == 0)
+						previous_images[i].im = memory_pool.get(current_prop);
+					previous_images[i].im->use_more_memory_to_avoid_reallocations(true);
+					if (next_images[i].im == 0)
+						next_images[i].im = memory_pool.get(current_prop);
+					next_images[i].im->use_more_memory_to_avoid_reallocations(true);
 				}
 				for (unsigned int i = 0; i < max_buffer_size; i++)
 					previous_images[i].im->init(current_image.im->properties());
@@ -1066,8 +1074,7 @@ public:
 			  next_images[i].loaded = false;
 			}
 			
-			ns_image_standard temp_buffer;
-			timepoints[current_timepoint_id].load_image(1024, current_image, sql, temp_buffer,local_image_cache, 1);
+			timepoints[current_timepoint_id].load_image(1024, current_image, sql,local_image_cache, memory_pool, 1);
 		 
 			lock.release();
 	}

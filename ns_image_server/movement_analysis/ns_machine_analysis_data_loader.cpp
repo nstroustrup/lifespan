@@ -120,7 +120,7 @@ bool ns_machine_analysis_region_data::recalculate_from_saved_movement_quantifica
 }
 
 void ns_machine_analysis_sample_data::load(const ns_death_time_annotation_set::ns_annotation_type_to_load & annotation_type_to_load,const ns_64_bit sample_id, const ns_region_metadata & sample_metadata,
-		ns_time_path_image_movement_analysis_memory_pool<ns_overallocation_resizer> & memory_pool, ns_sql & sql,
+		ns_time_path_image_movement_analysis_memory_pool<ns_wasteful_overallocation_resizer> & memory_pool, ns_sql & sql,
 		const ns_64_bit specific_region_id, const bool include_excluded_regions, const  ns_machine_analysis_region_data::ns_loading_details & loading_details){
 	bool calculate_missing_data = false;
 	device_name_ = sample_metadata.device;
@@ -181,7 +181,7 @@ void ns_machine_analysis_data_loader::load_just_survival(ns_lifespan_experiment_
 			last_r = r;
 		}
 		metadata.load_only_sample_info_from_db(samples[i].id(),sql);
-		samples[i].load(ns_death_time_annotation_set::ns_censoring_and_movement_transitions,metadata.sample_id,metadata,sql,region_id,load_excluded_regions);
+		samples[i].load(ns_death_time_annotation_set::ns_censoring_and_movement_transitions,metadata.sample_id,metadata,memory_pool,sql,region_id,load_excluded_regions);
 		ns_death_time_annotation_compiler compiler;
 		for (unsigned int j = 0 ; j < samples[i].regions.size(); j++){
 			samples[i].regions[j]->metadata.genotype = genotypes.genotype_from_strain(samples[i].regions[j]->metadata.strain,&sql);
@@ -229,7 +229,7 @@ void ns_machine_analysis_data_loader::load(const ns_death_time_annotation_set::n
 		metadata.load_only_sample_info_from_db(samples[i].id(),sql);
 	//	if (metadata.sample_name != "frog_c")
 	//		continue;
-		samples[i].load(annotation_types_to_load,metadata.sample_id,metadata,sql,region_id,load_excluded_regions,details);
+		samples[i].load(annotation_types_to_load,metadata.sample_id,metadata,memory_pool,sql,region_id,load_excluded_regions,details);
 		for (unsigned int j = 0 ; j < samples[i].regions.size(); j++)	
 			samples[i].regions[j]->metadata.genotype = genotypes.genotype_from_strain(samples[i].regions[j]->metadata.strain,&sql);
 		total_number_of_regions_+=samples[i].regions.size();

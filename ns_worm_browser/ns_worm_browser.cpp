@@ -7630,6 +7630,17 @@ void ns_worm_learner::update_worm_window_display(){
 	glDrawPixels(worm_window.gl_buffer_properties.width, worm_window.gl_buffer_properties.height,GL_RGB,GL_UNSIGNED_BYTE,worm_window.gl_buffer );
 	lock.release();
 }
+
+ns_thread_return_type ns_experiment_storyboard_annotater::precache_worm_images_asynch_internal(void *) {
+	for (unsigned int i = 0; i < divisions.size(); i++) {
+		divisions[i].
+	}
+}
+void ns_experiment_storyboard_annotater::precache_worm_images_asynch() {
+	ns_thread thread;
+	thread.run(precache_worm_images_asynch_internal, this);
+
+}
 void ns_experiment_storyboard_annotater::load_from_storyboard(const ns_region_metadata & strain_to_display_, const ns_censor_masking censor_masking_, ns_experiment_storyboard_spec & spec, ns_worm_learner * worm_learner_, double external_rescale_factor) {
 	stop_fast_movement();
 	clear();
@@ -7717,21 +7728,19 @@ void ns_experiment_storyboard_annotater::load_from_storyboard(const ns_region_me
 	this->initalize_division_image_population(sql);
 	//cerr << "Done.\n";
 
+	current_timepoint_id = 0;
+	divisions[current_timepoint_id].load_image(0, current_image, sql, local_image_cache,memory_pool, resize_factor);
+	ns_image_properties prop(current_image.im->properties());
 	//allocate image buffer
 	if (previous_images.size() != max_buffer_size || next_images.size() != max_buffer_size) {
 		previous_images.resize(max_buffer_size);
 		next_images.resize(max_buffer_size);
 		for (unsigned int i = 0; i < max_buffer_size; i++) {
-			previous_images[i].im = new ns_image_standard();
-			next_images[i].im = new ns_image_standard();
+			previous_images[i].im = memory_pool.get(prop);
+			next_images[i].im = memory_pool.get(prop);
 		}
 	}
-	if (current_image.im == 0)
-		current_image.im = new ns_image_standard();
 
-	current_timepoint_id = 0;
-
-	divisions[current_timepoint_id].load_image(0, current_image, sql, asynch_load_specification.temp_buffer, local_image_cache, resize_factor);
 	draw_metadata(&divisions[current_timepoint_id], *current_image.im,external_rescale_factor);
 	this->saved_ = true;
 	request_refresh();
@@ -7782,6 +7791,7 @@ bool ns_worm_learner::start_death_time_annotation(const ns_behavior_mode m, cons
 				storyboard_annotater.load_from_storyboard(metadata,c2,subject,this, worm_window.display_rescale_factor);
 				storyboard_annotater.display_current_frame();
 				set_behavior_mode(m);
+				storyboard_annotater.precache_worm_images_asynch();
 		}
 		else{
 			current_annotater = &death_time_annotater;
@@ -8813,8 +8823,7 @@ void ns_death_time_solo_posture_annotater::register_click(const ns_vector_2i & i
 				clear_cached_images(false);
 				set_current_timepoint(requested_time, false);
 				{
-					ns_image_standard temp_buffer;
-					timepoints[current_timepoint_id].load_image(1024, current_image, sql(), temp_buffer, local_image_cache, 1);
+					timepoints[current_timepoint_id].load_image(1024, current_image, sql(), local_image_cache, memory_pool, 1);
 				}
 				change_made = true;
 			}
@@ -9079,3 +9088,6 @@ void ns_experiment_storyboard_annotater::register_click(const ns_vector_2i & ima
 
 	lock.release();
 }
+
+
+ns_annotater_memory_pool ns_image_series_annotater::memory_pool;

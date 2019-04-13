@@ -7631,14 +7631,19 @@ void ns_worm_learner::update_worm_window_display(){
 	lock.release();
 }
 
-ns_thread_return_type ns_experiment_storyboard_annotater::precache_worm_images_asynch_internal(void *) {
-	for (unsigned int i = 0; i < divisions.size(); i++) {
-		divisions[i].
+ns_thread_return_type ns_experiment_storyboard_annotater::precache_worm_images_asynch_internal(void *t) {
+	ns_experiment_storyboard_annotater & a(*static_cast<ns_experiment_storyboard_annotater *>(t));
+	for (unsigned int i = 0; i < a.divisions.size(); i++) {
+		for (unsigned int j = 0; j < a.divisions[i].division->events.size(); j++) {
+			//XXX
+			cout << "Now should preload " << a.divisions[i].division->events[j].event_annotation.region_info_id << " " << a.divisions[i].division->events[j].event_annotation.stationary_path_id.group_id << "\n";
+		}
 	}
 }
 void ns_experiment_storyboard_annotater::precache_worm_images_asynch() {
 	ns_thread thread;
 	thread.run(precache_worm_images_asynch_internal, this);
+	thread.detach();
 
 }
 void ns_experiment_storyboard_annotater::load_from_storyboard(const ns_region_metadata & strain_to_display_, const ns_censor_masking censor_masking_, ns_experiment_storyboard_spec & spec, ns_worm_learner * worm_learner_, double external_rescale_factor) {
@@ -7791,7 +7796,9 @@ bool ns_worm_learner::start_death_time_annotation(const ns_behavior_mode m, cons
 				storyboard_annotater.load_from_storyboard(metadata,c2,subject,this, worm_window.display_rescale_factor);
 				storyboard_annotater.display_current_frame();
 				set_behavior_mode(m);
-				storyboard_annotater.precache_worm_images_asynch();
+				//We can speed things up if only one region is being considered.
+				if (m == ns_worm_learner::ns_annotate_storyboard_region)
+					storyboard_annotater.precache_worm_images_asynch();
 		}
 		else{
 			current_annotater = &death_time_annotater;

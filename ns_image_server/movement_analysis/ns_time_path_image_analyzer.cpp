@@ -6402,11 +6402,11 @@ bool ns_time_path_image_movement_analyzer<allocator_T>::load_movement_image_db_i
 template<class allocator_T>
 void ns_time_path_image_movement_analyzer<allocator_T>::precache_group_images_locally(const unsigned long group_id, unsigned long path_id,ns_sql & sql) {
 	ns_acquire_lock_for_scope lock(pre_cache_image_lock,__FILE__,__LINE__);
-	if (groups[group_id].paths[path_id].movement_image_storage != 0)
+	if (groups[group_id].paths[path_id].movement_image_storage.bound())
 		return;
 	ns_image_cache_data_source source(&image_server.image_storage, &sql);
-	image_cache.get_for_read(groups[group_id].paths[path_id].output_image, movement_image_storage_handle, source);
-	groups[group_id].paths[path_id].movement_image_storage = movement_image_storage_handle().source;
+	image_cache.get_for_read(groups[group_id].paths[path_id].output_image, groups[group_id].paths[path_id].movement_image_storage_handle, source);
+	groups[group_id].paths[path_id].movement_image_storage = groups[group_id].paths[path_id].movement_image_storage_handle().source;
 	lock.release();
 }
 template<class allocator_T>
@@ -6447,7 +6447,7 @@ void ns_time_path_image_movement_analyzer<allocator_T>::load_images_for_group(co
 			//if (groups[groups_id].paths[j].output_image.filename.empty()){
 			//groups[group_id].paths[j].output_image.load_from_db(groups[group_id].paths[j].output_image.id,&sql);
 			//groups[group_id].paths[j].movement_image_storage = image_server_const.image_storage.request_from_storage(groups[group_id].paths[j].output_image,&sql);
-			precache_group_images_locally(group_id,j sql);
+			precache_group_images_locally(group_id,j, sql);
 
 			groups[group_id].paths[j].movement_image_storage.input_stream().reset();
 

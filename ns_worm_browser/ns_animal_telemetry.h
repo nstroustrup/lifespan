@@ -16,7 +16,7 @@ private:
 	//disable copy constructor
 	ns_death_time_posture_solo_annotater_region_data(const ns_death_time_posture_solo_annotater_region_data &);
 public:
- ns_death_time_posture_solo_annotater_region_data() :movement_data_loaded(false), annotation_file("","", ""), loading_time(0), loaded_path_data_successfully(false), movement_quantification_data_loaded(false){}
+ ns_death_time_posture_solo_annotater_region_data(ns_time_path_image_movement_analysis_memory_pool<ns_wasteful_overallocation_resizer> & memory_pool) :movement_analyzer(memory_pool),movement_data_loaded(false), annotation_file("","", ""), loading_time(0), loaded_path_data_successfully(false), movement_quantification_data_loaded(false){}
 	
 	void load_movement_analysis(const ns_64_bit region_id_, ns_sql & sql, const bool load_movement_quantification = false) {
 		if (!movement_data_loaded) {

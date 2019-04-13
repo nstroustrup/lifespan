@@ -14,7 +14,7 @@ public:
 	
 	typedef enum {ns_load_all,ns_exclude_fast_moving_animals} ns_loading_details;
 
-	ns_machine_analysis_region_data():summary_series_generated_(false), censored(false),excluded(false),time_path_image_analyzer(new ns_time_path_image_movement_analyzer<ns_wasteful_overallocation_resizer>), contains_a_by_hand_death_time_annotation(false){}
+	ns_machine_analysis_region_data(ns_time_path_image_movement_analysis_memory_pool<ns_overallocation_resizer> & memory_pool):summary_series_generated_(false), censored(false),excluded(false),time_path_image_analyzer(new ns_time_path_image_movement_analyzer<ns_wasteful_overallocation_resizer>(memory_pool)), contains_a_by_hand_death_time_annotation(false){}
 	~ns_machine_analysis_region_data() {
 		ns_safe_delete(time_path_image_analyzer);
 	}
@@ -38,7 +38,7 @@ public:
 	bool recalculate_from_saved_movement_quantification(const ns_64_bit region_id,ns_sql & sql);
 
 	bool load_from_db(const ns_death_time_annotation_set::ns_annotation_type_to_load & annotation_types_to_load,const ns_loading_details & details,
-		const ns_64_bit region_id,ns_sql & sql);
+		const ns_64_bit region_id, ns_sql & sql);
 	
 	ns_time_path_solution time_path_solution;
 	ns_time_path_image_movement_analyzer<ns_wasteful_overallocation_resizer> * time_path_image_analyzer;
@@ -54,7 +54,9 @@ private:
 class ns_machine_analysis_sample_data{
 public:
 	void load(const ns_death_time_annotation_set::ns_annotation_type_to_load & annotation_types_to_load,
-		const ns_64_bit sample_id, const ns_region_metadata & sample_metadata, ns_sql & sql,
+		const ns_64_bit sample_id, const ns_region_metadata & sample_metadata,
+		ns_time_path_image_movement_analysis_memory_pool<ns_overallocation_resizer> & memory_pool,
+		ns_sql & sql,
 		const ns_64_bit specific_region_id=0, const bool include_excluded_regions=false,
 		const ns_machine_analysis_region_data::ns_loading_details & loading_details=ns_machine_analysis_region_data::ns_load_all);
 	ns_machine_analysis_sample_data(){}
@@ -94,6 +96,7 @@ private:
 	std::string experiment_name_;
 	ns_64_bit experiment_id_;
 	unsigned long total_number_of_regions_;
+	ns_time_path_image_movement_analysis_memory_pool<ns_wasteful_overallocation_resizer> memory_pool;
 };
 
 #endif

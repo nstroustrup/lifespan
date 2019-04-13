@@ -5,7 +5,8 @@
 #include <iostream>
 #include "ns_hand_annotation_loader.h"
 #include "ns_hidden_markov_model_posture_analyzer.h"
-bool ns_machine_analysis_region_data::load_from_db(const ns_death_time_annotation_set::ns_annotation_type_to_load & annotation_type_to_load,const ns_loading_details & details,const ns_64_bit region_id,ns_sql & sql){
+bool ns_machine_analysis_region_data::load_from_db(const ns_death_time_annotation_set::ns_annotation_type_to_load & annotation_type_to_load,
+												   const ns_loading_details & details,const ns_64_bit region_id,ns_sql & sql){
 	death_time_annotation_set.clear();
 	metadata.region_id = region_id;
 	if (annotation_type_to_load == ns_death_time_annotation_set::ns_recalculate_from_movement_quantification_data)
@@ -118,8 +119,9 @@ bool ns_machine_analysis_region_data::recalculate_from_saved_movement_quantifica
 	return true;
 }
 
-void ns_machine_analysis_sample_data::load(const ns_death_time_annotation_set::ns_annotation_type_to_load & annotation_type_to_load,const ns_64_bit sample_id, const ns_region_metadata & sample_metadata,ns_sql & sql, 
-	const ns_64_bit specific_region_id, const bool include_excluded_regions, const  ns_machine_analysis_region_data::ns_loading_details & loading_details){
+void ns_machine_analysis_sample_data::load(const ns_death_time_annotation_set::ns_annotation_type_to_load & annotation_type_to_load,const ns_64_bit sample_id, const ns_region_metadata & sample_metadata,
+		ns_time_path_image_movement_analysis_memory_pool<ns_overallocation_resizer> & memory_pool, ns_sql & sql,
+		const ns_64_bit specific_region_id, const bool include_excluded_regions, const  ns_machine_analysis_region_data::ns_loading_details & loading_details){
 	bool calculate_missing_data = false;
 	device_name_ = sample_metadata.device;
 	ns_sql_result reg;
@@ -138,7 +140,7 @@ void ns_machine_analysis_sample_data::load(const ns_death_time_annotation_set::n
 		try{
 			const unsigned int s = regions.size();
 			regions.resize(s+1);
-			regions[s] = new ns_machine_analysis_region_data;
+			regions[s] = new ns_machine_analysis_region_data(memory_pool);
 			ns_64_bit region_id = ns_atoi64(reg[i][0].c_str());
 			regions[s]->metadata = sample_metadata;
 			regions[s]->metadata.load_only_region_info_from_db(region_id,"",sql);

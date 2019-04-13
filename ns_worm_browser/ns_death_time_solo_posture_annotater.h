@@ -319,7 +319,7 @@ public:
 			}
 			if (cleared > 0)
 				cout << "Cleared " << cleared << " out of " << count << " entries in path cache.\n";
-			p = region_movement_data.insert(ns_movement_data_list::value_type(region_id, new ns_death_time_posture_solo_annotater_region_data())).first;
+			p = region_movement_data.insert(ns_movement_data_list::value_type(region_id, new ns_death_time_posture_solo_annotater_region_data(memory_pool))).first;
 		}
 		ns_death_time_posture_solo_annotater_region_data & data = *(p->second);
 		try {
@@ -361,6 +361,7 @@ public:
 			p->second->save_annotations(a);
 		return true;
 	}
+	ns_time_path_image_movement_analysis_memory_pool<ns_wasteful_overallocation_resizer> memory_pool;
 };
 
 class ns_worm_learner;

@@ -1595,7 +1595,7 @@ bool ns_time_path_image_movement_analyzer<allocator_T>::load_completed_analysis(
 			}
 		//	if (g == 5)
 		//		cerr << "WHA";
-			groups[g].paths[p].denoise_movement_series_and_calculate_intensity_slopes(0,times_series_denoising_parameters);
+			//groups[g].paths[p].denoise_movement_series_and_calculate_intensity_slopes(0,times_series_denoising_parameters);
 		}
 
 	//if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Normalizing scores"));
@@ -4533,88 +4533,29 @@ void ns_analyzed_image_time_path::denoise_movement_series_and_calculate_intensit
 		return;
 
 
-	const bool use_kernal_smoother(true);
-	if (use_kernal_smoother) {
-		const int kernel_width(1);
-		ns_movement_data_accessor acc(elements);
-		//ns_spatially_averaged_movement_data_accessor acc_spatial(elements);
+	const int kernel_width(1);
+	ns_movement_data_accessor acc(elements);
+	//ns_spatially_averaged_movement_data_accessor acc_spatial(elements);
 
 
-		//calculate the slope at each point
-		//Here, ns_movement_data_accessor calculates the movement score and stores it.
-		for (unsigned int i = 0; i < elements.size(); i++) {
-			elements[i].measurements.movement_score = acc.raw(i);
-			if (elements[i].measurements.movement_score < -1e300)
-				cerr << "YIKES";
-			//elements[i].measurements.spatial_averaged_movement_score = acc_spatial.raw(i);
-
-		}
-		ns_kernel_smoother<ns_movement_data_accessor>m;
-		//ns_kernel_smoother<ns_spatially_averaged_movement_data_accessor>m_s;
-		m(kernel_width, acc);
-		//m_s(kernel_width, acc_spatial);
+	//calculate the slope at each point
+	//Here, ns_movement_data_accessor calculates the movement score and stores it.
+	for (unsigned int i = 0; i < elements.size(); i++) {
+		elements[i].measurements.movement_score = acc.raw(i);
+		if (elements[i].measurements.movement_score < -1e300)
+			cerr << "YIKES";
+	}
+	ns_kernel_smoother<ns_movement_data_accessor>m;
+	m(kernel_width, acc);
 
 		
-		const int start_i = this->first_stationary_timepoint();  //do not use frames before worm arrives to calculate slope, as the worm's appearence will produce a very large spurious slope.
-		std::vector<ns_64_bit > tmp1, tmp2;
-		ns_slope_calculator<4, ns_slope_accessor_total_in_region> total_change_calculator(elements,start_i,tmp1,tmp2);
-		ns_slope_calculator<4, ns_slope_accessor_total_in_foreground> foreground_change_calculator(elements, start_i, tmp1, tmp2);
-		ns_slope_calculator<4, ns_slope_accessor_total_in_stabilized_1x> stabilized_change_calculator_1x(elements, start_i, tmp1, tmp2);
-		ns_slope_calculator<8, ns_slope_accessor_total_in_stabilized_2x> stabilized_change_calculator_2x(elements, start_i, tmp1, tmp2);
-		ns_slope_calculator<16, ns_slope_accessor_total_in_stabilized_4x> stabilized_change_calculator_4x(elements,start_i, tmp1, tmp2);
-			
-		
-		return;
-	}
-	else {
-		throw ns_ex("THIS CODE SHOULD NOT BE RUNNING");
-		const int offset_size(4);
-		const bool use_median(true);
-		std::vector<double> normalization_factors(offset_size);
-		if (use_median) {
-			std::vector<std::vector<ns_64_bit> > values(offset_size);
-			for (unsigned int i = 0; i < offset_size; i++) {
-				values[i].reserve(elements.size() / offset_size);
-			}
-			int k(0);
-			for (unsigned int i = 0; i < elements.size(); i++) {
-				values[k].push_back(elements[i].measurements.movement_sum);
-				k++;
-				if (k == offset_size) k = 0;
-			}
-			for (unsigned int i = 0; i < offset_size; i++) {
-				std::sort(values[i].begin(), values[i].end());
-				normalization_factors[i] = values[i][values[i].size() / 2];
-			}
-		}
-		else {
-			long long sums[offset_size];
-			long count[offset_size];
-			//initialize
-			for (unsigned int i = 0; i < offset_size; i++) {
-				sums[i] = 0;
-				count[i] = 0;
-			}
-			//calculate mean of each offset, first by calculating sum and count
-			int k(0);
-			for (unsigned int i = elements.size() / 3; i < elements.size(); i++) {
-				sums[k] += elements[i].measurements.movement_sum;
-				count[k]++;
-				k++;
-				if (k == offset_size) k = 0;
-			}
-			//then dividing to get the means.
-			for (unsigned int i = 0; i < offset_size; i++)
-				normalization_factors[i] = sums[i] / (double)count[i];
-		}
-		//now normalize each movement score by its offset's mean
-		int k = 0;
-		for (unsigned int i = 0; i < elements.size(); i++) {
-			elements[i].measurements.denoised_movement_score = elements[i].measurements.movement_sum / (double)normalization_factors[k];
-			k++;
-			if (k == offset_size) k = 0;
-		}
-	}
+	const int start_i = this->first_stationary_timepoint();  //do not use frames before worm arrives to calculate slope, as the worm's appearence will produce a very large spurious slope.
+	std::vector<ns_64_bit > tmp1, tmp2;
+	ns_slope_calculator<4, ns_slope_accessor_total_in_region> total_change_calculator(elements,start_i,tmp1,tmp2);
+	ns_slope_calculator<4, ns_slope_accessor_total_in_foreground> foreground_change_calculator(elements, start_i, tmp1, tmp2);
+	ns_slope_calculator<4, ns_slope_accessor_total_in_stabilized_1x> stabilized_change_calculator_1x(elements, start_i, tmp1, tmp2);
+	ns_slope_calculator<8, ns_slope_accessor_total_in_stabilized_2x> stabilized_change_calculator_2x(elements, start_i, tmp1, tmp2);
+	ns_slope_calculator<16, ns_slope_accessor_total_in_stabilized_4x> stabilized_change_calculator_4x(elements,start_i, tmp1, tmp2);
 }
 
 void ns_match_histograms(const ns_image_standard & im1, const ns_image_standard & im2, float * histogram_matching_factors) {

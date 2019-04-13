@@ -661,9 +661,10 @@ template<class allocator_T>
 class ns_time_path_image_movement_analyzer {
 public:
 	enum { ns_spatially_averaged_movement_threshold = 4, ns_spatially_averaged_movement_kernal_half_size=2};
-	ns_time_path_image_movement_analyzer():paths_loaded_from_solution(false),
+	ns_time_path_image_movement_analyzer(ns_time_path_image_movement_analysis_memory_pool<allocator_T> & memory_pool_):paths_loaded_from_solution(false),
 		movement_analyzed(false),region_info_id(0),last_timepoint_in_analysis_(0), _number_of_invalid_images_encountered(0),image_cache(1024*1024*64),
-		number_of_timepoints_in_analysis_(0),image_db_info_loaded(false),externally_specified_plate_observation_interval(0,ULONG_MAX),posture_model_version_used(NS_CURRENT_POSTURE_MODEL_VERSION){}
+		number_of_timepoints_in_analysis_(0),image_db_info_loaded(false),externally_specified_plate_observation_interval(0,ULONG_MAX),posture_model_version_used(NS_CURRENT_POSTURE_MODEL_VERSION),
+		memory_pool(&memory_pool_){}
 
 	~ns_time_path_image_movement_analyzer(){
 		for (unsigned int i = 0; i < groups.size(); i++)
@@ -806,7 +807,7 @@ private:
 	bool movement_analyzed;
 	ns_64_bit region_info_id;
 
-	ns_time_path_image_movement_analysis_memory_pool<allocator_T> memory_pool;
+	ns_time_path_image_movement_analysis_memory_pool<allocator_T> & memory_pool;
 
 	ns_death_time_annotation_time_interval externally_specified_plate_observation_interval;
 

@@ -139,7 +139,8 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 	if (time_path_solution.timepoints.empty())
 		throw ns_ex("The specified region does not appear to have any valid timepoints.  Has worm detection been run on any images?");
 
-	ns_time_path_image_movement_analyzer<ns_overallocation_resizer> time_path_image_analyzer;
+	ns_time_path_image_movement_analysis_memory_pool<ns_overallocation_resizer> memory_pool;
+	ns_time_path_image_movement_analyzer<ns_overallocation_resizer> time_path_image_analyzer(memory_pool);
 	ns_image_server::ns_posture_analysis_model_cache::const_handle_t posture_analysis_model_handle;
 	image_server->get_posture_analysis_model_for_region(job.region_id, posture_analysis_model_handle, sql);
 	ns_acquire_for_scope<ns_analyzed_image_time_path_death_time_estimator> death_time_estimator(

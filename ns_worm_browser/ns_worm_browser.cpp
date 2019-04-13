@@ -1994,7 +1994,9 @@ void ns_worm_learner::output_movement_analysis_optimization_data(const ns_optimi
 					ns_time_series_denoising_parameters denoising_parameters(ns_time_series_denoising_parameters::load_from_db(region_id, sql));
 					denoising_parameters.movement_score_normalization = norm_type[k];
 
-					ns_time_path_image_movement_analyzer<ns_overallocation_resizer> time_path_image_analyzer;
+					ns_time_path_image_movement_analysis_memory_pool<ns_overallocation_resizer> memory_pool;
+					ns_time_path_image_movement_analyzer<ns_overallocation_resizer> time_path_image_analyzer(memory_pool);
+
 					ns_image_server::ns_posture_analysis_model_cache::const_handle_t handle;
 					image_server.get_posture_analysis_model_for_region(region_id, handle, sql);
 
@@ -8638,8 +8640,6 @@ void ns_region_growing_segmenter(const ns_image_standard & input, ns_image_stand
 		}
 
 	}
-
-
 }
 
 bool ns_death_time_solo_posture_annotater::ns_fix_annotation(ns_death_time_annotation & a,ns_analyzed_image_time_path & p){
@@ -9079,9 +9079,3 @@ void ns_experiment_storyboard_annotater::register_click(const ns_vector_2i & ima
 
 	lock.release();
 }
-
-
-template class ns_time_path_image_movement_analyzer< ns_wasteful_overallocation_resizer>;
-template class ns_analyzed_image_time_path_group< ns_wasteful_overallocation_resizer>;
-template class ns_time_path_image_movement_analyzer< ns_overallocation_resizer>;
-template class ns_analyzed_image_time_path_group< ns_overallocation_resizer>;

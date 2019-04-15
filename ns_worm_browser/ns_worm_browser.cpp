@@ -8795,16 +8795,16 @@ void ns_death_time_solo_posture_annotater::draw_telemetry(const ns_vector_2i & p
 
 void ns_death_time_solo_posture_annotater::register_click(const ns_vector_2i & image_position, const ns_click_request & action, double external_rescale_factor) {
 
+	ns_acquire_lock_for_scope lock(image_buffer_access_lock, __FILE__, __LINE__);
 	ns_death_time_posture_solo_annotater_data_cache_storage::handle_t handle;
 	data_cache.get_region_movement_data_no_create(current_region_id, handle);
 	auto cur_worm = current_worm(handle);
 	auto cur_hand_data = current_by_hand_timing_data(handle);
 	auto cur_machine_timing(current_machine_timing_data(handle));
-	ns_acquire_lock_for_scope lock(image_buffer_access_lock, __FILE__, __LINE__);
 	const unsigned long hand_bar_group_bottom(bottom_margin_position(&handle).y*ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor+ worm_image_offset_due_to_telemetry_graph_spacing.y);
 
 	const unsigned long hand_bar_height(
-		(cur_hand_data.animals.size() + 1)*ns_death_time_solo_posture_annotater_timepoint::ns_movement_bar_height*ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor);
+		(cur_hand_data->animals.size() + 1)*ns_death_time_solo_posture_annotater_timepoint::ns_movement_bar_height*ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor);
 	
 	ns_vector_2i graph_tl(worm_learner->worm_window.worm_image_size.x, 0);
 	ns_vector_2i graph_br = graph_tl + telemetry_size();
@@ -8841,7 +8841,7 @@ void ns_death_time_solo_posture_annotater::register_click(const ns_vector_2i & i
 				}
 			}
 			else {
-				requested_time = cur_machine_timing.animals[0].get_time_from_movement_diagram_position(image_position.x, bottom_margin_bottom,
+				requested_time = cur_machine_timing->animals[0].get_time_from_movement_diagram_position(image_position.x, bottom_margin_bottom,
 					ns_vector_2i(cur_worm->element(current_element_id()).image().properties().width*ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor, 0),
 					observation_limit, clicked_on_expansion_button);
 				switch_time = !clicked_on_expansion_button;
@@ -8858,7 +8858,7 @@ void ns_death_time_solo_posture_annotater::register_click(const ns_vector_2i & i
 		}
 		else {
 			const unsigned long hand_bar_id = all_bar_id - 1;
-			if (hand_bar_id >= cur_hand_data.animals.size())
+			if (hand_bar_id >= cur_hand_data->animals.size())
 				throw ns_ex("Invalid hand bar");
 			if (hand_bar_id != current_animal_id) {
 				current_animal_id = hand_bar_id;
@@ -8894,17 +8894,17 @@ void ns_death_time_solo_posture_annotater::register_click(const ns_vector_2i & i
 			unsigned long requested_time;
 			bool clicked_on_expansion_button(false);
 			if (click_in_bar_area) {
-				requested_time = cur_machine_timing.animals[current_animal_id].get_time_from_movement_diagram_position(image_position.x, bottom_margin_bottom,
+				requested_time = cur_machine_timing->animals[current_animal_id].get_time_from_movement_diagram_position(image_position.x, bottom_margin_bottom,
 					ns_vector_2i(cur_worm->element(current_element_id()).image().properties().width*ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor, movement_vis_bar_height),
 					observation_limit, clicked_on_expansion_button);
 			}
 			
 			if (clicked_on_expansion_button)
-				cur_hand_data.animals[current_animal_id].step_death_posture_relaxation_explicitness(ns_death_timing_data_step_event_specification(
+				cur_hand_data->animals[current_animal_id].step_death_posture_relaxation_explicitness(ns_death_timing_data_step_event_specification(
 					current_time_interval(handle), cur_worm->element(current_element_id()),
 					properties_for_all_animals.region_info_id, properties_for_all_animals.stationary_path_id, current_animal_id));
 			else {
-				cur_hand_data.animals[current_animal_id].step_event(
+				cur_hand_data->animals[current_animal_id].step_event(
 					ns_death_timing_data_step_event_specification(
 						current_time_interval(handle), cur_worm->element(current_element_id()),
 						properties_for_all_animals.region_info_id, properties_for_all_animals.stationary_path_id, current_animal_id), cur_worm->observation_limits(), action == ns_cycle_state_alt_key_held);
@@ -8920,28 +8920,28 @@ void ns_death_time_solo_posture_annotater::register_click(const ns_vector_2i & i
 		{
 			unsigned long & current_annotated_worm_count(properties_for_all_animals.number_of_worms_at_location_marked_by_hand);
 
-			if (cur_hand_data.animals.size() >= ns_death_time_annotation::maximum_number_of_worms_at_position) {
-				cur_hand_data.animals.resize(1);
+			if (cur_hand_data->animals.size() >= ns_death_time_annotation::maximum_number_of_worms_at_position) {
+				cur_hand_data->animals.resize(1);
 				current_annotated_worm_count = 1;
 				current_animal_id = 0;
 			}
 			else {
-				const unsigned long new_animal_id(cur_hand_data.animals.size());
-				cur_hand_data.animals.resize(new_animal_id + 1);
-				cur_hand_data.animals.rbegin()->set_fast_movement_cessation_time(ns_death_timing_data_step_event_specification(
+				const unsigned long new_animal_id(cur_hand_data->animals.size());
+				cur_hand_data->animals.resize(new_animal_id + 1);
+				cur_hand_data->animals.rbegin()->set_fast_movement_cessation_time(ns_death_timing_data_step_event_specification(
 					ns_death_timing_data_step_event_specification(
 						current_time_interval(handle),
 						cur_worm->element(current_element_id()),
 						properties_for_all_animals.region_info_id,
 						properties_for_all_animals.stationary_path_id, new_animal_id)));
-				cur_hand_data.animals.rbegin()->animal_specific_sticky_properties.animal_id_at_position = new_animal_id;
+				cur_hand_data->animals.rbegin()->animal_specific_sticky_properties.animal_id_at_position = new_animal_id;
 				//add a "object has stopped fast moving" event at first timepoint of new path
-				cur_hand_data.animals.rbegin()->step_event(
+				cur_hand_data->animals.rbegin()->step_event(
 					ns_death_timing_data_step_event_specification(
 						current_time_interval(handle), cur_worm->element(current_element_id()),
 						properties_for_all_animals.region_info_id, properties_for_all_animals.stationary_path_id, new_animal_id), cur_worm->observation_limits(),false);
 				this->current_animal_id = new_animal_id;
-				unsigned long new_sticky_label = cur_hand_data.animals.size();
+				unsigned long new_sticky_label = cur_hand_data->animals.size();
 				if (current_annotated_worm_count > new_sticky_label)
 					new_sticky_label = current_annotated_worm_count;
 				properties_for_all_animals.number_of_worms_at_location_marked_by_hand = new_sticky_label;

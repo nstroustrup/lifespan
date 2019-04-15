@@ -435,11 +435,11 @@ private:
 			cur_worm->element(current_timepoint_id).absolute_time);
 
 	}
-	ns_animal_list_at_position & current_by_hand_timing_data(ns_death_time_posture_solo_annotater_data_cache_storage::handle_t & handle) {
-		return handle().data->by_hand_timing_data[properties_for_all_animals.stationary_path_id.group_id]; 
+	ns_animal_list_at_position * current_by_hand_timing_data(ns_death_time_posture_solo_annotater_data_cache_storage::handle_t & handle) {
+		return & handle().data->by_hand_timing_data[properties_for_all_animals.stationary_path_id.group_id]; 
 	}
-	ns_animal_list_at_position & current_machine_timing_data(ns_death_time_posture_solo_annotater_data_cache_storage::handle_t & handle) {
-		return handle().data->machine_timing_data[current_worm_id.group_id];
+	ns_animal_list_at_position * current_machine_timing_data(ns_death_time_posture_solo_annotater_data_cache_storage::handle_t & handle) {
+		return & handle().data->machine_timing_data[current_worm_id.group_id];
 	}
 	unsigned long current_animal_id;
 
@@ -516,10 +516,10 @@ private:
 		first_path_obs.period_start = cur_worm->element(0).absolute_time;
 		first_path_obs.period_end = cur_worm->element(1).absolute_time;
 
-		ns_animal_list_at_position & cur_hand_timing(current_by_hand_timing_data(handle));
-		ns_animal_list_at_position & cur_machine_timing(current_machine_timing_data(handle));
+		ns_animal_list_at_position * cur_hand_timing(current_by_hand_timing_data(handle));
+		ns_animal_list_at_position * cur_machine_timing(current_machine_timing_data(handle));
 		//handle out of bound values
-		for (ns_animal_list_at_position::ns_animal_list::iterator p = cur_hand_timing.animals.begin(); p != cur_hand_timing.animals.end(); p++) {
+		for (ns_animal_list_at_position::ns_animal_list::iterator p = cur_hand_timing->animals.begin(); p != cur_hand_timing->animals.end(); p++) {
 			ns_crop_time(observation_limit, first_path_obs, last_path_obs, p->fast_movement_cessation.time);
 			ns_crop_time(observation_limit, first_path_obs, last_path_obs, p->death_associated_expansion_stop.time);
 			ns_crop_time(observation_limit, first_path_obs, last_path_obs, p->death_associated_expansion_start.time);
@@ -531,16 +531,16 @@ private:
 
 		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Drawing timing."));
 
-		cur_machine_timing.animals[0].draw_movement_diagram(bottom_margin_bottom,
+		cur_machine_timing->animals[0].draw_movement_diagram(bottom_margin_bottom,
 			ns_vector_2i(cur_worm->element(current_element_id()).image().properties().width*ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor, movement_vis_bar_height),
 			observation_limit,
 			current_time_interval(handle),
 			im, 0.8, ceil(1/external_window_rescale_factor));
-		const unsigned long hand_bar_height(cur_hand_timing.animals.size()*
+		const unsigned long hand_bar_height(cur_hand_timing->animals.size()*
 			ns_death_time_solo_posture_annotater_timepoint::ns_movement_bar_height);
 
-		for (unsigned int i = 0; i < cur_hand_timing.animals.size(); i++) {
-			cur_hand_timing.animals[i].draw_movement_diagram(bottom_margin_bottom + (
+		for (unsigned int i = 0; i < cur_hand_timing->animals.size(); i++) {
+			cur_hand_timing->animals[i].draw_movement_diagram(bottom_margin_bottom + (
 				ns_vector_2i(0, (i + 1)*ns_death_time_solo_posture_annotater_timepoint::ns_movement_bar_height))*ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor,
 				ns_vector_2i(cur_worm->element(current_element_id()).image().properties().width*ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor, movement_vis_bar_height),
 				observation_limit,
@@ -551,12 +551,12 @@ private:
 		const int num_lines(6);
 		std::string lines[num_lines];
 		ns_color_8 line_color[num_lines];
-		const ns_movement_state cur_by_hand_state(cur_hand_timing.animals[current_animal_id].movement_state(cur_worm->element(current_element_id()).absolute_time));
-		const ns_movement_state cur_machine_state(cur_machine_timing.animals[0].movement_state(cur_worm->element(current_element_id()).absolute_time));
-		const bool by_hand_death_expanding(cur_hand_timing.animals[current_animal_id].is_death_time_expanding(cur_worm->element(current_element_id()).absolute_time));
-		const bool machine_death_expanding(cur_machine_timing.animals[0].is_death_time_expanding(cur_worm->element(current_element_id()).absolute_time));
-		const bool by_hand_death_post_expansion_contracting(cur_hand_timing.animals[current_animal_id].is_death_time_post_expansion_contracting(cur_worm->element(current_element_id()).absolute_time));
-		const bool machine_death_post_expansion_contracting(cur_machine_timing.animals[0].is_death_time_post_expansion_contracting(cur_worm->element(current_element_id()).absolute_time));
+		const ns_movement_state cur_by_hand_state(cur_hand_timing->animals[current_animal_id].movement_state(cur_worm->element(current_element_id()).absolute_time));
+		const ns_movement_state cur_machine_state(cur_machine_timing->animals[0].movement_state(cur_worm->element(current_element_id()).absolute_time));
+		const bool by_hand_death_expanding(cur_hand_timing->animals[current_animal_id].is_death_time_expanding(cur_worm->element(current_element_id()).absolute_time));
+		const bool machine_death_expanding(cur_machine_timing->animals[0].is_death_time_expanding(cur_worm->element(current_element_id()).absolute_time));
+		const bool by_hand_death_post_expansion_contracting(cur_hand_timing->animals[current_animal_id].is_death_time_post_expansion_contracting(cur_worm->element(current_element_id()).absolute_time));
+		const bool machine_death_post_expansion_contracting(cur_machine_timing->animals[0].is_death_time_post_expansion_contracting(cur_worm->element(current_element_id()).absolute_time));
 		lines[0] = "Frame " + ns_to_string(current_element_id() + 1) + " of " + ns_to_string(timepoints.size()) + " ";
 		lines[0] += cur_worm->element(current_element_id()).element_before_fast_movement_cessation ? "(B)" : "(A)";
 		lines[0] += cur_worm->element(current_element_id()).inferred_animal_location ? "(I)" : "";
@@ -579,7 +579,7 @@ private:
 		lines[2] += " (" + ns_to_string(p.x) + "," + ns_to_string(p.y) + ")";
 
 		lines[3] = "Machine:" + state_label(cur_machine_state) + (machine_death_expanding ? "(Expanding)" : "") + (machine_death_post_expansion_contracting ? "(Contracting)" : "");
-		if (cur_hand_timing.animals[current_animal_id].specified)
+		if (cur_hand_timing->animals[current_animal_id].specified)
 			lines[4] += "Human: " + state_label(cur_by_hand_state) + (by_hand_death_expanding ? "(Expanding)" : "") + (by_hand_death_post_expansion_contracting ? "(Contracting)" : "");
 		else lines[4] += "Human: Not Specified";
 		if (properties_for_all_animals.number_of_worms_at_location_marked_by_hand > 1) {
@@ -1255,11 +1255,11 @@ public:
 	void update_events_to_storyboard(double external_rescale_factor, ns_death_time_posture_solo_annotater_data_cache_storage::handle_t &handle){
 		auto cur_hand_data = current_by_hand_timing_data(handle);
 		properties_for_all_animals.annotation_time = ns_current_time();
-		cur_hand_data.animals[current_animal_id].specified = true;
+		cur_hand_data->animals[current_animal_id].specified = true;
 		click_event_cache.resize(0);
-		for (unsigned int i = 0; i < cur_hand_data.animals.size(); i++){
-			cur_hand_data.animals[i].generate_event_timing_data(click_event_cache);
-			cur_hand_data.animals[i].specified = true;
+		for (unsigned int i = 0; i < cur_hand_data->animals.size(); i++){
+			cur_hand_data->animals[i].generate_event_timing_data(click_event_cache);
+			cur_hand_data->animals[i].specified = true;
 		}
 		ns_specify_worm_details(properties_for_all_animals.region_info_id,properties_for_all_animals.stationary_path_id,properties_for_all_animals,click_event_cache,external_rescale_factor);
 	}

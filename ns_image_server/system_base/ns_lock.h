@@ -25,7 +25,10 @@ public:
 
 	void wait_to_acquire(const char * source_file, const unsigned int source_line);
 	bool try_to_acquire(const char * source_file, const unsigned int source_line);
-
+	ns_lock(const ns_lock & lock) {
+		std::cerr << "Copying lock!\n";
+		init(lock.name + "(1)");
+	}
 	void release();
 
 private:

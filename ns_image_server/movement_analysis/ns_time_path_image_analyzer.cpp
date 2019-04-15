@@ -41,6 +41,8 @@ void release_images(ns_time_path_image_movement_analysis_memory_pool<allocator_T
 	}
 }
 ns_analyzed_image_time_path::~ns_analyzed_image_time_path(){
+	movement_image_storage_lock.wait_to_acquire(__FILE__, __LINE__);
+	movement_image_storage_lock.release();
 		ns_safe_delete(output_reciever);
 		ns_safe_delete(flow_output_reciever);
 		#ifdef NS_CALCULATE_OPTICAL_FLOW
@@ -1201,7 +1203,7 @@ void ns_time_path_image_movement_analyzer<allocator_T>::load_from_solution(const
 	number_of_timepoints_in_analysis_ = solution_.timepoints.size();
 	groups.reserve(solution_.path_groups.size());
 	if (group_number != -1){
-		groups.push_back(ns_analyzed_image_time_path_group<allocator_T>(ns_stationary_path_id(group_number,0,analysis_id),region_info_id,solution_,externally_specified_plate_observation_interval,extra_non_path_events,memory_pool));
+		groups.emplace_back(ns_stationary_path_id(group_number,0,analysis_id),region_info_id,solution_,externally_specified_plate_observation_interval,extra_non_path_events,memory_pool);
 		for (unsigned int i = 0; i < groups.rbegin()->paths.size(); i++){
 			if (groups.rbegin()->paths[i].elements.size() < ns_analyzed_image_time_path::alignment_time_kernel_width)
 				throw ns_ex("ns_time_path_image_movement_analyzer<allocator_T>::load_from_solution::Path loaded that is too short.");
@@ -1212,7 +1214,7 @@ void ns_time_path_image_movement_analyzer<allocator_T>::load_from_solution(const
 	else{
 		for (unsigned int i = 0; i < solution_.path_groups.size(); i++){
 			
-			groups.push_back(ns_analyzed_image_time_path_group<allocator_T>(ns_stationary_path_id(i, 0, analysis_id),region_info_id,solution_,externally_specified_plate_observation_interval,extra_non_path_events,memory_pool));
+			groups.emplace_back(ns_stationary_path_id(i, 0, analysis_id),region_info_id,solution_,externally_specified_plate_observation_interval,extra_non_path_events,memory_pool);
 			for (unsigned int j = 0; j < groups.rbegin()->paths.size(); j++){
 				if (groups.rbegin()->paths[j].elements.size() < ns_analyzed_image_time_path::alignment_time_kernel_width)
 					throw ns_ex("ns_time_path_image_movement_analyzer<allocator_T>::load_from_solution::Path loaded that is too short.");
@@ -5417,11 +5419,11 @@ ns_analyzed_image_time_path_group<allocator_T>::ns_analyzed_image_time_path_grou
 	//if (group_id_ == 28)
 	//			cerr << "MA";
 	//if (limits.last_obsevation_of_plate.periode
-
+	paths.reserve(solution_.path_groups[group_id.group_id].path_ids.size());
 	for (unsigned int i = 0; i < solution_.path_groups[group_id.group_id].path_ids.size(); i++){
 		const unsigned long & path_id(solution_.path_groups[group_id.group_id].path_ids[i]);
 		const ns_time_path & source_path(solution_.paths[path_id]);
-		paths.resize(current_path_id+1,ns_analyzed_image_time_path(0));
+		paths.emplace_back(0);
 		ns_analyzed_image_time_path &path(paths[current_path_id]);
 
 		path.path = &source_path;
@@ -6398,17 +6400,6 @@ bool ns_time_path_image_movement_analyzer<allocator_T>::load_movement_image_db_i
 	image_db_info_loaded = true;
 	return true;
 }
-
-template<class allocator_T>
-void ns_time_path_image_movement_analyzer<allocator_T>::precache_group_images_locally(const unsigned long group_id, unsigned long path_id,ns_sql & sql) {
-	ns_acquire_lock_for_scope lock(pre_cache_image_lock,__FILE__,__LINE__);
-	if (groups[group_id].paths[path_id].movement_image_storage.bound())
-		return;
-	ns_image_cache_data_source source(&image_server.image_storage, &sql);
-	image_cache.get_for_read(groups[group_id].paths[path_id].output_image, groups[group_id].paths[path_id].movement_image_storage_handle, source);
-	groups[group_id].paths[path_id].movement_image_storage = groups[group_id].paths[path_id].movement_image_storage_handle().source;
-	lock.release();
-}
 template<class allocator_T>
 void ns_time_path_image_movement_analyzer<allocator_T>::load_images_for_group(const unsigned long group_id, unsigned long number_of_images_to_load,ns_sql & sql, const bool load_images_after_last_valid_sample, const bool load_flow_images, ns_simple_local_image_cache & image_cache){
 	#ifdef NS_CALCULATE_OPTICAL_FLOW
@@ -6439,7 +6430,8 @@ void ns_time_path_image_movement_analyzer<allocator_T>::load_images_for_group(co
 				}
 			}
 		}
-		
+
+		ns_acquire_lock_for_scope lock(groups[group_id].paths[j].movement_image_storage_lock, __FILE__, __LINE__);
 		if (number_of_images_loaded == 0){
 			if (groups[group_id].paths[j].output_image.id==0){
 				throw ns_ex("ns_time_path_image_movement_analyzer::load_images_for_group()::Group has no stored image id specified");
@@ -6447,7 +6439,7 @@ void ns_time_path_image_movement_analyzer<allocator_T>::load_images_for_group(co
 			//if (groups[groups_id].paths[j].output_image.filename.empty()){
 			//groups[group_id].paths[j].output_image.load_from_db(groups[group_id].paths[j].output_image.id,&sql);
 			//groups[group_id].paths[j].movement_image_storage = image_server_const.image_storage.request_from_storage(groups[group_id].paths[j].output_image,&sql);
-			precache_group_images_locally(group_id,j, sql);
+			precache_group_images_locally<ns_simple_local_image_cache::handle_t>(group_id,j,0, sql);
 
 			groups[group_id].paths[j].movement_image_storage.input_stream().reset();
 
@@ -6468,8 +6460,10 @@ void ns_time_path_image_movement_analyzer<allocator_T>::load_images_for_group(co
 		if (number_of_images_to_load > number_of_valid_elements)
 			number_of_images_to_load = number_of_valid_elements;
 			//throw ns_ex("ns_time_path_image_movement_analyzer::load_images_for_group()::Requesting to many images!");
-		if (number_of_images_to_load == 0)
+		if (number_of_images_to_load == 0) {
+			lock.release();
 			return;
+		}
 
 		unsigned long number_of_new_images_to_load(number_of_images_to_load-number_of_images_loaded);
 			
@@ -6498,6 +6492,7 @@ void ns_time_path_image_movement_analyzer<allocator_T>::load_images_for_group(co
 	//	debug_name += ".csv";
 	//	ofstream tmp(debug_name.c_str());
 	//	groups[i].paths[j].output_image_movement_summary(tmp);
+		lock.release();
 	}
 }
 

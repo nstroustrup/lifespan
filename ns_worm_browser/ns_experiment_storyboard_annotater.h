@@ -465,12 +465,24 @@ private:
 	std::map<ns_64_bit,bool> excluded_regions;
 
 	static ns_thread_return_type precache_worm_images_asynch_internal(void *);
+	ns_sql * precache_sql_connection;
+	bool run_precaching;
+	ns_lock precaching_lock;
 public:
 	void set_resize_factor(const unsigned long resize_factor_){
 		resize_factor = resize_factor_;
 	}
 	bool data_saved()const{return saved_;}
-	ns_experiment_storyboard_annotater(const unsigned long res):ns_image_series_annotater(res,0), draw_group_ids(0),saved_(true){}
+	ns_experiment_storyboard_annotater(const unsigned long res):ns_image_series_annotater(res,0), draw_group_ids(0),saved_(true),precache_sql_connection(0),run_precaching(false), precaching_lock("pcl"){}
+	~ns_experiment_storyboard_annotater() {
+		run_precaching = false;
+		precaching_lock.wait_to_acquire(__FILE__, __LINE__);
+		precaching_lock.release();
+		clear_precache_sql();
+	}
+	void clear_precache_sql() {
+		ns_safe_delete(precache_sql_connection);
+	}
 
 	std::string image_label(const unsigned long frame_id){
 		return ns_to_string(frame_id) + "/" + ns_to_string(divisions.size());	
@@ -520,7 +532,11 @@ public:
 	void load_random_worm();
 
 	void display_current_frame();
-
+	void stop_precaching() {
+		run_precaching = false;
+		precaching_lock.wait_to_acquire(__FILE__, __LINE__);
+		precaching_lock.release();
+	}
 	void clear() {
 		clear_base();
 		saved_ = false;
@@ -530,5 +546,6 @@ public:
 		display_events_from_region.clear();
 		excluded_regions.clear();
 	}
+
 };
 #endif

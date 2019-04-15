@@ -386,7 +386,7 @@ public:
 	ns_analyzed_image_time_path(ns_64_bit unique_process_id_) : volatile_backwards_path_data_written(false), first_stationary_timepoint_(0),
 		entirely_excluded(false), images_preallocated(false), 
 		low_density_path(false), output_reciever(0), flow_output_reciever(0), path_db_id(0), region_info_id(0), movement_image_storage(0), flow_movement_image_storage(0),
-		number_of_images_loaded(0), flow(0), stabilized_worm_region_total(0), unique_process_id(unique_process_id_){
+		number_of_images_loaded(0), flow(0), stabilized_worm_region_total(0), unique_process_id(unique_process_id_), movement_image_storage_lock("misl") {
 		by_hand_annotation_event_times.resize((int)ns_number_of_movement_event_types, ns_death_time_annotation_time_interval::unobserved_interval());
 		by_hand_annotation_event_explicitness.resize((int)ns_number_of_movement_event_types, ns_death_time_annotation::ns_unknown_explicitness);
 		state_intervals.resize((int)ns_movement_number_of_states);
@@ -635,6 +635,8 @@ private:
 	//the flow and save it to the data specified by element_index
 	void calculate_flow(const unsigned long element_index);
 	ns_optical_flow_processor * flow;
+
+	ns_lock movement_image_storage_lock;
 };
 
 template<class allocator_T>
@@ -665,7 +667,7 @@ public:
 	ns_time_path_image_movement_analyzer(ns_time_path_image_movement_analysis_memory_pool<allocator_T> & memory_pool_):paths_loaded_from_solution(false),
 		movement_analyzed(false),region_info_id(0),last_timepoint_in_analysis_(0), _number_of_invalid_images_encountered(0),image_cache(1024*1024*64),
 		number_of_timepoints_in_analysis_(0),image_db_info_loaded(false),externally_specified_plate_observation_interval(0,ULONG_MAX),posture_model_version_used(NS_CURRENT_POSTURE_MODEL_VERSION),
-		memory_pool(memory_pool_), pre_cache_image_lock("pcil"){}
+		memory_pool(memory_pool_){}
 
 	~ns_time_path_image_movement_analyzer(){
 		for (unsigned int i = 0; i < groups.size(); i++)
@@ -699,7 +701,20 @@ public:
 
 	//provide access to group images
 	void load_images_for_group(const unsigned long group_id, const unsigned long number_of_images_to_load,ns_sql & sql,const bool load_images_after_last_valid_sample,const bool load_flow_images,ns_simple_local_image_cache & image_cache);
-	void precache_group_images_locally(const unsigned long group_id, const unsigned long path_id,ns_sql & sql);
+	template<class handle_t>
+	void precache_group_images_locally(const unsigned long group_id, const unsigned long path_id, handle_t * handle_to_release,ns_sql & sql) {
+		ns_acquire_lock_for_scope lock(groups[group_id].paths[path_id].movement_image_storage_lock, __FILE__, __LINE__);
+		if (groups[group_id].paths[path_id].movement_image_storage.bound()) {
+			lock.release();
+			return;
+		}
+		if (handle_to_release != 0)
+			handle_to_release->release();
+		ns_image_cache_data_source source(&image_server.image_storage, &sql);
+		image_cache.get_for_read(groups[group_id].paths[path_id].output_image, groups[group_id].paths[path_id].movement_image_storage_handle, source);
+		groups[group_id].paths[path_id].movement_image_storage = groups[group_id].paths[path_id].movement_image_storage_handle().source;
+		lock.release();
+	}
 	void clear_images_for_group(const unsigned long group_id, ns_simple_local_image_cache & image_cache);
 
 	void clear(){
@@ -816,7 +831,6 @@ private:
 	void calculate_memory_pool_maximum_image_size(const unsigned int start_group,const unsigned int stop_group);
 	ns_simple_local_image_cache image_cache;
 
-	ns_lock pre_cache_image_lock;
 };
 
 struct ns_position_info{

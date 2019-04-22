@@ -34,7 +34,7 @@ const bool ns_skip_low_density_paths(false);
 
 
 template<class allocator_T>
-void release_images(ns_time_path_image_movement_analysis_memory_pool<allocator_T> & pool) {
+void ns_analyzed_image_time_path::release_images(ns_time_path_image_movement_analysis_memory_pool<allocator_T> & pool) {
 	for (unsigned int i = 0; i < elements.size(); i++) {
 		elements[i].clear_movement_images(pool);
 		elements[i].clear_path_aligned_images(pool);
@@ -6401,7 +6401,7 @@ bool ns_time_path_image_movement_analyzer<allocator_T>::load_movement_image_db_i
 	return true;
 }
 template<class allocator_T>
-void ns_time_path_image_movement_analyzer<allocator_T>::load_images_for_group(const unsigned long group_id, unsigned long number_of_images_to_load,ns_sql & sql, const bool load_images_after_last_valid_sample, const bool load_flow_images, ns_simple_local_image_cache & image_cache){
+void ns_time_path_image_movement_analyzer<allocator_T>::load_images_for_group(const unsigned long group_id, unsigned long requested_number_of_images_to_load,ns_sql & sql, const bool load_images_after_last_valid_sample, const bool load_flow_images, ns_simple_local_image_cache & image_cache){
 	#ifdef NS_CALCULATE_OPTICAL_FLOW
 	if (load_flow_images)
 		throw ns_ex("Attempting to load flow images with NS_CALCULATE_OPTICAL_FLOW set to false");
@@ -6413,7 +6413,7 @@ void ns_time_path_image_movement_analyzer<allocator_T>::load_images_for_group(co
 		if (group_id >= size())
 			throw ns_ex("ns_time_path_image_movement_analyzer::load_images_for_group()::Invalid group: ") << group_id;
 	}
-	if (number_of_images_loaded >= number_of_images_to_load)
+	if (number_of_images_loaded >= requested_number_of_images_to_load)
 		return;
 
 	const unsigned long chunk_size(10);
@@ -6456,7 +6456,7 @@ void ns_time_path_image_movement_analyzer<allocator_T>::load_images_for_group(co
 
 		}
 
-		
+		unsigned long number_of_images_to_load = requested_number_of_images_to_load;
 		if (number_of_images_to_load > number_of_valid_elements)
 			number_of_images_to_load = number_of_valid_elements;
 			//throw ns_ex("ns_time_path_image_movement_analyzer::load_images_for_group()::Requesting to many images!");

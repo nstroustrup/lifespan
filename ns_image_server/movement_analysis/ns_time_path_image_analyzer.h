@@ -772,7 +772,7 @@ public:
 	static ns_image_server_image get_movement_quantification_id(const ns_64_bit region_info_id, ns_sql & sql);
 
 	void match_plat_areas_to_paths(std::vector<ns_region_area> & areas);
-	template<class allocator_T>friend class ns_worm_morphology_data_integrator;
+	template<class T2>friend class ns_worm_morphology_data_integrator;
 	std::string posture_model_version_used;
 
 	void calculate_optimzation_stats_for_current_hmm_estimator(ns_hmm_movement_analysis_optimizatiom_stats & s, const ns_emperical_posture_quantification_value_estimator * e, std::set<ns_stationary_path_id> & paths_to_test, bool generate_path_info);

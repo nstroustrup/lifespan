@@ -1,4 +1,5 @@
 #include "ns_image_statistics.h"
+#include <deque>
 using namespace std;
 #include "ns_image_server.h"
 #include "ns_buffered_random_access_image.h"

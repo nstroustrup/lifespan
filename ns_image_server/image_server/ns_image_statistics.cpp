@@ -2,6 +2,7 @@
 using namespace std;
 #include "ns_image_server.h"
 #include "ns_buffered_random_access_image.h"
+#include <deque>
 using namespace std;
 
 void ns_histogram_sql_converter::insert_histogram(const ns_histogram_type & histogram,ns_image_server_sql * sql){

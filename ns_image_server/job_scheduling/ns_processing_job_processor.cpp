@@ -84,6 +84,7 @@ ns_image_server_captured_image_region ns_get_region_image(const ns_processing_jo
 	return region_image;
 }
 
+#ifndef NS_ONLY_IMAGE_ACQUISITION
 bool ns_processing_job_sample_processor::job_is_still_relevant(ns_sql & sql, std::string & reason_not_relevant){
 	sql << "SELECT image_id,small_image_id,mask_applied,currently_being_processed, problem FROM captured_images WHERE id=" << job.captured_image_id;
 	ns_sql_result res;
@@ -199,7 +200,7 @@ void ns_processing_job_whole_sample_processor::mark_subject_as_busy(const bool b
 void ns_processing_job_whole_sample_processor::mark_subject_as_problem(const ns_64_bit problem_id,ns_sql & sql){
 	return;
 }
-
+#endif
 bool ns_processing_job_maintenance_processor::job_is_still_relevant(ns_sql & sql, std::string & reason_not_relevant){
 	return true;
 }
@@ -215,6 +216,7 @@ void ns_processing_job_maintenance_processor::mark_subject_as_problem(const ns_6
 	sql.send_query();
 	return;
 }
+
 
 #ifndef NS_ONLY_IMAGE_ACQUISITION
 bool ns_processing_job_image_processor::job_is_still_relevant(ns_sql & sql, std::string & reason_not_relevant){

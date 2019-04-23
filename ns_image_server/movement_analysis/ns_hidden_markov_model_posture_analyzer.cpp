@@ -216,33 +216,45 @@ double ns_hmm_solver::run_viterbi(const ns_analyzed_image_time_path & path, cons
 		for (t = 1; t < nobs; t++) {
 		//	std::cout << t << " ";
 			bool missing_disalowed = t >= path_indices[first_appearance_id];
-			if (path.element(t).excluded)
-				continue;
-			estimator.probability_for_each_state(path.element(path_indices[t]).measurements, emission_log_probabilities);
-			if (1) {
-				bool nonzero = false;
-				for (unsigned int w = 0; w < emission_log_probabilities.size(); w++)
-					if (emission_log_probabilities[w] != 0)
-						nonzero = true;
-				if (!nonzero) {
-				//	std::cout << "Found impossible measurement: \n";
-					for (j = 0; j < mstat; j++) {
-						probabilitiy_of_path[mstat*t + j] = probabilitiy_of_path[mstat*(t - 1) + j];
-						previous_state[t*mstat + j] = previous_state[(t - 1)*mstat + j];
-					}
-					continue;
+			if (path.element(t).excluded) {
+				//skip, staying in the same state
+				for (j = 0; j < mstat; j++) {
+					probabilitiy_of_path[mstat*t + j] = probabilitiy_of_path[mstat*(t - 1) + j];
+					previous_state[t*mstat + j] = previous_state[(t - 1)*mstat + j];
+					path_forbidden[mstat*t + j] = path_forbidden[mstat*(t - 1) + j];
 				}
+				continue;
 			}
-			double max_pp = -DBL_MAX;
-			for (j = 0; j < mstat; j++) { //probability of moving from state i at time t-1 to state j now
-				max_p = -DBL_MAX;
+			estimator.probability_for_each_state(path.element(path_indices[t]).measurements, emission_log_probabilities);
+
+			
+			//identify situations where no state produces a non-zero probability
+			//skip these points, staying in the same state.
+			bool nonzero_state_probability_found = false;
+			for (unsigned int w = 0; w < emission_log_probabilities.size(); w++)
+				if (emission_log_probabilities[w] != 0)
+					nonzero_state_probability_found = true;
+			if (!nonzero_state_probability_found) {
+				//	std::cout << "Found impossible measurement: \n";
+				for (j = 0; j < mstat; j++) {
+					probabilitiy_of_path[mstat*t + j] = probabilitiy_of_path[mstat*(t - 1) + j];
+					previous_state[t*mstat + j] = previous_state[(t - 1)*mstat + j];
+					path_forbidden[t*mstat + j] = path_forbidden[(t - 1)*mstat + j];
+				}
+				continue;
+			}
+			
+			double max_pp = -DBL_MAX; //most likely path to reach any state at this time
+
+			for (j = 0; j < mstat; j++) { 
+				max_p = -DBL_MAX;	//most likely path to reach state j  at this time
 				max_prev_i = 0;
 				bool found_valid = false;
 				for (i = 0; i < mstat; i++) {
 					if (a[i][j] == 0 || emission_log_probabilities[j] == 0 || path_forbidden[mstat*(t - 1) + i])
 						continue;
+					//calculate probability of moving from state i at time t-1 to state j now
 					const double cur = probabilitiy_of_path[mstat*(t - 1)+i] + log(a[i][j] * emission_log_probabilities[j]);
-				//	std::cout << j << "," << i << ":" << cur << " " << max_p << "\n";
 					if (!std::isnan(cur) && std::isfinite(cur) && (!found_valid || cur > max_p)) {
 						max_p = cur;
 						max_prev_i = i;
@@ -314,20 +326,25 @@ double ns_hmm_solver::run_viterbi(const ns_analyzed_image_time_path & path, cons
 		if (s != movement_transitions.rbegin()->first)
 			movement_transitions.push_back(ns_hmm_state_transition_time_path_index(s, i));
 	}
-	if (0 && movement_transitions.size() == 1 && movement_transitions[0].first == ns_hmm_missing) {
+	if (0 && movement_transitions.size() >= 2 && movement_transitions[0].first == ns_hmm_missing && movement_transitions[1].first == ns_hmm_moving_weakly_post_expansion) {
 		std::ofstream out("c:\\server\\dbg.csv");
 		out << "t,R";
 		for (unsigned int j = 0; j < mstat; j++)
-			out << "," << "p " << ns_hmm_movement_state_to_string((ns_hmm_movement_state)j);
+			out << "," << "cumulative p " << ns_hmm_movement_state_to_string((ns_hmm_movement_state)j);
 		for (unsigned int j = 0; j < mstat; j++)
-			out << "," << "s " << ns_hmm_movement_state_to_string((ns_hmm_movement_state)j);
+			out << "," << "p(t) " << ns_hmm_movement_state_to_string((ns_hmm_movement_state)j);
 		for (unsigned int j = 0; j < mstat; j++)
-			out << "," << "f " << ns_hmm_movement_state_to_string((ns_hmm_movement_state)j);
+			out << "," << "s(t) " << ns_hmm_movement_state_to_string((ns_hmm_movement_state)j);
+		for (unsigned int j = 0; j < mstat; j++)
+			out << "," << "f(t) " << ns_hmm_movement_state_to_string((ns_hmm_movement_state)j);
 		out << "\n";
 		for (unsigned int t = 0; t < nobs; t++) {
 			out << t << "," << renormalization_factors[t];
 			for (unsigned int j = 0; j < mstat; j++)
 				out << "," << probabilitiy_of_path[mstat*t + j];
+			estimator.probability_for_each_state(path.element(path_indices[t]).measurements, emission_log_probabilities);
+			for (unsigned int j = 0; j < mstat; j++)
+				out << "," << emission_log_probabilities[j];
 			for (unsigned int j = 0; j < mstat; j++)
 				out << "," << ns_hmm_movement_state_to_string((ns_hmm_movement_state)previous_state[mstat*t + j]);
 			for (unsigned int j = 0; j < mstat; j++)
@@ -401,8 +418,12 @@ void ns_hmm_solver::build_movement_state_solution_from_movement_transitions(cons
 			}
 			else if (movement_transitions[i].first == ns_hmm_moving_weakly_post_expansion ||
 				movement_transitions[i].first == ns_hmm_contracting_post_expansion) {
-				std::cerr << "Yikes";
-				throw ns_ex("Unexpected pre-expansion state!");
+				//std::cerr << "Encountered an invalid post expansion state.";
+				ns_ex ex("Encountered an invalid post expansion state:");
+				for (unsigned int j = 0; j < movement_transitions.size(); j++) {
+					ex << "\n" << movement_transitions[j].second << ":" << ns_hmm_movement_state_to_string(movement_transitions[j].first);
+				}
+				throw ex;
 			}
 			break;
 		case 1:

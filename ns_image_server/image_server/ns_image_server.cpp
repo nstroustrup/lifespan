@@ -2499,7 +2499,7 @@ void ns_image_server::open_log_file(const ns_image_server::ns_image_server_exec_
 		log_suffix = "_server";
 		break;
 	case ns_worm_terminal_type:
-		log_suffix = "_terminal";
+		log_suffix = "_worm_browser";
 		break;
 	case ns_sever_updater_type:
 		log_suffix = "_updater";

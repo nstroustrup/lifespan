@@ -1535,9 +1535,13 @@ void ns_time_path_image_movement_analyzer<allocator_T>::reanalyze_with_different
 		for (unsigned long p = 0; p < groups[g].paths.size(); p++) {
 			if (ns_skip_low_density_paths && groups[g].paths[p].is_low_density_path())
 				continue;
-			groups[g].paths[p].analyze_movement(e, ns_stationary_path_id(g, p, analysis_id), last_timepoint_in_analysis_);
-			groups[g].paths[p].calculate_movement_quantification_summary();
-
+			try {
+				groups[g].paths[p].analyze_movement(e, ns_stationary_path_id(g, p, analysis_id), last_timepoint_in_analysis_);
+				groups[g].paths[p].calculate_movement_quantification_summary();
+			}
+			catch (ns_ex & ex) {
+				throw ns_ex("Error analyzing group ") << g << " path " << p << ":" << ex.text();
+			}
 		}
 	}
 }

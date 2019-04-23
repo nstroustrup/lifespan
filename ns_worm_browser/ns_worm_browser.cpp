@@ -2256,27 +2256,42 @@ void ns_test_parameter_set_on_region(const ns_64_bit region_id,
 	const ns_death_time_annotation_compiler & by_hand_annotations,
 	const ns_time_series_denoising_parameters & time_series_denoising_parameters, ns_time_path_image_movement_analyzer<ns_wasteful_overallocation_resizer> & time_path_image_analyzer, ns_time_path_solution & time_path_solution, ns_sql & sql,
 	ns_hmm_movement_analysis_optimizatiom_stats & output_stats,std::set<ns_stationary_path_id> & animals_to_test, bool generate_detailed_path_info) {
+	try {
+		ns_time_path_movement_markov_solver markov_solver(estimator);
+		//we might need to load everything again, if it has been cleared to reduce memory usage
+		if (time_path_image_analyzer.size() == 0) {
 
-	ns_time_path_movement_markov_solver markov_solver(estimator);
-	//we might need to load everything again, if it has been cleared to reduce memory usage
-	if (time_path_image_analyzer.size() == 0) {
+			time_path_image_analyzer.add_by_hand_annotations(by_hand_annotations);
+			time_path_image_analyzer.load_completed_analysis(
+				region_id,
+				time_path_solution,
+				time_series_denoising_parameters,
+				&markov_solver,
+				sql,
+				false);
+			time_path_image_analyzer.add_by_hand_annotations(by_hand_annotations);
 
-		time_path_image_analyzer.add_by_hand_annotations(by_hand_annotations);
-		time_path_image_analyzer.load_completed_analysis(
-			region_id,
-			time_path_solution,
-			time_series_denoising_parameters,
-			&markov_solver,
-			sql,
-			false);
-		time_path_image_analyzer.add_by_hand_annotations(by_hand_annotations);
-
+		}
+		else {
+			time_path_image_analyzer.add_by_hand_annotations(by_hand_annotations);
+			time_path_image_analyzer.reanalyze_with_different_movement_estimator(time_series_denoising_parameters, &markov_solver);
+		}
+		time_path_image_analyzer.calculate_optimzation_stats_for_current_hmm_estimator(output_stats, &estimator, animals_to_test, generate_detailed_path_info);
 	}
-	else {
-		time_path_image_analyzer.add_by_hand_annotations(by_hand_annotations);
-		time_path_image_analyzer.reanalyze_with_different_movement_estimator(time_series_denoising_parameters, &markov_solver);
+	catch (ns_ex & ex2) {
+		sql << "select r.name, s.name FROM sample_region_image_info as r, capture_samples as s WHERE r.id = " << region_id << " AND s.id = r.sample_id";
+		ns_sql_result res;
+		sql.get_rows(res);
+		ns_ex ex("Error analyzing plate ");
+		if (res.empty()) {
+			ex << "region" << region_id;
+		}
+		else {
+			ex << res[0][1] << "::" << res[0][0];
+		}
+		ex << ": " << ex2.text();
+		image_server.register_server_event(ex, &sql);
 	}
-	time_path_image_analyzer.calculate_optimzation_stats_for_current_hmm_estimator(output_stats,&estimator,animals_to_test, generate_detailed_path_info);
 
 }
 #include <random>

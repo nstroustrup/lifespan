@@ -193,7 +193,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <WarningLevel>Level2</WarningLevel>
-      <Optimization>Full</Optimization>
+      <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>_CRT_SECURE_NO_DEPRECATE;WIN32;NTDDI_VERSION=NTDDI_WINXPSP2;_WIN32_WINNT=0x501;WINVER=0x0501;TRILIBRARY;CPU86;NO_TIMER;ANSI_DECLARATORS;NS_DEFAULT_FONT="c:/windows/fonts/ARIAL.TTF";NS_INI_PATH="c:\\server\\ns_image_server.ini";ARCH_IS_LITTLE_ENDIAN;INCLUDE_STDAFX;_MBCS;NS_USE_INTEL_IPP;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>

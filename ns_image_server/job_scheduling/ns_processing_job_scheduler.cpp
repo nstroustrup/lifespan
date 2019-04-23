@@ -89,6 +89,7 @@ bool ns_processing_job_scheduler::run_a_job(ns_processing_job & job,ns_sql & sql
 		sql.send_query();
 		sql << "DELETE from processing_job_queue WHERE id = " << job.queue_entry_id;
 		sql.send_query();
+		sql.send_query("COMMIT");
 		return true;
 	}
 

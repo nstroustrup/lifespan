@@ -36,7 +36,7 @@ _act_as_processing_node(true), exit_lock("ns_is::el"),cleared(false), do_not_run
 #ifndef NS_ONLY_IMAGE_ACQUISITION
 image_registration_profile_cache(1024 * 4), //allocate 4 gigabytes of disk space in which to store reference images for capture sample registration
 storyboard_cache(0),worm_detection_model_cache(0),posture_analysis_model_cache(0),
-  survival_data_cache(1){
+  survival_data_cache(1),
 #endif
 _verbose_debug_output(false), _cache_subdirectory("cache"), sql_database_choice(possible_sql_databases.end()), next_scan_for_problems_time(0),
 _terminal_window_scale_factor(1), _system_parallel_process_id(0), _allow_multiple_processes_per_system(false),sql_table_lock_manager(this),

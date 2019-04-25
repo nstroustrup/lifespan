@@ -57,7 +57,7 @@ $host_where_statement = "id = $host_id";
 if (!$show_host_nodes)
    $host_where_statement = "base_host_name = '$base_host_name' AND system_hostname = '$system_host_name' AND system_parallel_process_id = $system_parallel_process_id";
 
-if (ns_param_spec($_POST,'save_host')){
+if (ns_param_spec($_POST,'update_database_name')){
 	$comments = ($_POST['comments']);
 
 	$update_database_name = $_POST['update_database_name']=='1';
@@ -422,7 +422,7 @@ foreach ($base_hosts as $base_host_name => $host){
 		//	var_dump($devs);
 		$real_devs = FALSE;
 		for ($j = 0; $j < sizeof($devs); $j++){
-		  if ($devs[$j][5]!="1"){
+		if ($devs[$j][5]!="1"){
 		    $real_devs = TRUE;
 		    break;
 		  }
@@ -435,28 +435,29 @@ foreach ($base_hosts as $base_host_name => $host){
 			echo sizeof($devs). " devices<br>";
 		if (strlen($host[$i][16])>0)
 		   echo "Extra Info: " . $host[$i][16] . "<BR>";
-		echo output_editable_field("comments",$host[$i][4],$edit_host,'',TRUE);
+		//echo output_editable_field("comments",$host[$i][4],$edit_host,'',TRUE);
 			echo "Disk: " . (floor($host[$i][13]/1024)) . " gb free</br>";
 		echo "</td><td bgcolor=\"$clrs[0]\">";
-		if (!$edit_host)
-		  echo "<a href=\"view_hosts_and_devices.php?show_host_nodes=" . ($show_host_nodes?"1":"0") . "&host_id={$host[$i][0]}\">[Edit]</a>";
+		if (0 &&!$edit_host)
+		  echo "<a href=\"view_hosts_and_devices.php?show_host_nodes=" . ($show_host_nodes?"1":"0") . "&host_id={$host[$i][0]}\">[View Details]</a>";
 		else{
 			if (!$real_devs){
-				echo "Database: "; ns_output_database_selector('requested_database_name',$host[$i][12],FALSE);
-				echo "<input name=\"update_database_name\" type=\"hidden\" value=\"1\">";
+				echo "Database: "; 
+				ns_output_database_selector('requested_database_name',$host[$i][12],TRUE);
+				echo "<br><input name=\"update_database_name\" type=\"hidden\" value=\"1\">";
 			}
 			echo "<input name=\"host_id\" type=\"hidden\" value=\"{$host[$i][0]}\">";
-			echo "<table cellspacing=5 cellpadding=0 border = 0>";
-			echo '<tr><td><input name="save_host" type="submit" value="Save"><BR>';
-			echo '<input name="delete_host" type="submit" value="Delete"></td>';
-			echo '<td><input name="launch_from_screen_saver" type="submit" value="Launch"><br>';
-			echo '<input name="shut_down" type="submit" value="Shut Down"></td></tr>';
-			echo '<tr><td><input name="pause" type="submit" value="Pause"><br>';
-			echo '<input name="hotplug" type="submit" value="Hotplug Devices"</td>';
+			//echo "<table cellspacing=5 cellpadding=0 border = 0>";
+			//echo '<tr><td><input name="save_host" type="submit" value="Save"><BR>';
+			//echo '<input name="delete_host" type="submit" value="Delete"></td>';
+			//echo '<td><input name="launch_from_screen_saver" type="submit" value="Launch"><br>';
+			echo '<input name="pause" type="submit" value="Pause"><br>';
+			echo '<input name="hotplug" type="submit" value="Search for New Devices"';
 			echo '<input name="buffer_reload" type="submit" value="Reload Schedule Buffer" onClick="javascript:return confirm(\'This will force the image acquisition server to re-download all pending scans, causing it to be temporarily unresponsive.  Continue?\')">';
-			echo "</td>";
-			echo '<td valign="bottom" align="right"><input name="cancel" type="submit" value="Cancel"></td></tr>';
-			echo '</table>';
+                        echo '<input name="shut_down" type="submit" value="Shut Down">';
+			//echo "</td>";
+			//echo '<td valign="bottom" align="right"><input name="cancel" type="submit" value="Cancel"></td></tr>';
+			//echo '</table>';
 		}
 		echo "</td></tr>";
 

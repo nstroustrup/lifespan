@@ -165,7 +165,7 @@ public:
 	
 	void remove_all_but_specified_event_type(const ns_death_time_annotation_set::ns_annotation_type_to_load & t);
 	void generate_survival_curve_set(ns_lifespan_experiment_set & survival_curves, const ns_death_time_annotation::ns_by_hand_annotation_integration_strategy & death_times_to_use,const bool use_by_hand_worm_cluster_annotations, const bool warn_on_movement_problems) const;
-	void generate_animal_event_method_comparison(std::ostream & o, double & total_mean_squared_error, ns_64_bit & number_of_animals) const;
+	void generate_animal_event_method_comparison(std::ostream & o,  double & total_death_mean_squared_error, double & total_expansion_mean_squared_error, double & total_contraction_mean_squared_error, ns_64_bit & death_N, ns_64_bit & expansion_N, ns_64_bit & contraction_N) const;
 	
 	#ifdef NS_GENERATE_IMAGE_STATISTICS
 	void generate_detailed_animal_data_file(const bool output_region_image_data,const ns_capture_sample_region_statistics_set & region_data,std::ostream & o) const;

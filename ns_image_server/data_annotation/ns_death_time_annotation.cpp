@@ -1744,23 +1744,28 @@ std::string ns_out_if_not_zero(const double d){
 		return "";
 	else return ns_to_string(d);
 };
-void ns_death_time_annotation_compiler::generate_animal_event_method_comparison(std::ostream & o, double & total_mean_squared_error, ns_64_bit & number_of_animals) const{
+void ns_death_time_annotation_compiler::generate_animal_event_method_comparison(std::ostream & o, double & total_death_mean_squared_error, double & total_expansion_mean_squared_error, double & total_contraction_mean_squared_error, 
+																								  ns_64_bit & death_N, ns_64_bit & expansion_N, ns_64_bit & contraction_N) const{
 
 	ns_region_metadata::out_JMP_plate_identity_header(o);
 	o << ",position_x,position_y,size_x,size_y,"
 		"Visual Inspection Fast Movement Cessession Time,Visual Inspection Slow Movement Cessession Time,Visual Inspection Death Time,"
 		"Machine Fast Movement Cessation Time,Machine Slow Movement Cessession Time, Machine Death Time,"
-		"Machine-Annotated Worm Count,Hand-Annotated Worm Count, Visual Inspection Excluded, Fully Specified, Machine Error (Days), Machine Error (Hours) \n";
+		"Machine-Annotated Worm Count,Hand-Annotated Worm Count, Visual Inspection Excluded, Fully Specified, Death Error (Days), Expansion Error (Days), Contraction Error (Days) \n";
 	for (ns_region_list::const_iterator p = regions.begin(); p != regions.end(); ++p){
 		for (ns_death_time_annotation_compiler_region::ns_location_list::const_iterator q = p->second.locations.begin(); q != p->second.locations.end(); ++q){
 			if (q->properties.is_excluded() || q->properties.is_censored())
 				continue;
 			unsigned long machine_death(p->second.metadata.time_at_which_animals_had_zero_age),
-						  machine_fast_cess(p->second.metadata.time_at_which_animals_had_zero_age),
-						  machine_slow_cess(p->second.metadata.time_at_which_animals_had_zero_age),
-						  vis_death(p->second.metadata.time_at_which_animals_had_zero_age),
-						  vis_fast_cess(p->second.metadata.time_at_which_animals_had_zero_age),
-						  vis_slow_cess(p->second.metadata.time_at_which_animals_had_zero_age);
+				machine_fast_cess(p->second.metadata.time_at_which_animals_had_zero_age),
+				machine_slow_cess(p->second.metadata.time_at_which_animals_had_zero_age),
+				machine_expansion(p->second.metadata.time_at_which_animals_had_zero_age),
+				machine_contraction(p->second.metadata.time_at_which_animals_had_zero_age),
+				vis_death(p->second.metadata.time_at_which_animals_had_zero_age),
+				vis_fast_cess(p->second.metadata.time_at_which_animals_had_zero_age),
+				vis_slow_cess(p->second.metadata.time_at_which_animals_had_zero_age),
+				vis_expansion(p->second.metadata.time_at_which_animals_had_zero_age),
+				vis_contraction(p->second.metadata.time_at_which_animals_had_zero_age);
 			for (unsigned int i = 0; i < q->annotations.size(); i++){
 				if (q->annotations[i].time.fully_unbounded()){
 					cerr << "Ignoring fully unbounded time interval.\n";
@@ -1781,6 +1786,12 @@ void ns_death_time_annotation_compiler::generate_animal_event_method_comparison(
 						case ns_movement_cessation:
 							machine_death = q->annotations[i].time.period_end;
 							break;
+						case ns_death_associated_expansion_start:
+							machine_expansion = q->annotations[i].time.period_end;
+							break;
+						case ns_death_associated_post_expansion_contraction_start:
+							machine_contraction = q->annotations[i].time.period_end;
+							break;
 					}
 				}
 				else if (q->annotations[i].annotation_source == ns_death_time_annotation::ns_posture_image ||
@@ -1796,35 +1807,60 @@ void ns_death_time_annotation_compiler::generate_animal_event_method_comparison(
 						case ns_movement_cessation:
 							vis_death = q->annotations[i].time.period_end;
 							break;
+						case ns_death_associated_expansion_start:
+							vis_expansion = q->annotations[i].time.period_end;
+							break;
+						case ns_death_associated_post_expansion_contraction_start:
+							vis_contraction = q->annotations[i].time.period_end;
+							break;
 					}
 				}
 			}
 			if (vis_death == 0)
 				continue;
 			p->second.metadata.out_JMP_plate_identity_data(o);
-			bool fully_spec((machine_death > p->second.metadata.time_at_which_animals_had_zero_age && vis_death > p->second.metadata.time_at_which_animals_had_zero_age));
+			bool death_spec((machine_death > p->second.metadata.time_at_which_animals_had_zero_age && vis_death > p->second.metadata.time_at_which_animals_had_zero_age)),
+				expansion_spec((machine_expansion > p->second.metadata.time_at_which_animals_had_zero_age && vis_expansion > p->second.metadata.time_at_which_animals_had_zero_age)),
+				contraction_spec((machine_contraction > p->second.metadata.time_at_which_animals_had_zero_age && vis_contraction > p->second.metadata.time_at_which_animals_had_zero_age));
 			o << "," << q->properties.position.x << "," << q->properties.position.y << "," << q->properties.size.x << "," << q->properties.size.y << ","
-				<< ns_out_if_not_zero((vis_fast_cess - p->second.metadata.time_at_which_animals_had_zero_age)/(60.0*60.0*24.0)) << ","
-				<< ns_out_if_not_zero((vis_slow_cess  - p->second.metadata.time_at_which_animals_had_zero_age)/(60.0*60.0*24.0)) << ","
-				<< ns_out_if_not_zero((vis_death  - p->second.metadata.time_at_which_animals_had_zero_age)/(60.0*60.0*24.0)) << ","
-				<< ns_out_if_not_zero((machine_fast_cess - p->second.metadata.time_at_which_animals_had_zero_age)/(60.0*60.0*24.0)) << ","
-				<< ns_out_if_not_zero((machine_slow_cess - p->second.metadata.time_at_which_animals_had_zero_age)/(60.0*60.0*24.0)) << ","
-				<< ns_out_if_not_zero((machine_death - p->second.metadata.time_at_which_animals_had_zero_age)/(60.0*60.0*24.0)) << ","
+				<< ns_out_if_not_zero((vis_fast_cess - p->second.metadata.time_at_which_animals_had_zero_age) / (60.0*60.0*24.0)) << ","
+				<< ns_out_if_not_zero((vis_slow_cess - p->second.metadata.time_at_which_animals_had_zero_age) / (60.0*60.0*24.0)) << ","
+				<< ns_out_if_not_zero((vis_death - p->second.metadata.time_at_which_animals_had_zero_age) / (60.0*60.0*24.0)) << ","
+				<< ns_out_if_not_zero((vis_expansion - p->second.metadata.time_at_which_animals_had_zero_age) / (60.0*60.0*24.0)) << ","
+				<< ns_out_if_not_zero((vis_contraction - p->second.metadata.time_at_which_animals_had_zero_age) / (60.0*60.0*24.0)) << ","
+				<< ns_out_if_not_zero((machine_fast_cess - p->second.metadata.time_at_which_animals_had_zero_age) / (60.0*60.0*24.0)) << ","
+				<< ns_out_if_not_zero((machine_slow_cess - p->second.metadata.time_at_which_animals_had_zero_age) / (60.0*60.0*24.0)) << ","
+				<< ns_out_if_not_zero((machine_death - p->second.metadata.time_at_which_animals_had_zero_age) / (60.0*60.0*24.0)) << ","
+				<< ns_out_if_not_zero((machine_expansion - p->second.metadata.time_at_which_animals_had_zero_age) / (60.0*60.0*24.0)) << ","
+				<< ns_out_if_not_zero((machine_contraction - p->second.metadata.time_at_which_animals_had_zero_age) / (60.0*60.0*24.0)) << ","
 				<< q->properties.number_of_worms_at_location_marked_by_machine << ","
 				<< q->properties.number_of_worms_at_location_marked_by_hand << ","
-				<< (q->properties.is_excluded()?"1":"0")<< ","
-				<< (fully_spec?"1":"0") << ",";
-			if (!fully_spec){
-				o << ",\n";
+				<< (q->properties.is_excluded() ? "1" : "0") << ",";
+			if (!death_spec)
+				o << ",";
+			else {
+				o << ((double)machine_death - (double)vis_death) / (60.0*60.0*24.0) << ",";
+				death_N++;
+				const double m((machine_death - (double)vis_death) / 60.0);
+				total_death_mean_squared_error += m * m;
 			}
-			else{
-				o << ((double)machine_death - (double)vis_death)/(60.0*60.0*24.0) << ","
-				<< ((double)machine_death - (double)vis_death)/(60.0*24.0) << "\n";
+			if (!expansion_spec)
+				o << ",";
+			else {
+				o << ((double)machine_expansion - (double)vis_expansion) / (60.0*60.0*24.0) << ",";
+				expansion_N++;
+				const double m((machine_expansion - (double)vis_expansion) / 60.0);
+				total_expansion_mean_squared_error += m * m;
+			}
+			if (!contraction_spec)
+				o << ",";
+			else {
+				o << ((double)machine_contraction - (double)vis_contraction) / (60.0*60.0*24.0) << "\n";
+				contraction_N++;
+				const double m((machine_contraction - (double)vis_contraction) / 60.0);
+				total_contraction_mean_squared_error += m * m;
+			}
 
-				number_of_animals++;
-				double m((machine_death - (double)vis_death) / 60.0);
-				total_mean_squared_error += m*m;
-			}
 		}
 	}
 

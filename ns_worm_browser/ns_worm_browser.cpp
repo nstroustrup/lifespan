@@ -1623,36 +1623,46 @@ void ns_worm_learner::compare_machine_and_by_hand_annotations(){
 	ns_image_server_results_subject results_subject;
 	results_subject.experiment_id = data_selector.current_experiment_id();
 	ns_acquire_for_scope<ostream> animal_data_file(image_server.results_storage.animal_event_data(results_subject,"automated_inspected_comparison",sql).output());
-	double overall_msqerr(0);
-	ns_64_bit overall_count(0);
-	death_time_annotation_compiler.generate_animal_event_method_comparison(animal_data_file(), overall_msqerr, overall_count);
-	overall_msqerr /= overall_count;
-	overall_msqerr /= (60 * 24 * 60 * 24);
+	double overall_death_msqerr(0), overall_expansion_msqerr(0), overall_contraction_msqerr(0);
+	ns_64_bit overall_death_count(0), overall_expansion_count(0), overall_contraction_count(0);
+	death_time_annotation_compiler.generate_animal_event_method_comparison(animal_data_file(), overall_death_msqerr, overall_expansion_msqerr, overall_contraction_msqerr, 
+																							overall_death_count, overall_expansion_count, overall_contraction_count);
+	overall_death_msqerr /= (overall_death_count * (60 * 24 * 60 * 24)); 
+	overall_expansion_msqerr /= (overall_expansion_count * (60 * 24 * 60 * 24));
+	overall_contraction_msqerr /= (overall_contraction_count * (60 * 24 * 60 * 24));
 	animal_data_file.release();
 
 	std::string results_text("===Comparrison between Storyboard By-Hand Annotations and Fully-Automated Machine Results===\n");
 	results_text += "Calculated at " + ns_format_time_string_for_human(ns_current_time()) + "\n\n";
 	for (map<std::string, ns_machine_by_hand_comp>::iterator p = per_strain_analysis.begin(); p != per_strain_analysis.end(); p++) {
 		results_text += "**For plates of type " + p->first + " **\n";
-		double local_msqerr(0);
-		ns_64_bit local_count(0);
-		ofstream tmp;
-		p->second.death_time_annotation_compiler.generate_animal_event_method_comparison(tmp, local_msqerr, local_count);
+		double death_msqerr(0), expansion_msqerr(0), contraction_msqerr(0);
+		ns_64_bit death_count(0), expansion_count(0),contraction_count(0); ofstream tmp;
+		p->second.death_time_annotation_compiler.generate_animal_event_method_comparison(tmp, death_msqerr, expansion_msqerr, contraction_msqerr,
+			death_count,expansion_count,contraction_count);
 
-		local_msqerr /= local_count;
-		local_msqerr /= (60*24*60*24);
+		death_msqerr /= (death_count * (60 * 24 * 60 * 24));
+		expansion_msqerr /= (expansion_count * (60 * 24 * 60 * 24));
+		contraction_msqerr /= (contraction_count * (60 * 24 * 60 * 24));
 
-		results_text += "The machine differed from by-hand annotations by\n" + ns_to_string_short(sqrt(local_msqerr),3) + " days on average (mean squared error :" + ns_to_string_short(local_msqerr,3) + " days squared)\n";
-		
+		results_text += "The machine differed from by-hand annotations by:\n"
+			"  [movement]:" + ns_to_string_short(sqrt(death_msqerr), 3) + " days on average (N=" + ns_to_string(death_count) + ")\n"
+			"  [death-associated expansion]:" + ns_to_string_short(sqrt(expansion_msqerr), 3) + " days on average (N=" + ns_to_string(expansion_count) + ")\n"
+			"  [post-death contraction]:" + ns_to_string_short(sqrt(contraction_msqerr), 3) + " days on average (N=" + ns_to_string(contraction_count) + ")\n";
+		/*
 		bool enough_worms = local_count < 50;
 		if (enough_worms)
 			results_text += "Only " + ns_to_string(local_count) + " individuals were annotated by hand.  It is recommended that you annotate more individuals of this type and re-run this analysis, to produce a more reliable parameter set.\n";
 		else results_text += ns_to_string(local_count) + " individuals were annotated by hand to produce these estimates.\n";
-		results_text += "\n";
+		*/
+			results_text += "\n";
 	}
 
-	results_text += "**For all plates in this experiment **\n";
-	results_text += "The machine differed from by-hand annotations by\n" + ns_to_string_short(sqrt(overall_msqerr),3) + " days on average (mean squared error :" + ns_to_string_short(overall_msqerr,3) + " square days\n";
+	results_text += "**For all plates in this experiment **\n"; 
+	results_text += "The machine differed from by-hand annotations by:\n"
+		"  [movement]:" + ns_to_string_short(sqrt(overall_death_msqerr), 3) + " days on average (N=" + ns_to_string(overall_death_count) + ")\n"
+		"  [death-associated expansion]:" + ns_to_string_short(sqrt(overall_expansion_msqerr), 3) + " days on average (N=" + ns_to_string(overall_expansion_count) + ")\n"
+		"  [post-death contraction]:" + ns_to_string_short(sqrt(overall_contraction_msqerr), 3) + " days on average (N=" + ns_to_string(overall_contraction_count) + ")\n";
 	ns_text_dialog td;
 	td.grid_text.push_back(results_text);
 	td.title = "Results";

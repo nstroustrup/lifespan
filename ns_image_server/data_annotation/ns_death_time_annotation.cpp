@@ -1726,7 +1726,7 @@ void ns_death_time_annotation_compiler::generate_detailed_animal_data_file(const
 
 					o << ",,";
 					o << ",,";
-					o << ",,"; //detah position
+					o << ",,"; //death position
 					o << ",,,";	//likelihood group and path
 					o << ",,"; //details
 					o << "non-location_event,";
@@ -1749,9 +1749,9 @@ void ns_death_time_annotation_compiler::generate_animal_event_method_comparison(
 
 	ns_region_metadata::out_JMP_plate_identity_header(o);
 	o << ",position_x,position_y,size_x,size_y,"
-		"Visual Inspection Fast Movement Cessession Time,Visual Inspection Slow Movement Cessession Time,Visual Inspection Death Time,"
-		"Machine Fast Movement Cessation Time,Machine Slow Movement Cessession Time, Machine Death Time,"
-		"Machine-Annotated Worm Count,Hand-Annotated Worm Count, Visual Inspection Excluded, Fully Specified, Death Error (Days), Expansion Error (Days), Contraction Error (Days) \n";
+		"By Hand Inspection Fast Movement Cessession Time,By Hand Inspection Slow Movement Cessession Time,By Hand Inspection Death Time,By Hand Death-Associated Expansion Time, By Hand Post-Mortem Contraction Time,"
+		"Machine Fast Movement Cessation Time,Machine Slow Movement Cessession Time, Machine Death Time,Machine Death-Associated Expansion Time, Machine Post-Mortem Contraction Time,"
+		"Machine-Annotated Worm Count,Hand-Annotated Worm Count, Visual Inspection Excluded, Machine Death Error (Days), Machine Expansion Error (Days), Machine Contraction Error (Days) \n";
 	for (ns_region_list::const_iterator p = regions.begin(); p != regions.end(); ++p){
 		for (ns_death_time_annotation_compiler_region::ns_location_list::const_iterator q = p->second.locations.begin(); q != p->second.locations.end(); ++q){
 			if (q->properties.is_excluded() || q->properties.is_censored())
@@ -1836,30 +1836,27 @@ void ns_death_time_annotation_compiler::generate_animal_event_method_comparison(
 				<< q->properties.number_of_worms_at_location_marked_by_machine << ","
 				<< q->properties.number_of_worms_at_location_marked_by_hand << ","
 				<< (q->properties.is_excluded() ? "1" : "0") << ",";
-			if (!death_spec)
-				o << ",";
-			else {
-				o << ((double)machine_death - (double)vis_death) / (60.0*60.0*24.0) << ",";
-				death_N++;
+			if (death_spec){
 				const double m((machine_death - (double)vis_death) / 60.0);
+				o << m / (60.0 * 24.0);
+				death_N++;
 				total_death_mean_squared_error += m * m;
 			}
-			if (!expansion_spec)
-				o << ",";
-			else {
-				o << ((double)machine_expansion - (double)vis_expansion) / (60.0*60.0*24.0) << ",";
-				expansion_N++;
+			o << ",";
+			if (expansion_spec){
 				const double m((machine_expansion - (double)vis_expansion) / 60.0);
+				o << m / (60.0 * 24.0);
+				expansion_N++;
 				total_expansion_mean_squared_error += m * m;
 			}
-			if (!contraction_spec)
-				o << ",";
-			else {
-				o << ((double)machine_contraction - (double)vis_contraction) / (60.0*60.0*24.0) << "\n";
-				contraction_N++;
+			o << ",";
+			if (contraction_spec) {
 				const double m((machine_contraction - (double)vis_contraction) / 60.0);
+				o << m/( 60.0 * 24.0);
+				contraction_N++;
 				total_contraction_mean_squared_error += m * m;
 			}
+			o << "\n";
 
 		}
 	}

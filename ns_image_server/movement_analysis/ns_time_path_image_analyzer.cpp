@@ -2304,8 +2304,9 @@ void ns_analyzed_image_time_path::write_detailed_movement_quantification_analysi
 		"Registration Offset X, Registration Offset Y, Registration Offset Magnitude,"
 		"Absolute Time, Age Relative Time,"
 		"Machine-Annotated Movement State,By Hand Annotated Movement State,"
-		"Machine Death Relative Time, Machine Slow Movement Cessation Relative Time, Machine Fast Movement Cessation Relative Time,Machine Death-Associated Expansion Time,"
-		"By Hand Death Relative Time, By Hand Slow Movement Cessation Relative Time, By Hand Fast Movement Cessation Relative Time,By Hand Death-Associated Expansion Time,"
+		"Machine Death Relative Time, Machine Slow Movement Cessation Relative Time, Machine Fast Movement Cessation Relative Time,Machine Death-Associated Expansion Time,Machine Post-mortem Contraction Time,"
+		"By Hand Death Relative Time, By Hand Slow Movement Cessation Relative Time, By Hand Fast Movement Cessation Relative Time,By Hand Death-Associated Expansion Time,By Hand Post-mortem Contraction Time,"
+		"Event-Aligned time,"
 		"Movement Sum, Movement Score, Denoised Movement Score,"
 		"Spatially Averaged Movement Sum Cropped,"
 		"Spatially Averaged Movement Sum Uncropped,"
@@ -2361,6 +2362,44 @@ ns_death_time_annotation_time_interval ns_analyzed_image_time_path::machine_even
 	}
 	return state_entrance_interval_time(interval);
 }
+
+//used to time warp time series so that all the transitions between movement states match up.
+class ns_time_series_event_aligner {
+public:
+	void calculate_alignment_dts(const std::vector<ns_death_time_annotation_time_interval>& intervals) {
+		offsets.resize(0);
+		offsets.resize(intervals.size(), 0);
+		dt.resize(0);
+		dt.resize(intervals.size(), 0);
+		for (unsigned long int i = 0; i < intervals.size(); i++) {
+			if (intervals[i].period_end_was_not_observed)
+				continue;
+			offsets[i] = intervals[i].period_end;
+			if (i > 0 && offsets[i - 1] != 0)
+				dt[i - 1] = offsets[i] - offsets[i - 1];
+		}
+	}
+	static double event_reference_point(const ns_movement_state& state) {
+		switch (state) {
+		case ns_movement_fast: return 0;
+		case ns_movement_slow: return 1;
+		case ns_movement_posture: return 2;
+		case ns_movement_stationary: return 3;
+		case ns_movement_death_associated_expansion: return 4;
+		case ns_movement_death_associated_post_expansion_contraction: return 5;
+		default: throw ns_ex("Unknown reference point state");
+		}
+	}
+	double rel_dt(const ns_movement_state& state, const unsigned long & time) const{
+		if (offsets[state] == 0)
+			return -1;
+		return event_reference_point(state) + (time - offsets[(int)state]) / dt[(int)state];
+	}
+private:
+	std::vector<unsigned long> offsets;
+	std::vector<double> dt;
+};
+
 void ns_analyzed_image_time_path::write_detailed_movement_quantification_analysis_data(const ns_region_metadata & m, const unsigned long group_id, const unsigned long path_id, std::ostream & o, const bool output_only_elements_with_hand,const bool abbreviated_time_series)const{
 	if (output_only_elements_with_hand && by_hand_annotation_event_times[(int)ns_movement_cessation].period_end_was_not_observed)
 		return;
@@ -2403,6 +2442,9 @@ void ns_analyzed_image_time_path::write_detailed_movement_quantification_analysi
 	if (!abbreviated_time_series)
 		end_index = elements.size();
 
+	ns_time_series_event_aligner event_aligner;
+	event_aligner.calculate_alignment_dts(by_hand_annotation_event_times);
+
 	for (unsigned long k = 1; k < end_index; k++){
 		m.out_JMP_plate_identity_data_short(o);
 		o << ",";
@@ -2430,10 +2472,13 @@ void ns_analyzed_image_time_path::write_detailed_movement_quantification_analysi
 			<< ns_calc_rel_time_by_index(elements[k].absolute_time,state_intervals[(int)ns_movement_posture],*this) << ","
 			<< ns_calc_rel_time_by_index(elements[k].absolute_time,state_intervals[(int)ns_movement_slow],*this) << ","
 			<< ns_calc_rel_time_by_index(elements[k].absolute_time, state_intervals[(int)ns_movement_death_associated_expansion], *this) << ","
+			<< ns_calc_rel_time_by_index(elements[k].absolute_time, state_intervals[(int)ns_movement_death_associated_post_expansion_contraction], *this) << ","
 			<< ns_output_interval_difference(elements[k].absolute_time,by_hand_annotation_event_times[(int)ns_movement_cessation]) << ","
 			<< ns_output_interval_difference(elements[k].absolute_time,by_hand_annotation_event_times[(int)ns_translation_cessation]) << ","
 			<< ns_output_interval_difference(elements[k].absolute_time,by_hand_annotation_event_times[(int)ns_fast_movement_cessation]) << ","
-			<< ns_output_interval_difference(elements[k].absolute_time,by_hand_annotation_event_times[(int)ns_death_associated_expansion_stop]) << ",";
+			<< ns_output_interval_difference(elements[k].absolute_time,by_hand_annotation_event_times[(int)ns_death_associated_expansion_stop]) << ","
+			<< ns_output_interval_difference(elements[k].absolute_time, by_hand_annotation_event_times[(int)ns_movement_death_associated_post_expansion_contraction]) << ","
+			<< event_aligner.rel_dt(by_hand_movement_state(elements[k].absolute_time),elements[k].absolute_time) << ",";
 
 		
 			o << elements[k].measurements.interframe_time_scaled_movement_sum << ",";                                                               	

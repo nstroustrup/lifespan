@@ -358,13 +358,13 @@ void ns_worm_learner::create_feature_time_series(const std::string & directory){
 void ns_worm_learner::load_current_experiment_movement_results(const ns_death_time_annotation_set::ns_annotation_type_to_load & annotations_to_load, const unsigned long experiment_id){		
 	if (data_selector.current_experiment_id() == 0)
 		throw ns_ex("ns_worm_learner::No experiment selected!");
-	
-	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
+
+	ns_sql& sql(get_sql_connection());
 	//if we haven't loaded any data yet, load it
 //	if (movement_results.experiment_id() != experiment_id || annotations_to_load != last_annotation_type_loaded){
 		movement_results.clear();
 		
-		movement_results.load(annotations_to_load,0,0,experiment_id,sql());
+		movement_results.load(annotations_to_load,0,0,experiment_id,sql);
 		last_annotation_type_loaded = annotations_to_load;
 		movement_data_is_strictly_decreasing_ = false;
 //	}
@@ -372,11 +372,11 @@ void ns_worm_learner::load_current_experiment_movement_results(const ns_death_ti
 /*	else{
 		for (unsigned int i = 0; i < movement_results.samples.size(); i++){
 			for (unsigned int j = 0; j < movement_results.samples[i].regions.size(); j++)
-				movement_results.samples[i].regions[j].metadata.load_from_db(movement_results.samples[i].regions[j].metadata.region_id,"",sql());
+				movement_results.samples[i].regions[j].metadata.load_from_db(movement_results.samples[i].regions[j].metadata.region_id,"",sql);
 		
 		}
 	}*/
-	sql.release();
+	
 }
 
 inline double ns_calc_gaussian_neighboorhood(const ns_image_standard & im, const long khr, const long x, const long y, double (*gk)[50]){
@@ -571,17 +571,17 @@ public:
 };
 
 void ns_worm_learner::generate_scanner_report(unsigned long first_experiment_time, unsigned long last_experiment_time){
-	
-	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
+
+	ns_sql& sql(get_sql_connection());
 	map<string,ns_device_history> devices;
 	vector<ns_experiment_error_data> experiments;
 	
 	//get devices
 	
 	{
-		sql() << "SELECT name,id FROM devices";
+		sql << "SELECT name,id FROM devices";
 		ns_sql_result res;
-		sql().get_rows(res);
+		sql.get_rows(res);
 		for (unsigned int i = 0; i < res.size(); i++) 
 			devices[res[i][0]] = ns_device_history(atol(res[i][1].c_str()),res[i][0]);
 	}
@@ -589,18 +589,18 @@ void ns_worm_learner::generate_scanner_report(unsigned long first_experiment_tim
 	//get experiments
 	{
 		ns_sql_result res;
-		sql() << "SELECT id, name FROM experiments WHERE first_time_point >= " << first_experiment_time << " AND first_time_point <= " << last_experiment_time;
-		sql().get_rows(res);
+		sql << "SELECT id, name FROM experiments WHERE first_time_point >= " << first_experiment_time << " AND first_time_point <= " << last_experiment_time;
+		sql.get_rows(res);
 		
 		experiments.resize(res.size());
 		for (unsigned int i = 0; i < res.size(); i++){
-			sql() << "SELECT id,name, censored,description,device_name FROM capture_samples WHERE experiment_id = " << res[i][0];
+			sql << "SELECT id,name, censored,description,device_name FROM capture_samples WHERE experiment_id = " << res[i][0];
 			ns_sql_result res2;
-			sql().get_rows(res2);
+			sql.get_rows(res2);
 			for (unsigned int j = 0; j < res2.size(); j++){	
-				sql() << "SELECT id,name, censored, details,strain,strain_condition_1,strain_condition_2 FROM sample_region_image_info WHERE sample_id = " << res2[j][0];
+				sql << "SELECT id,name, censored, details,strain,strain_condition_1,strain_condition_2 FROM sample_region_image_info WHERE sample_id = " << res2[j][0];
 				ns_sql_result res3;
-				sql().get_rows(res3);
+				sql.get_rows(res3);
 				unsigned long s = experiments[i].regions.size();
 				experiments[i].regions.resize(s + res3.size());
 				for (unsigned int k = 0; k < res3.size(); k++){
@@ -633,8 +633,8 @@ void ns_worm_learner::generate_scanner_report(unsigned long first_experiment_tim
 	sub.device_name = "all_devices";
 	sub.start_time = first_experiment_time;
 	sub.stop_time = last_experiment_time;
-	ns_image_server_results_file f(image_server.results_storage.device_history(sub,sql()));
-	sql.release();
+	ns_image_server_results_file f(image_server.results_storage.device_history(sub,sql));
+	
 	ns_acquire_for_scope<ostream> o(f.output());
 	ns_device_history::write_header(o());
 	for (map<string,ns_device_history>::const_iterator p = devices.begin(); p != devices.end(); p++)
@@ -734,7 +734,7 @@ void ns_worm_learner::generate_morphology_statistics(const ns_64_bit & experimen
 
 void ns_worm_learner::output_region_statistics(const unsigned long experiment_id, const unsigned long experiment_group_id){
 
-	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
+	ns_sql& sql(get_sql_connection());
 	vector<ns_64_bit> experiment_ids;
 	vector<string> experiment_names;
 	const bool multi_experiment(experiment_id == 0);
@@ -745,9 +745,9 @@ void ns_worm_learner::output_region_statistics(const unsigned long experiment_id
 		if (experiment_group_id == 0)
 			throw ns_ex("ns_worm_learner::output_region_statistics()::No experiment group id provided!");
 		
-		sql() << "SELECT id,name FROM experiments WHERE group_id = " << experiment_group_id << " AND hidden = 0 ";
+		sql << "SELECT id,name FROM experiments WHERE group_id = " << experiment_group_id << " AND hidden = 0 ";
 		ns_sql_result res;
-		sql().get_rows(res);
+		sql.get_rows(res);
 		experiment_ids.resize(res.size());
 		experiment_names.resize(res.size());
 		for (unsigned int i = 0; i < res.size(); i++){
@@ -758,7 +758,7 @@ void ns_worm_learner::output_region_statistics(const unsigned long experiment_id
 	
 	ns_image_server_results_subject sub;
 	sub.experiment_id = experiment_id;
-	ns_image_server_results_file f(image_server.results_storage.capture_region_image_statistics(sub,sql(),multi_experiment));
+	ns_image_server_results_file f(image_server.results_storage.capture_region_image_statistics(sub,sql,multi_experiment));
 	
 	ns_acquire_for_scope<ostream> o(f.output());
 	ns_capture_sample_region_data::output_region_data_in_jmp_format_header("",o());
@@ -767,7 +767,7 @@ void ns_worm_learner::output_region_statistics(const unsigned long experiment_id
 		if (experiment_names.size() > 0)
 			cout << "Processing " << experiment_names[i] << "...\n";
 		ns_capture_sample_region_statistics_set set;
-		set.load_whole_experiment(experiment_ids[i],sql(),false);
+		set.load_whole_experiment(experiment_ids[i],sql,false);
 
 		for (unsigned int j = 0; j < set.regions.size(); j++)
 			set.regions[j].output_region_data_in_jmp_format(o());
@@ -775,23 +775,23 @@ void ns_worm_learner::output_region_statistics(const unsigned long experiment_id
 	}
 	
 	o.release();
-	sql.release();
+	
 }
 
 
 void ns_worm_learner::output_device_timing_data(const unsigned long experiment_id,const unsigned long experiment_group_id){
 	bool multiple_experiments_requested=(experiment_id==0);
 	bool experiment_group_id_requested=(experiment_group_id!=0);
-	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
+	ns_sql & sql(get_sql_connection());
 
 	std::vector<unsigned long> experiment_ids;
 	std::vector<std::string> experiment_names;
 	if (multiple_experiments_requested){
-			sql() << "SELECT id FROM experiments WHERE hidden = 0";
+			sql << "SELECT id FROM experiments WHERE hidden = 0";
 		if (experiment_group_id_requested)
-			sql() << " AND group_id = " << experiment_group_id;
+			sql << " AND group_id = " << experiment_group_id;
 		ns_sql_result res;
-		sql().get_rows(res);
+		sql.get_rows(res);
 		experiment_ids.resize(res.size());
 		for (unsigned int i = 0; i < res.size(); i++){
 			experiment_ids[i] = atol(res[i][0].c_str());
@@ -805,7 +805,7 @@ void ns_worm_learner::output_device_timing_data(const unsigned long experiment_i
 	if (!multiple_experiments_requested)
 		sub.experiment_id = experiment_id;
 	
-	ns_image_server_results_file f(image_server.results_storage.capture_sample_image_statistics(sub,sql(),multiple_experiments_requested));
+	ns_image_server_results_file f(image_server.results_storage.capture_sample_image_statistics(sub,sql,multiple_experiments_requested));
 
 	ns_acquire_for_scope<ostream> o(f.output());
 
@@ -816,7 +816,7 @@ void ns_worm_learner::output_device_timing_data(const unsigned long experiment_i
 	ns_capture_sample_image_statistics::output_jmp_header(o());
 	for (unsigned int i = 0 ; i < experiment_ids.size(); i++){
 		ns_capture_sample_statistics_set set;
-		set.load_whole_experiment(experiment_ids[i],sql());
+		set.load_whole_experiment(experiment_ids[i],sql);
 		
 		for (unsigned int j = 0; j < set.samples.size(); j++){
 			cout << (100 * j) / set.samples.size() << "%...";
@@ -825,7 +825,7 @@ void ns_worm_learner::output_device_timing_data(const unsigned long experiment_i
 		}
 	}
 	o.release();
-	sql.release();
+	
 }
 
 
@@ -918,10 +918,10 @@ void ns_worm_learner::generate_survival_curve_from_hand_annotations(){
 		throw ns_ex("No experiment selected.");
 
 	ns_death_time_annotation_compiler compiler;
-	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
+	ns_sql& sql(get_sql_connection());
 	ns_hand_annotation_loader loader;
-	//loader.load_region_annotations(ns_death_time_annotation_set::ns_censoring_and_movement_transitions,13899,sql());
-	loader.load_experiment_annotations(ns_death_time_annotation_set::ns_censoring_and_movement_transitions,data_selector.current_experiment_id(),sql());
+	//loader.load_region_annotations(ns_death_time_annotation_set::ns_censoring_and_movement_transitions,13899,sql);
+	loader.load_experiment_annotations(ns_death_time_annotation_set::ns_censoring_and_movement_transitions,data_selector.current_experiment_id(),sql);
 	ns_lifespan_experiment_set set;
 	loader.annotations.generate_survival_curve_set(set,ns_death_time_annotation::ns_only_by_hand_annotations,false,false);
 
@@ -932,23 +932,23 @@ void ns_worm_learner::generate_survival_curve_from_hand_annotations(){
 	ns_image_server_results_subject results_subject;
 	results_subject.experiment_id = data_selector.current_experiment_id();
 
-	ns_acquire_for_scope<ostream> survival_jmp_file(image_server.results_storage.survival_data(results_subject,"by_hand","by_hand_interval_annotation_jmp",".csv",sql()).output());
+	ns_acquire_for_scope<ostream> survival_jmp_file(image_server.results_storage.survival_data(results_subject,"by_hand","by_hand_interval_annotation_jmp",".csv",sql).output());
 	set.output_JMP_file(ns_death_time_annotation::ns_only_by_hand_annotations,ns_lifespan_experiment_set::ns_output_event_intervals,ns_lifespan_experiment_set::ns_days,survival_jmp_file(),ns_lifespan_experiment_set::ns_simple);
 	survival_jmp_file.release();
-	ns_acquire_for_scope<ostream> survival_jmp_file2(image_server.results_storage.survival_data(results_subject,"by_hand","by_hand_event_annotation_jmp",".csv",sql()).output());
+	ns_acquire_for_scope<ostream> survival_jmp_file2(image_server.results_storage.survival_data(results_subject,"by_hand","by_hand_event_annotation_jmp",".csv",sql).output());
 	set.output_JMP_file(ns_death_time_annotation::ns_only_by_hand_annotations,ns_lifespan_experiment_set::ns_output_single_event_times,ns_lifespan_experiment_set::ns_days,survival_jmp_file2(),ns_lifespan_experiment_set::ns_simple);
 	survival_jmp_file2.release();
-	sql.release();
+	
 }
 
 
 void ns_worm_learner::generate_training_set_from_by_hand_annotation(){
 	if (!data_selector.experiment_selected())
 		throw ns_ex("No experiment selected.");
-	
-	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
+
+	ns_sql& sql(get_sql_connection());
 	ns_hand_annotation_loader loader;
-	loader.load_experiment_annotations(ns_death_time_annotation_set::ns_censoring_and_movement_transitions,data_selector.current_experiment_id(),sql());
+	loader.load_experiment_annotations(ns_death_time_annotation_set::ns_censoring_and_movement_transitions,data_selector.current_experiment_id(),sql);
 
 	ns_death_time_annotation_compiler & death_time_annotation_compiler(loader.annotations);
 
@@ -971,13 +971,13 @@ void ns_worm_learner::generate_training_set_from_by_hand_annotation(){
 	unsigned long i(1);
 	for (ns_death_time_annotation_compiler::ns_region_list::iterator p = death_time_annotation_compiler.regions.begin(); p != death_time_annotation_compiler.regions.end(); ++p){
 		try{
-			ns_worm_training_set_image::generate(p->second,im,sql());
+			ns_worm_training_set_image::generate(p->second,im,sql);
 		
 			results_subject.sample_name = p->second.metadata.sample_name;
 			results_subject.sample_id =  0;
 			results_subject.region_name = p->second.metadata.region_name;
 			results_subject.region_id =  p->second.metadata.region_id;
-			ns_image_storage_reciever_handle<ns_8_bit> out(image_server.results_storage.machine_learning_training_set_image(results_subject,1024,sql()));
+			ns_image_storage_reciever_handle<ns_8_bit> out(image_server.results_storage.machine_learning_training_set_image(results_subject,1024,sql));
 			cerr << "\nWriting " << p->second.metadata.sample_name << "::" << p->second.metadata.region_name << ": (" << i << "/" << death_time_annotation_compiler.regions.size() << ")\n";
 			im.pump(out.output_stream(),1024);
 		}
@@ -985,7 +985,7 @@ void ns_worm_learner::generate_training_set_from_by_hand_annotation(){
 			cerr << "Could not process region " << p->second.metadata.sample_name << "::" << p->second.metadata.region_name << ": " << ex.text() << "\n";
 		}
 	}
-	sql.release();
+	
 }
 
 
@@ -1204,11 +1204,11 @@ void ns_handle_pair(const ns_random_picker_type::return_type & d1, const ns_rand
 	worms.means.add(mmean_a,d1.second);
 }
 void ns_worm_learner::simulate_multiple_worm_clumps(const bool use_waiting_time_cropping,const bool require_nearly_slow_moving){
-	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
+	ns_sql& sql(get_sql_connection());
 	load_current_experiment_movement_results(ns_death_time_annotation_set::ns_censoring_and_movement_transitions,data_selector.current_experiment_id());
 	ns_image_server::ns_posture_analysis_model_cache::const_handle_t handle;
 	image_server.get_posture_analysis_model_for_region(
-		(*movement_results.samples.begin()->regions.begin())->metadata.region_id, handle, sql());
+		(*movement_results.samples.begin()->regions.begin())->metadata.region_id, handle, sql);
 	unsigned long wait_time = handle().model_specification.threshold_parameters.permanance_time_required_in_seconds;
 	handle.release();
 	wait_time=24*60*60;
@@ -1246,7 +1246,7 @@ void ns_worm_learner::simulate_multiple_worm_clumps(const bool use_waiting_time_
 				compiler.add(movement_results.samples[i].regions[j]->death_time_annotation_set,movement_results.samples[i].regions[j]->metadata);
 
 				ns_hand_annotation_loader loader;
-				loader.load_region_annotations(ns_death_time_annotation_set::ns_censoring_and_movement_transitions,movement_results.samples[i].regions[j]->metadata.region_id,sql());
+				loader.load_region_annotations(ns_death_time_annotation_set::ns_censoring_and_movement_transitions,movement_results.samples[i].regions[j]->metadata.region_id,sql);
 				compiler.add(loader.annotations);
 				unsigned long region_count_id(0);
 				for (ns_death_time_annotation_compiler::ns_region_list::iterator p = compiler.regions.begin(); p != compiler.regions.end(); p++){
@@ -1312,7 +1312,7 @@ void ns_worm_learner::simulate_multiple_worm_clumps(const bool use_waiting_time_
 		fn+="=require_nearly_slow_moving";
 	else fn+="=do_not_require_nearly_slow_moving";
 
-	ns_acquire_for_scope<ostream> o(image_server.results_storage.survival_data(results_subject,"",fn,"csv",sql()).output());
+	ns_acquire_for_scope<ostream> o(image_server.results_storage.survival_data(results_subject,"",fn,"csv",sql).output());
 	ns_lifespan_experiment_set singles,
 							   twos,
 							   threes,
@@ -1637,7 +1637,8 @@ void ns_worm_learner::compare_machine_and_by_hand_annotations(){
 	for (map<std::string, ns_machine_by_hand_comp>::iterator p = per_strain_analysis.begin(); p != per_strain_analysis.end(); p++) {
 		results_text += "**For plates of type " + p->first + " **\n";
 		double death_msqerr(0), expansion_msqerr(0), contraction_msqerr(0);
-		ns_64_bit death_count(0), expansion_count(0),contraction_count(0); ofstream tmp;
+		ns_64_bit death_count(0), expansion_count(0),contraction_count(0);
+		ofstream tmp;
 		p->second.death_time_annotation_compiler.generate_animal_event_method_comparison(tmp, death_msqerr, expansion_msqerr, contraction_msqerr,
 			death_count,expansion_count,contraction_count);
 
@@ -1648,7 +1649,7 @@ void ns_worm_learner::compare_machine_and_by_hand_annotations(){
 		results_text += "The machine differed from by-hand annotations by:\n"
 			"  [movement]:" + ns_to_string_short(sqrt(death_msqerr), 3) + " days on average (N=" + ns_to_string(death_count) + ")\n"
 			"  [death-associated expansion]:" + ns_to_string_short(sqrt(expansion_msqerr), 3) + " days on average (N=" + ns_to_string(expansion_count) + ")\n"
-			"  [post-death contraction]:" + ns_to_string_short(sqrt(contraction_msqerr), 3) + " days on average (N=" + ns_to_string(contraction_count) + ")\n";
+			"  [post-mortem contraction]:" + ns_to_string_short(sqrt(contraction_msqerr), 3) + " days on average (N=" + ns_to_string(contraction_count) + ")\n";
 		/*
 		bool enough_worms = local_count < 50;
 		if (enough_worms)
@@ -1662,7 +1663,7 @@ void ns_worm_learner::compare_machine_and_by_hand_annotations(){
 	results_text += "The machine differed from by-hand annotations by:\n"
 		"  [movement]:" + ns_to_string_short(sqrt(overall_death_msqerr), 3) + " days on average (N=" + ns_to_string(overall_death_count) + ")\n"
 		"  [death-associated expansion]:" + ns_to_string_short(sqrt(overall_expansion_msqerr), 3) + " days on average (N=" + ns_to_string(overall_expansion_count) + ")\n"
-		"  [post-death contraction]:" + ns_to_string_short(sqrt(overall_contraction_msqerr), 3) + " days on average (N=" + ns_to_string(overall_contraction_count) + ")\n";
+		"  [post-mortem contraction]:" + ns_to_string_short(sqrt(overall_contraction_msqerr), 3) + " days on average (N=" + ns_to_string(overall_contraction_count) + ")\n";
 	ns_text_dialog td;
 	td.grid_text.push_back(results_text);
 	td.title = "Results";
@@ -1678,15 +1679,15 @@ void ns_worm_learner::generate_scanner_lifespan_statistics(bool use_by_hand_cens
 	ofstream o(output_filename.c_str());
 	if (o.fail())
 		throw ns_ex("Could not open ") << output_filename;
-	
-	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
+
+	ns_sql& sql(get_sql_connection());
 
 	for (unsigned int e = 0; e < experiment_ids.size(); e++){
 
 		
 		ns_image_server_results_subject results_subject;
 		results_subject.experiment_id = experiment_ids[e];
-		ns_image_server_results_file results_file(image_server.results_storage.survival_data(results_subject,"summary","machine_summary_xml","xml",sql()));
+		ns_image_server_results_file results_file(image_server.results_storage.survival_data(results_subject,"summary","machine_summary_xml","xml",sql));
 		
 		ns_lifespan_experiment_set set;
 
@@ -1718,7 +1719,7 @@ void ns_worm_learner::generate_scanner_lifespan_statistics(bool use_by_hand_cens
 			}
 			if (use_by_hand_censoring){
 				ns_hand_annotation_loader loader;
-				loader.load_experiment_annotations(ns_death_time_annotation_set::ns_censoring_data,experiment_ids[e],sql());
+				loader.load_experiment_annotations(ns_death_time_annotation_set::ns_censoring_data,experiment_ids[e],sql);
 				survival_curve_compiler.add(loader.annotations);
 			}
 
@@ -1739,7 +1740,7 @@ void ns_worm_learner::generate_scanner_lifespan_statistics(bool use_by_hand_cens
 
 
 	}
-	sql.release();
+	
 
 	compiler.save_to_disk(o);
 	o.close();
@@ -2522,7 +2523,7 @@ struct ns_hmm_cross_validation_set {
 void ns_worm_learner::generate_experiment_movement_image_quantification_analysis_data(ns_movement_quantification_type  detail_level, const ns_optimization_subject & subject){
 	bool run_hmm_cross_validation(true);
 	const std::string experiment_name(data_selector.current_experiment_name());
-	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
+	ns_sql & sql(get_sql_connection());
 
 	ns_64_bit experiment_id = data_selector.current_experiment_id();
 	ns_64_bit plate_id = 0;
@@ -2561,7 +2562,7 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 			suffix += m.plate_type_summary("-",true);
 			
 		}
-		o_all.attach(image_server.results_storage.time_path_image_analysis_quantification(sub,"detailed" + suffix,true,sql(),detail_level==ns_quantification_abbreviated_detailed,false).output());
+		o_all.attach(image_server.results_storage.time_path_image_analysis_quantification(sub,"detailed" + suffix,true,sql,detail_level==ns_quantification_abbreviated_detailed,false).output());
 	
 
 	}
@@ -2585,21 +2586,21 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 	if (detail_level == ns_quantification_detailed){
 		bool header_written(false);
 		//if we're loading detailed information, there is so much data we load it from files created during movement analysis.
-		sql() << "SELECT r.id, r.name, s.name FROM sample_region_image_info as r, capture_samples as s WHERE r.sample_id = s.id AND s.experiment_id = " << experiment_id
+		sql << "SELECT r.id, r.name, s.name FROM sample_region_image_info as r, capture_samples as s WHERE r.sample_id = s.id AND s.experiment_id = " << experiment_id
 			  << " AND r.censored = 0 AND r.excluded_from_analysis = 0 AND s.censored = 0 AND s.excluded_from_analysis=0";
 		ns_sql_result res;
-		sql().get_rows(res);
+		sql.get_rows(res);
 		for (unsigned int i = 0; i < res.size(); i++){
 			cerr << (100*i)/res.size() << "%...";
 			ns_image_server_results_subject sub;
 			sub.region_id = atol(res[i][0].c_str());
 			if (data_selector.strain_selected()){
 				ns_region_metadata r_m;
-				r_m.load_from_db(sub.region_id,"",sql());
+				r_m.load_from_db(sub.region_id,"",sql);
 				if (!r_m.matches(ns_region_metadata::ns_strain_and_conditions_1_2_and_3,m))
 					continue;
 			}
-			ns_acquire_for_scope<istream> in(image_server.results_storage.time_path_image_analysis_quantification(sub,"detailed",false,sql(),detail_level==ns_quantification_abbreviated_detailed,false).input());
+			ns_acquire_for_scope<istream> in(image_server.results_storage.time_path_image_analysis_quantification(sub,"detailed",false,sql,detail_level==ns_quantification_abbreviated_detailed,false).input());
 			if (in.is_null()){
 				cerr << "Could not load cached movement quantification analysis for " << res[i][2] << "::" << res[i][1] << "\n";
 				continue;
@@ -2632,8 +2633,8 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 		//since there is less data here, we calculate it on the fly.
 		bool header_written(false);
 		if (plate_id == 0)
-		movement_results.load(ns_death_time_annotation_set::ns_censoring_and_movement_transitions,0,0,experiment_id,sql(),false);
-		else movement_results.load(ns_death_time_annotation_set::ns_censoring_and_movement_transitions, plate_id, 0, experiment_id, sql(), false);
+		movement_results.load(ns_death_time_annotation_set::ns_censoring_and_movement_transitions,0,0,experiment_id,sql,false);
+		else movement_results.load(ns_death_time_annotation_set::ns_censoring_and_movement_transitions, plate_id, 0, experiment_id, sql, false);
 
 		
 		for (unsigned int i = 0; i < movement_results.samples.size(); i++) {
@@ -2671,7 +2672,7 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 															experiment_id,
 															movement_results.samples[i].regions[j]->metadata.experiment_name,
 															movement_results.samples[i].regions[j]->metadata,
-															sql());
+															sql);
 				if (detail_level == ns_quantification_detailed_with_by_hand ||  
 					detail_level == ns_build_worm_markov_posture_model_from_by_hand_annotations){
 					//skip regions without by hand movement annotations
@@ -2700,17 +2701,17 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 				}
 
 				movement_results.samples[i].regions[j]->contains_a_by_hand_death_time_annotation = true;
-				movement_results.samples[i].regions[j]->time_path_solution.load_from_db(movement_results.samples[i].regions[j]->metadata.region_id,sql(),true);
+				movement_results.samples[i].regions[j]->time_path_solution.load_from_db(movement_results.samples[i].regions[j]->metadata.region_id,sql,true);
 				ns_posture_analysis_model dummy_model(ns_posture_analysis_model::dummy());
 				const ns_posture_analysis_model * posture_analysis_model(&dummy_model); 
 				ns_image_server::ns_posture_analysis_model_cache::const_handle_t handle;
-					image_server.get_posture_analysis_model_for_region(movement_results.samples[i].regions[j]->metadata.region_id, handle, sql());
+					image_server.get_posture_analysis_model_for_region(movement_results.samples[i].regions[j]->metadata.region_id, handle, sql);
 					posture_analysis_model = &handle().model_specification;
 				
 				ns_acquire_for_scope<ns_analyzed_image_time_path_death_time_estimator> death_time_estimator(
 					ns_get_death_time_estimator_from_posture_analysis_model(
 					handle().model_specification));
-				const ns_time_series_denoising_parameters time_series_denoising_parameters(ns_time_series_denoising_parameters::load_from_db(movement_results.samples[i].regions[j]->metadata.region_id,sql()));
+				const ns_time_series_denoising_parameters time_series_denoising_parameters(ns_time_series_denoising_parameters::load_from_db(movement_results.samples[i].regions[j]->metadata.region_id,sql));
 
 				time_series_denoising_parameters_cache[movement_results.samples[i].regions[j]->metadata.region_id] = time_series_denoising_parameters;
 
@@ -2719,7 +2720,7 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 					movement_results.samples[i].regions[j]->time_path_solution,
 					time_series_denoising_parameters,
 					&death_time_estimator(),
-					sql(),
+					sql,
 					false);
 				death_time_estimator.release();
 			
@@ -2728,7 +2729,7 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 				movement_results.samples[i].regions[j]->time_path_image_analyzer->add_by_hand_annotations(by_hand_annotations.annotations);
 				if (detail_level==ns_quantification_abbreviated_detailed){
 					if (!header_written){
-						o_all.attach(image_server.results_storage.time_path_image_analysis_quantification(sub,"detailed",true,sql(),true).output());
+						o_all.attach(image_server.results_storage.time_path_image_analysis_quantification(sub,"detailed",true,sql,true).output());
 						if (movement_results.samples[i].regions[j]->time_path_image_analyzer->size() > 0){
 							movement_results.samples[i].regions[j]->time_path_image_analyzer->group(0).paths[0].write_detailed_movement_quantification_analysis_header(o_all());
 							o_all() <<"\n";
@@ -2743,7 +2744,7 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 				else if (detail_level == ns_quantification_detailed_with_by_hand){
 				
 					if (!header_written){
-						o_all.attach(image_server.results_storage.time_path_image_analysis_quantification(sub,"detailed_with_by_hand",true,sql()).output());
+						o_all.attach(image_server.results_storage.time_path_image_analysis_quantification(sub,"detailed_with_by_hand",true,sql).output());
 						if (movement_results.samples[i].regions[j]->time_path_image_analyzer->size() > 0){
 							movement_results.samples[i].regions[j]->time_path_image_analyzer->group(0).paths[0].write_detailed_movement_quantification_analysis_header(o_all());
 							o_all() <<"\n";
@@ -2850,7 +2851,7 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 		for (auto p = base_observation_estimator.begin(); p != base_observation_estimator.end(); p++) {
 			std::cout << ns_to_string_short((100.0 * estimators_compiled) / base_observation_estimator.size(), 2) << "%...";
 			estimators_compiled++;
-			ns_acquire_for_scope<ostream> all_observations(image_server.results_storage.time_path_image_analysis_quantification(sub, std::string("hmm_obs=") + p->first, true, sql()).output());
+			ns_acquire_for_scope<ostream> all_observations(image_server.results_storage.time_path_image_analysis_quantification(sub, std::string("hmm_obs=") + p->first, true, sql).output());
 			p->second.write_observation_data(all_observations(), experiment_name);
 			all_observations.release();
 		}
@@ -2879,7 +2880,7 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 			}
 			p->second.build_models(model_building_and_testing_info[p->first], base_observation_estimator[p->first]);
 
-			ns_image_server_results_file ps(image_server.results_storage.optimized_posture_analysis_parameter_set(sub, std::string("hmm=") + p->first, sql()));
+			ns_image_server_results_file ps(image_server.results_storage.optimized_posture_analysis_parameter_set(sub, std::string("hmm=") + p->first, sql));
 			model_filenames[p->first] = ps.output_filename();
 			ns_acquire_for_scope<ostream> both_parameter_set(ps.output());
 			p->second.all_vs_all().estimator.write(both_parameter_set());
@@ -2917,7 +2918,7 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 							//if (q->generate_detailed_path_info)
 							//	cout << "Generating detailed path info for " << p->first << " " << q->description << "\n";
 							ns_test_parameter_set_on_region(movement_results.samples[i].regions[j]->metadata.region_id, q->estimator, movement_results.samples[i].regions[j]->by_hand_annotations,
-								time_series_denoising_parameters, *movement_results.samples[i].regions[j]->time_path_image_analyzer, movement_results.samples[i].regions[j]->time_path_solution, sql(), q->results,q->test_set.animal_group_ids, q->generate_detailed_path_info);
+								time_series_denoising_parameters, *movement_results.samples[i].regions[j]->time_path_image_analyzer, movement_results.samples[i].regions[j]->time_path_solution, sql, q->results,q->test_set.animal_group_ids, q->generate_detailed_path_info);
 						}
 					}
 				}
@@ -2971,7 +2972,7 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 			if (movement_N < 50 || expansion_N < 50)
 				model_building_and_testing_info[p->first] += "Warning: These results will not be meaningful until more worms are annotated by hand.\n";
 			else model_building_and_testing_info[p->first] += "The model file was written to \"" + model_filenames[p->first] + "\"\n";
-			ns_acquire_for_scope<ostream>  performance_stats_output(image_server.results_storage.time_path_image_analysis_quantification(sub, std::string("hmm_performance=") + p->first, true, sql()).output());
+			ns_acquire_for_scope<ostream>  performance_stats_output(image_server.results_storage.time_path_image_analysis_quantification(sub, std::string("hmm_performance=") + p->first, true, sql).output());
 			std::vector<std::string > measurement_names;
 			if (p->second.all_vs_all().results.animals.size() > 0)
 				measurement_names = p->second.all_vs_all().results.animals[0].state_info_variable_names;
@@ -2988,7 +2989,7 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 				if (tmp > 0)
 					suffix = "=" + ns_to_string(tmp);
 				//cout << "Writing path data for " << p->first << "\n";
-				ns_acquire_for_scope<ostream>  path_stats_output(image_server.results_storage.time_path_image_analysis_quantification(sub, std::string("hmm_path=") + p->first + suffix, true, sql()).output());
+				ns_acquire_for_scope<ostream>  path_stats_output(image_server.results_storage.time_path_image_analysis_quantification(sub, std::string("hmm_path=") + p->first + suffix, true, sql).output());
 				if (path_stats_output().fail()) {
 					cout << "Could not open file for " << p->first << "\n";
 					continue;
@@ -3004,7 +3005,7 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 		for (auto p = model_building_and_testing_info.begin(); p != model_building_and_testing_info.end(); p++) 
 			results_text += model_building_and_testing_info[p->first] + "\n";
 
-		ns_acquire_for_scope<ostream> summary(image_server.results_storage.optimized_posture_analysis_parameter_set(sub, "hmm_optimization_summary", sql()).output());
+		ns_acquire_for_scope<ostream> summary(image_server.results_storage.optimized_posture_analysis_parameter_set(sub, "hmm_optimization_summary", sql).output());
 		summary() << results_text;
 		summary.release();
 		ns_text_dialog td;
@@ -3017,7 +3018,7 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 	
 	o_all.release();
 
-	sql.release();
+	
 }
 
 void ns_worm_learner::calculate_hmm_from_files(const std::string & path) {
@@ -3394,7 +3395,7 @@ ns_64_bit ns_worm_learner::create_experiment_from_directory_structure(const std:
 	ns_dir dir(experiment_path);
 	std::vector<ns_deduced_sample> samples;
 
-	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
+	ns_sql & sql(get_sql_connection());
 	std::sort(dir.dirs.begin(),dir.dirs.end());
 	for (unsigned long i = 0; i < dir.dirs.size(); i++){
 		if (dir.dirs[i] != "." &&
@@ -3404,7 +3405,7 @@ ns_64_bit ns_worm_learner::create_experiment_from_directory_structure(const std:
 			dir.dirs[i] != "region_masks"){
 			samples.resize(samples.size()+1);
 			samples.rbegin()->name = dir.dirs[i];
-			samples.rbegin()->get_device_info(sql());
+			samples.rbegin()->get_device_info(sql);
 		}
 
 	}
@@ -3412,31 +3413,31 @@ ns_64_bit ns_worm_learner::create_experiment_from_directory_structure(const std:
 	if (samples.empty())
 		throw ns_ex("The specified directory does not seem to have any valid sample subdirectories");
 
-	sql() << "SELECT id FROM experiments WHERE name = \"" <<experiment_name << "\"";
+	sql << "SELECT id FROM experiments WHERE name = \"" <<experiment_name << "\"";
 	ns_sql_result res;
-	sql().get_rows(res);
+	sql.get_rows(res);
 	if(res.size() != 0)
 		throw ns_ex("An experiment with the name ") << experiment_name << " already exists!";
 
-	sql() << "INSERT INTO experiments SET name='" << sql().escape_string(experiment_name) << "',description='',`partition`='" 
-		  << sql().escape_string(experiment_partition) << "', time_stamp=0";
+	sql << "INSERT INTO experiments SET name='" << sql.escape_string(experiment_name) << "',description='',`partition`='" 
+		  << sql.escape_string(experiment_partition) << "', time_stamp=0";
 
-	const ns_64_bit experiment_id = sql().send_query_get_id();
+	const ns_64_bit experiment_id = sql.send_query_get_id();
 
 	for (unsigned long i = 0; i < samples.size(); i++){
 		cerr << "Creating record for sample " << samples[i].name << "\n";
-		sql() << "INSERT INTO capture_samples SET experiment_id = " << ns_to_string(experiment_id) << ",name='" << sql().escape_string(samples[i].name) << "'"
-				<< ",device_name='" << sql().escape_string(samples[i].device) << "',parameters=''"
+		sql << "INSERT INTO capture_samples SET experiment_id = " << ns_to_string(experiment_id) << ",name='" << sql.escape_string(samples[i].name) << "'"
+				<< ",device_name='" << sql.escape_string(samples[i].device) << "',parameters=''"
 				<< ",position_x=0 ,position_y=0"
 				<< ",size_x=0,size_y=0"
-				<< ",incubator_name='" << sql().escape_string(samples[i].incubator_name) 
-				<< "',incubator_location='" <<  sql().escape_string(samples[i].incubator_location)
+				<< ",incubator_name='" << sql.escape_string(samples[i].incubator_name) 
+				<< "',incubator_location='" <<  sql.escape_string(samples[i].incubator_location)
 				<< "',desired_capture_duration_in_seconds=0"
 				<< ",description='',model_filename='',reason_censored='',image_resolution_dpi='3200'"
 				<< ",device_capture_period_in_seconds=0"
 				<< ",number_of_consecutive_captures_per_sample=0"
 				<< ", time_stamp=0";
-		samples[i].id = sql().send_query_get_id();
+		samples[i].id = sql.send_query_get_id();
 	}
 	
 	for (unsigned long i = 0; i < samples.size(); i++){
@@ -3490,10 +3491,10 @@ ns_64_bit ns_worm_learner::create_experiment_from_directory_structure(const std:
 		else if (sample_interval > 30*60*60)
 			cerr <<("Unusual sample interval: ")<< sample_interval << "\n";
 		else{
-			sql() << "UPDATE capture_samples SET number_of_consecutive_captures_per_sample = " << number_of_consecutive_sample_captures 
+			sql << "UPDATE capture_samples SET number_of_consecutive_captures_per_sample = " << number_of_consecutive_sample_captures 
 				  << ", device_capture_period_in_seconds= " << sample_interval
 				  << " WHERE id = " << samples[i].id;
-			sql().send_query();
+			sql.send_query();
 		}
 		if (files.empty())
 			continue;
@@ -3530,9 +3531,9 @@ ns_64_bit ns_worm_learner::create_experiment_from_directory_structure(const std:
 		im.filename = mask_filename;
 		im.path = mask_relative_path;
 		im.partition = experiment_partition;
-		im.save_to_db(0,&sql());
+		im.save_to_db(0,&sql);
 		samples[i].mask_image_id = im.id;
-		samples[i].resubmit_mask_for_processing(!process_masks_locally,sql());
+		samples[i].resubmit_mask_for_processing(!process_masks_locally,sql);
 	}
 	ns_image_processing_pipeline pipeline(1024);
 	if (process_masks_locally){
@@ -3541,7 +3542,7 @@ ns_64_bit ns_worm_learner::create_experiment_from_directory_structure(const std:
 			job.image_id = samples[i].mask_image_record_id;
 			job.mask_id = samples[i].mask_id;
 			ns_processing_job_image_processor processor(job,image_server,&pipeline);
-			processor.run_job(sql());
+			processor.run_job(sql);
 		}
 	}
 	return experiment_id;
@@ -3549,29 +3550,30 @@ ns_64_bit ns_worm_learner::create_experiment_from_directory_structure(const std:
 
 
 void ns_worm_learner::rebuild_experiment_samples_from_disk(const ns_64_bit experiment_id){
-	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
 
-	sql() << "SELECT name FROM experiments WHERE id = " << experiment_id;
-	std::string experiment_name = sql().get_value();
+	ns_sql& sql(get_sql_connection());
 
-	sql() << "SELECT id,name FROM capture_samples WHERE experiment_id = " << experiment_id;
+	sql << "SELECT name FROM experiments WHERE id = " << experiment_id;
+	std::string experiment_name = sql.get_value();
+
+	sql << "SELECT id,name FROM capture_samples WHERE experiment_id = " << experiment_id;
 	ns_sql_result res;
-	sql().get_rows(res);
+	sql.get_rows(res);
 	for (unsigned long i = 0; i < res.size(); i++){
 		unsigned long number_of_additions(0);
 		cout << "Considering sample " << res[i][1] << "\n";
 		const ns_64_bit sample_id = ns_atoi64(res[i][0].c_str());
 		const std::string sample_name = res[i][1];
-		ns_file_location_specification path(image_server.image_storage.get_path_for_sample(sample_id,&sql()));
+		ns_file_location_specification path(image_server.image_storage.get_path_for_sample(sample_id,&sql));
 		std::string path_str = path.absolute_long_term_filename() + "captured_images";
 		if (!ns_dir::file_is_writeable(path_str + DIR_CHAR_STR + "temp.tif"))
 			throw ns_ex("The path ") << path_str << " is not writeable.  This is required to update database and rename image filenames accordingly.";
 		ns_dir dir;
 		std:: vector<std::string> filenames;
 		dir.load_masked(path_str,".tif",filenames);
-		sql() << "SELECT id, image_id FROM captured_images WHERE sample_id = " << sample_id;
+		sql << "SELECT id, image_id FROM captured_images WHERE sample_id = " << sample_id;
 		ns_sql_result res2;
-		sql().get_rows(res2);
+		sql.get_rows(res2);
 		map<ns_64_bit,ns_capture_image_d> image_lookup;
 
 		for (unsigned long j = 0; j < res2.size(); j++){
@@ -3589,9 +3591,9 @@ void ns_worm_learner::rebuild_experiment_samples_from_disk(const ns_64_bit exper
 				//if a captured image exists with the specified id, check to see if it points to the correct image record
 				if (p->second.image_id == captured_image.capture_images_image_id){
 					//check to see that the image record has the correct filename
-					sql() << "SELECT filename FROM images WHERE id = " << p->second.image_id;
+					sql << "SELECT filename FROM images WHERE id = " << p->second.image_id;
 					ns_sql_result res3;
-					sql().get_rows(res3);
+					sql.get_rows(res3);
 					if (res3.size() != 0 && res3[0][0] == filenames[j])
 						//this is great!  The image already exists and has the right filename.  move on.
 						continue;
@@ -3602,7 +3604,7 @@ void ns_worm_learner::rebuild_experiment_samples_from_disk(const ns_64_bit exper
 
 			ns_image_server_image captured_image_image;
 			captured_image_image.capture_time = captured_image.capture_time;
-			captured_image_image.partition = image_server.image_storage.get_partition_for_experiment(experiment_id,&sql(),true);
+			captured_image_image.partition = image_server.image_storage.get_partition_for_experiment(experiment_id,&sql,true);
 			captured_image_image.filename = filenames[j];
 			captured_image_image.path = path_str;
 			std::string::size_type pos = captured_image_image.path.find(captured_image_image.partition);
@@ -3610,7 +3612,7 @@ void ns_worm_learner::rebuild_experiment_samples_from_disk(const ns_64_bit exper
 				throw ns_ex("Incorrect path identified: Images are not in a partition of the long term storage directory");
 			std::string relative_path = captured_image_image.path.substr(pos+ captured_image_image.partition.size()+1);
 			captured_image_image.path = relative_path;
-			captured_image_image.save_to_db(0,&sql(),false);
+			captured_image_image.save_to_db(0,&sql,false);
 
 			captured_image.capture_images_image_id = captured_image_image.id;
 			captured_image.specified_16_bit = false;
@@ -3619,8 +3621,8 @@ void ns_worm_learner::rebuild_experiment_samples_from_disk(const ns_64_bit exper
 			captured_image.experiment_id = experiment_id;
 			captured_image.sample_id = sample_id;
 			captured_image.sample_name = sample_name;
-			captured_image.save(&sql());
-			std::string new_filename = captured_image.filename(&sql()) + "." + ns_dir::extract_extension(captured_image_image.filename);
+			captured_image.save(&sql);
+			std::string new_filename = captured_image.filename(&sql) + "." + ns_dir::extract_extension(captured_image_image.filename);
 			std::string old_filename = captured_image_image.filename;
 			bool success(ns_dir::move_file(path_str + DIR_CHAR_STR + old_filename,path_str + DIR_CHAR_STR + new_filename));
 			if (!success){
@@ -3628,13 +3630,13 @@ void ns_worm_learner::rebuild_experiment_samples_from_disk(const ns_64_bit exper
 				continue;
 			}
 			captured_image_image.filename = new_filename;
-			captured_image_image.save_to_db(captured_image_image.id,&sql());
+			captured_image_image.save_to_db(captured_image_image.id,&sql);
 		}
 		if (number_of_additions == 0)
 			cout << "No database entries were identified as missing.\n";
 	}
 
-	sql.release();
+	
 }
 
 struct ns_region_processed_image_disk_info{
@@ -3642,20 +3644,20 @@ struct ns_region_processed_image_disk_info{
 	ns_image_server_image im;
 };
 
-void repair_missing_captured_images(const ns_64_bit experiment_id){
-	
-	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
-	sql() << "SELECT r.id, r.capture_time,ri.id,s.id, r.capture_sample_image_id,s.device_name, s.name,s.experiment_id FROM sample_region_images as r, sample_region_image_info as ri, capture_samples as s WHERE "
+void ns_worm_learner::repair_missing_captured_images(const ns_64_bit experiment_id){
+
+	ns_sql& sql(get_sql_connection());
+	sql << "SELECT r.id, r.capture_time,ri.id,s.id, r.capture_sample_image_id,s.device_name, s.name,s.experiment_id FROM sample_region_images as r, sample_region_image_info as ri, capture_samples as s WHERE "
 			" r.region_info_id = ri.id AND ri.sample_id = s.id AND s.experiment_id = " << experiment_id;
 	ns_sql_result res;
-	sql().get_rows(res);
+	sql.get_rows(res);
 	ofstream of("c:\\server\\file_errors.csv");
 	of << "region_image_id,time,region_info_id,sample_id,capture_image_id,status\n";
 //	vector<ns_image_server_captured_image_region> problem, good;
 	for (unsigned long i = 0; i < res.size(); i++){
 
 		ns_image_server_captured_image_region r;
-		bool good (r.load_from_db(ns_atoi64(res[i][0].c_str()),&sql()));
+		bool good (r.load_from_db(ns_atoi64(res[i][0].c_str()),&sql));
 		of << res[i][0] << "," << res[i][1] << "," << res[i][2] << "," << res[i][3] << "," << res[i][4] << "," << (good?"good":"bad") << "\n";
 		if (!good){
 			ns_image_server_captured_image cp(r);
@@ -3668,25 +3670,25 @@ void repair_missing_captured_images(const ns_64_bit experiment_id){
 			cp.sample_id = atol(res[i][3].c_str());
 			cp.sample_name = res[i][6];
 			cp.specified_16_bit=false;
-			cp.save(&sql());
+			cp.save(&sql);
 			r.captured_images_id = cp.captured_images_id;
-			r.save(&sql());
+			r.save(&sql);
 		}
 	}
 	of.close();
-	sql.release();
+	
 }
 		
 
 void ns_worm_learner::rebuild_experiment_regions_from_disk(const ns_64_bit experiment_id){
-	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
+	ns_sql& sql(get_sql_connection());
 
-	sql() << "SELECT name FROM experiments WHERE id = " << experiment_id;
-	std::string experiment_name = sql().get_value();
+	sql << "SELECT name FROM experiments WHERE id = " << experiment_id;
+	std::string experiment_name = sql.get_value();
 
-	sql() << "SELECT id,name FROM capture_samples WHERE experiment_id = " << experiment_id;
+	sql << "SELECT id,name FROM capture_samples WHERE experiment_id = " << experiment_id;
 	ns_sql_result sample_res;
-	sql().get_rows(sample_res);
+	sql.get_rows(sample_res);
 	
 	std::vector<ns_processing_task> additional_tasks_to_load;
 	//additional_tasks_to_load.push_back(ns_unprocessed);
@@ -3695,7 +3697,7 @@ void ns_worm_learner::rebuild_experiment_regions_from_disk(const ns_64_bit exper
 	additional_tasks_to_load.push_back(ns_process_threshold);
 	additional_tasks_to_load.push_back(ns_process_thumbnail);
 	std::vector<std::map<ns_64_bit,ns_region_processed_image_disk_info> > existing_processed_task_images;
-	std::string partition(image_server.image_storage.get_partition_for_experiment(experiment_id,&sql(),true));
+	std::string partition(image_server.image_storage.get_partition_for_experiment(experiment_id,&sql,true));
 
 	for (unsigned long i = 0; i < sample_res.size(); i++){
 		unsigned long number_of_additions(0);
@@ -3703,9 +3705,9 @@ void ns_worm_learner::rebuild_experiment_regions_from_disk(const ns_64_bit exper
 		const ns_64_bit sample_id = ns_atoi64(sample_res[i][0].c_str());
 		const std::string sample_name = sample_res[i][1];
 		const std::string device_name = sample_name.substr(0,sample_name.size()-2);
-		sql() << "SELECT id,name FROM sample_region_image_info WHERE sample_id = "<< sample_id;
+		sql << "SELECT id,name FROM sample_region_image_info WHERE sample_id = "<< sample_id;
 		ns_sql_result region_res;
-		sql().get_rows(region_res);
+		sql.get_rows(region_res);
 		for (unsigned long k = 0; k < region_res.size(); k++){
 			existing_processed_task_images.clear();
 			existing_processed_task_images.resize(additional_tasks_to_load.size());
@@ -3714,7 +3716,7 @@ void ns_worm_learner::rebuild_experiment_regions_from_disk(const ns_64_bit exper
 
 			//we need to build a list of all processed images to link them to the main image if they exist
 			for (unsigned long j = 0; j < additional_tasks_to_load.size(); j++){
-				ns_file_location_specification path2(image_server.image_storage.get_path_for_region(region_info_id,&sql(),additional_tasks_to_load[j]));
+				ns_file_location_specification path2(image_server.image_storage.get_path_for_region(region_info_id,&sql,additional_tasks_to_load[j]));
 				std::string absolute_path(path2.absolute_long_term_filename());
 				if (!ns_dir::file_exists(absolute_path))
 					continue;
@@ -3753,7 +3755,7 @@ void ns_worm_learner::rebuild_experiment_regions_from_disk(const ns_64_bit exper
 			}
 
 			//now we look at each file and either link it up to an existing record or create a new record for it.
-			ns_file_location_specification path(image_server.image_storage.get_path_for_region(region_info_id,&sql()));
+			ns_file_location_specification path(image_server.image_storage.get_path_for_region(region_info_id,&sql));
 			std::string absolute_path = path.absolute_long_term_filename();
 
 			if (!ns_dir::file_exists(absolute_path))
@@ -3769,16 +3771,16 @@ void ns_worm_learner::rebuild_experiment_regions_from_disk(const ns_64_bit exper
 			ns_dir dir;
 			std:: vector<std::string> filenames;
 			dir.load_masked(absolute_path,".tif",filenames);
-			sql() << "SELECT id FROM sample_region_images WHERE region_info_id = " << region_info_id;
+			sql << "SELECT id FROM sample_region_images WHERE region_info_id = " << region_info_id;
 			ns_sql_result res2;
-			sql().get_rows(res2);
+			sql.get_rows(res2);
 			std::set<ns_64_bit> existing_region_images;
 
 			for (unsigned long j = 0; j < res2.size(); j++)
 				existing_region_images.insert(existing_region_images.end(),ns_atoi64(res2[j][0].c_str()));
 		
-			sql() << "SELECT id, capture_time FROM captured_images WHERE sample_id = " << sample_id;
-			sql().get_rows(res2);
+			sql << "SELECT id, capture_time FROM captured_images WHERE sample_id = " << sample_id;
+			sql.get_rows(res2);
 			std::map<unsigned long,ns_64_bit> existing_captured_images;
 			for (unsigned long j = 0; j < res2.size(); j++){
 				const ns_64_bit id(ns_atoi64(res2[j][0].c_str()));
@@ -3807,7 +3809,7 @@ void ns_worm_learner::rebuild_experiment_regions_from_disk(const ns_64_bit exper
 					cap_im.sample_id = sample_id;
 					cap_im.experiment_id = experiment_id;
 					cap_im.captured_images_id = 0;
-					cap_im.save(&sql());
+					cap_im.save(&sql);
 					region_image.captured_images_id = cap_im.captured_images_id;
 					existing_captured_images[cap_im.capture_time] = cap_im.captured_images_id;
 				}
@@ -3818,7 +3820,7 @@ void ns_worm_learner::rebuild_experiment_regions_from_disk(const ns_64_bit exper
 				unprocessed_image.partition = partition;
 				unprocessed_image.filename = filenames[j];;
 				unprocessed_image.path = relative_path;
-				unprocessed_image.save_to_db(0,&sql(),false);
+				unprocessed_image.save_to_db(0,&sql,false);
 				region_image.region_images_image_id = unprocessed_image.id;
 				
 
@@ -3831,7 +3833,7 @@ void ns_worm_learner::rebuild_experiment_regions_from_disk(const ns_64_bit exper
 						continue;
 					//create a new database record for existing file and link it to the region image record
 					p->second.im.id = 0;
-					p->second.im.save_to_db(0,&sql());
+					p->second.im.save_to_db(0,&sql);
 					region_image.op_images_[additional_tasks_to_load[j]] = p->second.im.id;
 				}
 				
@@ -3846,10 +3848,10 @@ void ns_worm_learner::rebuild_experiment_regions_from_disk(const ns_64_bit exper
 				region_image.mask_color = 0;
 				region_image.detected_worm_state = ns_detected_worm_unsorted;
 				region_image.region_images_id = 0;
-				region_image.save(&sql());
-				region_image.update_all_processed_image_records(sql());
+				region_image.save(&sql);
+				region_image.update_all_processed_image_records(sql);
 
-				/*std::string new_filename = im.filename(&sql()) + "." + ns_dir::extract_extension(image.filename);
+				/*std::string new_filename = im.filename(&sql) + "." + ns_dir::extract_extension(image.filename);
 				std::string old_filename = image.filename;
 				bool success(ns_dir::move_file(path_str + DIR_CHAR_STR + old_filename,path_str + DIR_CHAR_STR + new_filename));
 				if (!success){
@@ -3857,24 +3859,24 @@ void ns_worm_learner::rebuild_experiment_regions_from_disk(const ns_64_bit exper
 					continue;
 				}
 				image.filename = new_filename;
-				image.save_to_db(image.id,&sql());*/
+				image.save_to_db(image.id,&sql);*/
 			}
 			if (number_of_additions == 0)
 				cout << "No database entries were identified as missing.\n";
 		}
 	}
-	sql.release();
+	
 }
 
 void ns_worm_learner::repair_captured_image_transfer_errors(unsigned long experiment_id) {
-	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__, __LINE__));
-	sql() << "SELECT id, name FROM capture_samples WHERE experiment_id =" << experiment_id;
+	ns_sql& sql(get_sql_connection());
+	sql << "SELECT id, name FROM capture_samples WHERE experiment_id =" << experiment_id;
 	ns_sql_result sample_ids;
-	sql().get_rows(sample_ids);
+	sql.get_rows(sample_ids);
 	for (unsigned int j = 0; j < sample_ids.size(); j++) {
 		const ns_64_bit sample_id = ns_atoi64(sample_ids[j][0].c_str());
 		std::cerr << "Considering sample " << sample_ids[j][1] << "\n";
-		const ns_file_location_specification spec = image_server.image_storage.get_path_for_sample(sample_id, &sql());
+		const ns_file_location_specification spec = image_server.image_storage.get_path_for_sample(sample_id, &sql);
 		std::string dir_name = spec.absolute_long_term_filename() + "\\captured_images\\";
 		std::cerr << "Directory " << dir_name << "\n";
 		const string exp("2018_09_24_TT_microfluidics=63=chewie_a=917=1537885660=2018-09-25=16-27");
@@ -3895,10 +3897,10 @@ void ns_worm_learner::repair_captured_image_transfer_errors(unsigned long experi
 			}
 
 			string old_f = filename.substr(0, exp.size());
-			sql() << "SELECT i.id, i.filename, c.id FROM captured_images as c, images as i WHERE  i.id = c.image_id && c.sample_id = " << sample_id << " && INSTR(i.filename, '" << old_f << "')";
-			//cerr << sql().query();
+			sql << "SELECT i.id, i.filename, c.id FROM captured_images as c, images as i WHERE  i.id = c.image_id && c.sample_id = " << sample_id << " && INSTR(i.filename, '" << old_f << "')";
+			//cerr << sql.query();
 			ns_sql_result res;
-			sql().get_rows(res);
+			sql.get_rows(res);
 			if (res.empty())
 				throw ns_ex("Could not load record for ") << old_f;
 			if (res.size() > 1)
@@ -3906,12 +3908,12 @@ void ns_worm_learner::repair_captured_image_transfer_errors(unsigned long experi
 			if (filename != res[0][1]) {
 				changed = true;
 				cerr << "Renaming " << res[0][1] << " to " << filename << "\n";
-				sql() << "UPDATE images SET filename = '" << filename << "',problem=0, partition='partition_000'  WHERE id = " << res[0][0];
-				sql().send_query();
-				sql() << "UPDATE captured_images SET problem=0 WHERE id = " << res[0][2];
-				sql().send_query();
-				//cerr << sql().query() << "\n";
-				//sql().clear_query();
+				sql << "UPDATE images SET filename = '" << filename << "',problem=0, partition='partition_000'  WHERE id = " << res[0][0];
+				sql.send_query();
+				sql << "UPDATE captured_images SET problem=0 WHERE id = " << res[0][2];
+				sql.send_query();
+				//cerr << sql.query() << "\n";
+				//sql.clear_query();
 			}
 			//else cerr << res[0][0] << " " << res[0][2] << " looks fine.\n";
 		}
@@ -3921,10 +3923,10 @@ void ns_worm_learner::repair_captured_image_transfer_errors(unsigned long experi
 	std::cerr << "Done\n";
 }
 void ns_worm_learner::test_time_path_analysis_parameters(unsigned long region_id){
-	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
+	ns_sql& sql(get_sql_connection());
 	ns_time_path_solver tp_solver;
-	tp_solver.load(region_id,sql());
-	ns_time_path_solver_parameters default_parameters(ns_time_path_solver_parameters::default_parameters(region_id,sql()));
+	tp_solver.load(region_id,sql);
+	ns_time_path_solver_parameters default_parameters(ns_time_path_solver_parameters::default_parameters(region_id,sql));
 	vector<vector<ns_time_path_solver_parameters> > parameters;
 
 	unsigned long fragment_duration_in_hours[] = {4,3,2,1,0};
@@ -3932,7 +3934,7 @@ void ns_worm_learner::test_time_path_analysis_parameters(unsigned long region_id
 
 	ns_hand_annotation_loader by_hand_region_annotations;
 	by_hand_region_annotations.load_region_annotations(
-			ns_death_time_annotation_set::ns_censoring_and_movement_transitions,region_id,sql());					
+			ns_death_time_annotation_set::ns_censoring_and_movement_transitions,region_id,sql);					
 
 	parameters.resize(5);
 	for (unsigned int i = 0; i < 5; i++){
@@ -3948,7 +3950,7 @@ void ns_worm_learner::test_time_path_analysis_parameters(unsigned long region_id
 	ns_image_server_results_subject sub2;
 	sub2.region_id = region_id;
 	ns_acquire_for_scope<std::ostream> quant(image_server.results_storage.animal_position_timeseries_3d(
-		sub2,sql(),ns_image_server_results_storage::ns_3d_plot,"path_quantification").output());
+		sub2,sql,ns_image_server_results_storage::ns_3d_plot,"path_quantification").output());
 
 	quant() << "Min Stationary object path fragment duration (hours),Min Final stationary path duration (hours),"
 				"Total objects detected,Number of actual worms, Number of non-worm objects, Number of low-density_paths, Path ID,Center X, Center Y,Start Time,End Time,Duration (hours),Number of Observations in path,Low Density Path,Minimum distance to censored location, Likely censored, New This Round\n";
@@ -3958,7 +3960,7 @@ void ns_worm_learner::test_time_path_analysis_parameters(unsigned long region_id
 		for (unsigned int j = 0; j < parameters[i].size(); j++){
 			//get the solutions
 			ns_time_path_solver tp(tp_solver);
-			tp.solve(parameters[i][j],solutions[i][j],&sql());
+			tp.solve(parameters[i][j],solutions[i][j],&sql);
 	
 			//find which paths are new relative to the refence
 			vector<char> path_is_new_this_round(solutions[i][j].paths.size(),0);
@@ -3973,13 +3975,13 @@ void ns_worm_learner::test_time_path_analysis_parameters(unsigned long region_id
 		 
 			ns_acquire_for_scope<ostream> position_3d_file_output(
 			image_server.results_storage.animal_position_timeseries_3d(
-				sub,sql(),ns_image_server_results_storage::ns_3d_plot,type
+				sub,sql,ns_image_server_results_storage::ns_3d_plot,type
 			).output()
 			);
 			solutions[i][j].output_visualization_csv(position_3d_file_output());
 			position_3d_file_output.release();
 
-			image_server.results_storage.write_animal_position_timeseries_3d_launcher(sub,ns_image_server_results_storage::ns_3d_plot,sql(),type);
+			image_server.results_storage.write_animal_position_timeseries_3d_launcher(sub,ns_image_server_results_storage::ns_3d_plot,sql,type);
 			
 			//find which elements are censored
 			ns_time_path_solution & s(solutions[i][j]);
@@ -4041,7 +4043,7 @@ void ns_worm_learner::test_time_path_analysis_parameters(unsigned long region_id
 }
 
 void ns_worm_learner::load_strain_metadata_into_database(const std::string filename){
-	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
+	ns_sql& sql(get_sql_connection());
 	ifstream i(filename.c_str());
 	if (i.fail())
 		throw ns_ex("Could not load ") << filename;
@@ -4080,7 +4082,7 @@ void ns_worm_learner::load_strain_metadata_into_database(const std::string filen
 		data[s].genotype = v2;
 	}
 	ns_genotype_fetcher fetcher;
-	fetcher.add_information_to_database(data,&sql());
+	fetcher.add_information_to_database(data,&sql);
 }
 unsigned long is_equal(0),is_not_equal(0);
 
@@ -4190,8 +4192,8 @@ ns_8_bit ns_crop(ns_8_bit val,ns_8_bit eq_val,ns_8_bit crop){
 void ns_worm_learner::generate_single_frame_posture_image_pixel_data(const bool single_region){
 	load_current_experiment_movement_results(ns_death_time_annotation_set::ns_censoring_and_movement_transitions,data_selector.current_experiment_id());
 	ns_hand_annotation_loader by_hand_annotations;
-	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
-	by_hand_annotations.load_experiment_annotations(ns_death_time_annotation_set::ns_censoring_and_movement_transitions,data_selector.current_experiment_id(),sql());
+	ns_sql& sql(get_sql_connection());
+	by_hand_annotations.load_experiment_annotations(ns_death_time_annotation_set::ns_censoring_and_movement_transitions,data_selector.current_experiment_id(),sql);
 	const int total_images_per_worm(50);
 	ofstream o_data("y:\\posture_analysis\\out_data.csv"),o_stats("y:\\posture_analysis\\out_stats.csv");
 	std::string image_output_base_dir("y:\\posture_analysis\\images\\");
@@ -4223,13 +4225,13 @@ void ns_worm_learner::generate_single_frame_posture_image_pixel_data(const bool 
 		cerr << "Sample " <<movement_results.samples[i].name() << " has " << movement_results.samples[i].regions.size() << " regions\n";
 		for (unsigned int j = 0; j < movement_results.samples[i].regions.size(); j++){
 			const ns_64_bit region_id(movement_results.samples[i].regions[j]->metadata.region_id);
-			const ns_time_series_denoising_parameters time_series_denoising_parameters(ns_time_series_denoising_parameters::load_from_db(movement_results.samples[i].regions[j]->metadata.region_id,sql()));
+			const ns_time_series_denoising_parameters time_series_denoising_parameters(ns_time_series_denoising_parameters::load_from_db(movement_results.samples[i].regions[j]->metadata.region_id,sql));
 
 			if (single_region && region_id != data_selector.current_region().region_id)
 				continue;
 			try{
-				movement_results.samples[i].regions[j]->time_path_solution.load_from_db(region_id,sql(),true);
-				movement_results.samples[i].regions[j]->time_path_image_analyzer->load_completed_analysis(region_id,movement_results.samples[i].regions[j]->time_path_solution,time_series_denoising_parameters,0,sql(),true);
+				movement_results.samples[i].regions[j]->time_path_solution.load_from_db(region_id,sql,true);
+				movement_results.samples[i].regions[j]->time_path_image_analyzer->load_completed_analysis(region_id,movement_results.samples[i].regions[j]->time_path_solution,time_series_denoising_parameters,0,sql,true);
 				movement_results.samples[i].regions[j]->time_path_image_analyzer->add_by_hand_annotations(by_hand_annotations.annotations);
 				for (unsigned int w = 0; w < movement_results.samples[i].regions[j]->time_path_image_analyzer->size(); w++){
 					if (ns_death_time_annotation::is_excluded(movement_results.samples[i].regions[j]->time_path_image_analyzer->group(w).paths[0].excluded()))
@@ -4246,7 +4248,7 @@ void ns_worm_learner::generate_single_frame_posture_image_pixel_data(const bool 
 						number_of_images--;
 					}
 
-					movement_results.samples[i].regions[j]->time_path_image_analyzer->load_images_for_group(w,start_i+number_of_images,sql(),true,false,worm_image_cache);
+					movement_results.samples[i].regions[j]->time_path_image_analyzer->load_images_for_group(w,start_i+number_of_images,sql,true,false,worm_image_cache);
 					double avg_prev(0), stdev_prev(0);
 					ns_image_standard equalized,equalized_prev;
 					for (unsigned int k = start_i; k < start_i + number_of_images; k++){
@@ -4461,7 +4463,7 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 //const bool scatter_proportion_plot, const bool use_interpolated_data){
 	unsigned int experiment_id = data_selector.current_experiment_id();
 
-	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
+	ns_sql& sql(get_sql_connection());
 	ns_death_time_annotation_compiler survival_curve_compiler;
 
 	
@@ -4507,31 +4509,31 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 		ns_run_in_main_thread<ns_choice_dialog> b(&dialog);
 		switch (dialog.result) {
 		case 1: {
-			image_server.register_server_event(ns_image_server_event("Recalculating censoring"), &sql());
+			image_server.register_server_event(ns_image_server_event("Recalculating censoring"), &sql);
 			ns_image_processing_pipeline p(1024);
 			for (unsigned int i = 0; i < regions_needing_censoring_recalculation.size(); i++) {
-				image_server.add_subtext_to_current_event(ns_to_string((int)(i *100.0 / regions_needing_censoring_recalculation.size())) + "%...", &sql());
+				image_server.add_subtext_to_current_event(ns_to_string((int)(i *100.0 / regions_needing_censoring_recalculation.size())) + "%...", &sql);
 				ns_processing_job job;
 				job.region_id = regions_needing_censoring_recalculation[i];
 				job.maintenance_task = ns_maintenance_rebuild_movement_from_stored_image_quantification;
-				analyze_worm_movement_across_frames(job, &image_server, sql(), false);
+				analyze_worm_movement_across_frames(job, &image_server, sql, false);
 			}
 			break;
 		}
 		case 2: {
-			image_server.register_server_event(ns_image_server_event("Submitting jobs to cluster."), &sql());
+			image_server.register_server_event(ns_image_server_event("Submitting jobs to cluster."), &sql);
 			ns_processing_job job;
 			for (unsigned int i = 0; i < regions_needing_censoring_recalculation.size(); i++) {
-				sql() << "INSERT INTO processing_jobs SET region_id=" << regions_needing_censoring_recalculation[i] << ", "
+				sql << "INSERT INTO processing_jobs SET region_id=" << regions_needing_censoring_recalculation[i] << ", "
 					<< "maintenance_task=" << (unsigned int)ns_maintenance_rebuild_movement_from_stored_image_quantification << ", time_submitted=" << ns_current_time() << ", urgent=1";
-				sql().send_query();
+				sql.send_query();
 			}
-			sql().send_query("COMMIT");
-			ns_image_server_push_job_scheduler::request_job_queue_discovery(sql());
+			sql.send_query("COMMIT");
+			ns_image_server_push_job_scheduler::request_job_queue_discovery(sql);
 			return;
 		}
 		case 3:
-			image_server.register_server_event(ns_image_server_event("Ignoring request to rebuild censoring data."), &sql());
+			image_server.register_server_event(ns_image_server_event("Ignoring request to rebuild censoring data."), &sql);
 			break;
 		default: throw ns_ex("Unknown result!");
 		}
@@ -4572,7 +4574,7 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 					(ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy,
 					ns_death_time_annotation::ns_censoring_minimize_missing_times,
 					ns_include_unchanged,
-					results_subject,"grouped_by_plate","movement_timeseries",sql()).output());
+					results_subject,"grouped_by_plate","movement_timeseries",sql).output());
 				ns_worm_movement_measurement_summary::out_header(movement_data_plate_file_with_incomplete[censoring_strategy][by_hand_annotation_integration_strategy[bhais]]());
 				if (output_force_fast) {
 					movement_data_plate_file_without_incomplete[censoring_strategy][by_hand_annotation_integration_strategy[bhais]].attach(
@@ -4581,7 +4583,7 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 							(ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy,
 							ns_death_time_annotation::ns_censoring_minimize_missing_times,
 							ns_force_to_fast_moving,
-							results_subject, "grouped_by_plate", "movement_timeseries", sql()).output());
+							results_subject, "grouped_by_plate", "movement_timeseries", sql).output());
 					ns_worm_movement_measurement_summary::out_header(movement_data_plate_file_without_incomplete[censoring_strategy][by_hand_annotation_integration_strategy[bhais]]());
 				}
 			}
@@ -4591,13 +4593,13 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 			ns_death_time_annotation::ns_merge_multiple_worm_clusters_and_missing_and_censor,
 			default_missing_return_strategy,
 			ns_include_unchanged,
-			results_subject,"grouped_by_plate","censoring_diagnostics",sql()).output());
+			results_subject,"grouped_by_plate","censoring_diagnostics",sql).output());
 		censoring_diagnostics_by_plate_by_hand.attach(image_server.results_storage.movement_timeseries_data(
 			ns_death_time_annotation::ns_machine_annotations_if_no_by_hand,
 			ns_death_time_annotation::ns_merge_multiple_worm_clusters_and_missing_and_censor,
 			default_missing_return_strategy,
 			ns_include_unchanged,
-			results_subject,"grouped_by_plate","censoring_diagnostics",sql()).output());
+			results_subject,"grouped_by_plate","censoring_diagnostics",sql).output());
 		ns_worm_movement_summary_series::output_censoring_diagnostic_header(censoring_diagnostics_by_plate_by_hand());
 		ns_worm_movement_summary_series::output_censoring_diagnostic_header(censoring_diagnostics_by_plate_machine());
 		if (output_alternative_censoring_timings) {
@@ -4606,14 +4608,14 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 			ns_death_time_annotation::ns_merge_multiple_worm_clusters_and_missing_and_censor,
 			alternate_missing_return_strategy_1,
 			ns_include_unchanged,
-			results_subject,"grouped_by_plate","movement_timeseries",sql()).output());
+			results_subject,"grouped_by_plate","movement_timeseries",sql).output());
 		ns_worm_movement_measurement_summary::out_header(movement_data_plate_file_with_alternate_missing_return_strategy_1());	
 			movement_data_plate_file_with_alternate_missing_return_strategy_2.attach(image_server.results_storage.movement_timeseries_data(
 				ns_death_time_annotation::ns_machine_annotations_if_no_by_hand,
 				ns_death_time_annotation::ns_merge_multiple_worm_clusters_and_missing_and_censor,
 				alternate_missing_return_strategy_2,
 				ns_include_unchanged,
-				results_subject, "grouped_by_plate", "movement_timeseries", sql()).output());
+				results_subject, "grouped_by_plate", "movement_timeseries", sql).output());
 			ns_worm_movement_measurement_summary::out_header(movement_data_plate_file_with_alternate_missing_return_strategy_2());
 		}
 	}
@@ -4631,7 +4633,7 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 	//STEP 1 in generating death times: load by hand annotations
 	ns_hand_annotation_loader by_hand_annotations;
 	if (use_by_hand_censoring){
-		by_hand_annotations.load_experiment_annotations(ns_death_time_annotation_set::ns_censoring_and_movement_transitions,experiment_id,sql());
+		by_hand_annotations.load_experiment_annotations(ns_death_time_annotation_set::ns_censoring_and_movement_transitions,experiment_id,sql);
 	}	
 	unsigned long total_regions_processed(0);
 	for (unsigned int i = 0; i < movement_results.samples.size(); i++){
@@ -4758,18 +4760,18 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 	if (vis == ns_survival_curve){
 		//STEP 4 in generating death times: open a bunch of output files
 
-		ns_acquire_for_scope<ostream> survival_jmp_file_detailed_days(image_server.results_storage.survival_data(results_subject,"survival_with_alternate_censoring_schemes","machine_jmp_days","csv",sql()).output());
+		ns_acquire_for_scope<ostream> survival_jmp_file_detailed_days(image_server.results_storage.survival_data(results_subject,"survival_with_alternate_censoring_schemes","machine_jmp_days","csv",sql).output());
 		
-		ns_acquire_for_scope<ostream> survival_jmp_file_machine_simple_days(image_server.results_storage.survival_data(results_subject,"survival_simple","machine_jmp_days","csv",sql()).output());
-		ns_acquire_for_scope<ostream> survival_jmp_file_machine_hand_simple_days(image_server.results_storage.survival_data(results_subject,"survival_simple","machine_hand_jmp_days","csv",sql()).output());
+		ns_acquire_for_scope<ostream> survival_jmp_file_machine_simple_days(image_server.results_storage.survival_data(results_subject,"survival_simple","machine_jmp_days","csv",sql).output());
+		ns_acquire_for_scope<ostream> survival_jmp_file_machine_hand_simple_days(image_server.results_storage.survival_data(results_subject,"survival_simple","machine_hand_jmp_days","csv",sql).output());
 	
-		ns_acquire_for_scope<ostream> survival_jmp_file_simple_with_control_groups_days(image_server.results_storage.survival_data(results_subject,"survival_simple_with_control_groups","machine_jmp_days","csv",sql()).output());
+		ns_acquire_for_scope<ostream> survival_jmp_file_simple_with_control_groups_days(image_server.results_storage.survival_data(results_subject,"survival_simple_with_control_groups","machine_jmp_days","csv",sql).output());
 	
-		ns_acquire_for_scope<ostream> survival_jmp_file_time_by_hand_interval_simple_days(image_server.results_storage.survival_data(results_subject,"survival_interval","machine_jmp_time_interval_days","csv",sql()).output());
+		ns_acquire_for_scope<ostream> survival_jmp_file_time_by_hand_interval_simple_days(image_server.results_storage.survival_data(results_subject,"survival_interval","machine_jmp_time_interval_days","csv",sql).output());
 	
-		ns_acquire_for_scope<ostream> survival_jmp_file_time_machine_interval_simple_days(image_server.results_storage.survival_data(results_subject,"survival_interval","machine_hand_jmp_time_interval_days","csv",sql()).output());
+		ns_acquire_for_scope<ostream> survival_jmp_file_time_machine_interval_simple_days(image_server.results_storage.survival_data(results_subject,"survival_interval","machine_hand_jmp_time_interval_days","csv",sql).output());
 		
-		ns_acquire_for_scope<ostream> annotation_diagnostics(image_server.results_storage.survival_data(results_subject,"survival_simple","annotation_diagnostics","csv",sql()).output());
+		ns_acquire_for_scope<ostream> annotation_diagnostics(image_server.results_storage.survival_data(results_subject,"survival_simple","annotation_diagnostics","csv",sql).output());
 		
 		survival_curve_compiler.generate_validation_information(annotation_diagnostics());
 		annotation_diagnostics.release();
@@ -4820,15 +4822,15 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 		/*
 		ns_capture_sample_statistics_set s_set;
 		if (include_region_image_info)
-			s_set.load_whole_experiment(data_selector.current_experiment_id(),sql());
+			s_set.load_whole_experiment(data_selector.current_experiment_id(),sql);
 
 		ns_capture_sample_region_statistics_set r_set;
 		if (include_region_image_info){
-			r_set.load_whole_experiment(data_selector.current_experiment_id(),sql());
+			r_set.load_whole_experiment(data_selector.current_experiment_id(),sql);
 			r_set.set_sample_data(s_set);
 		}
 	*/
-		ns_acquire_for_scope<ostream> animal_data_file(image_server.results_storage.animal_event_data(results_subject,"detailed_animal_data",sql()).output());
+		ns_acquire_for_scope<ostream> animal_data_file(image_server.results_storage.animal_event_data(results_subject,"detailed_animal_data",sql).output());
 		survival_curve_compiler.generate_detailed_animal_data_file(include_region_image_info,animal_data_file());
 		animal_data_file.release();
 		
@@ -4885,7 +4887,7 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 						default_missing_return_strategy,
 						ns_include_unchanged,
 						sub,
-						subdirectory , "movement_timeseries", sql()).output());
+						subdirectory , "movement_timeseries", sql).output());
 					ns_acquire_for_scope<ostream> output_data_without_incomplete;
 					if (output_force_fast) {
 						output_data_without_incomplete.attach(image_server.results_storage.movement_timeseries_data(
@@ -4894,7 +4896,7 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 							default_missing_return_strategy,
 							ns_force_to_fast_moving,
 							sub,
-							subdirectory, "movement_timeseries", sql()).output());
+							subdirectory, "movement_timeseries", sql).output());
 					}
 					if (output_data_with_incomplete.is_null() || (output_force_fast && output_data_without_incomplete.is_null()))
 						throw ns_ex("Could not open aggregate data file");
@@ -4904,7 +4906,7 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 						ns_death_time_annotation::ns_merge_multiple_worm_clusters_and_missing_and_censor,
 						default_missing_return_strategy,
 						ns_include_unchanged,
-						sub, subdirectory, "censoring_diagnostics", sql()).output());
+						sub, subdirectory, "censoring_diagnostics", sql).output());
 
 					ns_worm_movement_summary_series::output_censoring_diagnostic_header(censoring_diagnostics());
 
@@ -4922,7 +4924,7 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 								(ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy,
 								alternate_missing_return_strategy_1,
 								ns_include_unchanged, sub,
-								subdirectory, "movement_timeseries", sql()).output());
+								subdirectory, "movement_timeseries", sql).output());
 							ns_worm_movement_measurement_summary::out_header(output_data_alternate_missing_return_strategy_1());
 
 							output_data_alternate_missing_return_strategy_2.attach(image_server.results_storage.movement_timeseries_data(
@@ -4930,7 +4932,7 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 								(ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy,
 								alternate_missing_return_strategy_2,
 								ns_include_unchanged, sub,
-								subdirectory, "movement_timeseries", sql()).output());
+								subdirectory, "movement_timeseries", sql).output());
 							ns_worm_movement_measurement_summary::out_header(output_data_alternate_missing_return_strategy_2());
 						}
 					}
@@ -5018,13 +5020,13 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 					ns_movement_data_source_type::type_string(type),
 					ns_tiff,
 					1024,
-					sql()));
+					sql));
 			current_image.pump(r.output_stream(),1024);
 			draw_image(-1,-1,current_image);*/
 		}
 	}
 
-	sql.release();
+	
 }
 
 
@@ -5061,14 +5063,14 @@ void ns_worm_learner::calculate_image_statistics_for_experiment_sample(unsigned 
 
 void ns_worm_learner::upgrade_tables() {
 
-	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__, __LINE__));
+	ns_sql& sql(get_sql_connection());
 	ns_alert_dialog d;
-	if (image_server.upgrade_tables(&sql(), false, image_server.current_sql_database(), false))
+	if (image_server.upgrade_tables(&sql, false, image_server.current_sql_database(), false))
 		d.text = "Schema update completed.";
 	else
 		d.text = "No update was needed.";
 
-	sql.release();
+	
 
 	//d.act();
 	ns_run_in_main_thread<ns_alert_dialog> dd(&d);
@@ -5092,9 +5094,9 @@ void ns_worm_learner::handle_file_request(const string & fname) {
 	if (ext == "m4v") {
 		std::string output_basename = ns_dir::extract_filename_without_extension(filename);
 		cerr << "Processing video " << filename << ": ";
-		ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__, __LINE__));
-		ns_image_processing_pipeline::wrap_m4v_stream(filename, output_basename, 25, !generate_mp4_, sql());
-		sql.release();
+		ns_sql& sql(get_sql_connection());
+		ns_image_processing_pipeline::wrap_m4v_stream(filename, output_basename, 25, !generate_mp4_, sql);
+		
 		cerr << " Done.\n";
 	}
 	else if (ext == "jpg" || ext == "tif" || ext == "jp2") {
@@ -5359,52 +5361,43 @@ void ns_worm_learner::output_subregion_as_test_set(const std::string & old_info)
 		throw ns_ex("Could not open subregion specification file: ") << old_info;
 	ns_subregion_source_info si(ns_get_subregion_source_information(in));
 	in.close();
-	ns_sql * sql = image_server.new_sql_connection(__FILE__,__LINE__);
-	try{
-		*sql << "SELECT sample_id,name FROM sample_region_image_info WHERE id=" << si.region_id;
-		ns_sql_result res;
-		sql->get_rows(res);
-		if(res.size() == 0)
-			throw ns_ex("Could find region ") << si.region_id;
-		unsigned long sample_id = atol(res[0][0].c_str());
-		std::string region_name = res[0][1];
+	ns_sql& sql(get_sql_connection());
+	sql << "SELECT sample_id,name FROM sample_region_image_info WHERE id=" << si.region_id;
+	ns_sql_result res;
+	sql.get_rows(res);
+	if(res.size() == 0)
+		throw ns_ex("Could find region ") << si.region_id;
+	unsigned long sample_id = atol(res[0][0].c_str());
+	std::string region_name = res[0][1];
 
-		*sql << "SELECT image_id,capture_time FROM sample_region_images WHERE region_info_id = " << si.region_id << " ORDER BY capture_time ASC";
-		sql->get_rows(res);
-		if(res.size() == 0)
-			throw ns_ex("Could not load any rows for region ") << region_name;
-		ns_image_standard temp;
-		ns_image_standard temp_out;
-		for (unsigned int i = 0; i < res.size(); i++){
-			unsigned long image_id = atol(res[i][0].c_str());
-			unsigned long capture_time = atol(res[i][1].c_str());
+	sql << "SELECT image_id,capture_time FROM sample_region_images WHERE region_info_id = " << si.region_id << " ORDER BY capture_time ASC";
+	sql.get_rows(res);
+	if(res.size() == 0)
+		throw ns_ex("Could not load any rows for region ") << region_name;
+	ns_image_standard temp;
+	ns_image_standard temp_out;
+	for (unsigned int i = 0; i < res.size(); i++){
+		unsigned long image_id = atol(res[i][0].c_str());
+		unsigned long capture_time = atol(res[i][1].c_str());
 
-			ns_image_server_image im;
-			im.load_from_db(image_id,sql);
-			ns_image_storage_source_handle<ns_8_bit> handle = image_server.image_storage.request_from_storage(im,sql);
-			handle.input_stream().pump(temp,1024);
-			if (si.x + si.w >= temp.properties().width || si.y + si.h >= temp.properties().height)
-				throw ns_ex("Invalid subregion (x,y,w,h)=") << si.x << "(" << si.y << "," << si.w <<"," << si.h << ")" << " in image with dimensions " << temp.properties().width << "," << temp.properties().height;
-			ns_image_properties prop(temp.properties());
-			prop.width = si.w;
-			prop.height = si.h;
-			temp_out.prepare_to_recieve_image(prop);
-			for (unsigned long y_ = 0; y_ < si.h; y_++)
-				for (unsigned long x_ = 0; x_ < prop.components*si.w; x_++)
-					temp_out[y_][x_] = temp[si.y+y_][prop.components*si.x+x_];
-			std::string dir = ns_dir::extract_path(old_info);
-			std::string fname = dir + DIR_CHAR_STR + region_name + "=" + ns_format_time_string(capture_time) + "=" + ns_to_string(capture_time) + ".tif";
-			cerr << "Outputting " << fname << "\n";		
-			ns_save_image(fname,temp_out);
-		}
-
-		delete sql;
+		ns_image_server_image im;
+		im.load_from_db(image_id,&sql);
+		ns_image_storage_source_handle<ns_8_bit> handle = image_server.image_storage.request_from_storage(im,&sql);
+		handle.input_stream().pump(temp,1024);
+		if (si.x + si.w >= temp.properties().width || si.y + si.h >= temp.properties().height)
+			throw ns_ex("Invalid subregion (x,y,w,h)=") << si.x << "(" << si.y << "," << si.w <<"," << si.h << ")" << " in image with dimensions " << temp.properties().width << "," << temp.properties().height;
+		ns_image_properties prop(temp.properties());
+		prop.width = si.w;
+		prop.height = si.h;
+		temp_out.prepare_to_recieve_image(prop);
+		for (unsigned long y_ = 0; y_ < si.h; y_++)
+			for (unsigned long x_ = 0; x_ < prop.components*si.w; x_++)
+				temp_out[y_][x_] = temp[si.y+y_][prop.components*si.x+x_];
+		std::string dir = ns_dir::extract_path(old_info);
+		std::string fname = dir + DIR_CHAR_STR + region_name + "=" + ns_format_time_string(capture_time) + "=" + ns_to_string(capture_time) + ".tif";
+		cerr << "Outputting " << fname << "\n";		
+		ns_save_image(fname,temp_out);
 	}
-	catch(...){
-		delete sql;
-		throw;
-	}
-
 }
 struct ns_debug_set_file_info{
 	ns_debug_set_file_info(const std::string & dir_, const std::string & filename_){
@@ -6304,9 +6297,9 @@ void ns_worm_learner::get_ip_and_port_for_mask_upload(std::string & ip_address,u
 	if (image_server.current_sql_database() != image_server.mask_upload_database)
 		throw ns_ex("To upload experiments to the mask file cluster, the terminal must be set to access the database ") << image_server.mask_upload_database;
 	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
-	sql() << "SELECT ip,port,database_used FROM hosts WHERE name='" << image_server.mask_upload_hostname << "'";
+	sql << "SELECT ip,port,database_used FROM hosts WHERE name='" << image_server.mask_upload_hostname << "'";
 	ns_sql_result res;
-	sql().get_rows(res);
+	sql.get_rows(res);
 	if (res.size() == 0)
 		throw ns_ex("Could not locate remote mask server with host name ") << image_server.mask_upload_hostname;
 	if (res[0][2] != image_server.mask_upload_database)
@@ -6323,17 +6316,17 @@ ns_mask_info ns_worm_learner::send_mask_to_server(const ns_64_bit & sample_id){
 	//Connecting to image server
 	//Updating database
 	cerr << "\nUpdating database....";
-	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
-	sql() << "INSERT INTO images SET filename = '" << current_mask_filename << "', creation_time = '" << ns_current_time() << "', "
+	ns_sql& sql(get_sql_connection());
+	sql << "INSERT INTO images SET filename = '" << current_mask_filename << "', creation_time = '" << ns_current_time() << "', "
 		<< "path = '" << ns_image_server::unclaimed_masks_directory() << "', currently_under_processing=0, partition=''";
-	mask_info.image_id = sql().send_query_get_id();
-	sql() << "INSERT INTO image_masks SET image_id = " << mask_info.image_id << ", processed='0'";
-	mask_info.mask_id = sql().send_query_get_id();
+	mask_info.image_id = sql.send_query_get_id();
+	sql << "INSERT INTO image_masks SET image_id = " << mask_info.image_id << ", processed='0'";
+	mask_info.mask_id = sql.send_query_get_id();
 	
 	ns_image_server_image image;
-	image.load_from_db(mask_info.image_id, &sql());
+	image.load_from_db(mask_info.image_id, &sql);
 	bool had_to_use_local_storage;
-	ns_image_storage_reciever_handle<ns_8_bit> image_storage = image_server.image_storage.request_storage(image, ns_tiff, 1.0,512, &sql(), had_to_use_local_storage, false, ns_image_storage_handler::ns_forbid_volatile);
+	ns_image_storage_reciever_handle<ns_8_bit> image_storage = image_server.image_storage.request_storage(image, ns_tiff, 1.0,512, &sql, had_to_use_local_storage, false, ns_image_storage_handler::ns_forbid_volatile);
 
 	//ns_image_standard decoded_image;
 	current_mask.pump(image_storage.output_stream(), 512);
@@ -6341,12 +6334,12 @@ ns_mask_info ns_worm_learner::send_mask_to_server(const ns_64_bit & sample_id){
 	//c.close();
 
 
-	sql() << "UPDATE capture_samples SET mask_id=" << mask_info.mask_id << " WHERE id=" << sample_id;
-	sql().send_query();
-	sql() << "INSERT INTO processing_jobs SET image_id=" << mask_info.image_id << ", mask_id=" << mask_info.mask_id << ", "
+	sql << "UPDATE capture_samples SET mask_id=" << mask_info.mask_id << " WHERE id=" << sample_id;
+	sql.send_query();
+	sql << "INSERT INTO processing_jobs SET image_id=" << mask_info.image_id << ", mask_id=" << mask_info.mask_id << ", "
 		<< "op" << (unsigned int)ns_process_analyze_mask << " = 1, time_submitted=" << ns_current_time() << ", urgent=1";
-	sql().send_query();
-	sql().send_query("COMMIT");
+	sql.send_query();
+	sql.send_query("COMMIT");
 	
 	cerr << "\nDone.\n";
 	return mask_info;
@@ -7505,10 +7498,10 @@ void ns_run_first_thermometer_experiment(){
 		scanners[i].processor.specificy_reference_temperature_image(calibration_temperature,im);
 
 
-		sql() << "SELECT c.capture_time, c.id,c.image_id FROM captured_images as c, capture_samples as s, capture_schedule as sh "
+		sql << "SELECT c.capture_time, c.id,c.image_id FROM captured_images as c, capture_samples as s, capture_schedule as sh "
 			"WHERE c.problem = 0 AND c.sample_id = s.id AND s.name = '" << scanners[i].device_name << "_e' AND s.device_name = '" << scanners[i].device_name << "' AND s.experiment_id = " << experiment_id
 				 << " AND sh.captured_image_id = c.id AND sh.transferred_to_long_term_storage = 3";
-		sql().get_rows(result);
+		sql.get_rows(result);
 		scanners[i].measurements.resize(result.size());
 		cerr << scanners[i].device_name << " has " << result.size() << " measurements\n";
 		for (unsigned int j = 0; j < result.size(); j++){
@@ -7524,10 +7517,10 @@ void ns_run_first_thermometer_experiment(){
 		cerr << scanners[i].device_name << " closest time to " << ns_format_time_string_for_human(low_differential_time) << " is " << ns_format_time_string_for_human(low_measurement.capture_time) <<"\n";
 
 		ns_image_standard high,low;
-		image_server.image_storage.request_from_storage(high_measurement.image,&sql()).input_stream().pump(high,1024);
-		image_server.image_storage.request_from_storage(low_measurement.image,&sql()).input_stream().pump(low,1024);
+		image_server.image_storage.request_from_storage(high_measurement.image,&sql).input_stream().pump(high,1024);
+		image_server.image_storage.request_from_storage(low_measurement.image,&sql).input_stream().pump(low,1024);
 		scanners[i].processor.specifiy_known_differential_temperature(high_differential_temperature-low_differential_temperature,low,high);									
-		scanners[i].estimate_temperatures(sql());
+		scanners[i].estimate_temperatures(sql);
 		scanners[i].output_data(output);
 	}
 	output.close();
@@ -8119,9 +8112,9 @@ void ns_worm_learner::train_from_data(const std::string & base_dir){
 		cout << "Error: No worm detection model specified\n";
 		return;
 	}
-	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
-	training_file_generator.generate_from_curated_set(base_dir,(*model_specification)().model_specification,true,&sql());
-	sql.release();
+	ns_sql& sql(get_sql_connection());
+	training_file_generator.generate_from_curated_set(base_dir,(*model_specification)().model_specification,true,&sql);
+	
 }
 const ns_svm_model_specification & ns_worm_learner::get_svm_model_specification(){
 	if (model_specification == 0 || !model_specification->is_valid() || *model_specification == this->default_model) 

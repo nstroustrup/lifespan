@@ -113,6 +113,7 @@ struct ns_graph_axes{
 	}
 	ns_axes_position axis_position[2];
 	inline double & operator[] (const unsigned int & i){return boundary(i);}
+	inline const double& operator[] (const unsigned int& i) const { return boundary(i); }
 
 	inline double & boundary(const unsigned int & i){
 		_boundary_specified[i] = true;
@@ -180,12 +181,13 @@ struct ns_graph_specifics{
 ///suppling the data series to add_fequency_distribution()
 class ns_graph{
 public:
-	ns_graph(){
+	ns_graph():aspect_ratio(1){
 		ns_graph_properties defaults;
 		title_properties.text_size = defaults.text_size*2;
 		set_graph_display_options();
 		stored_contents.reserve(10);
 	}
+	static const bool debug_range_checking;
 	//returns the index of the global independant variable, if found.
 	int  check_input_data();
 

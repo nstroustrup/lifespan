@@ -2759,7 +2759,9 @@ void ns_death_time_annotation_flag::generate_default_flags(std::vector<ns_death_
 	flags.push_back(ns_death_time_annotation_flag("2ND_WORM_ERR",
 		"Additional Worm Confuses Analysis",true,"","80FF80"));
 	flags.push_back(ns_death_time_annotation_flag("STILL_ALIVE",
-		"Worm is still alive at the end of the experiment",false,"","CCCCCC"));
+		"Worm is still alive at the end of the experiment",false,"VIS_INSPECT","CCCCCC"));
+	flags.push_back(ns_death_time_annotation_flag("VIS_INSPECT",
+		"Flagged for visual inspection", false, "", "FFCC11"));
 }
 
 std::string ns_death_time_annotation_flag::label() const{

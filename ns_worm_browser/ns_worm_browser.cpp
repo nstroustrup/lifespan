@@ -7646,27 +7646,37 @@ void ns_worm_learner::update_worm_window_display(){
 
 ns_thread_return_type ns_experiment_storyboard_annotater::precache_worm_images_asynch_internal(void *t) {
 	ns_experiment_storyboard_annotater & a(*static_cast<ns_experiment_storyboard_annotater *>(t));
-
-	ns_acquire_lock_for_scope lock(a.precaching_lock, __FILE__, __LINE__) ;
-	a.run_precaching = true;
-	if (a.precache_sql_connection == 0)
-		a.precache_sql_connection = image_server.new_sql_connection(__FILE__, __LINE__);
-	for (unsigned int i = 0; i < a.divisions.size(); i++) {
-		for (unsigned int j = 0; j < a.divisions[i].division->events.size(); j++) {
-			if (a.divisions[i].division->events[j].event_annotation.is_excluded() || a.divisions[i].division->events[j].event_annotation.is_censored())
-				continue;
+	try {
+		if (image_server.verbose_debug_output())
+			image_server_const.register_server_event_no_db(ns_image_server_event("Starting to pre-cache."));
+		ns_acquire_lock_for_scope lock(a.precaching_lock, __FILE__, __LINE__);
+		a.run_precaching = true;
+		if (a.precache_sql_connection == 0)
+			a.precache_sql_connection = image_server.new_sql_connection(__FILE__, __LINE__);
+		for (unsigned int i = 0; i < a.divisions.size(); i++) {
+			for (unsigned int j = 0; j < a.divisions[i].division->events.size(); j++) {
+				if (a.divisions[i].division->events[j].event_annotation.is_excluded() || a.divisions[i].division->events[j].event_annotation.is_censored())
+					continue;
+				if (!a.run_precaching)
+					break;
+				std::cout << "Precaching " << a.divisions[i].division->events[j].event_annotation.stationary_path_id.group_id << "\n";
+				a.worm_learner->death_time_solo_annotater.precache_images(a.divisions[i].division->events[j].event_annotation.region_info_id,
+					ns_stationary_path_id(a.divisions[i].division->events[j].event_annotation.stationary_path_id.group_id, 0, 0), *a.precache_sql_connection);
+			}
 			if (!a.run_precaching)
 				break;
-			std::cout << "Precaching " << a.divisions[i].division->events[j].event_annotation.stationary_path_id.group_id << "\n";
-			a.worm_learner->death_time_solo_annotater.precache_images(a.divisions[i].division->events[j].event_annotation.region_info_id,
-				ns_stationary_path_id(a.divisions[i].division->events[j].event_annotation.stationary_path_id.group_id, 0, 0), *a.precache_sql_connection);
 		}
-		if (!a.run_precaching)
-			break;
+		std::cout << "Stopping precaching.\n";
+		a.run_precaching = false;
+		lock.release();
+		return 0;
 	}
-	std::cout << "Stopping precaching.\n";
-	a.run_precaching = false;
-	lock.release();
+	catch (ns_ex & ex) {
+		cout << "\nCould not precache images: " << ex.text() << "\n";
+	}
+	catch (...) {
+		cout << "\nCould not precache images for unknown reason\n";
+	}
 	return 0;
 }
 void ns_experiment_storyboard_annotater::precache_worm_images_asynch() {
@@ -7823,11 +7833,18 @@ bool ns_worm_learner::start_death_time_annotation(const ns_behavior_mode m, cons
 				c2 = (ns_experiment_storyboard_annotater::ns_censor_masking)((int)c);
 				
 				storyboard_annotater.load_from_storyboard(metadata,c2,subject,this, worm_window.display_rescale_factor);
+				if (image_server.verbose_debug_output())
+					image_server_const.register_server_event_no_db(ns_image_server_event("Finished Loading"));
 				storyboard_annotater.display_current_frame();
+				if (image_server.verbose_debug_output())
+					image_server_const.register_server_event_no_db(ns_image_server_event("Display requested"));
 				set_behavior_mode(m);
 				//We can speed things up if only one region is being considered.
-				if (m == ns_worm_learner::ns_annotate_storyboard_region)
+				if (m == ns_worm_learner::ns_annotate_storyboard_region) {
+					if (image_server.verbose_debug_output())
+						image_server_const.register_server_event_no_db(ns_image_server_event("Trying to pre-cache."));
 					storyboard_annotater.precache_worm_images_asynch();
+				}
 		}
 		else{
 			current_annotater = &death_time_annotater;
@@ -8768,7 +8785,7 @@ unsigned long ns_death_time_solo_posture_annotater::last_time_at_current_telemen
 }
 
 void ns_death_time_solo_posture_annotater::draw_telemetry(const ns_vector_2i & position, const ns_vector_2i & graph_size, const ns_vector_2i & buffer_size, const float rescale_factor,ns_8_bit * buffer) {
-	if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Drawing telemetry."));
+	if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Starting to draw telemetry."));
 	if (telemetry_zoom_factor < 1) {
 		cerr << "Weird telemetry zoom factor: " << telemetry_zoom_factor << "\n";
 		telemetry_zoom_factor = 1;
@@ -8805,7 +8822,6 @@ void ns_death_time_solo_posture_annotater::draw_telemetry(const ns_vector_2i & p
 	stop_time = ((unsigned long)(ceil(stop_time / (double)time_block_resolution))) * time_block_resolution;
 	if (stop_time > path_stop_time)stop_time = path_stop_time;
 	if (start_time < path_start_time)start_time = path_start_time;
-
 	telemetry.draw(graph_contents, current_timepoint_id, position, graph_size, buffer_size, ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor/ rescale_factor,buffer,start_time,stop_time);
 	
 	if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Done with telemetry."));

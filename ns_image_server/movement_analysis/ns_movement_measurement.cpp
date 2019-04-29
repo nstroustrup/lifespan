@@ -917,6 +917,27 @@ ns_worm_movement_measurement_summary_timepoint_type::ns_worm_movement_measuremen
 	exclusion_type = a.excluded;
 }
 
+struct ns_labeled_data {
+	ns_stationary_path_id id;
+	double data;
+};
+bool operator<(const ns_labeled_data& a, const ns_labeled_data& b) {
+	return a.data < b.data;
+}
+class ns_problem_object_flagger {
+
+	void identify_movement_expansion_outliers(const ns_death_time_annotation_compiler_region& region) {
+		std::vector<ns_labeled_data> movement_cessation_times, expansion_times, movement_expansion_diff_times;
+		for (ns_death_time_annotation_compiler_region::ns_location_list::const_iterator q(region.locations.begin()); q != region.locations.end(); q++) {
+
+			ns_dying_animal_description_set_const description_set;
+			q->generate_dying_animal_description_const(true, description_set);
+			if (description_set.descriptions.begin()->machine.death_annotation != 0 &&
+				description_set.descriptions.begin()->machine.death_associated_expansion_start != 0)
+				cout << "WHA";
+		}
+	}
+};
 void ns_worm_movement_summary_series::from_death_time_annotations(
 	const ns_death_time_annotation::ns_by_hand_annotation_integration_strategy & by_hand_strategy,
 	const ns_death_time_annotation::ns_multiworm_censoring_strategy & censoring_strategy, 

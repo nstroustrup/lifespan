@@ -7,6 +7,9 @@ using namespace std;
 #define MAJOR_TICK_HEIGHT 5
 #define MINOR_TICK_HEIGHT 2
 using std::numeric_limits;
+
+const bool ns_graph::debug_range_checking = true;
+
 int  ns_graph::check_input_data(){
 	//see if an independant variable was specified for all input data
 	int global_independant_variable_id = -1;
@@ -576,25 +579,20 @@ void ns_graph::plot_object(const ns_graph_object & y, const ns_graph_object & x,
 			if (y.properties.fill_between_y_and_ymin && y.y_min.size() != y.y.size())
 				throw ns_ex("ns_graph()::y and y_min are not the same length.");
 
-			double x_min = x.x[0],
-				   x_max = x.x[x.x.size()-1]+spec.axes.axis_offset(0);
-			if (x.x.size() > 1)
-				x_min = (x.x[0]+x.x[1])/2;
-			int l = (unsigned int)((x_min - axes.boundary(0))*dx+1),
-						 r = (unsigned int)((x_max - axes.boundary(0)+ spec.axes.axis_offset(0)/2)*dx);
+			double l = 0,
+			r = (axes[1]- axes[0])*dx;
 			
-			for (int _x = l; _x < r; _x++){
-				double cur_x = _x/dx+axes.boundary(0);
-
-				int index = (unsigned int)x.x.size()-1; // if index < 0 is an error condition below it should be signed
+			for (int pixel_x = l; pixel_x < r; pixel_x++){
+				double data_x = (pixel_x) / dx+axes[0];
+				int data_index = (unsigned int)x.x.size()-1; // if index < 0 is an error condition below it should be signed
 				switch(y.properties.line_hold_order){
 					case ns_graph_properties::ns_first:
 					case ns_graph_properties::ns_zeroth_centered:{
 						for (unsigned int i = 1; i < x.x.size(); i++){
-							if (cur_x < x.x[i]+spec.axes.axis_offset(0)){
-								if (fabs(x.x[i]+spec.axes.axis_offset(0)-cur_x) > fabs(x.x[i-1]+spec.axes.axis_offset(0)-cur_x))
-									index = i-1;
-								else index = i;
+							if (data_x < x.x[i]){
+								if (fabs(x.x[i]+data_x) > fabs(x.x[i-1]+data_x))
+									data_index = i-1;
+								else data_index = i;
 								break;
 							}
 						}
@@ -602,8 +600,8 @@ void ns_graph::plot_object(const ns_graph_object & y, const ns_graph_object & x,
 					}
 					case ns_graph_properties::ns_zeroth:{
 						for (unsigned int i = 1; i < x.x.size(); i++){
-							if (cur_x < x.x[i]+spec.axes.axis_offset(0)){
-								index = i-1;
+							if (data_x < x.x[i]){
+								data_index = i-1;
 								break;
 							}
 						}
@@ -613,33 +611,36 @@ void ns_graph::plot_object(const ns_graph_object & y, const ns_graph_object & x,
 				
 				
 				//for out-of-bounds locations, draw no data.
-				if (index < 0 || index >= (unsigned int)y.y.size() || index >= (unsigned int)x.x.size())
+				if (data_index < 0 || data_index >= (unsigned int)y.y.size() || data_index >= (unsigned int)x.x.size())
 					continue;
 				//otherwise draw the data.
-				unsigned int top((int)(h-border.y)-(int)(dy*(y.y[index]-axes.boundary(2)+spec.axes.axis_offset(1))));
-				if (h-border.y < dy*(y.y[index]-axes.boundary(2)))
+				unsigned int pixel_top((int)(h-border.y)-(int)(dy*(y.y[data_index]-axes.boundary(2)+spec.axes.axis_offset(1))));
+				if (debug_range_checking && h-border.y < dy*(y.y[data_index]-axes.boundary(2)))
 					throw ns_ex("Something went wrong in graph logic.  Graph height: ") << h << ", border: " << border.y <<
-					", dy: " << dy << ", boundary(2): " << axes.boundary(2) << " y.y[" << index << "]: " << y.y[index];
-				int bottom;
+					", dy: " << dy << ", boundary(2): " << axes.boundary(2) << " y.y[" << data_index << "]: " << y.y[data_index];
+				int pixel_bottom;
 				if (!y.properties.fill_between_y_and_ymin)
-					bottom = spec.x_axis_pos + (unsigned int)(spec.dy*spec.axes.axis_offset(1)); // Again if it could be < 0 (below) it needs to be signed.
+					pixel_bottom = spec.x_axis_pos + (unsigned int)(spec.dy*spec.axes.axis_offset(1)); // Again if it could be < 0 (below) it needs to be signed.
 				else {
-					bottom = (int)(h - border.y) - (int)(dy*(y.y_min[index] - axes.boundary(2) + spec.axes.axis_offset(1)));
-					if (h - border.y < dy*(y.y_min[index] - axes.boundary(2)))
+					pixel_bottom = (int)(h - border.y) - (int)(dy*(y.y_min[data_index] - axes.boundary(2) + spec.axes.axis_offset(1)));
+					if (debug_range_checking && h - border.y < dy*(y.y_min[data_index] - axes.boundary(2)))
 						throw ns_ex("Something went wrong in graph logic.  Graph height: ") << h << ", border: " << border.y <<
-						", dy: " << dy << ", boundary(2): " << axes.boundary(2) << " y.y[" << index << "]: " << y.y[index];
+						", dy: " << dy << ", boundary(2): " << axes.boundary(2) << " y.y[" << data_index << "]: " << y.y[data_index];
 				}
-				if (top > bottom){
-					int tmp = bottom;
-					bottom = top;
-					top = tmp;
+				if (pixel_top > pixel_bottom){
+					int tmp = pixel_bottom;
+					pixel_bottom = pixel_top;
+					pixel_top = tmp;
 				}
-				if (bottom < 0 && !y.properties.draw_negatives)
-					continue;
-
-				for (unsigned int _y = top; _y < bottom; _y++){
-					for (unsigned int c = 0; c < 3; c++)
-						image[_y][3*(_x + border.x)+c] = (ns_8_bit)((1.0 - y.properties.area_fill.opacity)*image[_y][3*(_x + border.x)+c] + y.properties.area_fill.opacity*y.properties.area_fill.color[c]);
+				if (pixel_bottom < 0 && !y.properties.draw_negatives)
+					continue; 
+				const unsigned long screen_position_x = pixel_x + (-axes.boundary(0) + spec.axes.axis_offset(0))*dx + border.x;
+				for (unsigned int _y = pixel_top; _y < pixel_bottom; _y++){
+					for (unsigned int c = 0; c < 3; c++) {
+						if (debug_range_checking && (_y >= h || (screen_position_x) + c >= w))
+							throw ns_ex("Graph range upper border error");
+						image[_y][3 * (screen_position_x) + c] = (ns_8_bit)((1.0 - y.properties.area_fill.opacity) * image[_y][3 * (screen_position_x) + c] + y.properties.area_fill.opacity * y.properties.area_fill.color[c]);
+					}
 				}
 			}
 /*
@@ -669,12 +670,14 @@ void ns_graph::plot_object(const ns_graph_object & y, const ns_graph_object & x,
 							x1 = border.x + (unsigned int)(dx*(x.x[i+1]-axes.boundary(0)+ spec.axes.axis_offset(0))),
 							y0 = h-border.y - (unsigned int)(dy*(y.y[i]-axes.boundary(2)+ spec.axes.axis_offset(1))),
 							y1 = h-border.y - (unsigned int)(dy*(y.y[i+1]-axes.boundary(2)+ spec.axes.axis_offset(1)));
-						if (x0 < 0 || x0 >= (int)w)
-							throw ns_ex("ns_graph::Could not draw line due to x0");
-						if (x1 < 0 || x1 >= (int)w)
-							throw ns_ex("ns_graph::Could not draw line due to x1");
-						if (y0 < 0 || y0 >= (int)h)throw ns_ex("ns_graph::Could not draw line due to y0");
-						if (y1 < 0 || y1 >= (int)h)throw ns_ex("ns_graph::Could not draw line due to y1");
+						if (debug_range_checking) {
+							if (x0 < 0 || x0 >= (int)w)
+								throw ns_ex("ns_graph::Could not draw line due to x0");
+							if (x1 < 0 || x1 >= (int)w)
+								throw ns_ex("ns_graph::Could not draw line due to x1");
+							if (y0 < 0 || y0 >= (int)h)throw ns_ex("ns_graph::Could not draw line due to y0");
+							if (y1 < 0 || y1 >= (int)h)throw ns_ex("ns_graph::Could not draw line due to y1");
+						}
 						image.draw_line_color_thick(ns_vector_2i(x0,y0),ns_vector_2i(x1,y1),y.properties.line.color,y.properties.line.width);
 						if (y.properties.draw_vertical_lines == ns_graph_properties::ns_full_line)
 							image.draw_line_color_thick(ns_vector_2i(x0,spec.x_axis_pos),ns_vector_2i(x0,y0),y.properties.line.color,y.properties.line.width);
@@ -689,12 +692,14 @@ void ns_graph::plot_object(const ns_graph_object & y, const ns_graph_object & x,
 							x1 = border.x + (unsigned int)(dx*(x.x[i+1]-axes.boundary(0)+ spec.axes.axis_offset(0))),
 							y0 = h-border.y - (unsigned int)(dy*(y.y[i]-axes.boundary(2)+ spec.axes.axis_offset(1))),
 							y1 = h-border.y - (unsigned int)(dy*(y.y[i+1]-axes.boundary(2)+ spec.axes.axis_offset(1)));
-						if (x0 < 0 || x0 >= (int)w)
-							throw ns_ex("ns_graph::Could not draw line due to x0");
-						if (x1 < 0 || x1 >= (int)w)
-							throw ns_ex("ns_graph::Could not draw line due to x1");
-						if (y0 < 0 || y0 >= (int)h)throw ns_ex("ns_graph::Could not draw line due to y0");
-						if (y1 < 0 || y1 >= (int)h)throw ns_ex("ns_graph::Could not draw line due to y1");
+						if (debug_range_checking) {
+							if (x0 < 0 || x0 >= (int)w)
+								throw ns_ex("ns_graph::Could not draw line due to x0");
+							if (x1 < 0 || x1 >= (int)w)
+								throw ns_ex("ns_graph::Could not draw line due to x1");
+							if (y0 < 0 || y0 >= (int)h)throw ns_ex("ns_graph::Could not draw line due to y0");
+							if (y1 < 0 || y1 >= (int)h)throw ns_ex("ns_graph::Could not draw line due to y1");
+						}
 						image.draw_line_color_thick(ns_vector_2i(x0,y0),ns_vector_2i(x1,y0),y.properties.line.color,y.properties.line.width);
 						if (y.properties.draw_vertical_lines == ns_graph_properties::ns_full_line){
 							image.draw_line_color_thick(ns_vector_2i(x0,spec.x_axis_pos),ns_vector_2i(x0,y0),y.properties.line.color,y.properties.line.width);
@@ -718,10 +723,12 @@ void ns_graph::plot_object(const ns_graph_object & y, const ns_graph_object & x,
 						int x0 = border.x + (unsigned int)(p0-d_off),
 							x1 = border.x + (unsigned int)(p0+d_off),
 							y0 = h-border.y - (unsigned int)(dy*(y.y[i]-axes.boundary(2)+ spec.axes.axis_offset(1)));
-						if (x0 < 0 || x0 >= (int)w)throw ns_ex("ns_graph::Could not draw line due to x0");
-						if (x1 < 0 || x1 >= (int)w)
-							throw ns_ex("ns_graph::Could not draw line due to x1");
-						if (y0 < 0 || y0 >= (int)h)throw ns_ex("ns_graph::Could not draw line due to y0");
+						if (debug_range_checking) {
+							if (x0 < 0 || x0 >= (int)w)throw ns_ex("ns_graph::Could not draw line due to x0");
+							if (x1 < 0 || x1 >= (int)w)
+								throw ns_ex("ns_graph::Could not draw line due to x1");
+							if (y0 < 0 || y0 >= (int)h)throw ns_ex("ns_graph::Could not draw line due to y0");
+						}
 						image.draw_line_color_thick(ns_vector_2i(x0,y0),ns_vector_2i(x1,y0),y.properties.line.color,y.properties.line.width);
 						if (y.properties.draw_vertical_lines){
 							image.draw_line_color_thick(ns_vector_2i(x0,spec.x_axis_pos),ns_vector_2i(x0,y0),y.properties.line.color,y.properties.line.width);
@@ -750,10 +757,12 @@ void ns_graph::plot_object(const ns_graph_object & y, const ns_graph_object & x,
 								for (unsigned int c = 0; c < 3; c++){
 									int rx = 3*(border.x + (int)(dx*(x.x[i] - axes.boundary(0)+ spec.axes.axis_offset(0)) + shape_x))+c,
 										ry = (int)(h-border.y)-(int)(dy*(y.y[i]-axes.boundary(2)+ spec.axes.axis_offset(1)))+ shape_y;
-									if (ry < 0 || ry >= (int)h)
-										throw ns_ex("ns_graph::Could not draw point due to ry");
-									if (rx < 0 || rx >= (int)(3*w))
-										throw ns_ex("ns_graph::Could not draw point due to rx");
+									if (debug_range_checking) {
+										if (ry < 0 || ry >= (int)h)
+											throw ns_ex("ns_graph::Could not draw point due to ry");
+										if (rx < 0 || rx >= (int)(3 * w))
+											throw ns_ex("ns_graph::Could not draw point due to rx");
+									}
 									image[ry][rx] = (ns_8_bit)( (1.0 - y.properties.point.opacity)*image[ry][rx] + y.properties.point.opacity*(*color)[c]);
 								}
 							}
@@ -773,10 +782,12 @@ void ns_graph::plot_object(const ns_graph_object & y, const ns_graph_object & x,
 								for (unsigned int c = 0; c < 3; c++){
 									int rx = 3*(border.x + (int)(dx*(x.x[i] - axes.boundary(0)+ spec.axes.axis_offset(0)) + shape_x))+c,
 										ry = (int)(h-border.y)-(int)(dy*(y.y[i]-axes.boundary(2)+ spec.axes.axis_offset(1)))+ shape_y;
-									if (ry < 0 || ry >= (int)h)
-										throw ns_ex("ns_graph::Could not draw vertical line due to ry");
-									if (rx < 0 || rx >= (int)(3*w))
-										throw ns_ex("ns_graph::Could not draw vertical line due to rx");
+									if (debug_range_checking) {
+										if (ry < 0 || ry >= (int)h)
+											throw ns_ex("ns_graph::Could not draw vertical line due to ry");
+										if (rx < 0 || rx >= (int)(3 * w))
+											throw ns_ex("ns_graph::Could not draw vertical line due to rx");
+									}
 									image[ry][rx] = (ns_8_bit)( (1.0 - y.properties.point.opacity)*image[ry][rx] + y.properties.point.opacity*(*color)[c]);
 								}
 							}
@@ -796,6 +807,8 @@ void ns_graph::plot_object(const ns_graph_object & y, const ns_graph_object & x,
 				for (unsigned int c = 0; c < 3; c++){
 					if (rx +c> 3*w) 
 						break;
+					if (debug_range_checking && (h - _y - 1 >= h || rx + c >= 3*w))
+						throw ns_ex("Graph vertical line error");
 					image[h-_y-1][rx+c] = (ns_8_bit)((1.0 - y.properties.line.opacity)*image[h-_y-1][rx+c]+ y.properties.line.opacity*y.properties.line.color[c]);
 				}
 			}
@@ -803,10 +816,12 @@ void ns_graph::plot_object(const ns_graph_object & y, const ns_graph_object & x,
 	}
 	else if (y.type == ns_graph_object::ns_graph_horizontal_line) {
 		for (unsigned int i = 0; i < y.y.size(); i++) {
-			for (unsigned int _x = border.x; _x < w - border.x; _x++) {
-				int ry = (int)(h - border.y) - (int)(dy*(y.y[i] - axes.boundary(2) + spec.axes.axis_offset(1)));
+			for (unsigned int pixel_x = border.x; pixel_x < w - border.x; pixel_x++) {
+				int pixel_y = (int)(h - border.y-1) - (int)(dy*(y.y[i] - axes.boundary(2) + spec.axes.axis_offset(1)));
 				for (unsigned int c = 0; c < 3; c++) {
-					image[ry][3 * _x + c] = (ns_8_bit)((1.0 - y.properties.line.opacity)*image[ry][3 * _x + c] + y.properties.line.opacity*y.properties.line.color[c]);
+					if (debug_range_checking && (pixel_y >= h || pixel_x >= w))
+						throw ns_ex("Graph vertical line error");
+					image[pixel_y][3 * pixel_x + c] = (ns_8_bit)((1.0 - y.properties.line.opacity)*image[pixel_y][3 * pixel_x + c] + y.properties.line.opacity*y.properties.line.color[c]);
 				}
 			}
 		}

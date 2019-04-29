@@ -198,6 +198,8 @@ private:
 	unsigned long number_of_valid_elements, first_element;
 	
 	void draw_base_graph(const ns_graph_contents & graph_contents, const long marker_resize_factor, unsigned long start_time = 0, unsigned long stop_time = UINT_MAX) {
+
+		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Drawing telemetry base graph."));
 		if (graph_contents == ns_none)
 			return;
 		graph_top.clear();
@@ -291,6 +293,7 @@ private:
 		std::vector<double> scores;
 		scores.reserve(number_of_valid_elements);
 
+		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Calculating telemetry scores."));
 		//find lowest movement score.
 		for (unsigned int i = 0; i < number_of_valid_elements; i++) {
 			if (path->element(i + first_element).excluded)
@@ -343,6 +346,8 @@ private:
 		if (max_score == min_score)
 			max_score += .01;
 		//find min max of other statistics
+
+		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Calculating extrema."));
 		for (unsigned int i = 0; i < number_of_valid_elements; i++) {
 			if (path->element(i + first_element).excluded)
 				continue;
@@ -378,6 +383,8 @@ private:
 
 
 		double min_rounded_time(DBL_MAX), max_rounded_time(DBL_MIN);
+
+		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Normalizing scores."));
 		//calculate normalized scores and break up into independantly plotted segments
 		for (unsigned int i = 0; i < number_of_valid_elements; i++) {
 			const long & current_segment = segment_ids[i];
@@ -435,6 +442,7 @@ private:
 		const unsigned long resample_factor(4);
 		const unsigned long kernel_absolute_width(5);
 
+		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Calculate running extrema"));
 		ns_calculate_running_extrema(ns_connect_to_bottom, resample_factor, kernel_absolute_width, movement_vals, smoothed_movement_vals, temp1, temp2);
 		ns_calculate_running_extrema(ns_band,resample_factor, kernel_absolute_width, size_vals, smoothed_size_vals, temp1, temp2);
 		for (unsigned int i = 0; i < smoothed_movement_vals.size(); i++){
@@ -475,6 +483,8 @@ private:
 		unsigned long marker_size = desired_screen_marker_size /marker_resize_factor;
 		if (marker_size <desired_screen_marker_size)
 			marker_size = desired_screen_marker_size* marker_resize_factor;
+
+		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Building graph objects"));
 		for (unsigned int i = 0; i < number_of_separate_segments; i++) {
 
 			/*smoothed_movement_vals[i].properties.line.draw = size_vals[i].properties.line.draw = true;
@@ -593,7 +603,10 @@ private:
 
 		graph_top.set_graph_display_options("", axes, base_graph_top.properties().width/(float)base_graph_top.properties().height);
 		graph_bottom.set_graph_display_options("", axes, base_graph_bottom.properties().width / (float)base_graph_bottom.properties().height);
+
+		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Rendering movement graph"));
 		graph_top_specifics = graph_top.draw(base_graph_top);
+		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Rendering size graph"));
 		graph_bottom_specifics = graph_bottom.draw(base_graph_bottom);
 	}
 	inline void map_value_from_top_graph_onto_image(const float &x, const float &y, unsigned long & x1, unsigned long & y1) {
@@ -709,6 +722,7 @@ public:
 		posture_analysis_model = mod;
 	}
 	void draw(const ns_graph_contents graph_contents, const unsigned long element_id, const ns_vector_2i & position, const ns_vector_2i & graph_size, const ns_vector_2i & buffer_size, const float marker_resize_factor, ns_8_bit * buffer, const unsigned long start_time=0, const unsigned long stop_time=UINT_MAX) {
+		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Starting to draw telemetry."));
 		if (base_graph_top.properties().height == 0 || graph_contents != last_graph_contents || last_start_time != start_time || last_stop_time != stop_time || last_rescale_factor != marker_resize_factor) {
 			base_graph_top.use_more_memory_to_avoid_reallocations();
 			base_graph_bottom.use_more_memory_to_avoid_reallocations();
@@ -721,6 +735,7 @@ public:
 			base_graph_top.init(prop);
 			base_graph_bottom.init(prop);
 			try {
+
 				draw_base_graph(graph_contents, marker_resize_factor, start_time,stop_time);
 				last_graph_contents = graph_contents;
 				last_start_time = start_time;
@@ -733,6 +748,8 @@ public:
 				throw;
 			}
 		}
+
+		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Drawing everything"));
 		//top margin
 		for (unsigned int y = 0; y < border().y; y++)
 			for (unsigned int x = 0; x < graph_size.x; x++)
@@ -749,18 +766,19 @@ public:
 				for (unsigned int c = 0; c < 3; c++) 
 					buffer[map_pixel_from_image_onto_buffer(x + border().x, y + border().y, position, buffer_size) + c] = base_graph_top[y][3 * x + c];
 			}
-			overlay_metadata(graph_contents,element_id- first_element, position, buffer_size, marker_resize_factor,buffer);
 
 			//right margin
 			for (unsigned int x = base_graph_top.properties().width + border().x; x < graph_size.x; x++)
 				for (unsigned int c = 0; c < 3; c++)
 					buffer[map_pixel_from_image_onto_buffer(x, y + border().y, position, buffer_size) + c] = 0;
-		}//middle margin
+		}
+		//middle margin
 		for (unsigned int y = border().y + base_graph_bottom.properties().height; y < 2*border().y + base_graph_bottom.properties().height; y++)
 			for (unsigned int x = 0; x < graph_size.x; x++)
 				for (unsigned int c = 0; c < 3; c++)
 					buffer[map_pixel_from_image_onto_buffer(x, y, position, buffer_size) + c] = 0;
 		const long bottom_graph_y_offset(2 * border().y + base_graph_bottom.properties().height);
+
 		//BOTTOM GRAPH
 		for (unsigned int y = 0; y < base_graph_bottom.properties().height; y++) {
 			//left margin
@@ -772,7 +790,6 @@ public:
 				for (unsigned int c = 0; c < 3; c++)
 					buffer[map_pixel_from_image_onto_buffer(x + border().x, y + bottom_graph_y_offset, position, buffer_size) + c] = base_graph_bottom[y][3 * x + c];
 			}
-			overlay_metadata(graph_contents, element_id - first_element, position, buffer_size, marker_resize_factor, buffer);
 
 			//right margin
 			for (unsigned int x = base_graph_bottom.properties().width + border().x; x < graph_size.x; x++)
@@ -784,6 +801,8 @@ public:
 			for (unsigned int x = 0; x < graph_size.x; x++)
 				for (unsigned int c = 0; c < 3; c++)
 					buffer[map_pixel_from_image_onto_buffer(x, y, position, buffer_size) + c] = 0;
+
+		overlay_metadata(graph_contents, element_id - first_element, position, buffer_size, marker_resize_factor, buffer);
 	}
 	void show(bool s) { _show = s; }
 	bool show() const { return _show;  }

@@ -3145,6 +3145,9 @@ struct ns_asynch_worm_launcher{
 	}
 	void launch(){
 		try{
+
+			if (image_server.verbose_debug_output())
+				image_server_const.register_server_event_no_db(ns_image_server_event("Starting to load worm"));
 			worm_learner.death_time_solo_annotater.load_worm(region_id,worm,current_time,worm_learner.solo_annotation_visualization_type,storyboard,&worm_learner, worm_learner.worm_window.display_rescale_factor);
 			if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Finished loading.  Displaying."));
 			worm_learner.death_time_solo_annotater.display_current_frame();

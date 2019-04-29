@@ -860,12 +860,14 @@ public:
 	ns_64_bit current_region_id;
 	ns_stationary_path_id current_worm_id;
 	
-	void load_worm(const ns_64_bit region_info_id_, const ns_stationary_path_id & worm, const unsigned long current_time, const ns_death_time_solo_posture_annotater_timepoint::ns_visualization_type visualization_type, const ns_experiment_storyboard  * storyboard,ns_worm_learner * worm_learner_, const double external_rescale_factor){
-		
-		
+	void load_worm(const ns_64_bit region_info_id_, const ns_stationary_path_id& worm, const unsigned long current_time, const ns_death_time_solo_posture_annotater_timepoint::ns_visualization_type visualization_type, const ns_experiment_storyboard* storyboard, ns_worm_learner* worm_learner_, const double external_rescale_factor) {
 
-		if (sql.is_null())
+		if (sql.is_null()) {
+
+			if (image_server.verbose_debug_output())
+				image_server_const.register_server_event_no_db(ns_image_server_event("Connecting to sql db"));
 			sql.attach(image_server.new_sql_connection(__FILE__, __LINE__));
+		}
 		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Clearing self."));
 		clear();
 		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Clearing annotator."));
@@ -876,8 +878,6 @@ public:
 		stop_fast_movement();
 		current_visualization_type = visualization_type;
 		
-
-		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Showing telemetry"));
 	
 		telemetry.show(graph_contents != ns_animal_telemetry::ns_none);
 	

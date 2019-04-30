@@ -258,7 +258,7 @@ public:
 	}
 	void get_for_read_no_create(const typename data_t::id_type & id, const_handle_t & cache_object) {
 		if (!get_image(id, &cache_object, 0, ns_read, false)) {
-			throw ns_ex("Requesting a non-existant object");
+			throw ns_ex("simple_cache::get_for_read_no_create()::Requesting an object that has not previously been loaded");
 		}
 	}
 	void get_for_write(const typename data_t::id_type & id, handle_t & cache_object, typename data_t::external_source_type & external_source) {
@@ -508,7 +508,7 @@ private:
 		bool currently_have_write_lock(false), currently_have_table_lock(false);
 
 		if (request_type == ns_unlinked_singleton) {
-			if (external_source == 0) return false;
+		  if (external_source == 0)return false;
 			handle->unlinked_singleton = true;
 			data_t * data = new data_t;
 			try {
@@ -536,9 +536,12 @@ private:
 
 			//create a new cache entry if one isn't already there!
 			if (p == data_cache.end()) {
-
-				if (external_source == 0) return false;
-				//std::cerr << "$";
+			  
+			  if (external_source == 0){
+			    if (locked)lock.release();
+			    return false;
+			  }
+			  //std::cerr << "$";
 				typename cache_t::iterator p;
 				//create a new cache entry for the new image, and reserve it for writing
 				//{
@@ -587,8 +590,13 @@ private:
 				//if we find an old broken entry from a previous failed load.
 				//we will try to reload using this entry
 				if (p->second->to_be_deleted) {
-					if (external_source == 0) return false;
-					std::cerr << "%";
+				  if (external_source == 0){
+				    if (!only_try_to_get)
+				      p->second->object_write_lock.release();
+				    lock.release();
+				    return false;
+				  }
+				  //std::cerr << "%";
 					currently_have_table_lock = false;
 					setup_new_cache_object_and_handle_and_release_locks(id, handle, *external_source, request_type, p);
 					return true;
@@ -621,7 +629,7 @@ private:
 					object_write_requests_pending--;
 					currently_have_write_lock = true;
 					if (could_not_get_object) {
-						lock.release();
+					  lock.release();
 						return false;
 					}
 				}
@@ -629,8 +637,12 @@ private:
 				//if we find an old broken entry from a previous failed load.
 				//we will try to reload using this entry
 				if (p->second->to_be_deleted) {
-					if (external_source == 0) return false;
-					std::cerr << "%";
+				  if (external_source == 0){
+				    if (!only_try_to_get)
+				      p->second->object_write_lock.release();
+				    if (locked)lock.release();
+				    return false;
+				  }					//std::cerr << "%";
 					currently_have_table_lock = false;
 					setup_new_cache_object_and_handle_and_release_locks(id, handle, *external_source, request_type, p);
 					return true;

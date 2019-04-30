@@ -704,8 +704,13 @@ public:
 			return;
 		}
 		ns_death_time_posture_solo_annotater_data_cache_storage::handle_t handle;
+		try{
 		data_cache.get_region_movement_data_no_create(current_region_id, handle);
 		handle().data->clear_images_for_worm(properties_for_all_animals.stationary_path_id,local_image_cache);
+		}
+		catch(ns_ex & ex){
+		  cerr << ex.text() << "\n";
+		}
 		properties_for_all_animals = ns_death_time_annotation();
 		properties_for_all_animals.region_info_id = 0;
 		current_worm_id.group_id = 0;
@@ -1156,8 +1161,13 @@ public:
 	void load_movement_quantification_if_needed(ns_death_time_posture_solo_annotater_data_cache_storage::handle_t * handle) {
 		ns_death_time_posture_solo_annotater_data_cache_storage::handle_t local_handle;
 		if (handle == 0) {
+		  try{
 			data_cache.get_region_movement_data_no_create(current_region_id, local_handle);
 			handle = &local_handle;
+		  }
+		  catch(ns_ex & ex){
+		    throw ns_ex("Error while accessing previously loaded movement data:") << ex.text();
+		  }
 		}
 
 		if (!movement_quantification_data_loaded(*handle)) 

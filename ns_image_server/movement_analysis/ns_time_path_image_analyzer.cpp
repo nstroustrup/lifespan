@@ -658,7 +658,7 @@ void ns_time_path_image_movement_analyzer<allocator_T>::process_raw_images(const
 																const ns_analyzed_image_time_path_death_time_estimator * e,ns_sql & sql, const long group_number,const bool write_status_to_db,
 																const ns_analysis_db_options &id_reanalysis_options){
 	if (e->software_version_number() != NS_CURRENT_POSTURE_MODEL_VERSION)
-		throw ns_ex("This software, which is running posture analysis version ") << NS_CURRENT_POSTURE_MODEL_VERSION << ", cannot use the incompatible posture analysis parameter set " << e->name << ", which is version " << e->software_version_number();
+	  throw ns_ex("This software, which is running posture analysis version ") << ns_to_string(NS_CURRENT_POSTURE_MODEL_VERSION) << ", cannot use the incompatible posture analysis parameter set " << e->name << ", which is version " << e->software_version_number();
 	region_info_id = region_id; 
 	obtain_analysis_id_and_save_movement_data(region_id, sql, id_reanalysis_options,ns_do_not_write_data);
 	if (analysis_id == 0)
@@ -1528,7 +1528,7 @@ void ns_time_path_image_movement_analyzer<allocator_T>::reanalyze_with_different
 		throw ns_ex("Attempting to reanalyze an unloaded image!");
 
 	if (posture_model_version_used != e->software_version_number())
-		throw ns_ex("This region's movement analysis was run using posture analysis version ") << posture_model_version_used << ".  This is incompatible with the time series denoising parameter file you have specified, " << e->name << " which is v " << e->software_version_number() << ".  You can fix this by running the job \"Analyze Worm Movement using Cached Images\" which will preserve all by hand annotations.";
+	  throw ns_ex("This region's movement analysis was run using posture analysis version ") << ns_to_string(posture_model_version_used) << ".  This is incompatible with the posture analysis file you have specified, \"" << e->name << "\" which is v " << e->software_version_number() << ".  You can fix this by running the job \"Analyze Worm Movement using Cached Images\" which will preserve all by hand annotations.";
 
 
 	for (unsigned long g = 0; g < groups.size(); g++) {
@@ -1568,7 +1568,7 @@ bool ns_time_path_image_movement_analyzer<allocator_T>::load_completed_analysis(
 	populate_movement_quantification_from_file(sql, exclude_movement_quantification);
 
 	if (posture_model_version_used != e->software_version_number())
-		throw ns_ex("This region's movement analysis was run using posture analysis version ") << posture_model_version_used << ".  This is incompatible with the time series denoising parameter file you have specified, " << e->name << " which is v " << e->software_version_number() << ".  You can fix this by running the job \"Analyze Worm Movement using Cached Images\" which will preserve all by hand annotations.";
+		throw ns_ex("This region's movement analysis was run using posture analysis version ") << posture_model_version_used << ".  This is incompatible with the movement analysis model you have specified, \"" << e->name << "\" which is v " << e->software_version_number() << ".  You can fix this by running the job \"Analyze Worm Movement using Cached Images\" which will preserve all by hand annotations.";
 
 
 	ns_64_bit file_specified_analysis_id = this->analysis_id;
@@ -8095,11 +8095,15 @@ ns_time_path_posture_movement_solution ns_threshold_movement_posture_analyzer::r
 
 
 ns_analyzed_image_time_path_death_time_estimator * ns_get_death_time_estimator_from_posture_analysis_model(const ns_posture_analysis_model & m){
+  if (m.name.empty())
+    throw ns_ex("ns_analyzed_image_time_path_death_time_estimator::ns_get_death_time_estimator_from_posture_analysis_model::recieved model with no name");
 	ns_analyzed_image_time_path_death_time_estimator * p;
 	if (m.posture_analysis_method == ns_posture_analysis_model::ns_hidden_markov){
+	  //cout << "MARKOV";
 		p = new ns_time_path_movement_markov_solver(m.hmm_posture_estimator);
 	}
 	else if (m.posture_analysis_method == ns_posture_analysis_model::ns_threshold){
+	  // cout <<"THRESH";
 		p = new ns_threshold_movement_posture_analyzer(m.threshold_parameters);
 	}
 	else if (m.posture_analysis_method == ns_posture_analysis_model::ns_not_specified)

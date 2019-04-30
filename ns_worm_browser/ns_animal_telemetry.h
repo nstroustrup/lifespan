@@ -28,15 +28,25 @@ public:
 		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Loading time series denoising parameters"));
 		const ns_time_series_denoising_parameters time_series_denoising_parameters(ns_time_series_denoising_parameters::load_from_db(region_id_, sql));
 		ns_image_server::ns_posture_analysis_model_cache::const_handle_t handle;
-		image_server.get_posture_analysis_model_for_region(region_id_, handle, sql);
-		ns_acquire_for_scope<ns_analyzed_image_time_path_death_time_estimator> death_time_estimator(
-			ns_get_death_time_estimator_from_posture_analysis_model(handle().model_specification
-			));
-		handle.release();
+		try{
+		  image_server.get_posture_analysis_model_for_region(region_id_, handle, sql);
+		  //cout << "Using model " << handle().name << "\n";
+		  ns_acquire_for_scope<ns_analyzed_image_time_path_death_time_estimator> death_time_estimator(
+													      ns_get_death_time_estimator_from_posture_analysis_model(handle().model_specification
+																				      ));
+		  handle.release();
+		  
+		  if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Loading completed analysis"));
+		  loaded_path_data_successfully = movement_analyzer.load_completed_analysis(region_id_, solution, time_series_denoising_parameters, &death_time_estimator(), sql, !load_movement_quantification);
+		  death_time_estimator.release();
+		}
+		catch(ns_ex & ex){
+		  if (handle.is_valid())
+		    handle.release();
+		  throw ns_ex("Error while loading worm movement information: ") << ex.text();
 
-		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Loading completed analysis"));
-		loaded_path_data_successfully = movement_analyzer.load_completed_analysis(region_id_, solution, time_series_denoising_parameters, &death_time_estimator(), sql, !load_movement_quantification);
-		death_time_estimator.release();
+		}
+	      
 		movement_data_loaded = true;
 		if (load_movement_quantification)
 			movement_quantification_data_loaded = true;

@@ -1678,7 +1678,7 @@ struct ns_asynch_region_picker{
 			}
 		}
 		catch(ns_ex & ex){
-			cerr << "Error loading worm info:" << ex.text();
+			cerr << "Error switching to a different region:" << ex.text();
 			worm_learner.death_time_solo_annotater.close_worm();
 			show_worm_window = false;
 			ns_set_menu_bar_activity(true);
@@ -2431,7 +2431,7 @@ struct ns_asynch_annotation_saver {
 			ns_set_menu_bar_activity(true);
 		}
 		catch (ns_ex & ex) {
-			cerr << "Error loading worm info:" << ex.text();
+			cerr << "Error loading single worm data from storage asych: " << ex.text();
 			worm_learner.death_time_solo_annotater.close_worm();
 			show_worm_window = false;
 			ns_set_menu_bar_activity(true);
@@ -3157,15 +3157,15 @@ struct ns_asynch_worm_launcher{
 		//	cerr << "Add alerg dialog back in!\n";
 		}
 		catch(ns_ex & ex){
-			cerr << "Error loading worm info:" << ex.text();
+			cerr << "Error loading single worm data from storage asynch:" << ex.text();
 			worm_learner.death_time_solo_annotater.close_worm();
 			show_worm_window = false;
 		//	stop_death_time_annotation();
 			ns_set_menu_bar_activity(true);
-			ns_alert_dialog d;
-			d.text =  ex.text();
-			d.act();
-			cerr << ex.text() << "\n";
+			//ns_alert_dialog d;
+			//d.text =  ex.text();
+			//d.act();
+			//cerr << ex.text() << "\n";
 			worm_learner.worm_launch_finished = true;
 		}
 	}

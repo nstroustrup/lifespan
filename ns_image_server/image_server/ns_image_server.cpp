@@ -3351,7 +3351,7 @@ void ns_image_server::get_posture_analysis_model_for_region(const ns_64_bit regi
 		throw ns_ex("ns_image_server::get_posture_analysis_model_for_region()::Could not find region ") << region_info_id << " in db";
 	if (res[0][0].size() == 0)
 		throw ns_ex("ns_image_server::get_posture_analysis_model_for_region()::No posture analysis model was specified for region ")<< region_info_id;
-
+	//cout << "Loading region " << res[0][0] << "\n";
 	if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("get_posture_analysis_model_for_region::sql result checked"));
 	ns_posture_analysis_model_entry_source source;
 	source.analysis_method = (ns_posture_analysis_model::method_from_string(res[0][1]));

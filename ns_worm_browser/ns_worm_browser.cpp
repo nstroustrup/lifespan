@@ -2382,7 +2382,7 @@ private:
 		
 		std::vector<const T *> shuffled_subjects;
 		shuffled_subjects.reserve(subjects.size());
-		for (std::set<T>::const_iterator p = subjects.begin(); p != subjects.end(); ++p)
+		for (typename std::set<T>::const_iterator p = subjects.begin(); p != subjects.end(); ++p)
 			shuffled_subjects.push_back(&(*p));
 		std::random_shuffle(shuffled_subjects.begin(), shuffled_subjects.end());
 		for (unsigned long i = 0; i < test_set_N; i++)
@@ -2780,7 +2780,7 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 							ns_death_time_annotation a(movement_results.samples[i].regions[j]->time_path_image_analyzer->group(g).paths[p].sticky_properties());
 							if (a.is_excluded() || 
 								a.is_censored() || 
-								movement_results.samples[i].regions[j]->time_path_image_analyzer->group(g).paths[p].sticky_properties().event_observation_type != ns_death_time_annotation::ns_single_worm || 
+								movement_results.samples[i].regions[j]->time_path_image_analyzer->group(g).paths[p].sticky_properties().event_observation_type != ns_death_time_annotation::ns_standard || 
 								movement_results.samples[i].regions[j]->time_path_image_analyzer->group(g).paths[p].by_hand_death_time().fully_unbounded())
 								continue;
 
@@ -7187,6 +7187,7 @@ void ns_worm_learner::draw_worm_window_image(ns_image_standard & image){
 
 	if (death_time_solo_annotater.telemetry.show()) {
 		try {
+		 
 			death_time_solo_annotater.load_movement_quantification_if_needed(0);
 			
 		
@@ -7212,12 +7213,10 @@ void ns_worm_learner::draw_worm_window_image(ns_image_standard & image){
 			for (int _y = 0; _y < worm_window.gl_buffer_properties.height; _y++) 
 				for (unsigned int _x = 3*new_image_size.width; _x < 3*worm_window.gl_buffer_properties.width; _x++) 
 					worm_window.gl_buffer[3 * worm_window.gl_buffer_properties.width*_y + _x] = 0;
-			cout << ex.text();
+			cout << "Error while drawing telemetry: " << ex.text();
 		}
 		
 	}
-	
-	
 
 	lock.release();
 	worm_window.redraw_screen();
@@ -7580,6 +7579,7 @@ void ns_worm_learner::update_main_window_display(){
 	if (new_gl_image_pane_height == 0)
 		new_gl_image_pane_width = 100;
 
+	ns_acquire_lock_for_scope lock(main_window.display_lock,__FILE__,__LINE__);
 //	cerr << "worm_learner has received a request for a gl_window of size " << new_gl_image_pane_width << "x" << new_gl_image_pane_height << "\n";
 	float zoom_x =(float)((float)new_gl_image_pane_width)/main_window.gl_buffer_properties.width;
 	float zoom_y = (float)((float)new_gl_image_pane_height)/main_window.gl_buffer_properties.height;
@@ -7587,7 +7587,6 @@ void ns_worm_learner::update_main_window_display(){
 		zoom_x = .01;
 	
 	
-	ns_acquire_lock_for_scope lock(main_window.display_lock,__FILE__,__LINE__);
 	//if (zoom_x < zoom_y)
 	main_window.image_zoom = zoom_x;
 	//else main_window.image_zoom = zoom_y;
@@ -7617,12 +7616,12 @@ void ns_worm_learner::update_worm_window_display(){
 	if (new_gl_image_pane_height == 0)
 		new_gl_image_pane_height = 100;
 
+	ns_acquire_lock_for_scope lock(worm_window.display_lock,__FILE__,__LINE__);
 	float zoom_x =(float)((float)new_gl_image_pane_width)/worm_window.gl_buffer_properties.width;
 	float zoom_y = (float)((float)new_gl_image_pane_height)/worm_window.gl_buffer_properties.height;
 	if (zoom_x < .01)
 		zoom_x = .01;
 	
-	ns_acquire_lock_for_scope lock(worm_window.display_lock,__FILE__,__LINE__);
 
 	float cur_resize = (worm_window.gl_buffer_properties.width * worm_window.image_zoom) / (float)worm_window.gl_image_size.x;
 	
@@ -7843,7 +7842,7 @@ bool ns_worm_learner::start_death_time_annotation(const ns_behavior_mode m, cons
 				if (m == ns_worm_learner::ns_annotate_storyboard_region) {
 					if (image_server.verbose_debug_output())
 						image_server_const.register_server_event_no_db(ns_image_server_event("Trying to pre-cache."));
-					storyboard_annotater.precache_worm_images_asynch();
+					//storyboard_annotater.precache_worm_images_asynch();
 				}
 		}
 		else{

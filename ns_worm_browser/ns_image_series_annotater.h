@@ -25,7 +25,7 @@ public:
 	virtual ns_image_storage_source_handle<ns_8_bit> get_image(ns_sql & sql)=0;
 	virtual void load_image(const unsigned long bottom_border,ns_annotater_image_buffer_entry & im,ns_sql & sql, ns_simple_local_image_cache &image_cache, ns_annotater_memory_pool & pool,const unsigned long resize_factor_=1){
 		resize_factor = resize_factor_;
-		ns_image_storage_source_handle<ns_8_bit> & source(get_image(sql));
+		ns_image_storage_source_handle<ns_8_bit>  source(get_image(sql));
 
 		ns_image_standard * temp_buffer = pool.get(source.input_stream().properties());
 		try {

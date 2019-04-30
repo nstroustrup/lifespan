@@ -371,6 +371,7 @@ void ns_hmm_solver::build_movement_state_solution_from_movement_transitions(cons
 	//set all states skipped by default.
 	movement_state_solution.dead.end_index = movement_state_solution.dead.start_index = 0;
 	movement_state_solution.dead.skipped = true;
+	movement_state_solution.dead.longest_observation_gap_within_interval = 0;
 	movement_state_solution.expanding = movement_state_solution.post_expansion_contracting = movement_state_solution.post_expansion_contracting = movement_state_solution.slowing = movement_state_solution.dead;
 
 	int expanding_state = 0, contracting_state = 0;

@@ -332,8 +332,10 @@ public:
 			string experiment_name;
 			if (!get_experiment_name(experiment_id_,experiment_name))
 				throw ns_ex("Could not find experiment in cached experiment information.");
+			cerr << "Selecting experiment " << experiment_name << "\n";
 		}
 		if (experiment_id_ != 0){
+
 			load(experiment_id_,sql);
 			experiment_id = experiment_id_;
 		}

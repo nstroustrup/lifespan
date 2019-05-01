@@ -193,9 +193,9 @@ void ns_worm_learner::calculate_movement_threshold(const std::string & filename,
 }
 void ns_worm_learner::set_svm_model_specification(ns_worm_detection_model_cache::const_handle_t & spec){
 	model_specification = &spec;
-	if (spec == default_model || !spec.is_valid())
-		cout << "No worm detection model specified.\n";
-	else cout << "Using model specification " << spec().model_specification.model_name << "\n";
+	//if (spec == default_model || !spec.is_valid())
+	//	cout << "No worm detection model specified.\n";
+	//else cout << "Using model specification " << spec().model_specification.model_name << "\n";
 }
 void ns_worm_learner::calculate_heatmap_overlay(){
 	ns_image_standard tmp;
@@ -7940,7 +7940,7 @@ void ns_worm_learner::stop_death_time_annotation() {
 	//death_time_annotater.clear();
 	ns_fl_lock(__FILE__,__LINE__);
 	set_behavior_mode(ns_worm_learner::ns_draw_boxes);
-	Fl::release();
+	ns_fl_unlock(__FILE__, __LINE__);
 	ns_hide_worm_window();
 	display_splash_image();
 	ns_update_main_information_bar("");

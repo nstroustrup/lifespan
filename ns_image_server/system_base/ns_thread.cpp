@@ -961,7 +961,7 @@ void ns_lock::release(ns_mutex_handle & mutex){
 #ifdef NS_THREAD_DEBUG	
   if (ns_output_lock_init && this != &output_lock){
     output_lock.wait_to_acquire(__FILE__,__LINE__);
-    cerr << "[*->" << name << "<-*";
+    cerr << "[" << name << "->*!";
     #ifdef NS_DEBUG_LOCK
       cerr << ns_shorten_filename(acquire_source_file) << " " << acquire_source_line;
     #endif

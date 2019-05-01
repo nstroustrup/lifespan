@@ -992,18 +992,22 @@ bool ns_experiment_storyboard::load_events_from_annotation_compiler(const ns_loa
 			//check subject matches to an existing worm detection result, which we'll need to generate images etc.
 			std::map<ns_64_bit, map<ns_64_bit, ns_reg_info> >::iterator p(worm_detection_id_lookup.find(annotation_subject->annotation_whose_image_should_be_used.region_info_id)); 
 		
-			std::string problem_desc = "**E**: " + annotation_subject->annotation_whose_image_should_be_used.brief_description() + "\n" +
-				"**C**: " + annotation_subject->event_annotation.brief_description();
 			if (p == worm_detection_id_lookup.end()) {
+				std::string problem_desc = "**E**: " + annotation_subject->annotation_whose_image_should_be_used.brief_description() + "\n" +
+					"**C**: " + annotation_subject->event_annotation.brief_description();
 				problem_ids[annotation_subject->event_annotation.region_info_id].push_back(std::pair<ns_64_bit, std::string>(0, problem_desc + " is not in a valid region."));
 				continue;
 			}
 			map<ns_64_bit, ns_reg_info>::iterator q2(p->second.find(annotation_subject->annotation_whose_image_should_be_used.time.period_end));
 			if (q2 == p->second.end()) {
+				std::string problem_desc = "**E**: " + annotation_subject->annotation_whose_image_should_be_used.brief_description() + "\n" +
+					"**C**: " + annotation_subject->event_annotation.brief_description();
 				problem_ids[annotation_subject->event_annotation.region_info_id].push_back(std::pair<ns_64_bit, std::string>(0, problem_desc + " cannot be matched to an existing image"));
 				continue;
 			}
 			if (q2->second.worm_detection_results_id == 0) {
+				std::string problem_desc = "**E**: " + annotation_subject->annotation_whose_image_should_be_used.brief_description() + "\n" +
+					"**C**: " + annotation_subject->event_annotation.brief_description();
 				problem_ids[annotation_subject->event_annotation.region_info_id].push_back(std::pair<ns_64_bit, std::string>(q2->second.worm_detection_results_id,  problem_desc + " is matched to an image lacking a worm detection results id"));
 			}
 			all_ids[annotation_subject->event_annotation.region_info_id].push_back(std::pair<ns_64_bit, std::string>(q2->second.worm_detection_results_id,""));

@@ -705,11 +705,17 @@ public:
 		}
 		ns_death_time_posture_solo_annotater_data_cache_storage::handle_t handle;
 		try{
-		data_cache.get_region_movement_data_no_create(current_region_id, handle);
-		handle().data->clear_images_for_worm(properties_for_all_animals.stationary_path_id,local_image_cache);
-		}
+			data_cache.get_region_movement_data_no_create(current_region_id, handle);
+				}
 		catch(ns_ex & ex){
-		  cerr << ex.text() << "\n";
+		  //cerr << ex.text() << "\n";
+		}
+		try {
+			if (handle.is_valid())
+				handle().data->clear_images_for_worm(properties_for_all_animals.stationary_path_id, local_image_cache);
+		}
+		catch (ns_ex & ex) {
+			cerr << ex.text() << "\n";
 		}
 		properties_for_all_animals = ns_death_time_annotation();
 		properties_for_all_animals.region_info_id = 0;
@@ -1106,9 +1112,10 @@ public:
 		catch(ns_ex & ex){
 			if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Closing worm on error."));
 			close_worm();
-			cerr << "Error loading worm from region " << metadata.plate_name() << " : " << ex.text() << "\n";
+			ns_ex ex2("Error loading worm from region ");
+			ex2 << metadata.plate_name() << " : " << ex.text();
 			ns_hide_worm_window();
-			throw;
+			throw ex;
 		}
 	}
 

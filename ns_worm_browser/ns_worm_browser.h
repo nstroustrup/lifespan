@@ -74,7 +74,8 @@ ns_vector_2i worm_image_window_size_difference();
 
 void ns_worm_browser_output_debug(const unsigned long line_number,const std::string & source, const std::string & message);
 
-
+void ns_fl_lock(const char * file,unsigned long line);
+void ns_fl_unlock(const char * file, unsigned long line);
 void report_changes_made_to_screen();
 
 void ns_set_main_window_annotation_controls_activity(const bool active);
@@ -561,13 +562,14 @@ public:
 	}
 	ns_worm_learner():behavior_mode(ns_draw_boxes),mask_analyzer(4096), process_mask_menu_displayed(false),
 		worm_detection_results(0),model_specification(&default_model),last_annotation_type_loaded(ns_death_time_annotation_set::ns_no_annotations),
-		current_image_lock("ns_worm_learner::current_image"),
+	  current_image_lock("ns_worm_learner::current_image"),storyboard_lock("sbl"),
 		movement_data_is_strictly_decreasing_(false),overwrite_existing_mask_when_submitting(false),output_svg_spines(false),static_mask(0),generate_mp4_(false),
 		/*submit_capture_specification_to_db_when_recieved(false),*/overwrite_submitted_capture_specification(false),maximum_window_size(1024,768),
-		current_annotater(&death_time_annotater),storyboard_annotater(2),main_window("Main Window"), persistant_sql_connection(0), persistant_sql_lock("psl"), show_testing_menus(true),
+	  storyboard_annotater(2),main_window("Main Window"), persistant_sql_connection(0), persistant_sql_lock("psl"), show_testing_menus(true),
 				worm_window("Worm Window"), worm_image_offset_due_to_telemetry_graph_spacing(0, 0) {
 		storyboard_annotater.set_resize_factor(2);
 		last_button_press.click_type = ns_button_press::ns_none;
+		current_annotater = &storyboard_annotater;
 	}
 
 	~ns_worm_learner();
@@ -852,7 +854,7 @@ public:
 	
 	ns_experiment_region_selector data_selector;
 
-	ns_death_time_posture_annotater death_time_annotater;
+	//ns_death_time_posture_annotater death_time_annotater;
 	ns_experiment_storyboard_annotater storyboard_annotater;
 	ns_image_series_annotater * current_annotater;
 	ns_death_time_solo_posture_annotater death_time_solo_annotater;
@@ -880,6 +882,8 @@ public:
 	ns_death_time_solo_posture_annotater_timepoint::ns_visualization_type solo_annotation_visualization_type;
 
 	string current_clipboard_filename;
+
+	ns_lock storyboard_lock;
 private:
 	ns_image_standard animation_temp;
 	ns_death_time_annotation_set::ns_annotation_type_to_load last_annotation_type_loaded;

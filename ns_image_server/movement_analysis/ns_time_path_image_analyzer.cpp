@@ -1527,8 +1527,11 @@ void ns_time_path_image_movement_analyzer<allocator_T>::reanalyze_with_different
 	if (region_info_id == 0)
 		throw ns_ex("Attempting to reanalyze an unloaded image!");
 
-	if (posture_model_version_used != e->software_version_number())
-	  throw ns_ex("This region's movement analysis was run using posture analysis version ") << ns_to_string(posture_model_version_used) << ".  This is incompatible with the posture analysis file you have specified, \"" << e->name << "\" which is v " << e->software_version_number() << ".  You can fix this by running the job \"Analyze Worm Movement using Cached Images\" which will preserve all by hand annotations.";
+	if (posture_model_version_used != e->software_version_number()){
+	  //for (unsigned int i = 0; i <posture_model_version_used.size(); i++)
+	  //cout << (int)posture_model_version_used[i];
+	  throw ns_ex("This region's movement analysis was run using posture analysis version \"") << ns_to_string(posture_model_version_used) << "\".  This is incompatible with the posture analysis file you have specified, \"" << e->name << "\" which is v " << e->software_version_number() << ".  You can fix this by running the job \"Analyze Worm Movement using Cached Images\" which will preserve all by hand annotations.";
+	}
 
 
 	for (unsigned long g = 0; g < groups.size(); g++) {
@@ -1567,8 +1570,12 @@ bool ns_time_path_image_movement_analyzer<allocator_T>::load_completed_analysis(
 	if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Populating movement quantification from file"));
 	populate_movement_quantification_from_file(sql, exclude_movement_quantification);
 
-	if (posture_model_version_used != e->software_version_number())
-		throw ns_ex("This region's movement analysis was run using posture analysis version ") << posture_model_version_used << ".  This is incompatible with the movement analysis model you have specified, \"" << e->name << "\" which is v " << e->software_version_number() << ".  You can fix this by running the job \"Analyze Worm Movement using Cached Images\" which will preserve all by hand annotations.";
+	if (posture_model_version_used != e->software_version_number()){
+	  //for (unsigned int i = 0; i < posture_model_version_used.size(); i++)
+	  //cout << (int)posture_model_version_used[i];
+	  throw ns_ex("This region's movement analysis was run using posture analysis version \"") << ns_to_string(posture_model_version_used) << "\".  This is incompatible with the movement analysis model you have specified, \"" << e->name << "\" which is v " << e->software_version_number() << ".  You can fix this by running the job \"Analyze Worm Movement using Cached Images\" which will preserve all by hand annotations.";
+	}
+
 
 
 	ns_64_bit file_specified_analysis_id = this->analysis_id;

@@ -13,9 +13,9 @@
 #include <string.h>
 #include <stdio.h>
 
-#ifdef _DEBUG
+//#ifdef _DEBUG
 //#define NS_THREAD_DEBUG
-#endif
+//#endif
 
 #ifdef NS_THREAD_DEBUG
 #include "ns_dir.h"
@@ -890,7 +890,9 @@ void ns_lock::wait_to_acquire(const char * source_file, const unsigned int sourc
 	#ifdef NS_THREAD_DEBUG
 		if (ns_output_lock_init && this != &output_lock){
 			ns_64_bit dur(t.stop());
+			output_lock.wait_to_acquire(__FILE__,__LINE__);
 			cerr << "{" << dur/1000 << "}\n";
+			output_lock.release();
 		}
 	#endif
 	currently_holding = true;
@@ -943,17 +945,30 @@ bool ns_lock::try_to_acquire(const char * source_file, const unsigned int source
 	#ifdef NS_THREAD_DEBUG
 		if (ns_output_lock_init && this != &output_lock){
 			ns_64_bit dur(t.stop());
+
+			output_lock.wait_to_acquire(__FILE__,__LINE__);
 			cerr << "{" << dur/1000 << ";";
 			if (currently_holding)
 				cerr << "Taken}\n";
 			else cerr << "Busy}\n";
+			output_lock.release();
 		}
 	#endif
 	return currently_holding;
 }
 
 void ns_lock::release(ns_mutex_handle & mutex){
-
+#ifdef NS_THREAD_DEBUG	
+  if (ns_output_lock_init && this != &output_lock){
+    output_lock.wait_to_acquire(__FILE__,__LINE__);
+    cerr << "[*->" << name << "<-*";
+    #ifdef NS_DEBUG_LOCK
+      cerr << ns_shorten_filename(acquire_source_file) << " " << acquire_source_line;
+    #endif
+      cerr << "]\n"; 
+    output_lock.release();
+  }
+#endif
 #ifdef _WIN32 
 		 LeaveCriticalSection(&mutex);
 #else
@@ -1030,7 +1045,7 @@ ns_acquire_lock_for_scope::~ns_acquire_lock_for_scope(){
 ns_acquire_lock_for_scope::ns_acquire_lock_for_scope(ns_lock & lock_,const char * file, const unsigned int line,const bool acquire_immediately):currently_held(false){
 	lock = &lock_;
 	if (acquire_immediately)
-		get(__FILE__,__LINE__);
+		get(file,line);
 }
 	
 

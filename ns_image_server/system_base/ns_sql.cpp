@@ -16,6 +16,8 @@
 #include "ns_image_server.h"
 #endif
 #include <stdlib.h>
+
+
 using namespace std;
 
 ns_query & ns_query::write_data(const char * buffer, const unsigned int length){

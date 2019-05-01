@@ -28,7 +28,9 @@ namespace ns_mysql_header{
 #endif
 }
 
-#define NS_INCLUDE_ERROR_SIMULATION 1
+//this is useful for debugging
+//but adds a lot of extra locking to sql commands
+#define NS_INCLUDE_ERROR_SIMULATION 0
 
 #undef bool
 #undef sleep

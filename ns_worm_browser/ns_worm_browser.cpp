@@ -34,7 +34,7 @@ void ns_worm_learner::reset_sql_connections() {
 	ns_acquire_lock_for_scope lock(persistant_sql_lock, __FILE__, __LINE__);
 	ns_safe_delete(persistant_sql_connection);
 	lock.release();
-	death_time_annotater.clear_sql();
+	//death_time_annotater.clear_sql();
 	death_time_solo_annotater.clear_sql();
 	storyboard_annotater.clear_sql();
 	storyboard_annotater.clear_precache_sql();
@@ -7802,10 +7802,10 @@ bool ns_worm_learner::start_death_time_annotation(const ns_behavior_mode m, cons
 	
 	area_handler.clear_boxes();
 	try{
+	  ns_acquire_lock_for_scope lock(storyboard_lock,__FILE__,__LINE__);
 		if (m == ns_worm_learner::ns_annotate_storyboard_region || 
 			m == ns_worm_learner::ns_annotate_storyboard_sample || 
 			m == ns_worm_learner::ns_annotate_storyboard_experiment){
-				current_annotater = &storyboard_annotater;
 				storyboard_annotater.clear();
 
 				ns_experiment_storyboard_spec subject;
@@ -7837,7 +7837,7 @@ bool ns_worm_learner::start_death_time_annotation(const ns_behavior_mode m, cons
 				storyboard_annotater.display_current_frame();
 				if (image_server.verbose_debug_output())
 					image_server_const.register_server_event_no_db(ns_image_server_event("Display requested"));
-				set_behavior_mode(m);
+				//set_behavior_mode(m);
 				//We can speed things up if only one region is being considered.
 				if (m == ns_worm_learner::ns_annotate_storyboard_region) {
 					if (image_server.verbose_debug_output())
@@ -7846,7 +7846,7 @@ bool ns_worm_learner::start_death_time_annotation(const ns_behavior_mode m, cons
 				}
 		}
 		else{
-			current_annotater = &death_time_annotater;
+		  /*current_annotater = &death_time_annotater;
 			death_time_annotater.clear();
 
 			unsigned long region_id = data_selector.current_region().region_id;
@@ -7864,9 +7864,12 @@ bool ns_worm_learner::start_death_time_annotation(const ns_behavior_mode m, cons
 			death_time_annotater.load_region(data_selector.current_region().region_id, type, this,worm_window.display_rescale_factor);
 			death_time_annotater.display_current_frame();
 			death_time_annotater.request_refresh();
-		}
-
+		  */
+		 }
+		lock.release();
+		ns_fl_lock(__FILE__,__LINE__);
 		set_behavior_mode(m);
+		ns_fl_unlock(__FILE__,__LINE__);
 	}
 	catch (...) {
 		stop_death_time_annotation();
@@ -7934,9 +7937,10 @@ void ns_worm_learner::stop_death_time_annotation() {
 	//request the user save; stop the close operation on cancel
 	if (!prompt_to_save_death_time_annotations())
 		return;
-	death_time_annotater.clear();
-
+	//death_time_annotater.clear();
+	ns_fl_lock(__FILE__,__LINE__);
 	set_behavior_mode(ns_worm_learner::ns_draw_boxes);
+	Fl::release();
 	ns_hide_worm_window();
 	display_splash_image();
 	ns_update_main_information_bar("");

@@ -1370,6 +1370,7 @@ public:
 	}
 	void update_experiment_choice(Fl_Menu_Bar & bar){
 		ns_sql & sql(worm_learner.get_sql_connection());
+		menu_bar_processing_lock.mute_debug_output = true;
 		ns_acquire_lock_for_scope lock(menu_bar_processing_lock,__FILE__,__LINE__);
 
 		worm_learner.data_selector.load_experiment_names(sql);
@@ -2428,13 +2429,13 @@ public:
 	}
 };
 
-
+//MUST HOLD STORYBOARD LOCK BEFORE CALLING
 void ns_specify_worm_details(const ns_64_bit region_id,const ns_stationary_path_id & worm, const ns_death_time_annotation & sticky_properties, std::vector<ns_death_time_annotation> & event_times,double external_rescale_factor){
-  ns_acquire_lock_for_scope storyboard_lock(worm_learner.storyboard_lock,__FILE__,__LINE__);
+  //ns_acquire_lock_for_scope storyboard_lock(worm_learner.storyboard_lock,__FILE__,__LINE__);
   worm_learner.storyboard_annotater.specifiy_worm_details(region_id,worm,sticky_properties,event_times);
   worm_learner.storyboard_annotater.redraw_current_metadata(external_rescale_factor);
   worm_learner.storyboard_annotater.request_refresh();
-  storyboard_lock.release();
+  //storyboard_lock.release();
 }
 
 
@@ -2645,6 +2646,7 @@ void request_rate_limited_window_redraw_from_main_thread() {
 		if (debug_handlers) cout << "r";
 		return;
 	}
+	redraw_rate_limiting_lock.mute_debug_output = true;
 	if (!redraw_rate_limiting_lock.try_to_acquire(__FILE__, __LINE__)) {
 		if (debug_handlers) cout << "r";
 		return;
@@ -2674,11 +2676,11 @@ ns_lock fl_output_lock("Fl::lock");
 void ns_fl_lock(const char * file,unsigned long line){
   //cerr << "FL_LOCK: " << file << "\n";
   Fl::lock();
-  fl_output_lock.wait_to_acquire(file,line);
+  //fl_output_lock.wait_to_acquire(file,line);
 }
 void ns_fl_unlock(const char * file, unsigned long line){
 //cerr << "FL_UNLOCK: " << file << "\n";
-  fl_output_lock.release();
+  //fl_output_lock.release();
   Fl::unlock();
 }
 ns_64_bit last_callback_time(0);
@@ -2719,7 +2721,7 @@ void idle_main_window_update_callback(void * force_redraw) {
     const bool main_window_is_wrong_size(main_window->w() != main_window_requested_size.x || main_window->h() != main_window_requested_size.x);
     */
   if (debug_handlers) cout << "i";
-	{
+  {
 
 	  if (worm_window == 0 || main_window == 0)
 		  return;
@@ -2727,6 +2729,7 @@ void idle_main_window_update_callback(void * force_redraw) {
 
 
 		ns_image_series_annotater::ns_image_series_annotater_action a;
+		
 		ns_try_to_acquire_lock_for_scope storyboard_lock(worm_learner.storyboard_lock);
 		bool storyboard_in_use = !storyboard_lock.try_to_get(__FILE__, __LINE__);
 		if (!storyboard_in_use){
@@ -2799,6 +2802,7 @@ void idle_main_window_update_callback(void * force_redraw) {
 		ns_vector_2i window_size;
 		float d, menu_d;
 		if (worm_window->visible() || show_worm_window) {
+		  //worm_learner.worm_window.display_lock.mute_debug_output = true;
 			ns_acquire_lock_for_scope lock(worm_learner.worm_window.display_lock, __FILE__, __LINE__);
 			worm_window->get_window_size_needed(window_size.x, window_size.y, d, menu_d);
 			lock.release();
@@ -3120,7 +3124,7 @@ int main() {
 		
 		
 		ns_worm_browser_output_debug(__LINE__,__FILE__,"Creating new window");
-
+		worm_learner.main_window.display_lock.mute_debug_output = true;
 		ns_acquire_lock_for_scope dlock(worm_learner.main_window.display_lock,__FILE__,__LINE__);
 		ns_vector_2i main_window_requested_size;
 		float dd,menu_d;
@@ -3225,7 +3229,6 @@ struct ns_asynch_worm_launcher{
 			if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Finished loading.  Displaying."));
 			worm_learner.death_time_solo_annotater.display_current_frame();
 			storyboard_lock.release();
-			//lock.release();
 			show_worm_window = true;
 			worm_learner.worm_launch_finished = true;
 		//	cerr << "Add alerg dialog back in!\n";
@@ -3340,6 +3343,7 @@ void ns_set_menu_bar_activity_internal(bool activate){
 
 //must have FL:lock before calling!
 void ns_handle_menu_bar_activity_request(){
+  menu_bar_processing_lock.mute_debug_output = true;
 	menu_bar_processing_lock.wait_to_acquire(__FILE__,__LINE__);
 	if (set_menu_bar_request == ns_none){
 		menu_bar_processing_lock.release();

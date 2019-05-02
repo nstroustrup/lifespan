@@ -18,8 +18,8 @@
 
 class ns_lock{
 public:
-	ns_lock(){}
-	ns_lock(const std::string & lock_name_){init(lock_name_);}
+ ns_lock():mute_debug_output(false){}
+ ns_lock(const std::string & lock_name_):mute_debug_output(false){init(lock_name_);}
 	void init(const std::string & lock_name);
 	~ns_lock();
 
@@ -30,7 +30,7 @@ public:
 		init(lock.name + "(1)");
 	}
 	void release();
-
+	bool mute_debug_output;
 private:
 
 	bool currently_holding;

@@ -1449,7 +1449,15 @@ void ns_threshold_movement_posture_analyzer_parameters::read(std::istream & i){
 	}
 	 if (tmp != "software_version")
 		throw ns_ex("ns_threshold_movement_posture_analyzer_parameters::read()::Syntax error 4");
-	 i >> version_flag;
+	 i >> tmp;
+	 version_flag.resize(0);
+	 version_flag.reserve(tmp.size());
+	 for (unsigned int i = 0; i < tmp.size(); i++)
+	   if (!isspace(tmp[i]))
+	     version_flag+=tmp[i];
+
+
+
 	 use_v1_movement_score = version_flag == "1";
 	 if (use_v1_movement_score)
 		 return;

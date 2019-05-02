@@ -14,7 +14,7 @@
 #include "ns_annotation_handling_for_visualization.h"
 void ns_hide_worm_window();
 
-
+//must have worm browser storyboard lock before calling!
 void ns_specify_worm_details(const ns_64_bit region_info_id,const ns_stationary_path_id & worm, const ns_death_time_annotation & sticky_properties, std::vector<ns_death_time_annotation> & event_times,double external_rescale_factor);
 
 class ns_death_time_solo_posture_annotater_timepoint : public ns_annotater_timepoint{
@@ -865,15 +865,14 @@ public:
 	void precache_images(const ns_64_bit region_info_id, const ns_stationary_path_id & worm,ns_sql & sql) {
 		ns_death_time_posture_solo_annotater_data_cache_storage::handle_t handle;
 		data_cache.get_region_movement_data(region_info_id, sql, true, handle);
-		handle().data->movement_analyzer.precache_group_images_locally(worm.group_id, worm.path_id, &handle,sql);
+		handle().data->movement_analyzer.precache_group_images_locally(worm.group_id, worm.path_id, &handle,sql,false);
 
 	}
 	ns_64_bit current_region_id;
 	ns_stationary_path_id current_worm_id;
 	
 	void load_worm(const ns_64_bit region_info_id_, const ns_stationary_path_id& worm, const unsigned long current_time, const ns_death_time_solo_posture_annotater_timepoint::ns_visualization_type visualization_type, const ns_experiment_storyboard* storyboard, ns_worm_learner* worm_learner_, const double external_rescale_factor) {
-
-		if (sql.is_null()) {
+      		if (sql.is_null()) {
 
 			if (image_server.verbose_debug_output())
 				image_server_const.register_server_event_no_db(ns_image_server_event("Connecting to sql db"));
@@ -903,7 +902,7 @@ public:
 			ns_acquire_lock_for_scope lock(image_buffer_access_lock,__FILE__,__LINE__);
 			worm_learner = worm_learner_;
 
-
+			
 			ns_death_time_posture_solo_annotater_data_cache_storage::handle_t handle;
 			try {
 				if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Loading movement data"));
@@ -1030,17 +1029,14 @@ public:
 				timepoints[i].group_id = properties_for_all_animals.stationary_path_id.group_id;
 				timepoints[i].set_visulaization_type(current_visualization_type);
 			}
-//			current_by_hand_timing_data->animals[current_animal_id].first_frame_time = timepoints[0].path_timepoint_element->absolute_time;
-
 			
-			
-			
-
-			
+			if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Setting current timepoint"));
 			set_current_timepoint(current_time,handle,current_time!=0, true);
 			telemetry_zoom_factor = timepoints.size() / 250;
 			if (telemetry_zoom_factor < 1)
 				telemetry_zoom_factor = 1;
+			
+			if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Setting telemetry zoom"));
 			{
 				unsigned long latest_death_time = 0;
 				//make sure the death time is shown on the graph
@@ -1074,13 +1070,11 @@ public:
 				if (telemetry_zoom_factor < 1)
 					telemetry_zoom_factor = 1;
 			}
-
-
-			{
-
-				if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Loading first image."));
-				timepoints[current_timepoint_id].load_image(1024,current_image,sql(),local_image_cache, memory_pool,1);
-			}
+			
+			
+			if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Loading first image."));
+			timepoints[current_timepoint_id].load_image(1024,current_image,sql(),local_image_cache, memory_pool,1);
+			
 			const ns_image_properties current_prop = current_image.im->properties();
 			if (previous_images.size() != max_buffer_size || next_images.size() != max_buffer_size) {
 				previous_images.resize(max_buffer_size);
@@ -1278,6 +1272,7 @@ public:
 			cur_hand_data->animals[i].generate_event_timing_data(click_event_cache);
 			cur_hand_data->animals[i].specified = true;
 		}
+		//anyone who is working with the solo annotater already must have the storyboard lock
 		ns_specify_worm_details(properties_for_all_animals.region_info_id,properties_for_all_animals.stationary_path_id,properties_for_all_animals,click_event_cache,external_rescale_factor);
 	}
 		

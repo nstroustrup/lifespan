@@ -1571,8 +1571,7 @@ bool ns_time_path_image_movement_analyzer<allocator_T>::load_completed_analysis(
 	populate_movement_quantification_from_file(sql, exclude_movement_quantification);
 
 	if (posture_model_version_used != e->software_version_number()){
-	  //for (unsigned int i = 0; i < posture_model_version_used.size(); i++)
-	  //cout << (int)posture_model_version_used[i];
+	  cout << posture_model_version_used << "\n";
 	  throw ns_ex("This region's movement analysis was run using posture analysis version \"") << ns_to_string(posture_model_version_used) << "\".  This is incompatible with the movement analysis model you have specified, \"" << e->name << "\" which is v " << e->software_version_number() << ".  You can fix this by running the job \"Analyze Worm Movement using Cached Images\" which will preserve all by hand annotations.";
 	}
 
@@ -1860,12 +1859,19 @@ void ns_time_path_image_movement_analyzer<allocator_T>::load_movement_data_from_
 	std::string tmp;
 	get_string(in, tmp);
 	if (tmp == "v:") {
-		get_string(in, posture_model_version_used);
+		get_string(in, tmp);
+		posture_model_version_used.resize(0);
+		posture_model_version_used.reserve(tmp.size());
+		for (unsigned int i = 0; i < tmp.size(); i++)
+		  if (!isspace(tmp[i]))
+		    posture_model_version_used+=tmp[i];
+
 		version_specified = true;
+      
 	} 
 	if (!version_specified)
 		posture_model_version_used = "2";
-	//cout << "Posture model: " << posture_model_version_used << "\n";
+      
 	if (skip_movement_data)
 		return;
 		
@@ -6495,7 +6501,7 @@ void ns_time_path_image_movement_analyzer<allocator_T>::load_images_for_group(co
 			//if (groups[groups_id].paths[j].output_image.filename.empty()){
 			//groups[group_id].paths[j].output_image.load_from_db(groups[group_id].paths[j].output_image.id,&sql);
 			//groups[group_id].paths[j].movement_image_storage = image_server_const.image_storage.request_from_storage(groups[group_id].paths[j].output_image,&sql);
-			precache_group_images_locally<ns_simple_local_image_cache::handle_t>(group_id,j,0, sql);
+			precache_group_images_locally<ns_simple_local_image_cache::handle_t>(group_id,j,0, sql,true);
 
 			groups[group_id].paths[j].movement_image_storage.input_stream().reset();
 

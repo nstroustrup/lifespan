@@ -702,8 +702,10 @@ public:
 	//provide access to group images
 	void load_images_for_group(const unsigned long group_id, const unsigned long number_of_images_to_load,ns_sql & sql,const bool load_images_after_last_valid_sample,const bool load_flow_images,ns_simple_local_image_cache & image_cache);
 	template<class handle_t>
-	void precache_group_images_locally(const unsigned long group_id, const unsigned long path_id, handle_t * handle_to_release,ns_sql & sql) {
-		ns_acquire_lock_for_scope lock(groups[group_id].paths[path_id].movement_image_storage_lock, __FILE__, __LINE__);
+	  void precache_group_images_locally(const unsigned long group_id, const unsigned long path_id, handle_t * handle_to_release,ns_sql & sql, bool nolock) {
+	  ns_acquire_lock_for_scope lock(groups[group_id].paths[path_id].movement_image_storage_lock, __FILE__, __LINE__,false);
+	  if (!nolock)
+	    lock.get(__FILE__,__LINE__);
 		if (groups[group_id].paths[path_id].movement_image_storage.bound()) {
 			lock.release();
 			return;
@@ -713,6 +715,7 @@ public:
 		ns_image_cache_data_source source(&image_server.image_storage, &sql);
 		image_cache.get_for_read(groups[group_id].paths[path_id].output_image, groups[group_id].paths[path_id].movement_image_storage_handle, source);
 		groups[group_id].paths[path_id].movement_image_storage = groups[group_id].paths[path_id].movement_image_storage_handle().source;
+		if (!nolock)
 		lock.release();
 	}
 	void clear_images_for_group(const unsigned long group_id, ns_simple_local_image_cache & image_cache);

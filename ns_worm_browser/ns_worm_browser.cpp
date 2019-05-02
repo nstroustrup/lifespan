@@ -122,9 +122,28 @@ void ns_worm_learner::decode_mask_file(const std::string & filename, const std::
 //	draw();
 }
 void ns_worm_learner::submit_mask_file_to_cluster(const ns_bulk_experiment_mask_manager::ns_mask_type mask_type){
+	ns_sql& sql(get_sql_connection());
+	bool mask_already_exists;
 	if (mask_type == ns_bulk_experiment_mask_manager::ns_plate_region_mask)
-		mask_manager.submit_plate_region_masks_to_cluster(!overwrite_existing_mask_when_submitting);
-	else mask_manager.submit_subregion_label_masks_to_cluster(!overwrite_existing_mask_when_submitting);
+		mask_already_exists = !mask_manager.submit_plate_region_masks_to_cluster(true,sql);
+	else mask_already_exists = !mask_manager.submit_subregion_label_masks_to_cluster(true,sql);
+	if (!mask_already_exists)
+		return;
+	ns_choice_dialog c;
+	c.title = "The experiment you selected already has a mask.  What would you like to do?";
+	c.option_1 = "Cancel";
+	c.option_2 = "Override and add new mask regions";
+	ns_run_in_main_thread<ns_choice_dialog> b(&c);
+	if (c.result != 2) {
+		image_server.register_server_event(ns_image_server_event("Mask submitted."), &sql);
+		return;
+	}
+	//try again if requested
+	if (mask_type == ns_bulk_experiment_mask_manager::ns_plate_region_mask)
+		mask_already_exists = !mask_manager.submit_plate_region_masks_to_cluster(false, sql);
+	else mask_already_exists = !mask_manager.submit_subregion_label_masks_to_cluster(false, sql);
+	image_server.register_server_event(ns_image_server_event("Mask submitted."), &sql);
+	
 }
 
 void ns_worm_learner::resize_image(){

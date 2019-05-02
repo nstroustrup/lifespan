@@ -1547,7 +1547,7 @@ public:
 	//	add(ns_menu_item_spec(compile_schedule_to_disk,"Config/Compile Submitted Capture Schedules to Disk"));
 	//	add(ns_menu_item_spec(submit_schedule_to_db,"Config/_Submit Capture Schedules to Database"));	
 		string version("Worm Browser v");
-		version = version + ns_to_string(image_server.software_version_major()) + "." + ns_to_string(image_server.software_version_minor()) + "." + ns_to_string(image_server.software_version_compile()) + " (2017)";
+		version = version + ns_to_string(image_server.software_version_major()) + "." + ns_to_string(image_server.software_version_minor()) + "." + ns_to_string(image_server.software_version_compile()) + " (2019)";
 		add(ns_menu_item_spec(set_database,string("&Config/") + version,0,FL_MENU_INACTIVE));
 		add(ns_menu_item_spec(set_database,string("Config/_Nicholas Stroustrup, CRG"),0,FL_MENU_INACTIVE));
 		//add(ns_menu_item_spec(set_database,string("Config/_ "),0,FL_MENU_INACTIVE));
@@ -1556,8 +1556,8 @@ public:
 			db_spec.options.push_back(worm_learner.databases_available[i]);
 		add(db_spec);
 		add(ns_menu_item_spec(show_extra_menus, "Config/Set Behavior/_Show Image Analysis Diagnostic Tools"));
-		add(ns_menu_item_spec(do_not_overwrite_existing_masks,"Config/Set Behavior/Do not overwrite existing sample masks"));
-		add(ns_menu_item_spec(overwrite_existing_masks,"Config/Set Behavior/_Overwrite existing sample masks"));
+		//add(ns_menu_item_spec(do_not_overwrite_existing_masks,"Config/Set Behavior/Do not overwrite existing sample masks"));
+		//add(ns_menu_item_spec(overwrite_existing_masks,"Config/Set Behavior/_Overwrite existing sample masks"));
 		
 		add(ns_menu_item_spec(generate_mp4,"Config/Set Behavior/Generate Mp4 Videos"));
 		add(ns_menu_item_spec(generate_wmv,"Config/Set Behavior/_Generate WMV Videos"));

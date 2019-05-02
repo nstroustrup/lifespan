@@ -140,9 +140,9 @@ public:
 
 	void process_mask_file(ns_image_standard & mask_vis);
 
-	void submit_plate_region_masks_to_cluster(bool balk_on_overwrite = true);
+	bool submit_plate_region_masks_to_cluster(bool balk_on_overwrite, ns_sql & sql);
 
-	void submit_subregion_label_masks_to_cluster(bool balk_on_overwrite = true);
+	bool submit_subregion_label_masks_to_cluster(bool balk_on_overwrite, ns_sql & sql);
 
 	void render_mask_file(const ns_image_properties & prop, std::vector<ns_image_buffered_random_access_input_image<ns_8_bit, ns_image_storage_source<ns_8_bit> > > & images, ns_image_stream_file_sink<ns_8_bit> & reciever);
 	typedef enum {label_margin_buffer = 300, chunk_max_size = 1024,image_margin=50} ns_mask_constants;

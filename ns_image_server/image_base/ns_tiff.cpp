@@ -260,7 +260,7 @@ void ns_set_default_tiff_parameters(const ns_image_properties & p,const ns_tiff_
 	//ns_set_tiff_field(image, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
 	ns_set_tiff_field(image, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
 	ns_set_tiff_field(image, TIFFTAG_ORIENTATION,ORIENTATION_TOPLEFT);
-	ns_set_tiff_field(image, TIFFTAG_SOFTWARE, "ns_image_server (Nicholas Stroustrup 2017)");
+	ns_set_tiff_field(image, TIFFTAG_SOFTWARE, "ns_image_server (Nicholas Stroustrup 2019)");
 
 	if (bits_per_sample==32)
 		ns_set_tiff_field(image, TIFFTAG_SAMPLEFORMAT, SAMPLEFORMAT_IEEEFP);

@@ -127,7 +127,10 @@ public:
 	void act(){
 		Fl_Widget* f(fl_message_icon());
 		f->labelcolor(0x00000000);
-		result = 3-fl_choice(title.c_str(),option_3.c_str(),option_2.c_str(),option_1.c_str());
+		if (option_3.empty())
+			result = 2 - fl_choice(title.c_str(), option_2.c_str(), option_1.c_str(),0);
+		else
+			result = 3-fl_choice(title.c_str(),option_3.c_str(),option_2.c_str(),option_1.c_str());
 	}
 };
 

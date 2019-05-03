@@ -2728,7 +2728,7 @@ void idle_main_window_update_callback(void * force_redraw) {
 		bool schedule_timer(false);
 
 
-		ns_image_series_annotater::ns_image_series_annotater_action a;
+		ns_image_series_annotater::ns_image_series_annotater_action a = ns_image_series_annotater::ns_none;
 		
 		ns_try_to_acquire_lock_for_scope storyboard_lock(worm_learner.storyboard_lock);
 		bool storyboard_in_use = !storyboard_lock.try_to_get(__FILE__, __LINE__);

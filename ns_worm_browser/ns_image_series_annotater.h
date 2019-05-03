@@ -89,7 +89,6 @@ public:
 };
 
 void report_changes_made_to_screen();
-
 class ns_image_series_annotater{
 protected:
 
@@ -101,7 +100,7 @@ protected:
 	ns_annotater_image_buffer_entry current_image;
 	std::vector<ns_annotater_image_buffer_entry> previous_images;
 	std::vector<ns_annotater_image_buffer_entry> next_images;
-	ns_image_series_annotater(const unsigned long resize_factor_, const unsigned long bottom_border_size):local_image_cache(1024*1024*8),image_buffer_access_lock("ns_da_ib"),resize_factor(resize_factor_),image_bottom_border_size(bottom_border_size){}
+ ns_image_series_annotater(const unsigned long resize_factor_, const unsigned long bottom_border_size):local_image_cache(1024*1024*8),image_buffer_access_lock("ns_da_ib"),resize_factor(resize_factor_),image_bottom_border_size(bottom_border_size),fast_forward_requested(false),fast_back_requested(false){}
 	
 	virtual void draw_metadata(ns_annotater_timepoint * tp,ns_image_standard & im, double external_rescale_factor)=0;
 	

@@ -223,8 +223,8 @@ private:
 		ns_64_bit time_step(0);
 		unsigned long time_step_count(0);
 		unsigned long last_valid_time(0);
-		number_of_valid_elements = 0;
-		first_element = path->element_count();
+		unsigned long last_valid_element = 0;
+		unsigned long first_valid_element = path->element_count();
 		for (unsigned int i = 0; i < path->element_count(); i++) {
 			if (path->element(i).absolute_time > stop_time)
 				break;
@@ -233,43 +233,43 @@ private:
 					time_step += (path->element(i).absolute_time - last_valid_time);
 					time_step_count++;
 				}
-				if (i < first_element && path->element(i).absolute_time >= start_time) {
-					first_element = i;
+				if (i < first_valid_element && path->element(i).absolute_time >= start_time) {
+					first_valid_element = i;
 				}
 				last_valid_time = path->element(i).absolute_time;
-				number_of_valid_elements = i;
+				last_valid_element = i;
 			}
 		}
-		if (number_of_valid_elements == 0 || first_element == path->element_count())
+		if (last_valid_element == 0 || first_element == path->element_count())
 			throw ns_ex("No data to plot");
-		number_of_valid_elements = number_of_valid_elements + 1 - first_element;
+		unsigned long number_of_valid_elements_ = last_valid_element - first_element +1;
 
-		time_axis.resize(number_of_valid_elements);
-		segment_ids.resize(number_of_valid_elements, -1);
+		time_axis.resize(number_of_valid_elements_);
+		segment_ids.resize(number_of_valid_elements_, -1);
 
 		const unsigned long max_time_step_interval_to_connect_with_lines(4 * time_step / time_step_count);
 
 		//count how many connected line segments we'll need to draw.
 		long number_of_separate_segments(1);
 		last_valid_time = 0;
-		for (unsigned int i = 0; i < number_of_valid_elements; i++) {
-			if (path->element(i + first_element).excluded)
+		for (unsigned int i = first_valid_element; i <= last_valid_element; i++) {
+			if (path->element(i).excluded)
 				continue;
-			unsigned long current_time_step = (path->element(i + first_element).absolute_time - last_valid_time);
+			unsigned long current_time_step = (path->element(i).absolute_time - last_valid_time);
 			bool step_was_too_long(last_valid_time > 0 && current_time_step > max_time_step_interval_to_connect_with_lines);
 			if (step_was_too_long)
 				number_of_separate_segments++;
-			segment_ids[i] = number_of_separate_segments - 1;
-			last_valid_time = path->element(i + first_element).absolute_time;
+			segment_ids[i-first_valid_element] = number_of_separate_segments - 1;
+			last_valid_time = path->element(i).absolute_time;
 		}
 		segment_offsets.resize(number_of_separate_segments);
 		if (segment_offsets.size() > 0)
 			segment_offsets[0] = 0;
 		unsigned long cur_seg_id(0);
-		for (unsigned int i = 0; i < number_of_valid_elements; i++) {
+		for (unsigned int i = first_valid_element; i <= last_valid_element; i++) {
 			if (segment_ids[i] != cur_seg_id) {
 				cur_seg_id++;
-				segment_offsets[cur_seg_id] = i;
+				segment_offsets[cur_seg_id] = i-first_valid_element;
 			}
 		}
 
@@ -278,18 +278,18 @@ private:
 		size_vals.resize(number_of_separate_segments, ns_graph_object::ns_graph_dependant_variable);
 		for (unsigned int i = 0; i < number_of_separate_segments; i++) {
 			movement_vals[i].x.resize(0);
-			movement_vals[i].x.reserve(number_of_valid_elements);
+			movement_vals[i].x.reserve(number_of_valid_elements_);
 			movement_vals[i].y.resize(0);
-			movement_vals[i].y.reserve(number_of_valid_elements);
+			movement_vals[i].y.reserve(number_of_valid_elements_);
 
 			slope_vals[i].x.resize(0);
-			slope_vals[i].x.reserve(number_of_valid_elements);
+			slope_vals[i].x.reserve(number_of_valid_elements_);
 			slope_vals[i].y.resize(0);
-			slope_vals[i].y.reserve(number_of_valid_elements);
+			slope_vals[i].y.reserve(number_of_valid_elements_);
 			size_vals[i].x.resize(0);
-			size_vals[i].x.reserve(number_of_valid_elements);
+			size_vals[i].x.reserve(number_of_valid_elements_);
 			size_vals[i].y.resize(0);
-			size_vals[i].y.reserve(number_of_valid_elements);
+			size_vals[i].y.reserve(number_of_valid_elements_);
 		}
 
 		float min_score(FLT_MAX), max_score(-FLT_MAX);
@@ -301,18 +301,19 @@ private:
 		float min_time(FLT_MAX), max_time(-FLT_MAX);
 
 		std::vector<double> scores;
-		scores.reserve(number_of_valid_elements);
+		scores.reserve(number_of_valid_elements_);
 
 		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Calculating telemetry scores."));
 		//find lowest movement score.
-		for (unsigned int i = 0; i < number_of_valid_elements; i++) {
-			if (path->element(i + first_element).excluded)
+		for (unsigned int i = first_valid_element; i <= last_valid_element; i++) {
+			if (path->element(i).excluded)
 				continue;
-			const double d(path->element(i + first_element).measurements.death_time_posture_analysis_measure_v2_uncropped());
+			const double d(path->element(i).measurements.death_time_posture_analysis_measure_v2_uncropped());
 			scores.push_back(d);
 		}
 		//add in threshold
-		scores.push_back(posture_analysis_model.threshold_parameters.stationary_cutoff);
+		///if thresholding model!
+		//scores.push_back(posture_analysis_model.threshold_parameters.stationary_cutoff);
 
 		std::sort(scores.begin(), scores.end());
 		min_raw_score = scores[scores.size() / 50];
@@ -339,16 +340,16 @@ private:
 		//now reuse scores memory for another purpose--storing normalized movement scores.
 		scores.resize(number_of_valid_elements);
 		//calculate normalized movement scores and find their min and max
-		for (unsigned int i = 0; i < number_of_valid_elements; i++) {
-			if (path->element(i + first_element).excluded)
+		for (unsigned int i = first_valid_element; i < last_valid_element; i++) {
+			if (path->element(i).excluded)
 				continue;
-			double d(path->element(i + first_element).measurements.death_time_posture_analysis_measure_v2_uncropped());
+			double d(path->element(i).measurements.death_time_posture_analysis_measure_v2_uncropped());
 			if (d >= max_raw_score) d = log(max_raw_score - min_raw_score);
 			else if (d <= min_raw_score)
 				d = log(second_smallest_raw_score - min_raw_score); //can't be zero before we take the log
 			else d = log(d - min_raw_score);
 
-			scores[i] = d;
+			scores[i-first_valid_element] = d;
 
 			if (d < min_score) min_score = d;
 			if (d > max_score) max_score = d;
@@ -358,18 +359,18 @@ private:
 		//find min max of other statistics
 
 		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Calculating extrema."));
-		for (unsigned int i = 0; i < number_of_valid_elements; i++) {
-			if (path->element(i + first_element).excluded)
+		for (unsigned int i = first_valid_element; i <= last_valid_element; i++) {
+			if (path->element(i).excluded)
 				continue;
-			const double t(path->element(i + first_element).relative_time);
+			const double t(path->element(i).relative_time);
 			if (t < min_time) min_time = t;
 			if (t > max_time) max_time = t;
-			const double n(path->element(i + first_element).measurements.total_intensity_within_stabilized);
+			const double n(path->element(i).measurements.total_intensity_within_stabilized);
 			double s;
 			switch (graph_contents){
-				case ns_movement_intensity_slope_1x: s = path->element(i + first_element).measurements.change_in_total_stabilized_intensity_1x; break;
-				case ns_movement_intensity_slope_2x: s = path->element(i + first_element).measurements.change_in_total_stabilized_intensity_2x; break;
-				case ns_movement_intensity_slope_4x: s = path->element(i + first_element).measurements.change_in_total_stabilized_intensity_4x; break;
+				case ns_movement_intensity_slope_1x: s = path->element(i).measurements.change_in_total_stabilized_intensity_1x; break;
+				case ns_movement_intensity_slope_2x: s = path->element(i).measurements.change_in_total_stabilized_intensity_2x; break;
+				case ns_movement_intensity_slope_4x: s = path->element(i).measurements.change_in_total_stabilized_intensity_4x; break;
 				default: s = 0;
 			}
 			//cout << t / (60.0 * 60 * 24) << "," << s << "\n";
@@ -384,37 +385,38 @@ private:
 
 		ns_s64_bit intensity_slope_largest = (max_intensity_slope > -min_intensity_slope) ? max_intensity_slope: -min_intensity_slope;
 
-		double threshold;
-		if (posture_analysis_model.threshold_parameters.stationary_cutoff >= max_raw_score)
+		///xxx only for threshold!
+		double threshold = 0;
+		/*if (posture_analysis_model.threshold_parameters.stationary_cutoff >= max_raw_score)
 			threshold = log(max_raw_score - min_raw_score);
 		else if (posture_analysis_model.threshold_parameters.stationary_cutoff <= min_raw_score)
 			threshold = log(second_smallest_raw_score - min_raw_score);
 		else threshold = log(posture_analysis_model.threshold_parameters.stationary_cutoff - min_raw_score);
-
+		*/
 
 		double min_rounded_time(DBL_MAX), max_rounded_time(DBL_MIN);
 
 		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Normalizing scores."));
 		//calculate normalized scores and break up into independantly plotted segments
-		for (unsigned int i = 0; i < number_of_valid_elements; i++) {
-			const long & current_segment = segment_ids[i];
-			const double time = path->element(i + first_element).relative_time / 60.0 / 60 / 24;
+		for (unsigned int i = first_valid_element; i <= last_valid_element; i++) {
+			const long & current_segment = segment_ids[i-first_valid_element];
+			const double time = path->element(i).relative_time / 60.0 / 60 / 24;
 			if (time < min_rounded_time) min_rounded_time = time;
 			if (time > max_rounded_time) max_rounded_time = time;
 			time_axis[i] = time;
-			if (path->element(i + first_element).excluded || segment_ids[i] == -1)
+			if (path->element(i).excluded || segment_ids[i-first_valid_element] == -1)
 				continue;
 			//scale denoised movement score to a value between 0 and 1
 			//which on log scale becomes 0 and 1
 
 			movement_vals[current_segment].x.push_back(time);
-			movement_vals[current_segment].y.push_back((scores[i] - min_score) / (max_score - min_score));
+			movement_vals[current_segment].y.push_back((scores[i-first_valid_element] - min_score) / (max_score - min_score));
 			if (*movement_vals[current_segment].y.rbegin() < 0) *movement_vals[current_segment].y.rbegin() = 0;
 			if (*movement_vals[current_segment].y.rbegin() > 1) *movement_vals[current_segment].y.rbegin() = 1;
 
 			//scale intensity to a value between 0 and 1.
 			size_vals[current_segment].x.push_back(time);
-			size_vals[current_segment].y.push_back((path->element(i + first_element).measurements.total_intensity_within_stabilized - min_intensity) / (max_intensity - min_intensity));
+			size_vals[current_segment].y.push_back((path->element(i).measurements.total_intensity_within_stabilized - min_intensity) / (max_intensity - min_intensity));
 			if (*size_vals[current_segment].y.rbegin() < 0) *size_vals[current_segment].y.rbegin() = 0;
 			if (*size_vals[current_segment].y.rbegin() > 1) *size_vals[current_segment].y.rbegin() = 1;
 
@@ -422,9 +424,9 @@ private:
 			slope_vals[current_segment].x.push_back(time);
 			double s;
 			switch (graph_contents) {
-				case ns_movement_intensity_slope_1x: s = path->element(i + first_element).measurements.change_in_total_stabilized_intensity_1x; break;
-				case ns_movement_intensity_slope_2x: s = path->element(i + first_element).measurements.change_in_total_stabilized_intensity_2x; break;
-				case ns_movement_intensity_slope_4x: s = path->element(i + first_element).measurements.change_in_total_stabilized_intensity_4x; break;
+				case ns_movement_intensity_slope_1x: s = path->element(i).measurements.change_in_total_stabilized_intensity_1x; break;
+				case ns_movement_intensity_slope_2x: s = path->element(i).measurements.change_in_total_stabilized_intensity_2x; break;
+				case ns_movement_intensity_slope_4x: s = path->element(i).measurements.change_in_total_stabilized_intensity_4x; break;
 				default: s = 0;
 			}
 			if (intensity_slope_largest != 0)

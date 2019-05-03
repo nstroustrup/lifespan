@@ -154,11 +154,11 @@ struct ns_graph_specifics{
 						 number_of_y_minor_ticks(40),
 						 boundary(20,40),
 						 aspect_ratio(1.0){};
-	double dx,dy;
+	double dx,dy;	//reltationship between data scale and screen pixels
 	ns_graph_axes axes;
 
 	ns_vector_2i boundary;
-	unsigned int x_axis_pos;
+	unsigned long x_axis_pos;  //position of the x axis in screen pixels
 	int global_independant_variable_id;
 
 	unsigned int number_of_x_major_ticks,

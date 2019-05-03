@@ -1,5 +1,7 @@
 #include "ns_graph.h"
 #include <limits>
+#include <cmath>
+#include <cfloat>
 
 using namespace std;
 
@@ -69,6 +71,8 @@ void ns_graph::calculate_graph_specifics(const unsigned int width, const unsigne
 		if ( global_independant_variable_id != -1){
 			//if there is a global independant x axis
 			for (unsigned int i = 0; i < contents[global_independant_variable_id]->x.size(); i++){
+				if (debug_range_checking && !std::isfinite(contents[global_independant_variable_id]->x[i]))
+					throw ns_ex("Found a non-finite number in the shared x axis: ") << contents[global_independant_variable_id]->x[i];
 				if (contents[global_independant_variable_id]->x[i] < axes[0])
 					axes[0] = contents[global_independant_variable_id]->x[i];
 				if (contents[global_independant_variable_id]->x[i] > axes[1])
@@ -79,6 +83,8 @@ void ns_graph::calculate_graph_specifics(const unsigned int width, const unsigne
 			//if using a scatter plot
 			for (unsigned int i = 0; i < contents.size(); i++){
 				for (unsigned int j = 0; j < contents[i]->x.size(); j++){
+					if (debug_range_checking && !std::isfinite(contents[i]->x[j]))
+						throw ns_ex("Found a non-finite number in the x axis of object ") << i << ": " << contents[i]->x[j];
 					if (contents[i]->x[j] < axes[0])
 						axes[0] = contents[i]->x[j];
 					if (contents[i]->x[j] > axes[1])
@@ -98,6 +104,8 @@ void ns_graph::calculate_graph_specifics(const unsigned int width, const unsigne
 	else{
 		for (unsigned int i = 0; i < contents.size(); i++){
 			for (unsigned int j = 0; j < contents[i]->y.size(); j++){
+				if (debug_range_checking && !std::isfinite(contents[i]->y[j]))
+					throw ns_ex("Found a non-finite number in the y axis of object ") << i << ": " << contents[i]->y[j];
 				if (contents[i]->y[j] < 0 && !contents[i]->properties.draw_negatives)
 					continue;
 				if (contents[i]->y[j] < axes[2])
@@ -107,6 +115,8 @@ void ns_graph::calculate_graph_specifics(const unsigned int width, const unsigne
 			}
 			if (contents[i]->properties.fill_between_y_and_ymin) {
 				for (unsigned int j = 0; j < contents[i]->y_min.size(); j++) {
+					if (debug_range_checking && !std::isfinite(contents[i]->y[j]))
+						throw ns_ex("Found a non-finite number in the y_min axis of object ") << i << ": " << contents[i]->y[j];
 					if (contents[i]->y_min[j] < 0 && !contents[i]->properties.draw_negatives)
 						continue;
 					if (contents[i]->y_min[j] < axes[2])
@@ -121,10 +131,10 @@ void ns_graph::calculate_graph_specifics(const unsigned int width, const unsigne
 	}
 
 
-	if (axes[0] == numeric_limits<double>::infinity() || axes[0] == numeric_limits<double>::quiet_NaN() ||
-		axes[1] == numeric_limits<double>::infinity() || axes[1] == numeric_limits<double>::quiet_NaN() ||
-		axes[2] == numeric_limits<double>::infinity() || axes[2] == numeric_limits<double>::quiet_NaN() ||
-		axes[3] == numeric_limits<double>::infinity() || axes[3] == numeric_limits<double>::quiet_NaN())
+	if (!std::isfinite(axes[0]) ||
+		!std::isfinite(axes[1]) ||
+		!std::isfinite(axes[2]) ||
+		!std::isfinite(axes[3]))
 		throw ns_ex("ns_graph::Invalid graph dimentions produced(") << axes[0] << "," << axes[1] << "," <<axes[2] <<"," << axes[3] << ")";
 	//check for axes size sanity
 	if (axes[0] > axes[1] || axes[2] > axes[3])
@@ -164,13 +174,24 @@ void ns_graph::calculate_graph_specifics(const unsigned int width, const unsigne
 		s.minor_y_tick = specified_axes.tick(3);
 		s.number_of_y_minor_ticks =  (unsigned int)((axes[3]-axes[2])/s.minor_y_tick);
 	}
-
-	if (specified_axes.axis_position[0] == ns_graph_axes::ns_at_min_value)
+	bool zero_error(false);
+	if (specified_axes.axis_position[0] == ns_graph_axes::ns_at_zero) {
+		if ((int)(h - border.y) < (int)(dy * (0 - axes[2]))) {
+			cout << "Cannot place x axis at zero, because of the boundary set at " << axes[2] << "(pixel location: " << dy * axes[2] << "). Placing it at the min value.";
+			zero_error = true;
+		}
+		s.x_axis_pos = (int)(h - border.y) - (int)(dy * (0 - axes[2]));
+	}
+	if (specified_axes.axis_position[0] == ns_graph_axes::ns_at_min_value || zero_error)
 		s.x_axis_pos = (int)(h-border.y);
-	else if (specified_axes.axis_position[0] == ns_graph_axes::ns_at_zero)
-		s.x_axis_pos = (int)(h - border.y) - (int)(dy*(0 - axes[2]));
 	else //at max value
 		s.x_axis_pos = border.y;
+	if (!std::isfinite<double>(s.x_axis_pos))
+		throw ns_ex("Non-finite x axis position found:\n") <<
+		"h:" << h << "\n"
+		"border.y:" << border.y << "\n"
+		"dy:" << dy << "\n"
+		"axes[2]:" << axes[2] << "\n";
 }
 void ns_graph_axes::check_for_sanity() const{
 	if (boundary_specified(0) && boundary_specified(1) && boundary(0) >= boundary(1))
@@ -555,6 +576,11 @@ void ns_graph::plot_object(const ns_graph_object & y, const ns_graph_object & x,
 	const double &dx(spec.dx);
 	const double &dy(spec.dy);
 
+	if (x.x.empty())
+		return;
+	if (y.y.size() != x.x.size())
+		throw ns_ex("Axis size mismatch");
+
 	for (unsigned int i = 0; i < y.y.size(); i++){
 		if (y.y[i] < 0 && !y.properties.draw_negatives)
 			continue;
@@ -581,31 +607,36 @@ void ns_graph::plot_object(const ns_graph_object & y, const ns_graph_object & x,
 
 			double l = 0,
 			r = (axes[1]- axes[0])*dx;
-			
+			bool found_index = false;
 			for (int pixel_x = l; pixel_x < r; pixel_x++){
-				double data_x = (pixel_x) / dx+axes[0];
-				int data_index = (unsigned int)x.x.size()-1; // if index < 0 is an error condition below it should be signed
-				switch(y.properties.line_hold_order){
+				int data_index = 1; // if index < 0 is an error condition below it should be signed
+
+				if (x.x.size() == 1)
+					data_index = 0;
+				else {
+					double data_x = (pixel_x) / dx + axes[0];
+					switch (y.properties.line_hold_order) {
 					case ns_graph_properties::ns_first:
-					case ns_graph_properties::ns_zeroth_centered:{
-						for (unsigned int i = 1; i < x.x.size(); i++){
-							if (data_x < x.x[i]){
-								if (fabs(x.x[i]+data_x) > fabs(x.x[i-1]+data_x))
-									data_index = i-1;
+					case ns_graph_properties::ns_zeroth_centered: {
+						for (unsigned int i = 1; i < x.x.size(); i++) {
+							if (data_x < x.x[i]) {
+								if (fabs(x.x[i] + data_x) > fabs(x.x[i - 1] + data_x))
+									data_index = i - 1;
 								else data_index = i;
 								break;
 							}
 						}
 						break;
 					}
-					case ns_graph_properties::ns_zeroth:{
-						for (unsigned int i = 1; i < x.x.size(); i++){
-							if (data_x < x.x[i]){
-								data_index = i-1;
+					case ns_graph_properties::ns_zeroth: {
+						for (unsigned int i = 1; i < x.x.size(); i++) {
+							if (data_x < x.x[i]) {
+								data_index = i - 1;
 								break;
 							}
 						}
 						break;
+					}
 					}
 				}
 				
@@ -637,8 +668,41 @@ void ns_graph::plot_object(const ns_graph_object & y, const ns_graph_object & x,
 				const unsigned long screen_position_x = pixel_x + (-axes.boundary(0) + spec.axes.axis_offset(0))*dx + border.x;
 				for (unsigned int _y = pixel_top; _y < pixel_bottom; _y++){
 					for (unsigned int c = 0; c < 3; c++) {
-						if (debug_range_checking && (_y >= h || (screen_position_x) + c >= w))
-							throw ns_ex("Graph range upper border error");
+						if (debug_range_checking && (_y >= h || (screen_position_x)+c >= w)) {
+							ns_ex ex("Graph range upper border error: \n");
+							ex <<
+								"_y=" << _y << "\n"
+								"h=" << h << "\n"
+								"pixel_bottom=" << pixel_bottom << "\n"
+								"pixel_top=" << pixel_top << "\n"
+								"data_index=" << data_index << "\n"
+								"y.y.size()=" << y.y.size() << "\n"
+								"y.y[data_index]=" << y.y[data_index] << "\n"
+								"screen_position_x=" << (screen_position_x) << "\n"
+								"c=" << c << "\n"
+								"border.y=" << border.y << "\n"
+								"dy=" << dy << "\n"
+								"y.y_min[data_index]=" << y.y_min[data_index] << "\n"
+								"spec.axes.axis_offset(1)=" << spec.axes.axis_offset(1) << "\n"
+								"spec.x_axis_pos=" << spec.x_axis_pos << "\n"
+								"pixel_x=" << pixel_x << "\n"
+								"axes.boundary(0)=" << axes.boundary(0) << "\n"
+								"spec.axes.axis_offset(0)=" << spec.axes.axis_offset(0) << "\n"
+								"dx=" << dx << "\n"
+								"border.x=" << border.x << "\n"
+								"axes[3]=" << axes[3] << "\n"
+								"axes[2]=" << axes[2] << "\n"
+								"axes[1]=" << axes[1] << "\n"
+								"axes[0]=" << axes[0] << "\n"
+								"axes.axis_offset(1)=" << axes.axis_offset(1) << "\n"
+								"axis_offset(0)=" << axes.axis_offset(0) << "\n\n";
+								for (unsigned int i = 0; i < y.y.size(); i++) {
+									ex << x.x[i] << ", " << y.y[i] << "\n";
+								}
+								throw ex;
+						}
+
+
 						image[_y][3 * (screen_position_x) + c] = (ns_8_bit)((1.0 - y.properties.area_fill.opacity) * image[_y][3 * (screen_position_x) + c] + y.properties.area_fill.opacity * y.properties.area_fill.color[c]);
 					}
 				}

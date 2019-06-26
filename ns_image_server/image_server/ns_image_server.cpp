@@ -47,7 +47,7 @@ alert_handler_lock("ahl"), max_external_thread_id(1),currently_experiencing_a_di
 	ns_worm_detection_constants::init();
 	#endif
 	ns_set_global_debug_output_handler(ns_image_server_global_debug_handler);
-	_software_version_compile = 3;
+	_software_version_compile = 0;
 	image_storage.cache.set_memory_allocation_limit_in_kb(maximum_image_cache_memory_size());
 	system_host_name = ns_get_system_hostname();
 	//by default, run indefinately
@@ -3377,6 +3377,7 @@ void ns_posture_analysis_model_entry::load_from_external_source(const std::strin
 
 	if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("ns_posture_analysis_model_entry::opening"));
 	name = name_;
+	model_specification.name = name_;
 	model_specification.posture_analysis_method = external_source.analysis_method;
 	if (model_specification.posture_analysis_method == ns_posture_analysis_model::ns_hidden_markov) {
 		ifstream moving((external_source.model_directory + name + ".csv").c_str());
@@ -3384,7 +3385,6 @@ void ns_posture_analysis_model_entry::load_from_external_source(const std::strin
 			throw ns_ex("Could not load ") << external_source.model_directory + name + ".csv";
 
 		model_specification.hmm_posture_estimator.read(moving);
-		model_specification.name = name_;
 		moving.close();
 		return;
 	}

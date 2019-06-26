@@ -529,23 +529,48 @@ private:
 			ns_crop_time(observation_limit, first_path_obs, last_path_obs, p->translation_cessation.time);
 		}
 
-		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Drawing timing."));
-
-		cur_machine_timing->animals[0].draw_movement_diagram(bottom_margin_bottom,
-			ns_vector_2i(cur_worm->element(current_element_id()).image().properties().width*ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor, movement_vis_bar_height),
-			observation_limit,
-			current_time_interval(handle),
-			im, 0.8, ceil(1/external_window_rescale_factor));
-		const unsigned long hand_bar_height(cur_hand_timing->animals.size()*
+		const unsigned long hand_bar_height(cur_hand_timing->animals.size() *
 			ns_death_time_solo_posture_annotater_timepoint::ns_movement_bar_height);
 
-		for (unsigned int i = 0; i < cur_hand_timing->animals.size(); i++) {
-			cur_hand_timing->animals[i].draw_movement_diagram(bottom_margin_bottom + (
-				ns_vector_2i(0, (i + 1)*ns_death_time_solo_posture_annotater_timepoint::ns_movement_bar_height))*ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor,
-				ns_vector_2i(cur_worm->element(current_element_id()).image().properties().width*ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor, movement_vis_bar_height),
+		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Drawing timing."));
+		try {
+			cur_machine_timing->animals[0].draw_movement_diagram(bottom_margin_bottom,
+				ns_vector_2i(cur_worm->element(current_element_id()).image().properties().width * ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor, movement_vis_bar_height),
 				observation_limit,
 				current_time_interval(handle),
-				im, (i == current_animal_id) ? 1.0 : 0.8, ceil(1/external_window_rescale_factor));
+				im, 0.8, ceil(1 / external_window_rescale_factor));
+			for (unsigned int i = 0; i < cur_hand_timing->animals.size(); i++) {
+				cur_hand_timing->animals[i].draw_movement_diagram(bottom_margin_bottom + (
+					ns_vector_2i(0, (i + 1) * ns_death_time_solo_posture_annotater_timepoint::ns_movement_bar_height)) * ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor,
+					ns_vector_2i(cur_worm->element(current_element_id()).image().properties().width * ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor, movement_vis_bar_height),
+					observation_limit,
+					current_time_interval(handle),
+					im, (i == current_animal_id) ? 1.0 : 0.8, ceil(1 / external_window_rescale_factor));
+			}
+			//throw ns_ex("TEST");
+		}
+		catch (ns_ex & ex) {
+
+			cout << ex.text() << "\n";
+			/*class ns_choice_dialog dialog;
+			dialog.title = "An error is present in this animal's data:";
+			dialog.option_1 = "Ignore";
+			dialog.option_2 = "Clear all annotations";
+			ns_run_in_main_thread<ns_choice_dialog> b(&dialog);
+			switch (dialog.result) {
+			case 1:
+				break;
+			case 2:*/
+			cur_hand_timing->animals.resize(1);
+			current_animal_id = 0;
+			cur_hand_timing->animals[0].clear_annotations();
+
+			cur_hand_timing->animals[0].set_fast_movement_cessation_time(
+				ns_death_timing_data_step_event_specification(cur_worm->cessation_of_fast_movement_interval(),
+					cur_worm->element(cur_worm->first_stationary_timepoint()),
+					properties_for_all_animals.region_info_id, properties_for_all_animals.stationary_path_id, 0));
+				//	}
+
 		}
 
 		const int num_lines(6);

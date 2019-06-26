@@ -8109,7 +8109,7 @@ ns_time_path_posture_movement_solution ns_threshold_movement_posture_analyzer::r
 
 ns_analyzed_image_time_path_death_time_estimator * ns_get_death_time_estimator_from_posture_analysis_model(const ns_posture_analysis_model & m){
   if (m.name.empty())
-    throw ns_ex("ns_analyzed_image_time_path_death_time_estimator::ns_get_death_time_estimator_from_posture_analysis_model::recieved model with no name");
+    throw ns_ex("ns_analyzed_image_time_path_death_time_estimator::ns_get_death_time_estimator_from_posture_analysis_model::received model with no name");
 	ns_analyzed_image_time_path_death_time_estimator * p;
 	if (m.posture_analysis_method == ns_posture_analysis_model::ns_hidden_markov){
 	  //cout << "MARKOV";

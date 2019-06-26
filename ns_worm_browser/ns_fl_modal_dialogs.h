@@ -233,8 +233,14 @@ public:
 		while(wait_for_it)ns_thread::sleep(1);
 	}
 	static void main_thread_call(void * t){
-		ns_run_in_main_thread<T> * tt = (ns_run_in_main_thread<T> *)(t);
-		tt->data->act();
+		ns_run_in_main_thread<T>* tt = (ns_run_in_main_thread<T>*)(t);
+		try {
+			tt->data->act();
+		}
+		catch (...) {
+			tt->wait_for_it = false;
+			throw;
+		}
 		tt->wait_for_it = false;
 	}
 private:

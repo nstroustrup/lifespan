@@ -291,6 +291,7 @@ struct ns_death_time_annotation{
 	void clear_movement_properties(){
 		type = ns_no_movement_event;
 		time.period_end = time.period_start = 0;
+		time.period_end_was_not_observed = time.period_start_was_not_observed = true;
 		event_explicitness = ns_unknown_explicitness;
 	}
 	//sticky properties

@@ -66,7 +66,7 @@ int ns_third_point(const int & i, const int & j);
 template<class binary_image>
 void ns_flood_fill_from_outside(binary_image & im, const bool color, std::stack<ns_vector_2i> & flood_fill_stack){
 	if (!flood_fill_stack.empty())
-		throw ns_ex("Recieved non-empty stack!");
+		throw ns_ex("Received non-empty stack!");
 	unsigned long w = im.properties().width,
 				  h = im.properties().height;
 	if (w == 0 || h == 0)

@@ -186,12 +186,12 @@ void ns_graph::calculate_graph_specifics(const unsigned int width, const unsigne
 		s.x_axis_pos = (int)(h-border.y);
 	else //at max value
 		s.x_axis_pos = border.y;
-	if (!std::isfinite<double>(s.x_axis_pos))
+	/*if (!std::isfinite<double>(s.x_axis_pos))
 		throw ns_ex("Non-finite x axis position found:\n") <<
 		"h:" << h << "\n"
 		"border.y:" << border.y << "\n"
 		"dy:" << dy << "\n"
-		"axes[2]:" << axes[2] << "\n";
+		"axes[2]:" << axes[2] << "\n";*/
 }
 void ns_graph_axes::check_for_sanity() const{
 	if (boundary_specified(0) && boundary_specified(1) && boundary(0) >= boundary(1))

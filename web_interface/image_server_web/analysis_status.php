@@ -39,7 +39,7 @@ else{
 
   echo "</td><td bgcolor=\"".$table_colors[0][0] ."\" valign=\"top\">";
    foreach ($done as $d){
-    echo $d[0]. " ";
+    echo $d. " ";
   }
   echo "</td></tr></table></td></tr></table>";
 }

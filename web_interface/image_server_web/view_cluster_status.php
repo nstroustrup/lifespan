@@ -95,10 +95,20 @@ for ($i = 0; $i < sizeof($hosts); $i++){
        echo "<a href=\"#h" . $hosts[$i][0] . "\">[".host_label($hosts[$i])."]</a>&nbsp;&nbsp;";
 }
 echo "<BR>";
-echo "<a href=\"view_cluster_status.php?show_offline_hosts=";
+echo "<a href=\"view_cluster_status.php?show_idle_threads=";
+echo $show_idle_threads?"1":"0";
+echo "&show_offline_hosts=";
 if ($show_offline_hosts) echo "0\">[Hide";
 else echo "1\">[Show";
 echo " Offline Hosts]</a>";
+
+echo "<a href=\"view_cluster_status.php?show_offline_hosts=";
+echo $show_offline_hosts?"1":"0";
+echo "&show_idle_threads=";
+if ($show_idle_threads) echo "0\">[Hide";
+else echo "1\">[Show";
+echo " Idle Threads]</a>";
+
 for ($i = 0; $i < sizeof($hosts); $i++){
     
 	$host_is_online = $hosts[$i][9]==0;

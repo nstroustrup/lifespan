@@ -387,6 +387,31 @@ class ns_movement_analysis_result {
 public:
 	ns_movement_analysis_result() { state_intervals.resize((int)ns_movement_number_of_states); }
 	
+	void write_intervals(std::ostream& o) const {
+		first_valid_element_id.write(o);
+		o << ",";
+		last_valid_element_id.write(o);
+		o << ",";
+		o << state_intervals.size();
+		for (unsigned int i = 0; i < state_intervals.size(); i++) {
+			o << ",";
+			state_intervals[i].write(o);
+		}
+	}
+	void read_intervals(std::istream& in) {
+		first_valid_element_id.read(in);
+		last_valid_element_id.read(in);
+		int num_intervals = 0;
+		ns_get_int get_int;
+		get_int(in, num_intervals);
+		state_intervals.resize(num_intervals);
+		for (unsigned int i = 0; i < state_intervals.size(); i++) {
+			state_intervals[i].read(in);
+			if (i+1 != state_intervals.size() && in.fail())
+				throw ns_ex("Malformed intervals file");
+		}
+	}
+
 	void clear() {
 		first_valid_element_id.clear();
 		last_valid_element_id.clear();
@@ -715,10 +740,15 @@ public:
 							const ns_analysis_db_options &analysis_options = ns_force_creation_of_new_db_record); //do not set ns_analysis_db_options to anything other than ns_force_creation_of_new_db_record unless you
 																												  //understand how this might effect all other cached data!
 	void reanalyze_stored_aligned_images(const ns_64_bit region_id,const ns_time_path_solution & solution_,const ns_time_series_denoising_parameters &,const ns_analyzed_image_time_path_death_time_estimator * e,ns_sql & sql,const bool load_images_after_last_valid_sample, const bool recalculate_flow_images);
-	bool load_completed_analysis(const ns_64_bit region_id, const ns_time_path_solution & solution_, const ns_time_series_denoising_parameters &, const ns_analyzed_image_time_path_death_time_estimator * e, ns_sql & sql, bool exclude_movement_quantification = false);
-	
+	bool load_image_quantification_and_rerun_death_time_detection(const ns_64_bit region_id, const ns_time_path_solution & solution_, const ns_time_series_denoising_parameters &, const ns_analyzed_image_time_path_death_time_estimator * e, ns_sql & sql);
+	bool load_completed_analysis_(const ns_64_bit region_id, const ns_time_path_solution& solution_, const ns_time_series_denoising_parameters&, const ns_analyzed_image_time_path_death_time_estimator* e, ns_sql& sql, bool exclude_movement_quantification = false);
+
 	void reanalyze_with_different_movement_estimator(const ns_time_series_denoising_parameters &,const ns_analyzed_image_time_path_death_time_estimator * e);
 
+	void write_internal_annotation_data(std::ostream& o) const;
+	void read_internal_annotation_data(std::istream& in);
+	void write_internal_intervals_data(std::ostream& o) const;
+	void read_internal_intervals_data(std::istream& in);
 
 	//provide access to group images
 	void load_images_for_group(const unsigned long group_id, const unsigned long number_of_images_to_load,ns_sql & sql,const bool load_images_after_last_valid_sample,const bool load_flow_images,ns_simple_local_image_cache & image_cache);
@@ -809,7 +839,8 @@ private:
 	ns_stationary_path_id generate_stationary_path_id(const unsigned long group_id, const unsigned long path_id) const{
 		return ns_stationary_path_id(group_id,path_id,analysis_id);
 	}
-	void populate_movement_quantification_from_file(ns_sql & sql, const bool skip_movement_data);
+	typedef enum{ns_all_results, ns_all_results_no_movement, ns_only_quantification,ns_only_quantification_no_movement} ns_movement_analysis_results_to_load;
+	void load_stored_movement_analysis_results(ns_sql & sql, const ns_movement_analysis_results_to_load & movement_data_to_load);
 	
 	static ns_death_time_annotation_time_interval get_externally_specified_last_measurement(const ns_64_bit region_id, ns_sql & sql);
 	void crop_path_observation_times(const ns_death_time_annotation_time_interval & observation_interval);

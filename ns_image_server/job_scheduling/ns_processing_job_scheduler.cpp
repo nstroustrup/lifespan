@@ -25,15 +25,15 @@ std::string ns_maintenance_task_to_string(const ns_maintenance_task & task){
 		case ns_maintenance_update_processing_job_queue:
 			return "Add new jobs to queue";
 		case ns_maintenance_rebuild_movement_data:
-			return "Build Movement Data";
+			return "Analyze Worm Movement";
 		case ns_maintenance_rebuild_movement_from_stored_image_quantification:
-			return "Rebuild Movement Analysis From Stored Image Quantification";
+			return "Re-calculate Death Times from Movement Analysis";
 		case ns_maintenance_rebuild_movement_from_stored_images:
-			return "Rebuild Movement Analysis From Stored Images";
+			return "Re-run Movement Analysis From Cached Images";
 		case ns_maintenance_generate_movement_posture_visualization:
 			return "Generate Movement Posture Visualization";
 		case ns_maintenance_recalculate_censoring:
-			return "Recalculate Censoring";
+			return "Re-calculate Censoring";
 		case ns_maintenance_plate_and_individual_visualization:
 			return "Generate Plate and individual visualization";
 		case ns_maintenance_generate_sample_regions_from_mask:

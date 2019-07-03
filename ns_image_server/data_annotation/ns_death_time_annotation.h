@@ -336,6 +336,9 @@ struct ns_death_time_annotation{
 	bool volatile_matches_machine_detected_death;
 
 	ns_event_explicitness event_explicitness;
+
+
+	void write_column_format_data(std::ostream& o) const;
 };
 
 typedef enum {ns_include_unchanged,ns_force_to_fast_moving} ns_animals_that_slow_but_do_not_die_handling_strategy;

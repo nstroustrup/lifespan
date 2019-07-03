@@ -27,7 +27,7 @@ public:
 	
 	void write_column_format(std::ostream & o)const;
 	void write_split_file_column_format(std::ostream & censored_and_transition_file, std::ostream & state_file)const;
-	void read_column_format(const ns_annotation_type_to_load & t,std::istream & o, const bool exclude_fast_moving_animals=true);
+	void read_column_format(const ns_annotation_type_to_load & t,std::istream & o, const bool exclude_fast_moving_animals=true, const bool single_line=false);
 	void read_xml(const ns_annotation_type_to_load & t,std::istream & i);
 	void write_xml(std::ostream & o) const;
 

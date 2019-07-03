@@ -2042,7 +2042,7 @@ void ns_worm_learner::output_movement_analysis_optimization_data(const ns_optimi
 
 						ns_get_death_time_estimator_from_posture_analysis_model(mod));
 
-					time_path_image_analyzer.load_completed_analysis(region_id, time_path_solution, denoising_parameters, &death_time_estimator(), sql);
+					time_path_image_analyzer.load_completed_analysis_(region_id, time_path_solution, denoising_parameters, &death_time_estimator(), sql);
 					death_time_estimator.release();
 					ns_region_metadata metadata;
 
@@ -2292,7 +2292,7 @@ void ns_test_parameter_set_on_region(const ns_64_bit region_id,
 		if (time_path_image_analyzer.size() == 0) {
 
 			time_path_image_analyzer.add_by_hand_annotations(by_hand_annotations);
-			time_path_image_analyzer.load_completed_analysis(
+			time_path_image_analyzer.load_completed_analysis_(
 				region_id,
 				time_path_solution,
 				time_series_denoising_parameters,
@@ -2734,7 +2734,7 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 
 				time_series_denoising_parameters_cache[movement_results.samples[i].regions[j]->metadata.region_id] = time_series_denoising_parameters;
 
-				movement_results.samples[i].regions[j]->time_path_image_analyzer->load_completed_analysis(
+				movement_results.samples[i].regions[j]->time_path_image_analyzer->load_completed_analysis_(
 					movement_results.samples[i].regions[j]->metadata.region_id,
 					movement_results.samples[i].regions[j]->time_path_solution,
 					time_series_denoising_parameters,
@@ -4250,7 +4250,7 @@ void ns_worm_learner::generate_single_frame_posture_image_pixel_data(const bool 
 				continue;
 			try{
 				movement_results.samples[i].regions[j]->time_path_solution.load_from_db(region_id,sql,true);
-				movement_results.samples[i].regions[j]->time_path_image_analyzer->load_completed_analysis(region_id,movement_results.samples[i].regions[j]->time_path_solution,time_series_denoising_parameters,0,sql,true);
+				movement_results.samples[i].regions[j]->time_path_image_analyzer->load_completed_analysis_(region_id,movement_results.samples[i].regions[j]->time_path_solution,time_series_denoising_parameters,0,sql,true);
 				movement_results.samples[i].regions[j]->time_path_image_analyzer->add_by_hand_annotations(by_hand_annotations.annotations);
 				for (unsigned int w = 0; w < movement_results.samples[i].regions[j]->time_path_image_analyzer->size(); w++){
 					if (ns_death_time_annotation::is_excluded(movement_results.samples[i].regions[j]->time_path_image_analyzer->group(w).paths[0].excluded()))
@@ -4513,7 +4513,7 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 	for (unsigned int i = 0; i < movement_results.samples.size(); i++)
 		for (unsigned int j = 0; j < movement_results.samples[i].regions.size(); j++) {
 			const ns_region_metadata & metadata(movement_results.samples[i].regions[j]->metadata);
-			if (metadata.by_hand_annotation_timestamp > metadata.movement_rebuild_timestamp && metadata.movement_rebuild_timestamp != 0)
+			//if (metadata.by_hand_annotation_timestamp > metadata.movement_rebuild_timestamp && metadata.movement_rebuild_timestamp != 0)
 				regions_needing_censoring_recalculation.push_back(metadata.region_id);
 		}
 	if (!regions_needing_censoring_recalculation.empty()) {
@@ -4534,7 +4534,7 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 				image_server.add_subtext_to_current_event(ns_to_string((int)(i *100.0 / regions_needing_censoring_recalculation.size())) + "%...", &sql);
 				ns_processing_job job;
 				job.region_id = regions_needing_censoring_recalculation[i];
-				job.maintenance_task = ns_maintenance_rebuild_movement_from_stored_image_quantification;
+				job.maintenance_task = ns_maintenance_recalculate_censoring;
 				analyze_worm_movement_across_frames(job, &image_server, sql, false);
 			}
 			break;

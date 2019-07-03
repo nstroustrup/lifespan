@@ -37,7 +37,7 @@ public:
 		  handle.release();
 		  
 		  if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Loading completed analysis"));
-		  loaded_path_data_successfully = movement_analyzer.load_completed_analysis(region_id_, solution, time_series_denoising_parameters, &death_time_estimator(), sql, !load_movement_quantification);
+		  loaded_path_data_successfully = movement_analyzer.load_completed_analysis_(region_id_, solution, time_series_denoising_parameters, &death_time_estimator(), sql, !load_movement_quantification);
 		  death_time_estimator.release();
 		}
 		catch(ns_ex & ex){

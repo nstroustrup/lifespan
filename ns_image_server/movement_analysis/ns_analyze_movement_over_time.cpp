@@ -62,7 +62,8 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 	}
 	else if (job.maintenance_task == ns_maintenance_rebuild_movement_from_stored_images ||
 		job.maintenance_task == ns_maintenance_rebuild_movement_from_stored_image_quantification || 
-		job.maintenance_task == ns_maintenance_rebuild_movement_data_from_stored_solution) {
+		job.maintenance_task == ns_maintenance_rebuild_movement_data_from_stored_solution ||
+		job.maintenance_task ==	ns_maintenance_recalculate_censoring) {
 		if (log_output)
 			image_server->register_server_event(ns_image_server_event("Loading point cloud solution from disk."), &sql);
 		time_path_solution.load_from_db(job.region_id, sql, false);
@@ -217,17 +218,25 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 
 		invalidate_stored_data_depending_on_movement_analysis(job, sql, invalidated_old_data);
 	}
-	else {
+	else if (job.maintenance_task == ns_maintenance_rebuild_movement_from_stored_image_quantification){
 		//load in previously calculated image quantification from disk for re-analysis
 		//This is good, for example, if changes have been made to the movement quantification analyzer
 		//and it needs to be rerun though the actual images don't need to be requantified.
 		//or if by hand annotations have been performed and the alignment in the output files should be redone.
 		if (log_output)
 			image_server->register_server_event(ns_image_server_event("Analyzing stored animal posture quantification."), &sql);
-		time_path_image_analyzer.load_completed_analysis(job.region_id, time_path_solution, time_series_denoising_parameters, &death_time_estimator(), sql);
+		time_path_image_analyzer.load_image_quantification_and_rerun_death_time_detection(job.region_id, time_path_solution, time_series_denoising_parameters, &death_time_estimator(), sql);
 		time_path_image_analyzer.obtain_analysis_id_and_save_movement_data(job.region_id, sql,
 			ns_time_path_image_movement_analyzer<ns_overallocation_resizer>::ns_require_existing_record,
 			ns_time_path_image_movement_analyzer<ns_overallocation_resizer>::ns_write_data);
+	}
+	else if (job.maintenance_task == ns_maintenance_recalculate_censoring) {
+		if (log_output)
+			image_server->register_server_event(ns_image_server_event("Analyzing stored animal posture quantification."), &sql);
+		time_path_image_analyzer.load_completed_analysis_(job.region_id, time_path_solution, time_series_denoising_parameters, &death_time_estimator(), sql,true);
+		time_path_image_analyzer.obtain_analysis_id_and_save_movement_data(job.region_id, sql,
+			ns_time_path_image_movement_analyzer<ns_overallocation_resizer>::ns_require_existing_record,
+			ns_time_path_image_movement_analyzer<ns_overallocation_resizer>::ns_do_not_write_data);
 	}
 	death_time_estimator.release();
 
@@ -342,16 +351,18 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 	ns_image_server_results_subject sub;
 	sub.region_id = job.region_id;
 	try {
-		ns_acquire_for_scope<std::ostream> o(image_server->results_storage.time_path_image_analysis_quantification(sub, "detailed", false, sql,false,false).output());
-		if (time_path_image_analyzer.size() > 0) {
-			time_path_image_analyzer.group(0).paths[0].write_detailed_movement_quantification_analysis_header(o());
-			o() << "\n";
-			time_path_image_analyzer.write_detailed_movement_quantification_analysis_data(metadata, o(), false);
-		}
-		else o() << "(No Paths in Solution)\n";
+		if (job.maintenance_task != ns_maintenance_recalculate_censoring) {
+			ns_acquire_for_scope<std::ostream> o(image_server->results_storage.time_path_image_analysis_quantification(sub, "detailed", false, sql, false, false).output());
+			if (time_path_image_analyzer.size() > 0) {
+				time_path_image_analyzer.group(0).paths[0].write_detailed_movement_quantification_analysis_header(o());
+				o() << "\n";
+				time_path_image_analyzer.write_detailed_movement_quantification_analysis_data(metadata, o(), false);
+			}
+			else o() << "(No Paths in Solution)\n";
 
-		o() << "\n";
-		o.release();
+			o() << "\n";
+			o.release();
+		}
 	}
 	catch (ns_ex & ex) {
 		image_server->register_server_event(ex, &sql);

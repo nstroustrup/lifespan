@@ -500,44 +500,43 @@ void ns_death_time_annotation_set::write(std::ostream & o) const{
 	write_column_format(o);
 }
 
-void write_column_format_data(std::ostream & o, const ns_death_time_annotation & a){
-	o << (int)a.type << ","
-		<< a.time.period_end << ","
-		<< a.region_id << ","
-		<< a.region_info_id << ","
-		<< a.position.x << ","
-		<< a.position.y << ","
-		<< a.size.x << ","
-		<< a.size.y << ","
-		<< (int)a.annotation_source << ","
-		<< a.annotation_time << ","
-		<< a.annotation_source_details << ","
-		<< ns_death_time_annotation::exclusion_value(a.excluded) << ","
-		<< a.loglikelihood << "," //room for expansion; old location of extra worms
-		<< (int)a.disambiguation_type << ","
-		<< a.stationary_path_id.group_id << ","
-		<< a.stationary_path_id.path_id << ","
-		<< a.stationary_path_id.detection_set_id << ","
-		<< a.time.period_start << ","
-		<< a.time.interval_bound_code() << ","
-		<< a.flag.label_short <<","
-		<< a.animal_is_part_of_a_complete_trace << ","
-		<< a.number_of_worms_at_location_marked_by_machine << ","
-		<< a.number_of_worms_at_location_marked_by_hand << ","
-		<< (int)a.multiworm_censoring_strategy <<","
-		<< (int)a.missing_worm_return_strategy <<","
-		<< a.animal_id_at_position << ","
-		<< (int)a.event_observation_type << ","
-		<< a.longest_gap_without_observation << ","
-		<< (int)a.by_hand_annotation_integration_strategy << ","
-		<< (a.inferred_animal_location?"1":"0") << ","
-		<< a.subregion_info.plate_subregion_id << ","
-		<< a.subregion_info.nearest_neighbor_subregion_id << ","
-		<< a.subregion_info.nearest_neighbor_subregion_distance.x << ","
-		<< a.subregion_info.nearest_neighbor_subregion_distance.y << ","
-		<< (int)a.event_explicitness << ","
-		// reserved for future use
-		<< "\n";
+void ns_death_time_annotation::write_column_format_data(std::ostream & o) const{
+	o << (int)type << ","
+		<< time.period_end << ","
+		<< region_id << ","
+		<< region_info_id << ","
+		<< position.x << ","
+		<< position.y << ","
+		<< size.x << ","
+		<< size.y << ","
+		<< (int)annotation_source << ","
+		<< annotation_time << ","
+		<< annotation_source_details << ","
+		<< ns_death_time_annotation::exclusion_value(excluded) << ","
+		<< loglikelihood << "," //room for expansion; old location of extra worms
+		<< (int)disambiguation_type << ","
+		<< stationary_path_id.group_id << ","
+		<< stationary_path_id.path_id << ","
+		<< stationary_path_id.detection_set_id << ","
+		<< time.period_start << ","
+		<< time.interval_bound_code() << ","
+		<< flag.label_short << ","
+		<< animal_is_part_of_a_complete_trace << ","
+		<< number_of_worms_at_location_marked_by_machine << ","
+		<< number_of_worms_at_location_marked_by_hand << ","
+		<< (int)multiworm_censoring_strategy << ","
+		<< (int)missing_worm_return_strategy << ","
+		<< animal_id_at_position << ","
+		<< (int)event_observation_type << ","
+		<< longest_gap_without_observation << ","
+		<< (int)by_hand_annotation_integration_strategy << ","
+		<< (inferred_animal_location ? "1" : "0") << ","
+		<< subregion_info.plate_subregion_id << ","
+		<< subregion_info.nearest_neighbor_subregion_id << ","
+		<< subregion_info.nearest_neighbor_subregion_distance.x << ","
+		<< subregion_info.nearest_neighbor_subregion_distance.y << ","
+		<< (int)event_explicitness << ",";
+		// one column reserved for future use
 }
 void write_column_format_header(std::ostream & o){
 	o << "Event Type,Event Time, Region Image Id, Region Info Id, Position x, Position y, Size X, Size y, Annotation Source,"
@@ -552,10 +551,15 @@ void ns_death_time_annotation_set::write_split_file_column_format(std::ostream &
 	write_column_format_header(censored_and_transition_file);
 	write_column_format_header(state_file);
 	for (unsigned int i = 0; i < events.size(); i++){
-		if (!annotation_matches(ns_movement_states,events[i]))
-			write_column_format_data(censored_and_transition_file,events[i]);
-		else
-			write_column_format_data(state_file,events[i]);
+		if (!annotation_matches(ns_movement_states, events[i])) {
+			events[i].write_column_format_data(censored_and_transition_file);
+			censored_and_transition_file << "\n";
+		}
+		else {
+			events[i].write_column_format_data(state_file);
+			state_file << "\n";
+		}
+
 
 	}
 
@@ -563,9 +567,11 @@ void ns_death_time_annotation_set::write_split_file_column_format(std::ostream &
 
 void ns_death_time_annotation_set::write_column_format(std::ostream & o)const{
 	write_column_format_header(o);
-	for (unsigned int i = 0; i < events.size(); i++){
-		write_column_format_data(o,events[i]);
+	for (unsigned int i = 0; i < events.size(); i++) {
+		events[i].write_column_format_data(o);
+		o << "\n";
 	}
+	
 }
 
 char ns_conditional_getline(istream & i, std::string & val, const std::string & separators){
@@ -581,44 +587,48 @@ char ns_conditional_getline(istream & i, std::string & val, const std::string & 
 	}
 	return 0;
 }
-void ns_death_time_annotation_set::read_column_format(const  ns_annotation_type_to_load & type_to_load, std::istream & i, const bool exclude_fast_moving_animals){
+void ns_death_time_annotation_set::read_column_format(const  ns_annotation_type_to_load & type_to_load, std::istream & i, const bool exclude_fast_moving_animals, const bool single_line){
 	char a(' ');
 	while (!i.fail() && isspace(a))
 		a=i.get();
-	if (i.fail() || a != 'E')
+	if (i.fail() || (!single_line && a != 'E'))
 		throw ns_ex("Could not read death time annotation format");
 
-	string val;
-	getline(i,val,'\n');
-	if (i.fail())
-		throw ns_ex("Could not read death time annotation format");
 	bool newest_old_record(false);
-	if (val.find("Event Observation Type") == val.npos)
-		newest_old_record = true;
 	bool kind_of_old_record(false);
-	{
-		int cur_column(0);
-		string column_text,
+	string val;
+	if (!single_line) {
+		getline(i, val, '\n');
+		if (i.fail())
+			throw ns_ex("Could not read death time annotation format");
+		if (val.find("Event Observation Type") == val.npos)
+			newest_old_record = true;
+		{
+			int cur_column(0);
+			string column_text,
 				previous_column_text;
-		for (unsigned int i = 0; i < val.size(); i++){
-			if (val[i] == ','){
-				cur_column++;
-				previous_column_text = column_text;
-				column_text.resize(0);
+			for (unsigned int i = 0; i < val.size(); i++) {
+				if (val[i] == ',') {
+					cur_column++;
+					previous_column_text = column_text;
+					column_text.resize(0);
+				}
+				else column_text.push_back(val[i]);
+				if (cur_column == 13) {
+					if (previous_column_text == " Number of Extra Worms")
+						kind_of_old_record = true;
+					break;
+				}
+				if (cur_column > 13)
+					break;
 			}
-			else column_text.push_back(val[i]);
-			if (cur_column == 13){
-				if (previous_column_text == " Number of Extra Worms")
-					kind_of_old_record = true;
-				break;
-			}
-			if (cur_column > 13)
-				break;
 		}
 	}
 	ns_death_time_annotation annotation;
 	val.resize(0);
 	val.reserve(20);
+	if (events.size() == 0)
+		events.reserve(100);
 	while(true){
 		annotation.time.period_start = 0;
 		annotation.time.period_end = 0;
@@ -729,7 +739,9 @@ void ns_death_time_annotation_set::read_column_format(const  ns_annotation_type_
 			if (kind_of_old_record){
 				getline(i,val,'\n');
 				if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF");
-				continue;
+				if (!single_line)
+					continue;
+				else return;
 			}
 			getline(i,val,',');
 			if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF");
@@ -842,7 +854,7 @@ void ns_death_time_annotation_set::read_column_format(const  ns_annotation_type_
 		if (!annotation_matches(type_to_load,e) || ( exclude_fast_moving_animals && e.type == ns_fast_moving_worm_observed))
 			events.pop_back();
 
-		if (i.fail())
+		if (single_line || i.fail())
 			return;
 	}
 }

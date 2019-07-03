@@ -738,6 +738,7 @@ ns_64_bit ns_processing_job_maintenance_processor::run_job(ns_sql & sql) {
 		case ns_maintenance_rebuild_movement_from_stored_images:
 		case ns_maintenance_rebuild_movement_from_stored_image_quantification:
 		case ns_maintenance_rebuild_movement_data_from_stored_solution:
+		case ns_maintenance_recalculate_censoring:
 			analyze_worm_movement_across_frames(job, image_server, sql, true);
 			break;
 		case ns_maintenance_generate_movement_posture_visualization: {
@@ -769,7 +770,7 @@ ns_64_bit ns_processing_job_maintenance_processor::run_job(ns_sql & sql) {
 
 			ns_acquire_for_scope<ns_analyzed_image_time_path_death_time_estimator> death_time_estimator(
 				ns_get_death_time_estimator_from_posture_analysis_model(posture_analysis_model_handle().model_specification));
-			analyzer.load_completed_analysis(job.region_id, solution, time_series_denoising_parameters, &death_time_estimator(), sql);
+			analyzer.load_completed_analysis_(job.region_id, solution, time_series_denoising_parameters, &death_time_estimator(), sql);
 			death_time_estimator.release();
 			ns_region_metadata metadata;
 			ns_hand_annotation_loader by_hand_region_annotations;

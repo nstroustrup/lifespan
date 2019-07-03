@@ -77,7 +77,7 @@ public:
 		ns_acquire_for_scope<ns_analyzed_image_time_path_death_time_estimator> death_time_estimator(
 			ns_get_death_time_estimator_from_posture_analysis_model(posture_analysis_model_handle().model_specification));
 		const ns_time_series_denoising_parameters time_series_denoising_parameters(ns_time_series_denoising_parameters::load_from_db(region_id, sql));
-		analyzer.load_completed_analysis(region_id, solution, time_series_denoising_parameters, &death_time_estimator(), sql, true);
+		analyzer.load_completed_analysis_(region_id, solution, time_series_denoising_parameters, &death_time_estimator(), sql, true);
 
 		timepoints.resize(solution.timepoints.size());
 		for (unsigned int i = 0; i < solution.timepoints.size(); i++) {

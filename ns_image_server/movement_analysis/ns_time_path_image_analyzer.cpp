@@ -1418,17 +1418,56 @@ const ns_movement_event ns_hmm_movement_analysis_optimizatiom_stats_record::stat
 															ns_death_associated_post_expansion_contraction_start};
 
 template<class allocator_T>
-void ns_time_path_image_movement_analyzer<allocator_T>::populate_movement_quantification_from_file(ns_sql & sql,const bool skip_movement_data){
+void ns_time_path_image_movement_analyzer<allocator_T>::load_stored_movement_analysis_results(ns_sql & sql, const ns_movement_analysis_results_to_load& movement_data_to_load){
 	
-	ns_image_server_image im = get_movement_quantification_id(this->region_info_id,sql);
-	ifstream * i(image_server_const.image_storage.request_metadata_from_disk(im,false,&sql));
+	ns_image_server_image base_db_record = get_movement_quantification_id(this->region_info_id,sql);
+	base_db_record.load_from_db(base_db_record.id, &sql);
+	ns_image_server_image quantification_db_record(base_db_record);
+	std::string base_filename = ns_dir::extract_filename_without_extension(quantification_db_record.filename);
+	if (quantification_db_record.filename.find("_quantification") != quantification_db_record.filename.npos);
+	//	image_server.register_server_event(ns_image_server_event("Handling old movement filename."),&sql);	//retain compatability with old version
+	else
+		quantification_db_record.filename = base_filename+"_quantification.csv";
 
+	ns_image_server_image event_annotations_record(base_db_record);
+	event_annotations_record.filename = base_filename + "_events.csv";
+
+	ns_image_server_image state_intervals_record(base_db_record);
+	state_intervals_record.filename = base_filename + "_intervals.csv";
+
+
+	ifstream* q_i = 0,
+			* i_i = 0, 
+			* e_i = 0;
+	ns_ex additional_metadata_problem;
 	try{
-		load_movement_data_from_disk(*i, skip_movement_data);
-		delete i;
+
+		if (movement_data_to_load == ns_all_results || movement_data_to_load == ns_all_results_no_movement) {
+			try {
+				e_i = image_server_const.image_storage.request_metadata_from_disk(event_annotations_record, false, &sql);
+				 i_i = image_server_const.image_storage.request_metadata_from_disk(state_intervals_record, false, &sql);
+			}
+			catch (ns_ex & ex) {
+				additional_metadata_problem = ns_ex("Some stored movement analysis could not be found.  Please re-run the job \"Rebuild Movement Analysis from cached image analysis\".");
+				ns_safe_delete(q_i);
+			}
+		}
+		q_i = image_server_const.image_storage.request_metadata_from_disk(quantification_db_record, false, &sql);
+		if (additional_metadata_problem.text().empty()) {
+			load_movement_data_from_disk(*q_i, movement_data_to_load == ns_only_quantification_no_movement || movement_data_to_load == ns_all_results_no_movement);
+			ns_safe_delete(q_i);
+			if (movement_data_to_load == ns_all_results || movement_data_to_load == ns_all_results_no_movement) {
+				read_internal_annotation_data(*e_i);
+				ns_safe_delete(e_i);
+				read_internal_intervals_data(*i_i);
+				ns_safe_delete(i_i);
+			}
+		}
 	}
 	catch (ns_ex & ex) {
-		delete i;
+		ns_safe_delete(q_i);
+		ns_safe_delete(e_i);
+		ns_safe_delete(i_i);
 		std::string data = "unknown";
 		try {
 			sql << "SELECT s.name,r.name FROM sample_region_image_info as r, capture_samples as s WHERE r.id = " << this->region_info_id << " and s.id = r.sample_id";
@@ -1446,9 +1485,13 @@ void ns_time_path_image_movement_analyzer<allocator_T>::populate_movement_quanti
 
 	}
 	catch(...){
-		delete i;
+		ns_safe_delete(q_i);
+		ns_safe_delete(e_i);
+		ns_safe_delete(i_i);
 		throw;
 	}
+	if (!additional_metadata_problem.text().empty())
+		throw additional_metadata_problem;
 };
 
 template<class allocator_T>
@@ -1550,7 +1593,101 @@ void ns_time_path_image_movement_analyzer<allocator_T>::reanalyze_with_different
 }
 
 template<class allocator_T>
-bool ns_time_path_image_movement_analyzer<allocator_T>::load_completed_analysis(const ns_64_bit region_id,const ns_time_path_solution & solution_,  const ns_time_series_denoising_parameters & times_series_denoising_parameters, 
+bool ns_time_path_image_movement_analyzer<allocator_T>::load_image_quantification_and_rerun_death_time_detection(const ns_64_bit region_id, const ns_time_path_solution& solution_, const ns_time_series_denoising_parameters& times_series_denoising_parameters,
+	const ns_analyzed_image_time_path_death_time_estimator* e, ns_sql& sql) {
+	region_info_id = region_id;
+	externally_specified_plate_observation_interval = get_externally_specified_last_measurement(region_id, sql);
+	load_from_solution(solution_);
+	crop_path_observation_times(externally_specified_plate_observation_interval);
+	bool found_path_info_in_db = load_movement_image_db_info(region_info_id, sql);
+
+
+
+	for (unsigned long g = 0; g < groups.size(); g++) {
+		for (unsigned long p = 0; p < groups[g].paths.size(); p++)
+			for (unsigned int i = 0; i < groups[g].paths[p].death_time_annotations().events.size(); i++) {
+				//	groups[g].paths[p].by_hand_annotation_event_times.resize((int)ns_number_of_movement_event_types,-1);
+				groups[g].paths[p].movement_analysis_result.death_time_annotation_set.events[i].region_info_id = region_info_id;
+			}
+	}
+	if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Populating movement quantification from file"));
+	load_stored_movement_analysis_results(sql, ns_only_quantification);
+
+	if (posture_model_version_used != e->software_version_number()) {
+		cout << posture_model_version_used << "\n";
+		throw ns_ex("This region's movement analysis was run using posture analysis version \"") << ns_to_string(posture_model_version_used) << "\".  This is incompatible with the movement analysis model you have specified, \"" << e->name << "\" which is v " << e->software_version_number() << ".  You can fix this by running the job \"Analyze Worm Movement using Cached Images\" which will preserve all by hand annotations.";
+	}
+
+
+
+	ns_64_bit file_specified_analysis_id = this->analysis_id;
+
+	if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Getting analysis id"));
+	obtain_analysis_id_and_save_movement_data(region_id, sql, ns_require_existing_record, ns_do_not_write_data);
+	if (file_specified_analysis_id != this->analysis_id)
+		throw ns_ex("Movement analysis ID specified on disk does not agree with the ID  specified in database.");
+	if (analysis_id == 0)
+		throw ns_ex("Could not obtain analysis id!");
+
+
+	if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Denoising movement series and calculating slopes"));
+	for (unsigned long g = 0; g < groups.size(); g++)
+		for (unsigned long p = 0; p < groups[g].paths.size(); p++) {
+			unsigned long number_of_valid_points(0);
+			for (unsigned int i = 0; i < groups[g].paths[p].element_count(); i++) {
+				if (!groups[g].paths[p].element(i).censored &&
+					!groups[g].paths[p].element(i).excluded)
+					number_of_valid_points++;
+			}
+			if (ns_skip_low_density_paths && groups[g].paths[p].is_low_density_path())
+				continue;
+			//invalid paths can result from changing the last valid timepoint and reanalyzing saved movement analyses
+			if (number_of_valid_points <= 1 || groups[g].paths[p].element_count() > 0 && groups[g].paths[p].element(0).absolute_time > this->last_timepoint_in_analysis()) {
+				groups[g].paths[p].entirely_excluded = true;
+				continue;
+			}
+			//	if (g == 5)
+			//		cerr << "WHA";
+				//groups[g].paths[p].denoise_movement_series_and_calculate_intensity_slopes(0,times_series_denoising_parameters);
+		}
+
+	//if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Normalizing scores"));
+	normalize_movement_scores_over_all_paths(e->software_version_number(), times_series_denoising_parameters, sql);
+	if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Calculating quantifications"));
+
+	for (unsigned long g = 0; g < groups.size(); g++)
+		for (unsigned long p = 0; p < groups[g].paths.size(); p++) {
+			unsigned long number_of_valid_points(0);
+			for (unsigned int i = 0; i < groups[g].paths[p].element_count(); i++) {
+				if (!groups[g].paths[p].element(i).censored &&
+					!groups[g].paths[p].element(i).excluded)
+					number_of_valid_points++;
+			}
+			if (ns_skip_low_density_paths && groups[g].paths[p].is_low_density_path())
+				continue;
+			//invalid paths can result from changing the last valid timepoint and reanalyzing saved movement analyses
+			if (number_of_valid_points <= 1 || groups[g].paths[p].element_count() > 0 && groups[g].paths[p].element(0).absolute_time > this->last_timepoint_in_analysis()) {
+				groups[g].paths[p].entirely_excluded = true;
+				continue;
+			}
+			//	if (g == 5)
+			//		cerr << "WHA";
+			groups[g].paths[p].analyze_movement(e, ns_stationary_path_id(g, p, analysis_id), last_timepoint_in_analysis_);
+			groups[g].paths[p].calculate_movement_quantification_summary(groups[g].paths[p].movement_analysis_result);
+		}
+
+
+
+	if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Done"));
+
+
+
+	//generate_movement_description_series();
+	movement_analyzed = true;
+	return found_path_info_in_db;
+}
+template<class allocator_T>
+bool ns_time_path_image_movement_analyzer<allocator_T>::load_completed_analysis_(const ns_64_bit region_id,const ns_time_path_solution & solution_,  const ns_time_series_denoising_parameters & times_series_denoising_parameters, 
 															const ns_analyzed_image_time_path_death_time_estimator * e,ns_sql & sql, bool exclude_movement_quantification){
 	region_info_id = region_id;
 	externally_specified_plate_observation_interval = get_externally_specified_last_measurement(region_id,sql);
@@ -1568,7 +1705,7 @@ bool ns_time_path_image_movement_analyzer<allocator_T>::load_completed_analysis(
 			}
 	}
 	if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Populating movement quantification from file"));
-	populate_movement_quantification_from_file(sql, exclude_movement_quantification);
+	load_stored_movement_analysis_results(sql, exclude_movement_quantification? ns_all_results_no_movement:ns_all_results );
 
 	if (posture_model_version_used != e->software_version_number()){
 	  cout << posture_model_version_used << "\n";
@@ -1609,11 +1746,7 @@ bool ns_time_path_image_movement_analyzer<allocator_T>::load_completed_analysis(
 		//		cerr << "WHA";
 			//groups[g].paths[p].denoise_movement_series_and_calculate_intensity_slopes(0,times_series_denoising_parameters);
 		}
-
-	//if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Normalizing scores"));
-	normalize_movement_scores_over_all_paths(e->software_version_number(),times_series_denoising_parameters,sql);
-	if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Calculating quantifications"));
-
+	
 	for (unsigned long g = 0; g < groups.size(); g++)
 		for (unsigned long p = 0; p < groups[g].paths.size(); p++){
 			unsigned long number_of_valid_points(0);
@@ -1629,21 +1762,79 @@ bool ns_time_path_image_movement_analyzer<allocator_T>::load_completed_analysis(
 				groups[g].paths[p].entirely_excluded = true;
 				continue;
 			}
-		//	if (g == 5)
-		//		cerr << "WHA";
-			groups[g].paths[p].analyze_movement(e,ns_stationary_path_id(g,p,analysis_id),last_timepoint_in_analysis_);
 			groups[g].paths[p].calculate_movement_quantification_summary(groups[g].paths[p].movement_analysis_result);
 		}	
 
-	
-
 	if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Done"));
 
-
-
-	//generate_movement_description_series();
 	movement_analyzed = true;
 	return found_path_info_in_db;
+}
+
+
+
+template<class allocator_T>
+void ns_time_path_image_movement_analyzer<allocator_T>::write_internal_annotation_data(std::ostream& o) const {
+	for (unsigned int i = 0; i < groups.size(); i++) {
+		for (unsigned int j = 0; j < groups[i].paths.size(); j++) {
+			for (unsigned int k = 0; k < groups[i].paths[j].movement_analysis_result.death_time_annotation_set.size(); k++) {
+				o << i << "," << j << ",";
+				groups[i].paths[j].movement_analysis_result.death_time_annotation_set[k].write_column_format_data(o);
+				o << "\n";
+			}
+		}
+	}
+}
+template<class allocator_T>
+void ns_time_path_image_movement_analyzer<allocator_T>::read_internal_annotation_data(std::istream& in) {
+	ns_get_int get_int;
+	while (true) {
+		int group_id, path_id;
+		get_int(in, group_id);
+		if (in.fail())
+			break;
+		get_int(in, path_id);
+		if (group_id >= groups.size())
+			throw ns_ex("Invalid group id");
+		if (path_id >= groups[group_id].paths.size())
+			throw ns_ex("Invalid path id");
+		groups[group_id].paths[path_id].movement_analysis_result.death_time_annotation_set.read_column_format(ns_death_time_annotation_set::ns_all_annotations, in, false,true);
+		if (in.fail())
+			throw ns_ex("Malformed intervals file");
+	}
+}
+template<class allocator_T>
+void ns_time_path_image_movement_analyzer<allocator_T>::write_internal_intervals_data(std::ostream & o) const {
+	for (unsigned int i = 0; i < groups.size(); i++) {
+		for (unsigned int j = 0; j < groups[i].paths.size(); j++) {
+			if (i != 0 || j != 0)
+				o << "\n";
+			o << i << "," << j << ",";
+			groups[i].paths[j].movement_analysis_result.write_intervals(o);
+		}
+	}
+}
+template<class allocator_T>
+void ns_time_path_image_movement_analyzer<allocator_T>::read_internal_intervals_data(std::istream& in) {
+	ns_get_int get_int;
+	while (true) {
+		if (in.fail())
+			return;
+		int group_id, path_id;
+		get_int(in, group_id);
+		if (in.fail())
+			throw ns_ex("Malformed intervals file");
+		get_int(in, path_id);
+		if (in.fail())
+			throw ns_ex("Malformed intervals file");
+		//cout << group_id << " " << path_id << "\n";
+		if (group_id >= groups.size())
+			throw ns_ex("Invalid group id");
+		if (path_id >= groups[group_id].paths.size())
+			throw ns_ex("Invalid path id");
+		groups[group_id].paths[path_id].movement_analysis_result.read_intervals(in);
+		
+	}
 }
 
 template<class allocator_T>
@@ -1655,70 +1846,102 @@ void ns_time_path_image_movement_analyzer<allocator_T>::obtain_analysis_id_and_s
 	sql.get_rows(res);
 	if (res.size() == 0)
 		throw ns_ex("ns_time_path_image_movement_analyzer::save_movement_data_to_db():Could not load info from db");
-	ns_image_server_image im;
-	im.id = ns_atoi64(res[0][0].c_str());
+	ns_image_server_image time_path_quantification_db_record;
+	time_path_quantification_db_record.id = ns_atoi64(res[0][0].c_str());
 
-	if (id_options == ns_require_existing_record && im.id == 0)
+	if (id_options == ns_require_existing_record && time_path_quantification_db_record.id == 0)
 		//do not change this text...it is recognized explicitly elsewhere
 		throw ns_ex(" ns_time_path_image_movement_analyzer::obtain_analysis_id_and_save_movement_data()::Could not find existing record.");
 
-	if (im.id != 0) { //load and check for bad filenames
-		im.load_from_db(im.id, &sql);
-		if (im.filename.empty()) {
+	if (time_path_quantification_db_record.id != 0) { //load and check for bad filenames
+		time_path_quantification_db_record.load_from_db(time_path_quantification_db_record.id, &sql);
+		if (time_path_quantification_db_record.filename.empty()) {
 			if (id_options == ns_require_existing_record)
 				throw ns_ex("obtain_analysis_id_and_save_movement_data()::Encountered an empty record");
 			id_options = ns_force_creation_of_new_db_record;
 		}
 	}
-	if (id_options == ns_force_creation_of_new_db_record && im.id != 0) {
-		sql << "DELETE FROM images WHERE id = " << im.id;
+	if (id_options == ns_force_creation_of_new_db_record && time_path_quantification_db_record.id != 0) {
+		sql << "DELETE FROM images WHERE id = " << time_path_quantification_db_record.id;
 		sql.send_query();
-		im.id = 0; 
+		time_path_quantification_db_record.id = 0;
 		sql << "UPDATE sample_region_image_info SET movement_image_analysis_quantification_id = 0 WHERE id = " << region_id;
 		sql.send_query();
 	}
 
 	bool update_db(false);
-	if (im.id == 0){
-		im = image_server_const.image_storage.get_region_movement_metadata_info(region_id,"time_path_movement_image_analysis_quantification",sql);
+	if (time_path_quantification_db_record.id == 0){
+		time_path_quantification_db_record = image_server_const.image_storage.get_region_movement_metadata_info(region_id,"time_path_movement_image_analysis",sql);
 		update_db = true;
 	}
-	ofstream * o(0);
+	ns_image_server_image quantification_db_record(time_path_quantification_db_record);
+	std::string base_filename = ns_dir::extract_filename_without_extension(quantification_db_record.filename);
+	if (quantification_db_record.filename.find("_quantification") != quantification_db_record.filename.npos);
+		//image_server.register_server_event(ns_image_server_event("Handling old movement filename."),&sql);	//retain compatability with old version
+	else
+		quantification_db_record.filename = base_filename + "_quantification.csv";
+
+	ns_image_server_image event_annotations_record(time_path_quantification_db_record);
+	event_annotations_record.filename = base_filename + "_events.csv";
+
+	ns_image_server_image state_intervals_record(time_path_quantification_db_record);
+	state_intervals_record.filename = base_filename + "_intervals.csv";
+
+	ofstream *time_path_quantification_output(0), *events_output(0), *state_intervals_output(0);
 	try {
-		if (im.filename.empty()) throw ns_ex("Encountered a blank filename!");
-		if (write_options == ns_write_data)
-			o = image_server_const.image_storage.request_metadata_output(im, ns_csv, false, &sql);
+		if (time_path_quantification_db_record.filename.empty()) throw ns_ex("Encountered a blank filename!");
+
+		if (write_options == ns_write_data) {
+			events_output = image_server_const.image_storage.request_metadata_output(event_annotations_record, ns_csv, false, &sql);
+			state_intervals_output = image_server_const.image_storage.request_metadata_output(state_intervals_record, ns_csv, false, &sql);
+			time_path_quantification_output = image_server_const.image_storage.request_metadata_output(quantification_db_record, ns_csv, false, &sql);
+		}
 	}
 	catch (ns_ex & ex) {
 		//if there's a problem create a new entry in the db to halt propigation of db errors
 		if (id_options == ns_require_existing_record)
-			throw ns_ex("ns_time_path_image_movement_analyzer::obtain_analysis_id_and_save_movement_data()::Cannot write to existing movement analysis record");
-		im = ns_image_server_image();
-		im = image_server_const.image_storage.get_region_movement_metadata_info(region_id, "time_path_movement_image_analysis_quantification", sql);
-		if (im.filename.empty()) throw ns_ex("Encountered a blank filename!");
-		im.save_to_db(im.id, &sql);
+			throw ns_ex("ns_time_path_image_movement_analyzer::obtain_analysis_id_and_save_movement_data()::Cannot write to an existing movement analysis record, because that record could not be found");
+		time_path_quantification_db_record = ns_image_server_image();
+		time_path_quantification_db_record = image_server_const.image_storage.get_region_movement_metadata_info(region_id, "time_path_movement_image_analysis", sql);
+		if (time_path_quantification_db_record.filename.empty()) throw ns_ex("Encountered a blank filename!");
+		time_path_quantification_db_record.save_to_db(time_path_quantification_db_record.id, &sql);
+		state_intervals_record = event_annotations_record = quantification_db_record = time_path_quantification_db_record;
+		quantification_db_record.filename += "_quantification.csv";
+		event_annotations_record.filename += "_events.csv";
+		state_intervals_record.filename += "_intervals.csv";
 		update_db = true;
 
-		if (write_options == ns_write_data)
-			o = image_server_const.image_storage.request_metadata_output(im, ns_csv, false, &sql);
+		if (write_options == ns_write_data) {
+			time_path_quantification_output = image_server_const.image_storage.request_metadata_output(quantification_db_record, ns_csv, false, &sql);
+			events_output = image_server_const.image_storage.request_metadata_output(event_annotations_record, ns_csv, false, &sql);
+			state_intervals_output = image_server_const.image_storage.request_metadata_output(state_intervals_record, ns_csv, false, &sql);
+		}
 	}
 	//set analysis id that will uniquely identify all annotations generated by this analysis
 	if (update_db)
-		im.save_to_db(im.id, &sql);
-	analysis_id = im.id;
+		time_path_quantification_db_record.save_to_db(time_path_quantification_db_record.id, &sql);
+	analysis_id = time_path_quantification_db_record.id;
 	try{
 		if (write_options == ns_write_data) {
-			save_movement_data_to_disk(*o);
-			o->close();
+			save_movement_data_to_disk(*time_path_quantification_output);
+			time_path_quantification_output->close();
+			write_internal_annotation_data(*events_output);
+			events_output->close();
+			write_internal_intervals_data(*state_intervals_output);
+			state_intervals_output->close();
 		}
-		ns_safe_delete(o);
+		ns_safe_delete(time_path_quantification_output);
+		ns_safe_delete(state_intervals_output);
+		ns_safe_delete(events_output);
 	}
 	catch(...){
-		ns_safe_delete(o);
+		ns_safe_delete(time_path_quantification_output);
+		ns_safe_delete(state_intervals_output);
+		ns_safe_delete(events_output);
 		throw;
 	}
 	if (update_db){
-		sql << "UPDATE sample_region_image_info SET movement_image_analysis_quantification_id = " << im.id << " WHERE id = " << region_id;
+		sql << "UPDATE sample_region_image_info SET movement_image_analysis_quantification_id = " << time_path_quantification_db_record.id << " WHERE id = " << region_id;
 		sql.send_query();
 	}
 
@@ -6628,7 +6851,7 @@ void ns_time_path_image_movement_analyzer<allocator_T>::reanalyze_stored_aligned
 		//the registered movement images, and these values need to be written to the new movement quantification file.
 
 		//this will set the analysis id based on the file contents
-		populate_movement_quantification_from_file(sql,false);
+		load_stored_movement_analysis_results(sql, ns_only_quantification);
 		posture_model_version_used = NS_CURRENT_POSTURE_MODEL_VERSION;
 		ns_64_bit file_specified_analysis_id = this->analysis_id;
 		//xxxxxx disabled for debug

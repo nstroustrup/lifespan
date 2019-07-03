@@ -1,6 +1,7 @@
 #ifndef NS_TIME_PATH_POSTURE_MOVEMENT_SOLUTION
 #define NS_TIME_PATH_POSTURE_MOVEMENT_SOLUTION
 #include "ns_death_time_annotation.h"
+#include "ns_get_double.h"
 
 struct ns_movement_state_observation_boundaries{
 	long start_index,
@@ -34,6 +35,18 @@ struct ns_movement_state_time_interval_indicies{
 			interval_occurs_after_observation_interval =
 			interval_occurs_before_observation_interval = false;
 	}
+	void write(std::ostream& o) const {
+		o << period_start_index << "," << period_end_index << "," << 
+			(interval_occurs_after_observation_interval ? "1" : "0") << "," <<
+			(interval_occurs_before_observation_interval ? "1" : "0");
+	}
+	void read(std::istream& i) {
+		ns_get_int get_int;
+		get_int(i, period_start_index);
+		get_int(i, period_end_index);
+		get_int(i, interval_occurs_after_observation_interval);
+		get_int(i, interval_occurs_before_observation_interval);
+	}
 };
 struct ns_movement_state_observation_boundary_interval{
 	ns_movement_state_observation_boundary_interval():skipped(false){}
@@ -42,6 +55,19 @@ struct ns_movement_state_observation_boundary_interval{
 											exit_interval;
 	unsigned long longest_observation_gap_within_interval;
 	bool skipped;
+	void write(std::ostream& o) const{
+		entrance_interval.write(o);
+		o << ",";
+		exit_interval.write(o);
+		o << "," << longest_observation_gap_within_interval << "," << (skipped ? "1":"0");
+	}
+	void read(std::istream& i) {
+		ns_get_int get_int;
+		entrance_interval.read(i);
+		exit_interval.read(i);
+		get_int(i, longest_observation_gap_within_interval);
+		get_int(i,skipped);
+	}
 };
 
 class ns_analyzed_image_time_path;

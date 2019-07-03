@@ -1128,7 +1128,7 @@ void ns_time_path_image_movement_analyzer<allocator_T>::process_raw_images(const
 								continue;
 				//THIS IS WHERE QUANTIFICATION IS ANALYZED AND DEATH TIMES ARE IDENTIFIED AND ANNOTATIONS ARE GENERATED
 				groups[i].paths[j].analyze_movement(e,ns_stationary_path_id(i,j,analysis_id),last_timepoint_in_analysis_);
-				groups[i].paths[j].calculate_movement_quantification_summary();
+				groups[i].paths[j].calculate_movement_quantification_summary(groups[i].paths[j].movement_analysis_result);
 			}
 		}
 
@@ -1469,7 +1469,7 @@ void ns_time_path_image_movement_analyzer<allocator_T>::calculate_optimzation_st
 
 			if (!paths_to_test.empty() && paths_to_test.find(this->generate_stationary_path_id(g, p)) == paths_to_test.end())
 				continue;
-			ns_time_path_posture_movement_solution by_hand_posture_movement_solution(groups[g].paths[p].reconstruct_movement_state_solution_from_annotations(groups[g].paths[p].first_valid_element_id.period_start_index, groups[g].paths[p].last_valid_element_id.period_end_index, groups[g].paths[p].by_hand_annotation_event_times));
+			ns_time_path_posture_movement_solution by_hand_posture_movement_solution(groups[g].paths[p].reconstruct_movement_state_solution_from_annotations(groups[g].paths[p].movement_analysis_result.first_valid_element_id.period_start_index, groups[g].paths[p].movement_analysis_result.last_valid_element_id.period_end_index, groups[g].paths[p].by_hand_annotation_event_times));
 			//if (by_hand_posture_movement_solution.moving.skipped) {
 				//cout << "Encountered a by hand annotation in which the animal never slowed: " << g << "\n";
 			//	continue;
@@ -1488,12 +1488,12 @@ void ns_time_path_image_movement_analyzer<allocator_T>::calculate_optimzation_st
 			
 			
 			//cerr << "<m\n";
-			hmm_solver.probability_of_path_solution(groups[g].paths[p], *e, groups[g].paths[p].machine_movement_state_solution, s.animals.rbegin()->machine_state_info, generate_path_info);
+			hmm_solver.probability_of_path_solution(groups[g].paths[p], *e, groups[g].paths[p].movement_analysis_result.machine_movement_state_solution, s.animals.rbegin()->machine_state_info, generate_path_info);
 			//cerr << "m>\n";
 			//cerr << "<h\n";
 			hmm_solver.probability_of_path_solution(groups[g].paths[p], *e, by_hand_posture_movement_solution, s.animals.rbegin()->by_hand_state_info, generate_path_info);
 			//cerr << "h>\n";
-			s.animals.rbegin()->solution_loglikelihood = groups[g].paths[p].machine_movement_state_solution.loglikelihood_of_solution;
+			s.animals.rbegin()->solution_loglikelihood = groups[g].paths[p].movement_analysis_result.machine_movement_state_solution.loglikelihood_of_solution;
 			//std::cout << s.animals.rbegin()->solution_loglikelihood << "\n";
 			
 			//now go through and calculate the errors betweeen the machine and by hand calculations
@@ -1540,7 +1540,7 @@ void ns_time_path_image_movement_analyzer<allocator_T>::reanalyze_with_different
 				continue;
 			try {
 				groups[g].paths[p].analyze_movement(e, ns_stationary_path_id(g, p, analysis_id), last_timepoint_in_analysis_);
-				groups[g].paths[p].calculate_movement_quantification_summary();
+				groups[g].paths[p].calculate_movement_quantification_summary(groups[g].paths[p].movement_analysis_result);
 			}
 			catch (ns_ex & ex) {
 				throw ns_ex("Error analyzing group ") << g << " path " << p << ":" << ex.text();
@@ -1564,7 +1564,7 @@ bool ns_time_path_image_movement_analyzer<allocator_T>::load_completed_analysis(
 		for (unsigned long p = 0; p < groups[g].paths.size(); p++)
 			for (unsigned int i = 0; i < groups[g].paths[p].death_time_annotations().events.size(); i++){
 			//	groups[g].paths[p].by_hand_annotation_event_times.resize((int)ns_number_of_movement_event_types,-1);
-				groups[g].paths[p].death_time_annotation_set.events[i].region_info_id = region_info_id;
+				groups[g].paths[p].movement_analysis_result.death_time_annotation_set.events[i].region_info_id = region_info_id;
 			}
 	}
 	if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Populating movement quantification from file"));
@@ -1632,7 +1632,7 @@ bool ns_time_path_image_movement_analyzer<allocator_T>::load_completed_analysis(
 		//	if (g == 5)
 		//		cerr << "WHA";
 			groups[g].paths[p].analyze_movement(e,ns_stationary_path_id(g,p,analysis_id),last_timepoint_in_analysis_);
-			groups[g].paths[p].calculate_movement_quantification_summary();
+			groups[g].paths[p].calculate_movement_quantification_summary(groups[g].paths[p].movement_analysis_result);
 		}	
 
 	
@@ -2230,83 +2230,81 @@ void ns_analyzed_image_time_path::calculate_expansion_analysis_optimization_data
 	identify_expansion_time(death_index, thresholds, hold_times, expansion_intervals, tmp);
 }
 
-void ns_analyzed_image_time_path::calculate_movement_quantification_summary(){
+void ns_analyzed_image_time_path::calculate_movement_quantification_summary(ns_movement_analysis_result& result) const {
 
-	quantification_summary.mean_before_death.zero();
-	quantification_summary.mean_after_death.zero();
-	quantification_summary.variability_all.zero();
-	quantification_summary.variability_before_death.zero();
-	quantification_summary.variability_after_death.zero();
-	quantification_summary.mean_all.zero();
-	quantification_summary.count_after_death = 0;
-	quantification_summary.count_before_death = 0;
-	quantification_summary.count_all = 0;
-	quantification_summary.number_of_registration_saturated_frames_before_death = 0;
-	quantification_summary.number_of_registration_saturated_frames_after_death = 0;
-	for (unsigned int i  = 0; i < elements.size(); i++)
-		elements[i].measurements.registration_displacement = elements[i].registration_offset;
+	result.quantification_summary.mean_before_death.zero();
+	result.quantification_summary.mean_after_death.zero();
+	result.quantification_summary.variability_all.zero();
+	result.quantification_summary.variability_before_death.zero();
+	result.quantification_summary.variability_after_death.zero();
+	result.quantification_summary.mean_all.zero();
+	result.quantification_summary.count_after_death = 0;
+	result.quantification_summary.count_before_death = 0;
+	result.quantification_summary.count_all = 0;
+	result.quantification_summary.number_of_registration_saturated_frames_before_death = 0;
+	result.quantification_summary.number_of_registration_saturated_frames_after_death = 0;
 
-	const long death_index((!state_intervals[(int)ns_movement_stationary].skipped)?
-		state_intervals[(int)ns_movement_stationary].entrance_interval.period_end_index:(-1));
+	const long death_index((!result.state_intervals[(int)ns_movement_stationary].skipped)?
+		result.state_intervals[(int)ns_movement_stationary].entrance_interval.period_end_index:(-1));
 	if (death_index != -1){
 		for (unsigned int i = 0; i <= death_index; i++){
-			quantification_summary.count_before_death++;
+			result.quantification_summary.count_before_death++;
 		//	elements[i].measurements.calculate_means();
-			quantification_summary.mean_before_death = quantification_summary.mean_before_death + elements[i].measurements;
+			result.quantification_summary.mean_before_death = result.quantification_summary.mean_before_death + elements[i].measurements;
 			if (elements[i].saturated_offset)
-				quantification_summary.number_of_registration_saturated_frames_before_death++;
+				result.quantification_summary.number_of_registration_saturated_frames_before_death++;
 		}
 	}	
 	for (unsigned int i = death_index+1; i < elements.size();i++){
-	quantification_summary.count_after_death++;
+	result.quantification_summary.count_after_death++;
 	//	elements[i].measurements.calculate_means();
-		quantification_summary.mean_after_death = quantification_summary.mean_after_death + elements[i].measurements;
+		result.quantification_summary.mean_after_death = result.quantification_summary.mean_after_death + elements[i].measurements;
 		if (elements[i].saturated_offset)
-			quantification_summary.number_of_registration_saturated_frames_after_death++;
+			result.quantification_summary.number_of_registration_saturated_frames_after_death++;
 	}
 	
-	quantification_summary.count_all = quantification_summary.count_before_death + quantification_summary.count_after_death;
-	quantification_summary.mean_all = quantification_summary.mean_before_death + quantification_summary.mean_after_death;
+	result.quantification_summary.count_all = result.quantification_summary.count_before_death + result.quantification_summary.count_after_death;
+	result.quantification_summary.mean_all = result.quantification_summary.mean_before_death + result.quantification_summary.mean_after_death;
 	
-	if (quantification_summary.count_all != 0) 
-		quantification_summary.mean_all = quantification_summary.mean_all / quantification_summary.count_all;
-	if (quantification_summary.count_before_death != 0) 
-		quantification_summary.mean_before_death = quantification_summary.mean_before_death / quantification_summary.count_before_death;
-	if (quantification_summary.count_after_death != 0) 
-		quantification_summary.mean_after_death = quantification_summary.mean_after_death / quantification_summary.count_after_death;
+	if (result.quantification_summary.count_all != 0) 
+		result.quantification_summary.mean_all = result.quantification_summary.mean_all / result.quantification_summary.count_all;
+	if (result.quantification_summary.count_before_death != 0) 
+		result.quantification_summary.mean_before_death = result.quantification_summary.mean_before_death / result.quantification_summary.count_before_death;
+	if (result.quantification_summary.count_after_death != 0) 
+		result.quantification_summary.mean_after_death = result.quantification_summary.mean_after_death / result.quantification_summary.count_after_death;
 
 	if (death_index != -1){
 		for (unsigned int i = 0; i <= death_index; i++){
 			
-			ns_analyzed_image_time_path_element_measurements dif((elements[i].measurements + quantification_summary.mean_before_death/-1));
+			ns_analyzed_image_time_path_element_measurements dif((elements[i].measurements + result.quantification_summary.mean_before_death/-1));
 			dif.square();
-			quantification_summary.variability_before_death = quantification_summary.variability_before_death + dif;
+			result.quantification_summary.variability_before_death = result.quantification_summary.variability_before_death + dif;
 
-			dif = (elements[i].measurements + quantification_summary.mean_all/-1);
+			dif = (elements[i].measurements + result.quantification_summary.mean_all/-1);
 			dif.square();
-			quantification_summary.variability_all = quantification_summary.variability_all + dif;
+			result.quantification_summary.variability_all = result.quantification_summary.variability_all + dif;
 		}
 	}	
 	for (unsigned int i = death_index+1; i < elements.size();i++){
-		ns_analyzed_image_time_path_element_measurements dif((elements[i].measurements + quantification_summary.mean_after_death/-1));
+		ns_analyzed_image_time_path_element_measurements dif((elements[i].measurements + result.quantification_summary.mean_after_death/-1));
 		dif.square();
-		quantification_summary.variability_after_death = quantification_summary.variability_after_death + dif;
+		result.quantification_summary.variability_after_death = result.quantification_summary.variability_after_death + dif;
 
-		dif = (elements[i].measurements + quantification_summary.mean_all/-1);
+		dif = (elements[i].measurements + result.quantification_summary.mean_all/-1);
 		dif.square();
-		quantification_summary.variability_all = quantification_summary.variability_all + dif;
+		result.quantification_summary.variability_all = result.quantification_summary.variability_all + dif;
 	}
 
-	quantification_summary.variability_after_death.square_root();
-	quantification_summary.variability_before_death.square_root();
-	quantification_summary.variability_all.square_root();
+	result.quantification_summary.variability_after_death.square_root();
+	result.quantification_summary.variability_before_death.square_root();
+	result.quantification_summary.variability_all.square_root();
 
-	if (quantification_summary.count_all != 0) 
-		quantification_summary.variability_all = quantification_summary.variability_all / quantification_summary.count_all;
-	if (quantification_summary.count_before_death != 0) 
-		quantification_summary.variability_before_death = quantification_summary.variability_before_death / quantification_summary.count_before_death;
-	if (quantification_summary.count_after_death != 0) 
-		quantification_summary.variability_after_death = quantification_summary.variability_after_death / quantification_summary.count_after_death;
+	if (result.quantification_summary.count_all != 0) 
+		result.quantification_summary.variability_all = result.quantification_summary.variability_all / result.quantification_summary.count_all;
+	if (result.quantification_summary.count_before_death != 0) 
+		result.quantification_summary.variability_before_death = result.quantification_summary.variability_before_death / result.quantification_summary.count_before_death;
+	if (result.quantification_summary.count_after_death != 0) 
+		result.quantification_summary.variability_after_death = result.quantification_summary.variability_after_death / result.quantification_summary.count_after_death;
 }
 void ns_analyzed_image_time_path::write_detailed_movement_quantification_analysis_header(std::ostream & o){
 	ns_region_metadata::out_JMP_plate_identity_header_short(o);
@@ -2355,15 +2353,15 @@ ns_death_time_annotation_time_interval ns_analyzed_image_time_path::machine_even
 	ns_movement_state_observation_boundary_interval interval;
 	switch (e) {
 	case ns_translation_cessation:
-		interval = state_intervals[(int)ns_movement_fast]; break;
+		interval = movement_analysis_result.state_intervals[(int)ns_movement_fast]; break;
 	case ns_fast_movement_cessation:
-		interval = (state_intervals[(int)ns_movement_slow]); break;
+		interval = (movement_analysis_result.state_intervals[(int)ns_movement_slow]); break;
 	case ns_movement_cessation:
-		interval = (state_intervals[(int)ns_movement_stationary]); break;
+		interval = (movement_analysis_result.state_intervals[(int)ns_movement_stationary]); break;
 	case ns_death_associated_expansion_start:
-		interval = (state_intervals[(int)ns_movement_death_associated_expansion]); break;
+		interval = (movement_analysis_result.state_intervals[(int)ns_movement_death_associated_expansion]); break;
 	case ns_death_associated_post_expansion_contraction_start:
-		interval = (state_intervals[(int)ns_movement_death_associated_post_expansion_contraction]); break;
+		interval = (movement_analysis_result.state_intervals[(int)ns_movement_death_associated_post_expansion_contraction]); break;
 	default: ns_ex("Unknown event type!");
 	}
 	skipped = interval.skipped;
@@ -2423,7 +2421,7 @@ void ns_analyzed_image_time_path::write_detailed_movement_quantification_analysi
 	unsigned long death_index(0);
 	
 	unsigned long death_time(0);
-	if(!state_intervals[(int)ns_movement_stationary].skipped){
+	if(!movement_analysis_result.state_intervals[(int)ns_movement_stationary].skipped){
 		long least_dt_to_death(LONG_MAX);
 		//double size_at_closest_distance(1);
 		if (by_hand_annotation_event_times[(int)ns_movement_stationary].period_end_was_not_observed) {
@@ -2481,11 +2479,11 @@ void ns_analyzed_image_time_path::write_detailed_movement_quantification_analysi
 			<< ns_to_string_short((elements[k].absolute_time - m.time_at_which_animals_had_zero_age)/(60.0*60*24),3) << ","
 			<< ns_movement_state_to_string(explicitly_recognized_movement_state(elements[k].absolute_time)) << ","
 			<< ns_movement_state_to_string(by_hand_movement_state(elements[k].absolute_time)) << ","
-			<< ns_calc_rel_time_by_index(elements[k].absolute_time,state_intervals[(int)ns_movement_stationary],*this) << ","
-			<< ns_calc_rel_time_by_index(elements[k].absolute_time,state_intervals[(int)ns_movement_posture],*this) << ","
-			<< ns_calc_rel_time_by_index(elements[k].absolute_time,state_intervals[(int)ns_movement_slow],*this) << ","
-			<< ns_calc_rel_time_by_index(elements[k].absolute_time, state_intervals[(int)ns_movement_death_associated_expansion], *this) << ","
-			<< ns_calc_rel_time_by_index(elements[k].absolute_time, state_intervals[(int)ns_movement_death_associated_post_expansion_contraction], *this) << ","
+			<< ns_calc_rel_time_by_index(elements[k].absolute_time, movement_analysis_result.state_intervals[(int)ns_movement_stationary],*this) << ","
+			<< ns_calc_rel_time_by_index(elements[k].absolute_time, movement_analysis_result.state_intervals[(int)ns_movement_posture],*this) << ","
+			<< ns_calc_rel_time_by_index(elements[k].absolute_time, movement_analysis_result.state_intervals[(int)ns_movement_slow],*this) << ","
+			<< ns_calc_rel_time_by_index(elements[k].absolute_time, movement_analysis_result.state_intervals[(int)ns_movement_death_associated_expansion], *this) << ","
+			<< ns_calc_rel_time_by_index(elements[k].absolute_time, movement_analysis_result.state_intervals[(int)ns_movement_death_associated_post_expansion_contraction], *this) << ","
 			<< ns_output_interval_difference(elements[k].absolute_time,by_hand_annotation_event_times[(int)ns_movement_cessation]) << ","
 			<< ns_output_interval_difference(elements[k].absolute_time,by_hand_annotation_event_times[(int)ns_translation_cessation]) << ","
 			<< ns_output_interval_difference(elements[k].absolute_time,by_hand_annotation_event_times[(int)ns_fast_movement_cessation]) << ","
@@ -2523,14 +2521,14 @@ void ns_analyzed_image_time_path::write_detailed_movement_quantification_analysi
 			
 		
 			<< (elements[k].saturated_offset ? "1" : "0") << ",";
-		if ( state_intervals[(int)ns_movement_stationary].skipped)
+		if (movement_analysis_result.state_intervals[(int)ns_movement_stationary].skipped)
 			 o << ",";
-		else o << ns_output_interval_difference(this->state_entrance_interval_time(state_intervals[(int)ns_movement_stationary]).
+		else o << ns_output_interval_difference(this->state_entrance_interval_time(movement_analysis_result.state_intervals[(int)ns_movement_stationary]).
 													best_estimate_event_time_for_possible_partially_unbounded_interval(),
 													by_hand_annotation_event_times[(int)ns_movement_cessation]) <<",";
 
 		o << death_time << ",";
-		if (state_intervals[(int)ns_movement_stationary].skipped)
+		if (movement_analysis_result.state_intervals[(int)ns_movement_stationary].skipped)
 			o << ",,";
 		else o << elements[death_index].measurements.total_foreground_area << ","
 			<< elements[death_index].measurements.total_stabilized_area << ",";
@@ -2599,7 +2597,7 @@ void ns_time_path_image_movement_analyzer<allocator_T>::write_detailed_movement_
 			if (ns_skip_low_density_paths && groups[i].paths[j].is_low_density_path() ||
 				specific_animal_id != -1 && i != specific_animal_id || groups[i].paths[j].entirely_excluded)
 				continue;
-			if (groups[i].paths[j].state_intervals.size() != ns_movement_number_of_states)
+			if (groups[i].paths[j].movement_analysis_result.state_intervals.size() != ns_movement_number_of_states)
 				throw ns_ex("ns_time_path_image_movement_analyzer::write_movement_quantification_analysis_data()::Event Indicies not loaded properly!");
 			groups[i].paths[j].write_detailed_movement_quantification_analysis_data(m,i,j,o,only_output_elements_with_by_hand_data,abbreviated_time_series);
 		}
@@ -2790,7 +2788,7 @@ ns_death_time_annotation_time_interval ns_analyzed_image_time_path::state_exit_i
 
 
 void ns_analyzed_image_time_path::add_death_time_events_to_set(ns_death_time_annotation_set & set) const{
-	set.add(death_time_annotation_set);
+	set.add(movement_analysis_result.death_time_annotation_set);
 }
 
 long ns_find_last_valid_observation_index(const long index,const ns_analyzed_image_time_path::ns_element_list & e){
@@ -2916,44 +2914,44 @@ ns_movement_state_time_interval_indicies calc_frame_before_first(const ns_moveme
 //
 //There is no problem handling events that continue past the end of the path;
 //we don't use this information for anything and do not output any annotations about it.
-void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_from_movement_quantification(const ns_stationary_path_id & path_id, const ns_analyzed_image_time_path_death_time_estimator * movement_death_time_estimator, ns_death_time_annotation_set & set, const unsigned long last_time_point_in_analysis) {
+void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_from_movement_quantification(const ns_stationary_path_id & path_id, const ns_analyzed_image_time_path_death_time_estimator * movement_death_time_estimator, ns_movement_analysis_result & result, const unsigned long last_time_point_in_analysis) const {
 	std::vector<double > tmp_storage_1;
 	std::vector<unsigned long > tmp_storage_2;
-	detect_death_times_and_generate_annotations_from_movement_quantification(path_id, movement_death_time_estimator, set, last_time_point_in_analysis,tmp_storage_1, tmp_storage_2);
+	detect_death_times_and_generate_annotations_from_movement_quantification(path_id, movement_death_time_estimator, result, last_time_point_in_analysis,tmp_storage_1, tmp_storage_2);
 }
-void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_from_movement_quantification(const ns_stationary_path_id & path_id, const ns_analyzed_image_time_path_death_time_estimator * movement_death_time_estimator, ns_death_time_annotation_set & set, const unsigned long last_time_point_in_analysis, std::vector<double > & tmp_storage_1, std::vector<unsigned long > & tmp_storage_2 ) {
+void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_from_movement_quantification(const ns_stationary_path_id & path_id, const ns_analyzed_image_time_path_death_time_estimator * movement_death_time_estimator, ns_movement_analysis_result & analysis_result, const unsigned long last_time_point_in_analysis, std::vector<double > & tmp_storage_1, std::vector<unsigned long > & tmp_storage_2 ) const {
 		
 	//if (path_id.group_id == 5)
 	//	cerr << "RA";
-	state_intervals.clear();
-	state_intervals.resize((int)ns_movement_number_of_states);
-	by_hand_annotation_event_times.resize((int)ns_number_of_movement_event_types,ns_death_time_annotation_time_interval::unobserved_interval());
+	analysis_result.state_intervals.clear();
+	analysis_result.state_intervals.resize((int)ns_movement_number_of_states);
+	//by_hand_annotation_event_times.resize((int)ns_number_of_movement_event_types,ns_death_time_annotation_time_interval::unobserved_interval());
 
 	unsigned long current_time(ns_current_time());
-	set.clear();
+	analysis_result.death_time_annotation_set.clear();
 	if (elements.size() == 0) return;
 
-	first_valid_element_id = ns_movement_state_time_interval_indicies(elements.size(), elements.size());
-	last_valid_element_id = ns_movement_state_time_interval_indicies(0,0);
+	analysis_result.first_valid_element_id = ns_movement_state_time_interval_indicies(elements.size(), elements.size());
+	analysis_result.last_valid_element_id = ns_movement_state_time_interval_indicies(0,0);
 	for (unsigned int i = 0; i < elements.size(); i++)
 		if (!elements[i].excluded && !elements[i].element_before_fast_movement_cessation){
 			//find first measurment
-			if (first_valid_element_id.period_start_index >= i)
-				first_valid_element_id.period_start_index = i;
+			if (analysis_result.first_valid_element_id.period_start_index >= i)
+				analysis_result.first_valid_element_id.period_start_index = i;
 			else
 				//find the second measurement
-			if (first_valid_element_id.period_end_index > i)
-				first_valid_element_id.period_end_index = i;
+			if (analysis_result.first_valid_element_id.period_end_index > i)
+				analysis_result.first_valid_element_id.period_end_index = i;
 
 			//find the last measurement
-			if (last_valid_element_id.period_end_index < i){
+			if (analysis_result.last_valid_element_id.period_end_index < i){
 				//set the measurement previous to the last measurement
-				last_valid_element_id.period_start_index =
-					last_valid_element_id.period_end_index;
-				last_valid_element_id.period_end_index = i;
+				analysis_result.last_valid_element_id.period_start_index =
+					analysis_result.last_valid_element_id.period_end_index;
+				analysis_result.last_valid_element_id.period_end_index = i;
 			}
 		}
-		if (first_valid_element_id.period_start_index+1 >= elements.size())
+		if (analysis_result.first_valid_element_id.period_start_index+1 >= elements.size())
 		return;
 
 	//if the experiment is cropped before the current path ends, then we don't add a stationary worm is lost event.
@@ -2964,14 +2962,14 @@ void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_fr
 	//if the path has been declared as not having enough information
 	//for annotation, register it as so.
 	if (this->is_low_density_path()){
-		unsigned long end_index(first_valid_element_id.period_end_index);
+		unsigned long end_index(analysis_result.first_valid_element_id.period_end_index);
 		if (end_index > elements.size())
 			throw ns_ex("Invalid end index");
 		if (end_index == elements.size())
 			end_index = elements.size()-1;
-		set.add(ns_death_time_annotation(ns_no_movement_event,
+		analysis_result.death_time_annotation_set.add(ns_death_time_annotation(ns_no_movement_event,
 			0,region_info_id,
-			ns_death_time_annotation_time_interval(elements[first_valid_element_id.period_start_index].absolute_time,
+			ns_death_time_annotation_time_interval(elements[analysis_result.first_valid_element_id.period_start_index].absolute_time,
 													elements[end_index].absolute_time),
 			elements[end_index].region_offset_in_source_image(),
 			elements[end_index].worm_region_size(),
@@ -2982,15 +2980,15 @@ void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_fr
 			path_id,true,elements[end_index].inferred_animal_location,elements[end_index].subregion_info,"low_density"));
 	}
 	
-	machine_movement_state_solution = movement_death_time_estimator->operator()(this,true,tmp_storage_1,tmp_storage_2);
+	analysis_result.machine_movement_state_solution = movement_death_time_estimator->operator()(this,true,tmp_storage_1,tmp_storage_2);
 
 	//Some movement detection algorithms need a significant amount of time after an animal has died
 	//to detect its death.  So, if we are going to censor an animal at the end of the experiment,
 	//we need to ask the movement detection about the latest time such an event can occur.
 	const unsigned long last_possible_death_time(movement_death_time_estimator->latest_possible_death_time(this,last_time_point_in_analysis));
 
-	const double loglikelihood_of_solution(machine_movement_state_solution.loglikelihood_of_solution);
-	const string reason_to_be_censored(machine_movement_state_solution.reason_for_animal_to_be_censored);
+	const double loglikelihood_of_solution (analysis_result.machine_movement_state_solution.loglikelihood_of_solution);
+	const string reason_to_be_censored(analysis_result.machine_movement_state_solution.reason_for_animal_to_be_censored);
 
 	ns_movement_state_observation_boundary_interval slow_moving_interval_including_missed_states,
 		posture_changing_interval_including_missed_states,
@@ -2998,9 +2996,9 @@ void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_fr
 		expansion_interval_including_missed_states,
 		post_expansion_contraction_interval_including_missed_states;
 
-	slow_moving_interval_including_missed_states.longest_observation_gap_within_interval = machine_movement_state_solution.slowing.longest_observation_gap_within_interval;
-	posture_changing_interval_including_missed_states.longest_observation_gap_within_interval = machine_movement_state_solution.moving.longest_observation_gap_within_interval;
-	dead_interval_including_missed_states.longest_observation_gap_within_interval = machine_movement_state_solution.dead.longest_observation_gap_within_interval;
+	slow_moving_interval_including_missed_states.longest_observation_gap_within_interval = analysis_result.machine_movement_state_solution.slowing.longest_observation_gap_within_interval;
+	posture_changing_interval_including_missed_states.longest_observation_gap_within_interval = analysis_result.machine_movement_state_solution.moving.longest_observation_gap_within_interval;
+	dead_interval_including_missed_states.longest_observation_gap_within_interval = analysis_result.machine_movement_state_solution.dead.longest_observation_gap_within_interval;
 	expansion_interval_including_missed_states.longest_observation_gap_within_interval = 0;
 	
 	unsigned long longest_skipped_interval_before_death = slow_moving_interval_including_missed_states.longest_observation_gap_within_interval;
@@ -3009,8 +3007,8 @@ void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_fr
 	
 	{
 
-		ns_movement_state_time_interval_indicies frame_before_first = calc_frame_before_first(first_valid_element_id);
-		convert_movement_solution_to_state_intervals(frame_before_first, machine_movement_state_solution, state_intervals);
+		ns_movement_state_time_interval_indicies frame_before_first = calc_frame_before_first(analysis_result.first_valid_element_id);
+		convert_movement_solution_to_state_intervals(frame_before_first, analysis_result.machine_movement_state_solution, analysis_result.state_intervals);
 
 		//ok, now we have the correct state intervals.  BUT we need to change them around because we know that animals have to pass through 
 		//fast to slow movement to posture, and posture to death.  If the movement detection algorithms didn't find any states
@@ -3018,11 +3016,11 @@ void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_fr
 		//which involves transitioning through the missed state within a single frame
 		calculate_state_transitions_in_the_presence_of_missing_states(
 			frame_before_first,
-			state_intervals[ns_movement_slow],
-			state_intervals[ns_movement_posture],
-			state_intervals[ns_movement_stationary],
-			state_intervals[ns_movement_death_associated_expansion],
-			state_intervals[ns_movement_death_associated_post_expansion_contraction],
+			analysis_result.state_intervals[ns_movement_slow],
+			analysis_result.state_intervals[ns_movement_posture],
+			analysis_result.state_intervals[ns_movement_stationary],
+			analysis_result.state_intervals[ns_movement_death_associated_expansion],
+			analysis_result.state_intervals[ns_movement_death_associated_post_expansion_contraction],
 			slow_moving_interval_including_missed_states,
 			posture_changing_interval_including_missed_states,
 			dead_interval_including_missed_states,
@@ -3039,7 +3037,7 @@ void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_fr
 		total_observations(0);
 	bool part_of_a_multiple_worm_disambiguation_group(false);
 	{
-		unsigned long stop_i(last_valid_element_id.period_end_index);
+		unsigned long stop_i(analysis_result.last_valid_element_id.period_end_index);
 		if (!dead_interval_including_missed_states.skipped)
 			stop_i=dead_interval_including_missed_states.entrance_interval.period_end_index;
 	
@@ -3072,23 +3070,23 @@ void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_fr
 	if (!reason_to_be_censored.empty()){
 		exclusion_type = ns_death_time_annotation::ns_censored;
 	}
-	set.add(
+	analysis_result.death_time_annotation_set.add(
 		ns_death_time_annotation(ns_fast_movement_cessation,
 		0,region_info_id,
 		state_entrance_interval_time(slow_moving_interval_including_missed_states),
-		elements[first_valid_element_id.period_start_index].region_offset_in_source_image(),  //register the position of the object at that time point
-		elements[first_valid_element_id.period_start_index].worm_region_size(),
+		elements[analysis_result.first_valid_element_id.period_start_index].region_offset_in_source_image(),  //register the position of the object at that time point
+		elements[analysis_result.first_valid_element_id.period_start_index].worm_region_size(),
 		exclusion_type,
 		ns_death_time_annotation_event_count(1+number_of_extra_worms_in_path,0),current_time,ns_death_time_annotation::ns_lifespan_machine,
 		(part_of_a_multiple_worm_disambiguation_group)?ns_death_time_annotation::ns_part_of_a_mutliple_worm_disambiguation_cluster:ns_death_time_annotation::ns_single_worm,
-		path_id,part_of_a_full_trace,elements[first_valid_element_id.period_start_index].inferred_animal_location, elements[first_valid_element_id.period_start_index].subregion_info,reason_to_be_censored,loglikelihood_of_solution,longest_skipped_interval_before_death));
+		path_id,part_of_a_full_trace,elements[analysis_result.first_valid_element_id.period_start_index].inferred_animal_location, elements[analysis_result.first_valid_element_id.period_start_index].subregion_info,reason_to_be_censored,loglikelihood_of_solution,longest_skipped_interval_before_death));
 	
 	//observations are made at specific times (i.e. we see a fast moving worm at this time)
 	for (unsigned int i = slow_moving_interval_including_missed_states.entrance_interval.period_end_index; i < slow_moving_interval_including_missed_states.exit_interval.period_end_index; i++){
 
 		if (elements[i].excluded) continue;
 
-		set.add(
+		analysis_result.death_time_annotation_set.add(
 			ns_death_time_annotation(ns_slow_moving_worm_observed,
 			0,region_info_id,
 			ns_death_time_annotation_time_interval(elements[i].absolute_time,elements[i].absolute_time),
@@ -3114,7 +3112,7 @@ void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_fr
 			elements[expansion_interval_including_missed_states.entrance_interval.period_end_index].subregion_info,
 			reason_to_be_censored, loglikelihood_of_solution, longest_skipped_interval_before_death);
 		e1.event_explicitness = ns_death_time_annotation::ns_explicitly_observed;
-		set.add(e1);
+		analysis_result.death_time_annotation_set.add(e1);
 		
 		ns_death_time_annotation e2(ns_death_associated_expansion_stop,
 			0, region_info_id,
@@ -3127,7 +3125,7 @@ void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_fr
 			path_id, part_of_a_full_trace, elements[expansion_interval_including_missed_states.entrance_interval.period_end_index].inferred_animal_location, 
 			elements[expansion_interval_including_missed_states.entrance_interval.period_end_index].subregion_info,reason_to_be_censored, loglikelihood_of_solution, longest_skipped_interval_before_death);
 		e2.event_explicitness = ns_death_time_annotation::ns_explicitly_observed;
-		set.add(e2);
+		analysis_result.death_time_annotation_set.add(e2);
 	}
 	else {
 		ns_death_time_annotation e1(ns_death_associated_expansion_start,
@@ -3142,7 +3140,7 @@ void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_fr
 			elements[expansion_interval_including_missed_states.entrance_interval.period_end_index].subregion_info,
 			reason_to_be_censored, loglikelihood_of_solution, longest_skipped_interval_before_death);
 		e1.event_explicitness = ns_death_time_annotation::ns_explicitly_not_observed;
-		set.add(e1);
+		analysis_result.death_time_annotation_set.add(e1);
 
 		ns_death_time_annotation e2(ns_death_associated_expansion_stop,
 			0, region_info_id,
@@ -3155,7 +3153,7 @@ void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_fr
 			path_id, part_of_a_full_trace, elements[expansion_interval_including_missed_states.entrance_interval.period_end_index].inferred_animal_location,
 			elements[expansion_interval_including_missed_states.entrance_interval.period_end_index].subregion_info, reason_to_be_censored, loglikelihood_of_solution, longest_skipped_interval_before_death);
 		e2.event_explicitness = ns_death_time_annotation::ns_explicitly_not_observed;
-		set.add(e2);
+		analysis_result.death_time_annotation_set.add(e2);
 	}
 	if (!post_expansion_contraction_interval_including_missed_states.skipped) {
 
@@ -3171,7 +3169,7 @@ void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_fr
 			elements[post_expansion_contraction_interval_including_missed_states.entrance_interval.period_end_index].subregion_info,
 			reason_to_be_censored, loglikelihood_of_solution, longest_skipped_interval_before_death);
 		e1.event_explicitness = ns_death_time_annotation::ns_explicitly_observed;
-		set.add(e1);
+		analysis_result.death_time_annotation_set.add(e1);
 
 		ns_death_time_annotation e2(ns_death_associated_post_expansion_contraction_stop,
 			0, region_info_id,
@@ -3184,7 +3182,7 @@ void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_fr
 			path_id, part_of_a_full_trace, elements[post_expansion_contraction_interval_including_missed_states.entrance_interval.period_end_index].inferred_animal_location,
 			elements[post_expansion_contraction_interval_including_missed_states.entrance_interval.period_end_index].subregion_info, reason_to_be_censored, loglikelihood_of_solution, longest_skipped_interval_before_death);
 		e2.event_explicitness = ns_death_time_annotation::ns_explicitly_observed;
-		set.add(e2);
+		analysis_result.death_time_annotation_set.add(e2);
 	}
 	else {
 		ns_death_time_annotation e1(ns_death_associated_post_expansion_contraction_start,
@@ -3199,7 +3197,7 @@ void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_fr
 			elements[post_expansion_contraction_interval_including_missed_states.entrance_interval.period_end_index].subregion_info,
 			reason_to_be_censored, loglikelihood_of_solution, longest_skipped_interval_before_death);
 		e1.event_explicitness = ns_death_time_annotation::ns_explicitly_not_observed;
-		set.add(e1);
+		analysis_result.death_time_annotation_set.add(e1);
 
 		ns_death_time_annotation e2(ns_death_associated_post_expansion_contraction_stop,
 			0, region_info_id,
@@ -3212,7 +3210,7 @@ void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_fr
 			path_id, part_of_a_full_trace, elements[post_expansion_contraction_interval_including_missed_states.entrance_interval.period_end_index].inferred_animal_location,
 			elements[post_expansion_contraction_interval_including_missed_states.entrance_interval.period_end_index].subregion_info, reason_to_be_censored, loglikelihood_of_solution, longest_skipped_interval_before_death);
 		e2.event_explicitness = ns_death_time_annotation::ns_explicitly_not_observed;
-		set.add(e2);
+		analysis_result.death_time_annotation_set.add(e2);
 	}
 	
 	if (posture_changing_interval_including_missed_states.skipped && dead_interval_including_missed_states.skipped)
@@ -3226,7 +3224,7 @@ void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_fr
 	if (posture_changing_interval_including_missed_states.entrance_interval.period_end_index >= elements.size())
 		throw ns_ex("Encountered an unskipped start interval for posture changing with an invalid end point");
 		
-	set.add(
+	analysis_result.death_time_annotation_set.add(
 		ns_death_time_annotation(ns_translation_cessation,
 		0,region_info_id,
 		state_entrance_interval_time(posture_changing_interval_including_missed_states),
@@ -3240,7 +3238,7 @@ void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_fr
 	
 	for (unsigned int i = posture_changing_interval_including_missed_states.entrance_interval.period_end_index; i < posture_changing_interval_including_missed_states.exit_interval.period_end_index; i++){
 		if (elements[i].excluded) continue;
-		set.add(
+		analysis_result.death_time_annotation_set.add(
 			ns_death_time_annotation(ns_posture_changing_worm_observed,
 			0,region_info_id,
 			ns_death_time_annotation_time_interval(elements[i].absolute_time,elements[i].absolute_time),
@@ -3273,7 +3271,7 @@ void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_fr
 				interval.period_start = elements[i1 - 1].absolute_time;
 			else interval.period_start_was_not_observed = true;
 
-			set.add(
+			analysis_result.death_time_annotation_set.add(
 				ns_death_time_annotation(ns_movement_cessation,
 					0, region_info_id,
 					interval,
@@ -3302,7 +3300,7 @@ void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_fr
 	if (dead_interval_including_missed_states.entrance_interval.period_end_index >= elements.size())
 		throw ns_ex("Encountered an unskipped start interval for death with an invalid end point");
 		
-	set.add(
+	analysis_result.death_time_annotation_set.add(
 		ns_death_time_annotation(ns_movement_cessation,
 		0,region_info_id,
 		ns_death_time_annotation_time_interval(state_entrance_interval_time(dead_interval_including_missed_states)),
@@ -3316,7 +3314,7 @@ void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_fr
 	
 	for (unsigned int i = dead_interval_including_missed_states.entrance_interval.period_end_index; i < dead_interval_including_missed_states.exit_interval.period_end_index; i++){
 		if (elements[i].excluded) continue;
-		set.add(
+		analysis_result.death_time_annotation_set.add(
 			ns_death_time_annotation(ns_stationary_worm_observed,
 			0,region_info_id,
 			ns_death_time_annotation_time_interval(elements[i].absolute_time,elements[i].absolute_time),
@@ -3335,24 +3333,24 @@ void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_fr
 	//output an annotation there.
 	if (!time_path_limits.interval_after_last_observation.period_end_was_not_observed){
 
-		set.add(
+		analysis_result.death_time_annotation_set.add(
 			ns_death_time_annotation(ns_stationary_worm_disappearance,
 			0,region_info_id,
 			time_path_limits.interval_after_last_observation,
-			elements[last_valid_element_id.period_end_index].region_offset_in_source_image(),
-			elements[last_valid_element_id.period_end_index].worm_region_size(),
+			elements[analysis_result.last_valid_element_id.period_end_index].region_offset_in_source_image(),
+			elements[analysis_result.last_valid_element_id.period_end_index].worm_region_size(),
 			ns_death_time_annotation::ns_not_excluded,
 			ns_death_time_annotation_event_count(1+number_of_extra_worms_in_path,0),current_time,ns_death_time_annotation::ns_lifespan_machine,
 			part_of_a_multiple_worm_disambiguation_group?ns_death_time_annotation::ns_part_of_a_mutliple_worm_disambiguation_cluster:ns_death_time_annotation::ns_single_worm,
-			path_id,part_of_a_full_trace,elements[last_valid_element_id.period_end_index].inferred_animal_location,
-				elements[last_valid_element_id.period_end_index].subregion_info,
+			path_id,part_of_a_full_trace,elements[analysis_result.last_valid_element_id.period_end_index].inferred_animal_location,
+				elements[analysis_result.last_valid_element_id.period_end_index].subregion_info,
 				"",loglikelihood_of_solution));
 	}
 }
 
 
 
-void ns_analyzed_image_time_path::convert_movement_solution_to_state_intervals(const ns_movement_state_time_interval_indicies & frame_before_first, const ns_time_path_posture_movement_solution &solution, ns_state_interval_list & list) {
+void ns_analyzed_image_time_path::convert_movement_solution_to_state_intervals(const ns_movement_state_time_interval_indicies & frame_before_first, const ns_time_path_posture_movement_solution &solution, ns_movement_analysis_result::ns_state_interval_list & list) const {
 	ns_movement_state_observation_boundary_interval slow_moving_interval,
 		posture_changing_interval,
 		dead_interval,
@@ -3454,18 +3452,16 @@ void ns_analyzed_image_time_path::convert_movement_solution_to_state_intervals(c
 		if (post_expansion_contraction_interval.exit_interval.period_start_index == -1) post_expansion_contraction_interval.exit_interval = frame_before_first;
 	}
 
-	state_intervals[ns_movement_slow] = slow_moving_interval;
-	state_intervals[ns_movement_posture] = posture_changing_interval;
-	state_intervals[ns_movement_stationary] = dead_interval;
-	state_intervals[ns_movement_death_associated_expansion] = expansion_interval;
-	state_intervals[ns_movement_death_associated_post_expansion_contraction] = post_expansion_contraction_interval;
-
+	list[ns_movement_slow] = slow_moving_interval;
+	list[ns_movement_posture] = posture_changing_interval;
+	list[ns_movement_stationary] = dead_interval;
+	list[ns_movement_death_associated_expansion] = expansion_interval;
+	list[ns_movement_death_associated_post_expansion_contraction] = post_expansion_contraction_interval;
 }
 
 void ns_analyzed_image_time_path::analyze_movement(const ns_analyzed_image_time_path_death_time_estimator * movement_death_time_estimator,const ns_stationary_path_id & path_id, const unsigned long last_timepoint_in_analysis){
-	death_time_annotation_set.clear();
-	
-	detect_death_times_and_generate_annotations_from_movement_quantification(path_id,movement_death_time_estimator,death_time_annotation_set,last_timepoint_in_analysis);
+	movement_analysis_result.clear();
+	detect_death_times_and_generate_annotations_from_movement_quantification(path_id,movement_death_time_estimator, movement_analysis_result,last_timepoint_in_analysis);
 }
 bool inline ns_state_match(const unsigned long t,const ns_movement_state_observation_boundary_interval & i, const ns_analyzed_image_time_path & p){
 	if (i.skipped)
@@ -3492,14 +3488,14 @@ ns_movement_state ns_analyzed_image_time_path::best_guess_movement_state(const u
 		post_expansion_contraction_interval_including_missed_states;
 
 	//get the relevant transition times
-	ns_movement_state_time_interval_indicies frame_before_first = calc_frame_before_first(first_valid_element_id);
+	ns_movement_state_time_interval_indicies frame_before_first = calc_frame_before_first(movement_analysis_result.first_valid_element_id);
 	calculate_state_transitions_in_the_presence_of_missing_states(
 		frame_before_first,
-		state_intervals[ns_movement_slow],
-		state_intervals[ns_movement_posture],
-		state_intervals[ns_movement_stationary],
-		state_intervals[ns_movement_death_associated_expansion],
-		state_intervals[ns_movement_death_associated_post_expansion_contraction],
+		movement_analysis_result.state_intervals[ns_movement_slow],
+		movement_analysis_result.state_intervals[ns_movement_posture],
+		movement_analysis_result.state_intervals[ns_movement_stationary],
+		movement_analysis_result.state_intervals[ns_movement_death_associated_expansion],
+		movement_analysis_result.state_intervals[ns_movement_death_associated_post_expansion_contraction],
 		slow_moving_interval_including_missed_states,
 		posture_changing_interval_including_missed_states,
 		dead_interval_including_missed_states, expansion_interval_including_missed_states,post_expansion_contraction_interval_including_missed_states);
@@ -3536,22 +3532,22 @@ ns_movement_state ns_analyzed_image_time_path::explicitly_recognized_movement_st
 		return ns_movement_machine_excluded;
 
 	//ns_event_index_list::const_iterator p;
-	if (ns_state_match(t,state_intervals[ns_movement_fast],*this))
+	if (ns_state_match(t, movement_analysis_result.state_intervals[ns_movement_fast],*this))
 		return ns_movement_fast;
 	
-	if (ns_state_match(t,state_intervals[ns_movement_slow],*this))
+	if (ns_state_match(t, movement_analysis_result.state_intervals[ns_movement_slow],*this))
 		return ns_movement_slow;
 
-	if (ns_state_match(t,state_intervals[ns_movement_posture],*this))
+	if (ns_state_match(t, movement_analysis_result.state_intervals[ns_movement_posture],*this))
 		return ns_movement_posture;
 	
-	if (ns_state_match(t,state_intervals[ns_movement_stationary],*this))
+	if (ns_state_match(t, movement_analysis_result.state_intervals[ns_movement_stationary],*this))
 		return ns_movement_stationary;
 
-	if (ns_state_match(t,state_intervals[ns_movement_death_associated_expansion],*this))
+	if (ns_state_match(t, movement_analysis_result.state_intervals[ns_movement_death_associated_expansion],*this))
 		return ns_movement_death_associated_expansion;	
 
-	if (ns_state_match(t, state_intervals[ns_movement_death_associated_post_expansion_contraction], *this))
+	if (ns_state_match(t, movement_analysis_result.state_intervals[ns_movement_death_associated_post_expansion_contraction], *this))
 		return ns_movement_death_associated_post_expansion_contraction;
 	return ns_movement_not_calculated;
 }
@@ -4133,12 +4129,12 @@ ns_time_path_posture_movement_solution ns_analyzed_image_time_path::reconstruct_
 
 	//use the machine annotations for translation and fast movement cessation if not specified explicitly
 	if (translation_cessation.first == -1 && translation_cessation.second == -1) {
-		translation_cessation.first = state_intervals[(int)ns_translation_cessation].exit_interval.period_start_index;
-		translation_cessation.second = state_intervals[(int)ns_translation_cessation].exit_interval.period_end_index;
+		translation_cessation.first = movement_analysis_result.state_intervals[(int)ns_translation_cessation].exit_interval.period_start_index;
+		translation_cessation.second = movement_analysis_result.state_intervals[(int)ns_translation_cessation].exit_interval.period_end_index;
 	}
 	if (fast_movement_cessation.first == -1 && fast_movement_cessation.second == -1) {
-		fast_movement_cessation.first = state_intervals[(int)ns_fast_movement_cessation].exit_interval.period_start_index;
-		fast_movement_cessation.second = state_intervals[(int)ns_fast_movement_cessation].exit_interval.period_end_index;
+		fast_movement_cessation.first = movement_analysis_result.state_intervals[(int)ns_fast_movement_cessation].exit_interval.period_start_index;
+		fast_movement_cessation.second = movement_analysis_result.state_intervals[(int)ns_fast_movement_cessation].exit_interval.period_end_index;
 	}
 
 	if (translation_cessation.second == -1)
@@ -4596,7 +4592,7 @@ void ns_analyzed_image_time_path::denoise_movement_series_and_calculate_intensit
 	if (elements.size() == 0)
 		return;
 
-
+	
 	const int kernel_width(1);
 	ns_movement_data_accessor acc(elements);
 	//ns_spatially_averaged_movement_data_accessor acc_spatial(elements);
@@ -4605,6 +4601,7 @@ void ns_analyzed_image_time_path::denoise_movement_series_and_calculate_intensit
 	//calculate the slope at each point
 	//Here, ns_movement_data_accessor calculates the movement score and stores it.
 	for (unsigned int i = 0; i < elements.size(); i++) {
+		elements[i].measurements.registration_displacement = elements[i].registration_offset;
 		elements[i].measurements.movement_score = acc.raw(i);
 		if (elements[i].measurements.movement_score < -1e300)
 			cerr << "YIKES";
@@ -6731,7 +6728,7 @@ void ns_time_path_image_movement_analyzer<allocator_T>::reanalyze_stored_aligned
 				if (ns_skip_low_density_paths && groups[i].paths[j].is_low_density_path())
 					continue;
 				groups[i].paths[j].analyze_movement(e,generate_stationary_path_id(i,j),last_timepoint_in_analysis_);
-				groups[i].paths[j].calculate_movement_quantification_summary();
+				groups[i].paths[j].calculate_movement_quantification_summary(groups[i].paths[j].movement_analysis_result);
 			}
 		}
 		memory_pool.clear();
@@ -6784,8 +6781,8 @@ template<class allocator_T>
 void ns_time_path_image_movement_analyzer<allocator_T>::normalize_movement_scores_over_all_paths(const std::string & software_version, const ns_time_series_denoising_parameters & param, ns_sql & sql){
 	if (param.movement_score_normalization == ns_time_series_denoising_parameters::ns_none)
 		return;
-	image_server.register_server_event(ns_image_server_event("Ignoring depreciated denosing parameter specification."),&sql);
-
+	image_server.register_server_event(ns_image_server_event("Ignoring depreciated denosing parameter specification!!"),&sql);
+	return;
 	if (param.movement_score_normalization == ns_time_series_denoising_parameters::ns_subtract_out_device_median)
 		return;
 
@@ -6941,7 +6938,7 @@ void ns_time_path_image_movement_analyzer<allocator_T>::generate_movement_descri
 		description_series.items[i].final_image_size.x = prop.width;
 		description_series.items[i].final_image_size.y = prop.height;
 		description_series.items[i].sticky_properties = groups[i].paths[0].censoring_and_flag_details;
-		description_series.items[i].animal_death_was_observed = groups[i].paths[0].animal_died();
+		description_series.items[i].animal_death_was_observed = groups[i].paths[0].movement_analysis_result.animal_died();
 		description_series.items[i].animal_alive_at_end_of_observation = !description_series.items[i].animal_death_was_observed &&
 			groups[i].paths[0].observation_limits().last_obsevation_of_plate.period_start == groups[i].paths[0].observation_limits().interval_after_last_observation.period_start;
 	}
@@ -7002,7 +6999,7 @@ void ns_time_path_image_movement_analyzer<allocator_T>::generate_movement_descri
 
 
 ns_analyzed_image_time_path_event_index ns_analyzed_image_time_path::find_event_index(const ns_movement_event & event_to_align){
-	ns_movement_state_observation_boundary_interval & state_interval(state_intervals[(int)ns_movement_event_state(event_to_align)]);
+	ns_movement_state_observation_boundary_interval & state_interval(movement_analysis_result.state_intervals[(int)ns_movement_event_state(event_to_align)]);
 	if (state_interval.skipped){
 		return ns_analyzed_image_time_path_event_index(ns_no_movement_event,ns_movement_state_time_interval_indicies());
 	}

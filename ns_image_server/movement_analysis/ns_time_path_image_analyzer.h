@@ -381,6 +381,40 @@ struct ns_death_time_expansion_info {
 		time_point_at_which_death_time_expansion_stopped;
 	bool found_death_time_expansion;
 };
+
+
+class ns_movement_analysis_result {
+public:
+	ns_movement_analysis_result() { state_intervals.resize((int)ns_movement_number_of_states); }
+	
+	void clear() {
+		first_valid_element_id.clear();
+		last_valid_element_id.clear();
+		state_intervals.resize(0);
+		state_intervals.resize((int)ns_movement_number_of_states);
+		death_time_annotation_set.clear();
+	}
+	ns_movement_state_time_interval_indicies first_valid_element_id, last_valid_element_id;
+
+	//the state interval list has the transition times marked in absolute chronological time
+	typedef std::vector<ns_movement_state_observation_boundary_interval> ns_state_interval_list;
+	ns_state_interval_list state_intervals;
+
+	//the movement solution has the transition times marked in respect to indicies in the path object
+	ns_time_path_posture_movement_solution machine_movement_state_solution;
+
+	ns_death_time_annotation_set death_time_annotation_set;
+
+	bool animal_died() const {
+		return !state_intervals[(int)ns_movement_stationary].skipped;
+	}
+	bool animal_contracted() const {
+		return !state_intervals[(int)ns_movement_death_associated_post_expansion_contraction].skipped;
+	}
+
+
+	ns_analyzed_time_path_quantification_summary quantification_summary;
+};
 class ns_analyzed_image_time_path {
 public:
 	ns_analyzed_image_time_path(ns_64_bit unique_process_id_) : volatile_backwards_path_data_written(false), first_stationary_timepoint_(0),
@@ -389,7 +423,6 @@ public:
 		number_of_images_loaded(0), flow(0), stabilized_worm_region_total(0), unique_process_id(unique_process_id_), movement_image_storage_lock("misl") {
 		by_hand_annotation_event_times.resize((int)ns_number_of_movement_event_types, ns_death_time_annotation_time_interval::unobserved_interval());
 		by_hand_annotation_event_explicitness.resize((int)ns_number_of_movement_event_types, ns_death_time_annotation::ns_unknown_explicitness);
-		state_intervals.resize((int)ns_movement_number_of_states);
 	}
 	ns_64_bit unique_process_id;
 	~ns_analyzed_image_time_path();
@@ -397,12 +430,6 @@ public:
 	template<class allocator_T>
 	void release_images(ns_time_path_image_movement_analysis_memory_pool<allocator_T> & pool);
 
-	bool animal_died() const {
-		return !state_intervals[(int)ns_movement_stationary].skipped;
-	}	
-	bool animal_contracted() const {
-		return !state_intervals[(int)ns_movement_death_associated_post_expansion_contraction].skipped;
-	}
 	unsigned long number_of_elements_not_processed_correctly() const;
 	void denoise_movement_series_and_calculate_intensity_slopes(const unsigned long change_time_in_seconds,const ns_time_series_denoising_parameters &);
 
@@ -432,7 +459,7 @@ public:
 	ns_movement_state by_hand_movement_state(const unsigned long & t) const;
 	ns_hmm_movement_state by_hand_hmm_movement_state(const unsigned long & t, const ns_emperical_posture_quantification_value_estimator & estimator) const;
 	void add_death_time_events_to_set(ns_death_time_annotation_set & set) const;
-	const ns_death_time_annotation_set & death_time_annotations() const { return death_time_annotation_set; }
+	const ns_death_time_annotation_set & death_time_annotations() const { return movement_analysis_result.death_time_annotation_set; }
 
 	bool is_low_density_path() const { return path->is_low_density_path || low_density_path; }
 
@@ -484,7 +511,7 @@ public:
 	ns_image_properties registered_image_properties;
 	//void output_image_movement_summary(std::ostream & o);
 	void write_detailed_movement_quantification_analysis_data(const ns_region_metadata & m, const unsigned long group_id, const unsigned long path_id, std::ostream & o,const bool output_only_elements_with_hand,const bool abbreviated_time_series=false) const;
-	void calculate_movement_quantification_summary();
+	void calculate_movement_quantification_summary(ns_movement_analysis_result& result) const;
 	static ns_vector_2i max_step_alignment_offset();
 
 	void set_path_alignment_image_dimensions(ns_image_properties & prop) const{
@@ -523,15 +550,16 @@ public:
 
 	long debug_number_images_written;
 	const ns_death_time_annotation & sticky_properties() const { return censoring_and_flag_details; }
-private:
 
+	ns_movement_analysis_result movement_analysis_result;
+private:
+	//ns_movement_analysis_result analysis_result;
 	ns_image_whole<unsigned long> stabilized_worm_region_temp;
 	unsigned long stabilized_worm_region_total;
 	ns_time_path_limits time_path_limits;
 	
 	unsigned long first_stationary_timepoint_;
 
-	ns_movement_state_time_interval_indicies first_valid_element_id, last_valid_element_id;
 
 	bool images_preallocated;
 	ns_death_time_annotation censoring_and_flag_details;
@@ -543,24 +571,18 @@ private:
 	ns_image_storage_source_handle<float> flow_movement_image_storage;
 	unsigned long flow_movement_image_storage_internal_state;
 		
-	ns_analyzed_time_path_quantification_summary quantification_summary;
 
 	ns_analyzed_image_time_path_event_index find_event_index(const ns_movement_event & event_to_align);
 	
 	ns_analyzed_image_time_path_event_index find_event_index_with_fallback(const ns_movement_event & event_to_align);
 
-	//the state interval list has the transition times marked in absolute chronological time
-	typedef std::vector<ns_movement_state_observation_boundary_interval> ns_state_interval_list;
-	ns_state_interval_list state_intervals; 
 
-	//the movement solution has the transition times marked in respect to indicies in the path object
-	ns_time_path_posture_movement_solution machine_movement_state_solution;
-
-	void convert_movement_solution_to_state_intervals(const ns_movement_state_time_interval_indicies & frame_before_first_interval, const ns_time_path_posture_movement_solution &solution, ns_state_interval_list & list);
+	void convert_movement_solution_to_state_intervals(const ns_movement_state_time_interval_indicies & frame_before_first_interval, const ns_time_path_posture_movement_solution &solution, ns_movement_analysis_result::ns_state_interval_list & list) const;
 	
 	std::vector<ns_death_time_annotation_time_interval> by_hand_annotation_event_times;
 	std::vector<ns_death_time_annotation::ns_event_explicitness> by_hand_annotation_event_explicitness;
 	ns_time_path_posture_movement_solution reconstruct_movement_state_solution_from_annotations(const unsigned long first_index, const unsigned long last_index,const std::vector<ns_death_time_annotation_time_interval> & intervals) const;
+
 
 	void quantify_movement(const ns_analyzed_time_image_chunk & chunk);
 
@@ -575,8 +597,8 @@ private:
 	void add_by_hand_annotations(const ns_death_time_annotation_set & e);
 	void add_by_hand_annotations(const ns_death_time_annotation_compiler_location & l);
 
-	void detect_death_times_and_generate_annotations_from_movement_quantification(const ns_stationary_path_id & path_id,const ns_analyzed_image_time_path_death_time_estimator * e,  ns_death_time_annotation_set & set, const unsigned long last_timepoint_in_analysis);
-	void detect_death_times_and_generate_annotations_from_movement_quantification(const ns_stationary_path_id & path_id, const ns_analyzed_image_time_path_death_time_estimator * e, ns_death_time_annotation_set & set, const unsigned long last_timepoint_in_analysis, std::vector<double > & tmp_storage_1, std::vector<unsigned long > & tmp_storage_2);
+	void detect_death_times_and_generate_annotations_from_movement_quantification(const ns_stationary_path_id & path_id,const ns_analyzed_image_time_path_death_time_estimator * e, ns_movement_analysis_result & set, const unsigned long last_timepoint_in_analysis) const;
+	void detect_death_times_and_generate_annotations_from_movement_quantification(const ns_stationary_path_id & path_id, const ns_analyzed_image_time_path_death_time_estimator * e, ns_movement_analysis_result & set, const unsigned long last_timepoint_in_analysis, std::vector<double > & tmp_storage_1, std::vector<unsigned long > & tmp_storage_2) const;
 	//ns_64_bit stationary_histogram[256];
 	//ns_64_bit movement_histogram[256];
 
@@ -591,7 +613,6 @@ private:
 
 	ns_image_storage_reciever_handle<ns_8_bit> * output_reciever;
 	ns_image_storage_reciever_handle<float> * flow_output_reciever;
-	ns_death_time_annotation_set death_time_annotation_set;
 
 	bool low_density_path;
 
@@ -726,7 +747,7 @@ public:
 	void clear_annotations(){
 		for (unsigned int i = 0; i < groups.size(); i++){
 			for (unsigned int j = 0; j < groups[i].paths.size(); j++)
-				groups[i].paths[j].death_time_annotation_set.clear();
+				groups[i].paths[j].movement_analysis_result.death_time_annotation_set.clear();
 		}
 			
 	}

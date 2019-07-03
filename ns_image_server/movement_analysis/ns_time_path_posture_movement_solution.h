@@ -29,6 +29,11 @@ struct ns_movement_state_time_interval_indicies{
 		 period_end_index;
 	bool interval_occurs_after_observation_interval,
 		 interval_occurs_before_observation_interval;
+	void clear() {
+		period_start_index = period_end_index = 0,
+			interval_occurs_after_observation_interval =
+			interval_occurs_before_observation_interval = false;
+	}
 };
 struct ns_movement_state_observation_boundary_interval{
 	ns_movement_state_observation_boundary_interval():skipped(false){}

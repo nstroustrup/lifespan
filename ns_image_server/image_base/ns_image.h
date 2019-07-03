@@ -154,7 +154,7 @@ class ns_image_stream_sender{
 public:
 
 
-	ns_image_stream_sender(const ns_image_properties & properties, const sender_t * sender):_properties(properties){verify_constraints(sender);}
+	ns_image_stream_sender(const ns_image_properties & properties, const sender_t * sender):_max_line_block_height(0),_properties(properties){verify_constraints(sender);}
 	typedef ns_component component_type;
 	typedef sender_internal_state_t internal_state_t;
 	///stream senders need to be able to "send" image lines, ie write

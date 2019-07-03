@@ -9,7 +9,7 @@
 #include "ns_image.h"
 struct ns_font_output_dimension{
 	ns_font_output_dimension(const long w_,const long h_):w(w_),h(h_){}
-	ns_font_output_dimension(){}
+	ns_font_output_dimension():w(0), h(0){}
 	long w, h;
 };
 
@@ -17,7 +17,7 @@ FT_Library & ns_get_ft_library();
 ///ns_font is a wrapper for the FreeType font renderer, allowing text rendering on ns_image_whole objects.
 class ns_font{
 public:
-	ns_font():face_loaded(false),current_face_height(0){}
+	ns_font():face_loaded(false),current_face_height(0), face(0){}
 
 	~ns_font(){
 		if (face_loaded){

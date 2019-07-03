@@ -394,6 +394,10 @@ ns_graph_specifics ns_graph::draw(ns_image_standard & image) {
 				y1 = spec.x_axis_pos;
 				y2 = spec.x_axis_pos - MINOR_TICK_HEIGHT*x_axis_properties.tick_mark_rescale_factor;
 			}
+			else {
+				y1 = spec.x_axis_pos - MINOR_TICK_HEIGHT * x_axis_properties.tick_mark_rescale_factor;
+				y2 = spec.x_axis_pos + MINOR_TICK_HEIGHT * x_axis_properties.tick_mark_rescale_factor;
+			}
 				
 			image.draw_line_color(ns_vector_2i(x, y1),ns_vector_2i(x,y2),x_axis_properties.line.color);
 		}

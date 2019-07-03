@@ -121,8 +121,8 @@ ns_ex_type ns_ex_type_from_string(const std::string & str);
 #pragma warning(disable: 4355)  //our use of this in the constructor is completely legit, so we disable the warning.
 class ns_ex : public ns_text_stream<ns_ex, ns_ex_type>, public std::exception{
 public:
-	~ns_ex() throw(){}
-	ns_ex():ns_text_stream<ns_ex, ns_ex_type>(*this, ns_standard){}
+	~ns_ex() {}
+	ns_ex():ns_text_stream<ns_ex, ns_ex_type>(*this, ns_standard),err_text(""){}
 	ns_ex(const char * str):ns_text_stream<ns_ex, ns_ex_type>(*this, ns_standard){append(str);}
 	/*ns_ex(const char * _filename, const unsigned long line, const char * err):ns_text_stream<ns_ex, ns_ex_type>(*this, ns_standard){line_number=line;filename=_filename;append(err);}
 	ns_ex(const char * _filename, const unsigned long line):ns_text_stream<ns_ex, ns_ex_type>(*this, ns_standard){line_number=line;filename=_filename;}

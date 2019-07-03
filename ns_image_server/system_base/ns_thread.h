@@ -37,7 +37,7 @@ functionality on Windows, Linux, and OSX machines.
 
 		HANDLE handle(){return handle_->handle;}
 
-	ns_thread_handle():handle_(0){};
+	ns_thread_handle():handle_(0),id(0){};
 	  void set_handle(const HANDLE & h){
 		  handle_ = std::shared_ptr<ns_thread_handle_handle>(new ns_thread_handle_handle(h));
 	  }
@@ -99,8 +99,8 @@ private:
 
 struct ns_process_termination_daemon_ptr{
 	ns_process_termination_daemon_ptr():daemon(0){}
-	ns_process_termination_daemon_ptr(ns_process_termination_daemon * d){acquire(d);}
-	ns_process_termination_daemon_ptr(const ns_process_termination_daemon_ptr & d){acquire(d.daemon);}
+	ns_process_termination_daemon_ptr(ns_process_termination_daemon * d):daemon(0){acquire(d);}
+	ns_process_termination_daemon_ptr(const ns_process_termination_daemon_ptr & d) :daemon(0){acquire(d.daemon);}
 	ns_process_termination_daemon & operator()();
 	void acquire(ns_process_termination_daemon * d);
 	void release();

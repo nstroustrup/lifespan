@@ -105,13 +105,14 @@ function ns_maintenance_task_order($is_region,$is_sample,$is_experiment){
   if ($is_region){
     array_push($r,$ns_maintenance_tasks['ns_maintenance_rebuild_movement_data']);
     array_push($r,$ns_maintenance_tasks['ns_maintenance_generate_animal_storyboard']);
-    array_push($r,$ns_maintenance_tasks['ns_maintenance_rebuild_movement_from_stored_image_quantification']);
+    array_push($r,$ns_maintenance_tasks['ns_maintenance_recalculate_censoring']);
     //array_push($r,$ns_maintenance_tasks['ns_maintenance_generate_movement_posture_visualization']);
     //array_push($r,$ns_maintenance_tasks['ns_maintenance_generate_movement_posture_aligned_visualization']);
     array_push($r,$ns_maintenance_tasks['ns_maintenance_determine_disk_usage']);
     array_push($r,$ns_maintenance_tasks['ns_maintenance_compress_stored_images']);
     array_push($r,$ns_maintenance_tasks['ns_maintenance_rerun_image_registration']);
     array_push($r,$ns_maintenance_tasks['ns_maintenance_check_for_file_errors']);
+    array_push($r,$ns_maintenance_tasks['ns_maintenance_rebuild_movement_from_stored_image_quantification']);    
     array_push($r,$ns_maintenance_tasks['ns_maintenance_rebuild_movement_from_stored_images']);
     array_push($r,$ns_maintenance_tasks['ns_maintenance_rebuild_movement_from_stored_solution']);
     array_push($r,$ns_maintenance_tasks['ns_maintenance_delete_movement_data']);
@@ -140,9 +141,9 @@ $ns_maintenance_task_labels = array(0=>'No Task',
 				    4=>'Delete Images',
 				    5=>'Execute File Deletion',
 				    6=>'Analyze Worm Movement',
-				    7=>'Rebuild Worm Analysis from Cached Image Analysis',
-				    8=>'Re-calculate Censoring and Death Times',
-				    9=>'Recalculate Censoring',
+				    7=>'Rerun Movement Analysis from Cached Images',
+				    8=>'Re-calculate Death Times from Movement Analysis',
+				    9=>'Re-calculate Censoring',
 				    10=>'Generate Posture Visualization',
 				    11=>'Generate Death-Aligned Posture Visualization',
 				    12=>'Generate Sample Regions From the Sample Mask',
@@ -762,7 +763,7 @@ function ns_update_job_queue($sql){
   $sql->send_query($query);
 }
 
-function ns_delete_images_from_database($experiment_id,$sample_id,$region_id,$image_id,$sql){
+function ns_delete_images_from_database($experiment_id,$sample_id,$region_id,$image_id,$sql, $update_queue=TRUE){
   global $ns_maintenance_tasks;
   global $ns_maintenance_flags;
   $job = new ns_processing_job;
@@ -778,19 +779,19 @@ function ns_delete_images_from_database($experiment_id,$sample_id,$region_id,$im
 	$job->maintenance_flag = $ns_maintenance_flags['ns_delete_entire_sample_region'];
   }
   $job->save_to_db($sql);
-
+if ($update_queue)
   ns_update_job_queue($sql);
 }
-function ns_delete_image_from_database($image_id,$sql){
-  ns_delete_images_from_database(0,0,0,$image_id,$sql);
+function ns_delete_image_from_database($image_id,$sql,$update_queue=TRUE){
+  ns_delete_images_from_database(0,0,0,$image_id,$sql,$update_queue);
 }
-function ns_delete_region_from_database($region_id,$sql){
-  ns_delete_images_from_database(0,0,$region_id,0,$sql);
+function ns_delete_region_from_database($region_id,$sql,$update_queue=TRUE){
+  ns_delete_images_from_database(0,0,$region_id,0,$sql,$update_queue);
 }
-function ns_delete_sample_from_database($sample_id,$sql){
-  ns_delete_images_from_database(0,$sample_id,0,0,$sql);
+function ns_delete_sample_from_database($sample_id,$sql,$update_queue=TRUE){
+  ns_delete_images_from_database(0,$sample_id,0,0,$sql,$update_queue);
 }
-function ns_delete_experiment_from_database($experiment_id,$sql){
-  ns_delete_images_from_database($experiment_id,0,0,0,$sql);
+function ns_delete_experiment_from_database($experiment_id,$sql,$update_queue=TRUE){
+  ns_delete_images_from_database($experiment_id,0,0,0,$sql,$update_queue);
 }
 ?>

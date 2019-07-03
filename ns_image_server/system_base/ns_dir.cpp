@@ -540,12 +540,24 @@ string ns_dir::extract_extension(const string & filename){
 	string::size_type dot_pos = filename.find_last_of(".");
 	if (dot_pos == filename.npos)
 		return "";
-	return filename.substr(dot_pos+1);
+	const std::string ex(filename.substr(dot_pos + 1));
+	if (dot_pos > 1 && ex == "gz") {
+		string::size_type dot_pos2 = filename.find_last_of(".", dot_pos - 1);
+		if (dot_pos2 != filename.npos)
+			return filename.substr(dot_pos2 + 1);
+	}
+	return ex;
 }
 string ns_dir::extract_filename_without_extension(const string & filename){
 	string::size_type dot_pos= filename.find_last_of(".");
 	if (dot_pos == filename.npos)
 		return filename;
+	const std::string ex(filename.substr(dot_pos + 1));
+	if (dot_pos > 1 && ex == "gz") {
+		string::size_type dot_pos2 = filename.find_last_of(".", dot_pos - 1);
+		if (dot_pos2 != filename.npos)
+			return filename.substr(0, dot_pos);
+	}
 	return filename.substr(0,dot_pos);
 }
 /*

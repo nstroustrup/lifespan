@@ -18,10 +18,14 @@ ns_image_type ns_image_type_from_filename(const string & filename){
 		return ns_jp2k;
 	if (ext == "wrm")
 		return ns_wrm;
+	if (ext == "wrm.gz")
+		return ns_wrm_gz;
 	if (ext == "csv")
 		return ns_csv;
 	if (ext == "xml")
 		return ns_xml;
+	if (ext == "csv.gz")
+		return ns_csv_gz;
 	return ns_unknown;
 
 }
@@ -63,7 +67,9 @@ void ns_add_image_suffix(string & str, const ns_image_type & type){
 		case ns_tiff_uncompressed: str += ".tif"; return;
 		case ns_jp2k: str+=".jp2"; return;
 		case ns_wrm: str += ".wrm"; return;
+		case ns_wrm_gz: str += ".wrm_gz"; return;
 		case ns_csv: str += ".csv"; return;
+		case ns_csv_gz: str += ".csv_gz"; return;
 		case ns_xml: str += ".xml"; return;
 		default: throw ns_ex("ns_add_image_suffix: Unknown image type: ") << (unsigned int)type;
 	}

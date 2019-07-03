@@ -1424,16 +1424,15 @@ void ns_time_path_image_movement_analyzer<allocator_T>::load_stored_movement_ana
 	base_db_record.load_from_db(base_db_record.id, &sql);
 	ns_image_server_image quantification_db_record(base_db_record);
 	std::string base_filename = ns_dir::extract_filename_without_extension(quantification_db_record.filename);
-	if (quantification_db_record.filename.find("_quantification") != quantification_db_record.filename.npos);
-	//	image_server.register_server_event(ns_image_server_event("Handling old movement filename."),&sql);	//retain compatability with old version
-	else
-		quantification_db_record.filename = base_filename+"_quantification.csv";
+	if (quantification_db_record.filename.find("_quantification") == quantification_db_record.filename.npos)
+		quantification_db_record.filename = base_filename+"_quantification.csv.gz";
+	//otherwise load it from the default location
 
 	ns_image_server_image event_annotations_record(base_db_record);
-	event_annotations_record.filename = base_filename + "_events.csv";
+	event_annotations_record.filename = base_filename + "_events.csv.gz"
 
 	ns_image_server_image state_intervals_record(base_db_record);
-	state_intervals_record.filename = base_filename + "_intervals.csv";
+	state_intervals_record.filename = base_filename + "_intervals.csv.gz";
 
 
 	ifstream* q_i = 0,
@@ -1870,31 +1869,31 @@ void ns_time_path_image_movement_analyzer<allocator_T>::obtain_analysis_id_and_s
 	}
 
 	bool update_db(false);
-	if (time_path_quantification_db_record.id == 0){
+	if (time_path_quantification_db_record.id == 0 || 
+		time_path_quantification_db_record.filename.find("_quantification") != time_path_quantification_db_record.filename.npos //update old-style uncompressed records
+		){
+
 		time_path_quantification_db_record = image_server_const.image_storage.get_region_movement_metadata_info(region_id,"time_path_movement_image_analysis",sql);
 		update_db = true;
 	}
 	ns_image_server_image quantification_db_record(time_path_quantification_db_record);
 	std::string base_filename = ns_dir::extract_filename_without_extension(quantification_db_record.filename);
-	if (quantification_db_record.filename.find("_quantification") != quantification_db_record.filename.npos);
-		//image_server.register_server_event(ns_image_server_event("Handling old movement filename."),&sql);	//retain compatability with old version
-	else
-		quantification_db_record.filename = base_filename + "_quantification.csv";
+	quantification_db_record.filename = base_filename + "_quantification.csv.gz";
 
 	ns_image_server_image event_annotations_record(time_path_quantification_db_record);
-	event_annotations_record.filename = base_filename + "_events.csv";
+	event_annotations_record.filename = base_filename + "_events.csv.gz";
 
 	ns_image_server_image state_intervals_record(time_path_quantification_db_record);
-	state_intervals_record.filename = base_filename + "_intervals.csv";
+	state_intervals_record.filename = base_filename + "_intervals.csv.gz";
 
 	ofstream *time_path_quantification_output(0), *events_output(0), *state_intervals_output(0);
 	try {
 		if (time_path_quantification_db_record.filename.empty()) throw ns_ex("Encountered a blank filename!");
 
 		if (write_options == ns_write_data) {
-			events_output = image_server_const.image_storage.request_metadata_output(event_annotations_record, ns_csv, false, &sql);
-			state_intervals_output = image_server_const.image_storage.request_metadata_output(state_intervals_record, ns_csv, false, &sql);
-			time_path_quantification_output = image_server_const.image_storage.request_metadata_output(quantification_db_record, ns_csv, false, &sql);
+			events_output = image_server_const.image_storage.request_metadata_output(event_annotations_record, ns_csv_gz, false, &sql);
+			state_intervals_output = image_server_const.image_storage.request_metadata_output(state_intervals_record, ns_csv_gz, false, &sql);
+			time_path_quantification_output = image_server_const.image_storage.request_metadata_output(quantification_db_record, ns_csv_gz, false, &sql);
 		}
 	}
 	catch (ns_ex & ex) {

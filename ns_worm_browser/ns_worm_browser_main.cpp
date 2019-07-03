@@ -2182,7 +2182,7 @@ public:
 			w_*d,
 			h_*d);
 	
-		main_menu->resize(0,0, window_size.x*d,menu_height()*menu_d);
+		main_menu->resize(0,0, window_size.x,menu_height()*menu_d);
 
 		int bottom_bar_height(h_*d+menu_height()*menu_d);
 		//cerr << "eb" << experiment_bar_width()*d << ","  << bottom_bar_height << "-" <<  bottom_bar_height+info_bar_height() << "\n";
@@ -2210,10 +2210,10 @@ public:
 		int left_buttons_width((experiment_bar_width() + region_name_bar_width() + strain_bar_width() + exclusion_bar_width() + worm_input_width())*d);
 		info_bar->resize(left_buttons_width,
 											bottom_bar_height,
-											window_size.x*d- left_buttons_width -(ns_death_event_annotation_group::window_width)*d,
+											window_size.x- left_buttons_width -(ns_death_event_annotation_group::window_width),
 											info_bar_height()*menu_d);
 
-		annotation_group->resize((window_size.x-ns_death_event_annotation_group::window_width)*d,
+		annotation_group->resize(window_size.x-ns_death_event_annotation_group::window_width,
 								bottom_bar_height,
 								 ns_death_event_annotation_group::window_width*d,
 								 ns_death_event_annotation_group::window_height*menu_d);

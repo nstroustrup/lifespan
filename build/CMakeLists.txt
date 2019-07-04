@@ -50,8 +50,8 @@ file(GLOB_RECURSE system_base_HEADERS "${PROJECT_SOURCE_DIR}/../ns_image_server/
 
 set(ns_external_HEADER_DIRS "")
 list (APPEND ns_external_HEADER_DIRS "${PROJECT_SOURCE_DIR}/../external_compile_libraries/wcon_cpp"
-"${PROJECT_SOURCE_DIR}/../external_compile_libraries/json/single_include")
- 
+"${PROJECT_SOURCE_DIR}/../external_compile_libraries/json/single_include"
+"${PROJECT_SOURCE_DIR}/../external_compile_libraries/gzstream")
 
 set (ns_image_server_base_HEADERS "")
 list(APPEND ns_image_server_base_HEADERS ${image_server_HEADERS} ${image_acquisition_HEADERS} ${image_base_HEADERS} ${image_processing_HEADERS} ${job_scheduling_HEADERS} ${movement_analysis_HEADERS} ${statistics_HEADERS}  ${system_base_HEADERS} ${data_annotation_HEADERS})
@@ -69,6 +69,7 @@ list(APPEND ns_image_server_base_INCLUDE_DIRS ${ns_external_HEADER_DIRS})
 set (ns_external_SOURCES  "")
 if (NOT ONLY_IMAGE_ACQUISITION)
 list (APPEND ns_external_SOURCES "${PROJECT_SOURCE_DIR}/../external_libraries/libsvm/svm.cpp" 
+"${PROJECT_SOURCE_DIR}/../external_compile_libraries/gzstream/gzstream.C"
 "${PROJECT_SOURCE_DIR}/../external_libraries/ctmf/ctmf.c" 
 "${PROJECT_SOURCE_DIR}/../external_libraries/triangle/triangle.cpp"
 "${PROJECT_SOURCE_DIR}/../external_libraries/gmm/gmm.cpp"

@@ -549,11 +549,12 @@ static void ctmf_helper_orig(
  *                      For example, a 512 kB L2 cache would have
  *                      memsize=512*1024 initially.
  */
+
 void ctmf(
-        const unsigned char* const src, unsigned char* const dst,
+        const unsigned char* const src, unsigned char*  dst,
         const int width, const int height,
         const int src_step, const int dst_step,
-        const int r, const int cn, const long unsigned int memsize
+        const int r, const int cn, const unsigned long  memsize
         )
 {
     /*

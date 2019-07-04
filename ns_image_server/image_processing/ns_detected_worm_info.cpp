@@ -1942,17 +1942,16 @@ void ns_image_worm_detection_results::save(ns_image_server_captured_image_region
 
 
 	//open data storage on disk
-	ns_acquire_for_scope<ofstream> outfile(image_server.image_storage.request_metadata_output(data_storage_on_disk, ns_wrm, true, &sql));
+	ns_acquire_for_scope<ns_ostream> outfile(image_server.image_storage.request_metadata_output(data_storage_on_disk, ns_wrm_gz, true, &sql));
 
-	if (outfile().fail())
+	if (outfile()().fail())
 		throw ns_ex("Could not make storage for region data file.");
 
-	save_data_to_disk(outfile(), interpolated);
-	outfile().close();
+	save_data_to_disk(outfile()(), interpolated);
 	outfile.release();
 
 }
-void ns_image_worm_detection_results::save_data_to_disk(std::ofstream & out, const bool interpolated){
+void ns_image_worm_detection_results::save_data_to_disk(std::ostream & out, const bool interpolated){
 
 
 
@@ -2050,7 +2049,7 @@ void ns_image_worm_detection_results::load_from_db_internal(const bool load_worm
 	}
 	else{
 		//load from disk
-		ns_acquire_for_scope<ifstream> in;
+		ns_acquire_for_scope<ns_istream> in;
 
 		try{
 			in.attach(image_server.image_storage.request_metadata_from_disk(data_storage_on_disk,true,&sql));
@@ -2071,9 +2070,10 @@ void ns_image_worm_detection_results::load_from_db_internal(const bool load_worm
 		}
 		//this->capture_time = data_storage_on_disk.capture_time;
 		unsigned long file_number_of_worms, file_number_of_interpolated_worms;
-		if (!ns_read_csv_value(in(),file_number_of_worms))
+		std::istream& inp(in()());
+		if (!ns_read_csv_value(inp,file_number_of_worms))
 					throw ns_ex("ns_image_worm_detection_results::load_from_disk()::Malformed file");
-		if (!ns_read_csv_value(in(),file_number_of_interpolated_worms))
+		if (!ns_read_csv_value(inp,file_number_of_interpolated_worms))
 					throw ns_ex("ns_image_worm_detection_results::load_from_disk()::Malformed file");
 		if (number_of_worms != file_number_of_worms)
 			throw ns_ex("ns_image_worm_detection_results::load_from_db()::File specified incorrect number of worms: ") << file_number_of_worms << "; db specifies " << number_of_worms;
@@ -2089,21 +2089,21 @@ void ns_image_worm_detection_results::load_from_db_internal(const bool load_worm
 
 				putative_worms[i].interpolated = images_comes_from_interpolated_annotations;
 				actual_worms[i] = &putative_worms[i];
-				if (!ns_read_csv_value(in(),putative_worms[i].region_position_in_source_image.x))
+				if (!ns_read_csv_value(inp,putative_worms[i].region_position_in_source_image.x))
 					throw ns_ex("ns_image_worm_detection_results::load_from_disk()::Malformed file");
-				if (!ns_read_csv_value(in(),putative_worms[i].region_position_in_source_image.y))
+				if (!ns_read_csv_value(inp,putative_worms[i].region_position_in_source_image.y))
 					throw ns_ex("ns_image_worm_detection_results::load_from_disk()::Malformed file");
-				if (!ns_read_csv_value(in(),putative_worms[i].context_position_in_source_image.x))
+				if (!ns_read_csv_value(inp,putative_worms[i].context_position_in_source_image.x))
 					throw ns_ex("ns_image_worm_detection_results::load_from_disk()::Malformed file");
-				if (!ns_read_csv_value(in(),putative_worms[i].context_position_in_source_image.y))
+				if (!ns_read_csv_value(inp,putative_worms[i].context_position_in_source_image.y))
 					throw ns_ex("ns_image_worm_detection_results::load_from_disk()::Malformed file");
-				if (!ns_read_csv_value(in(),putative_worms[i].region_size.x))
+				if (!ns_read_csv_value(inp,putative_worms[i].region_size.x))
 					throw ns_ex("ns_image_worm_detection_results::load_from_disk()::Malformed file");
-				if (!ns_read_csv_value(in(),putative_worms[i].region_size.y))
+				if (!ns_read_csv_value(inp,putative_worms[i].region_size.y))
 					throw ns_ex("ns_image_worm_detection_results::load_from_disk()::Malformed file");
-				if (!ns_read_csv_value(in(),putative_worms[i].context_image_size.x))
+				if (!ns_read_csv_value(inp,putative_worms[i].context_image_size.x))
 					throw ns_ex("ns_image_worm_detection_results::load_from_disk()::Malformed file");
-				if (!ns_read_csv_value(in(),putative_worms[i].context_image_size.y))
+				if (!ns_read_csv_value(inp,putative_worms[i].context_image_size.y))
 					throw ns_ex("ns_image_worm_detection_results::load_from_disk()::Malformed file");
 				if (putative_worms[i].region_size.x == 0||
 					putative_worms[i].region_size.y == 0||
@@ -2117,13 +2117,13 @@ void ns_image_worm_detection_results::load_from_db_internal(const bool load_worm
 		interpolated_worm_areas.resize(number_of_interpolated_worm_areas);
 		if (interpolated_worm_areas.size() != 0){
 			for (unsigned int i = 0; i < number_of_interpolated_worm_areas; i++){
-				if (!ns_read_csv_value(in(),interpolated_worm_areas[i].position_in_source_image.x))
+				if (!ns_read_csv_value(inp,interpolated_worm_areas[i].position_in_source_image.x))
 					throw ns_ex("ns_image_worm_detection_results::load_from_disk()::Malformed file");
-				if (!ns_read_csv_value(in(),interpolated_worm_areas[i].position_in_source_image.y))
+				if (!ns_read_csv_value(inp,interpolated_worm_areas[i].position_in_source_image.y))
 					throw ns_ex("ns_image_worm_detection_results::load_from_disk()::Malformed file");
-				if (!ns_read_csv_value(in(),interpolated_worm_areas[i].size.x))
+				if (!ns_read_csv_value(inp,interpolated_worm_areas[i].size.x))
 					throw ns_ex("ns_image_worm_detection_results::load_from_disk()::Malformed file");
-				if (!ns_read_csv_value(in(),interpolated_worm_areas[i].size.y))
+				if (!ns_read_csv_value(inp,interpolated_worm_areas[i].size.y))
 					throw ns_ex("ns_image_worm_detection_results::load_from_disk()::Malformed file");
 			}
 		}
@@ -2134,7 +2134,6 @@ void ns_image_worm_detection_results::load_from_db_internal(const bool load_worm
 
 
 		if (!load_worm_postures){
-			in().close();
 			in.release();
 			return;
 		}
@@ -2143,20 +2142,20 @@ void ns_image_worm_detection_results::load_from_db_internal(const bool load_worm
 		std::vector<unsigned long> worm_segment_node_counts(number_of_worms);
 		if (number_of_worms != 0){
 			for (unsigned int i = 0; i < number_of_worms; i++){
-				if (!ns_read_csv_value(in(),worm_segment_node_counts[i]))
+				if (!ns_read_csv_value(inp,worm_segment_node_counts[i]))
 					throw ns_ex("ns_image_worm_detection_results::load_from_disk()::Malformed file");
 				total_node_length+=worm_segment_node_counts[i];
 			}
 		}
 
 		//output code generates spurious comma
-		in().get();
+		inp.get();
 		if (total_node_length != 0){
 
 			for (unsigned int i = 0; i < number_of_worms; i++){
-				putative_worms[i].worm_shape.read_from_csv(in(),worm_segment_node_counts[i]);
+				putative_worms[i].worm_shape.read_from_csv(inp,worm_segment_node_counts[i]);
 				//output code generates spurious comma
-				in().get();
+				inp.get();
 				if (putative_worms[i].worm_shape.nodes.size() == 0)
 					throw ns_ex("ns_image_worm_detection_results::load_from_db()::Encountered empty worm shape!");
 				for (unsigned int j = 0; j < putative_worms[i].worm_shape.nodes.size(); j++){
@@ -2168,9 +2167,8 @@ void ns_image_worm_detection_results::load_from_db_internal(const bool load_worm
 				}
 			}
 		}
-		if (in().fail())
+		if (inp.fail())
 			throw ns_ex("Improper file format: error at EOF");
-		in().close();
 		in.release();
 
 	}

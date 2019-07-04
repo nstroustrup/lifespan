@@ -1,6 +1,5 @@
 #include "ns_image_storage_handler.h"
 #include "ns_image_server.h"
-#include "zstr.hpp"
 #include <functional>
 
 using namespace std;
@@ -436,7 +435,8 @@ bool ns_image_storage_handler::assign_unique_filename(ns_image_server_image & im
 	return true;
 }
 
-ifstream * ns_image_storage_handler::request_metadata_from_disk(ns_image_server_image & image,const bool binary,ns_image_server_sql * sql) const{
+
+ns_istream * ns_image_storage_handler::request_metadata_from_disk(ns_image_server_image & image,const bool binary,ns_image_server_sql * sql) const{
 	if (image.filename.size() == 0 || image.path.size() == 0 || image.partition.size() == 0) 
 		if (!image.load_from_db(image.id, sql)) 
 			throw ns_ex("Could not find image record for time path image analyzer metadata");
@@ -452,25 +452,36 @@ ifstream * ns_image_storage_handler::request_metadata_from_disk(ns_image_server_
 		throw ns_ex("ns_image_storage_handler::request_metadata_from_disk()::Could not access long term storage at ") << spec.long_term_directory << ns_network_io;
 	}
 
-	std::ifstream * i;
+	ns_istream * i(0);
 	ns_image_type type = ns_image_type_from_filename(spec.filename);
-	if (type != ns_csv_gz && type != ns_wrm_gz) {
-		if (binary) i = new std::ifstream(spec.absolute_long_term_filename().c_str(), ios_base::binary);
-		else i = new std::ifstream(spec.absolute_long_term_filename().c_str());
+	try {
+		if (type != ns_csv_gz && type != ns_wrm_gz && type != ns_xml_gz) {
+			if (binary) i = new ns_istream(new std::ifstream(spec.absolute_long_term_filename().c_str(), ios_base::binary));
+			else i = new ns_istream(new std::ifstream(spec.absolute_long_term_filename().c_str()));
+		}
+		else {
+			try {
+				if (binary) i = new ns_istream(new igzstream(spec.absolute_long_term_filename().c_str(), ios_base::binary));
+				else i = new ns_istream(new igzstream(spec.absolute_long_term_filename().c_str()));
+			}
+			catch (const std::exception & ex) {
+				throw ns_ex(ex.what());
+			}
+		}
 	}
-	else {
-		if (binary) i = new zlib::ifstream(spec.absolute_long_term_filename().c_str(), ios_base::binary);
-		else i = new zlib::ifstream(spec.absolute_long_term_filename().c_str());
+	catch (...) {
+		if (i != 0) delete i;
+		throw;
 	}
 
-	if (i->fail()){
+	if ((*i)().fail()){
 		delete i;
 		throw ns_ex("ns_image_storage_handler::request_metadata_from_disk()::Could not open file ") << spec.absolute_long_term_filename() << ns_file_io;
 	}
 	return i;
 }
 
-ofstream * ns_image_storage_handler::request_metadata_output(ns_image_server_image & image, const ns_image_type & image_type, const bool binary, ns_image_server_sql * sql) const {
+ns_ostream * ns_image_storage_handler::request_metadata_output(ns_image_server_image & image, const ns_image_type & image_type, const bool binary, ns_image_server_sql * sql) const {
 
 	if (image.filename.size() == 0 || image.path.size() == 0 || image.partition.size() == 0) image.load_from_db(image.id, sql);
 	//std::string existing_filename_extension(ns_dir::extract_extension(image.filename));
@@ -490,16 +501,21 @@ ofstream * ns_image_storage_handler::request_metadata_output(ns_image_server_ima
 				std::string("ns_image_storage_handler::request_metadata_output(1)::Could not access long term storage when attempting to write ") + spec.relative_directory + DIR_CHAR_STR + spec.filename, sql);
 			throw ns_ex("ns_image_storage_handler:: request_metadata_output()::Long term storage location is not writeable: ") << spec.absolute_long_term_filename() << ns_network_io;
 		}
-		std::ofstream * o;
-		if (image_type != ns_wrm_gz && image_type != ns_csv_gz) {
-			if (binary) o = new std::ofstream(spec.absolute_long_term_filename().c_str(), ios_base::binary);
-			else o = new std::ofstream(spec.absolute_long_term_filename().c_str());
+		ns_ostream * o;
+		if (image_type != ns_wrm_gz && image_type != ns_csv_gz && image_type != ns_xml_gz) {
+			if (binary) o = new ns_ostream(new std::ofstream(spec.absolute_long_term_filename().c_str(), ios_base::binary));
+			else o = new ns_ostream(new std::ofstream(spec.absolute_long_term_filename().c_str()));
 		}
 		else {
-			if (binary) o = new zstr::ofstream(spec.absolute_long_term_filename().c_str(), ios_base::binary);
-			else o = new zstr::ofstream(spec.absolute_long_term_filename().c_str());
+			try {
+				if (binary) o = new ns_ostream(new ogzstream(spec.absolute_long_term_filename().c_str(), ios_base::binary));
+				else o = new ns_ostream(new ogzstream(spec.absolute_long_term_filename().c_str()));
+			}
+			catch (const std::exception & ex) {
+				throw ns_ex(ex.what());
+			}
 		}
-		if (o->fail()){
+		if ((*o)().fail()){
 			delete o;
 			ns_image_handler_submit_alert(ns_alert::ns_long_term_storage_error,
 				"Could not access long term storage.",

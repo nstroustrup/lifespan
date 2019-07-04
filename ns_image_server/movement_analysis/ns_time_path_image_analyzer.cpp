@@ -1423,50 +1423,47 @@ void ns_time_path_image_movement_analyzer<allocator_T>::load_stored_movement_ana
 	ns_image_server_image base_db_record = get_movement_quantification_id(this->region_info_id,sql);
 	base_db_record.load_from_db(base_db_record.id, &sql);
 	ns_image_server_image quantification_db_record(base_db_record);
-	std::string base_filename = ns_dir::extract_filename_without_extension(quantification_db_record.filename);
-	if (quantification_db_record.filename.find("_quantification") == quantification_db_record.filename.npos)
-		quantification_db_record.filename = base_filename+"_quantification.csv.gz";
-	//otherwise load it from the default location
-
 	ns_image_server_image event_annotations_record(base_db_record);
-	event_annotations_record.filename = base_filename + "_events.csv.gz"
-
 	ns_image_server_image state_intervals_record(base_db_record);
-	state_intervals_record.filename = base_filename + "_intervals.csv.gz";
+	std::string base_filename = ns_dir::extract_filename_without_extension(quantification_db_record.filename);
+
+	if (quantification_db_record.filename.find("_quantification") == quantification_db_record.filename.npos) {
+		quantification_db_record.filename = base_filename + "_quantification.csv.gz";
+		event_annotations_record.filename = base_filename + "_events.csv.gz";
+		state_intervals_record.filename = base_filename + "_intervals.csv.gz";
+	}
+	else if (movement_data_to_load != ns_only_quantification){
+		throw ns_ex("This plate was analyzed with a previous version of the analysis software.  Please re-run the job \"Rebuild Movement Analysis from cached image analysis\".");
+	}
 
 
-	ifstream* q_i = 0,
-			* i_i = 0, 
-			* e_i = 0;
+	ns_acquire_for_scope<ns_istream> q_i(0),
+			i_i(0), 
+			 e_i(0);
 	ns_ex additional_metadata_problem;
 	try{
 
 		if (movement_data_to_load == ns_all_results || movement_data_to_load == ns_all_results_no_movement) {
-			try {
-				e_i = image_server_const.image_storage.request_metadata_from_disk(event_annotations_record, false, &sql);
-				 i_i = image_server_const.image_storage.request_metadata_from_disk(state_intervals_record, false, &sql);
+			try{
+				e_i.attach(image_server_const.image_storage.request_metadata_from_disk(event_annotations_record, false, &sql));
+				 i_i.attach(image_server_const.image_storage.request_metadata_from_disk(state_intervals_record, false, &sql));
 			}
 			catch (ns_ex & ex) {
-				additional_metadata_problem = ns_ex("Some stored movement analysis could not be found.  Please re-run the job \"Rebuild Movement Analysis from cached image analysis\".");
-				ns_safe_delete(q_i);
+				throw ns_ex("Some stored movement analysis could not be found.  Please re-run the job \"Rebuild Movement Analysis from cached image analysis\": ") << ex.text();
 			}
 		}
-		q_i = image_server_const.image_storage.request_metadata_from_disk(quantification_db_record, false, &sql);
-		if (additional_metadata_problem.text().empty()) {
-			load_movement_data_from_disk(*q_i, movement_data_to_load == ns_only_quantification_no_movement || movement_data_to_load == ns_all_results_no_movement);
-			ns_safe_delete(q_i);
-			if (movement_data_to_load == ns_all_results || movement_data_to_load == ns_all_results_no_movement) {
-				read_internal_annotation_data(*e_i);
-				ns_safe_delete(e_i);
-				read_internal_intervals_data(*i_i);
-				ns_safe_delete(i_i);
-			}
+		q_i.attach(image_server_const.image_storage.request_metadata_from_disk(quantification_db_record, false, &sql));
+		load_movement_data_from_disk(q_i()(), movement_data_to_load == ns_only_quantification_no_movement || movement_data_to_load == ns_all_results_no_movement);
+		q_i.release();
+		if (movement_data_to_load == ns_all_results || movement_data_to_load == ns_all_results_no_movement) {
+			read_internal_annotation_data(e_i()());
+			e_i.release();
+			read_internal_intervals_data(i_i()());
+			i_i.release();
 		}
+		
 	}
 	catch (ns_ex & ex) {
-		ns_safe_delete(q_i);
-		ns_safe_delete(e_i);
-		ns_safe_delete(i_i);
 		std::string data = "unknown";
 		try {
 			sql << "SELECT s.name,r.name FROM sample_region_image_info as r, capture_samples as s WHERE r.id = " << this->region_info_id << " and s.id = r.sample_id";
@@ -1483,14 +1480,6 @@ void ns_time_path_image_movement_analyzer<allocator_T>::load_stored_movement_ana
 		throw ex2;
 
 	}
-	catch(...){
-		ns_safe_delete(q_i);
-		ns_safe_delete(e_i);
-		ns_safe_delete(i_i);
-		throw;
-	}
-	if (!additional_metadata_problem.text().empty())
-		throw additional_metadata_problem;
 };
 
 template<class allocator_T>
@@ -1793,6 +1782,7 @@ void ns_time_path_image_movement_analyzer<allocator_T>::read_internal_annotation
 		if (in.fail())
 			break;
 		get_int(in, path_id);
+		//cout << group_id << "," << path_id << "\n";
 		if (group_id >= groups.size())
 			throw ns_ex("Invalid group id");
 		if (path_id >= groups[group_id].paths.size())
@@ -1869,13 +1859,18 @@ void ns_time_path_image_movement_analyzer<allocator_T>::obtain_analysis_id_and_s
 	}
 
 	bool update_db(false);
-	if (time_path_quantification_db_record.id == 0 || 
-		time_path_quantification_db_record.filename.find("_quantification") != time_path_quantification_db_record.filename.npos //update old-style uncompressed records
-		){
-
+	if (time_path_quantification_db_record.id == 0){
 		time_path_quantification_db_record = image_server_const.image_storage.get_region_movement_metadata_info(region_id,"time_path_movement_image_analysis",sql);
 		update_db = true;
 	}
+	if (time_path_quantification_db_record.filename.find("_quantification") != time_path_quantification_db_record.filename.npos) {
+		//update old-style uncompressed records
+		ns_64_bit id = time_path_quantification_db_record.id; 
+		time_path_quantification_db_record = image_server_const.image_storage.get_region_movement_metadata_info(region_id, "time_path_movement_image_analysis", sql);
+		time_path_quantification_db_record.id = id;
+		update_db = true;
+	}
+
 	ns_image_server_image quantification_db_record(time_path_quantification_db_record);
 	std::string base_filename = ns_dir::extract_filename_without_extension(quantification_db_record.filename);
 	quantification_db_record.filename = base_filename + "_quantification.csv.gz";
@@ -1886,14 +1881,14 @@ void ns_time_path_image_movement_analyzer<allocator_T>::obtain_analysis_id_and_s
 	ns_image_server_image state_intervals_record(time_path_quantification_db_record);
 	state_intervals_record.filename = base_filename + "_intervals.csv.gz";
 
-	ofstream *time_path_quantification_output(0), *events_output(0), *state_intervals_output(0);
+	ns_acquire_for_scope<ns_ostream> time_path_quantification_output(0), events_output(0), state_intervals_output(0);
 	try {
 		if (time_path_quantification_db_record.filename.empty()) throw ns_ex("Encountered a blank filename!");
 
 		if (write_options == ns_write_data) {
-			events_output = image_server_const.image_storage.request_metadata_output(event_annotations_record, ns_csv_gz, false, &sql);
-			state_intervals_output = image_server_const.image_storage.request_metadata_output(state_intervals_record, ns_csv_gz, false, &sql);
-			time_path_quantification_output = image_server_const.image_storage.request_metadata_output(quantification_db_record, ns_csv_gz, false, &sql);
+			events_output.attach(image_server_const.image_storage.request_metadata_output(event_annotations_record, ns_csv_gz, false, &sql));
+			state_intervals_output.attach(image_server_const.image_storage.request_metadata_output(state_intervals_record, ns_csv_gz, false, &sql));
+			time_path_quantification_output.attach(image_server_const.image_storage.request_metadata_output(quantification_db_record, ns_csv_gz, false, &sql));
 		}
 	}
 	catch (ns_ex & ex) {
@@ -1909,36 +1904,29 @@ void ns_time_path_image_movement_analyzer<allocator_T>::obtain_analysis_id_and_s
 		event_annotations_record.filename += "_events.csv";
 		state_intervals_record.filename += "_intervals.csv";
 		update_db = true;
-
+		events_output.release();
+		state_intervals_output.release();
+		time_path_quantification_output.release();
 		if (write_options == ns_write_data) {
-			time_path_quantification_output = image_server_const.image_storage.request_metadata_output(quantification_db_record, ns_csv, false, &sql);
-			events_output = image_server_const.image_storage.request_metadata_output(event_annotations_record, ns_csv, false, &sql);
-			state_intervals_output = image_server_const.image_storage.request_metadata_output(state_intervals_record, ns_csv, false, &sql);
+			time_path_quantification_output.attach(image_server_const.image_storage.request_metadata_output(quantification_db_record, ns_csv, false, &sql));
+			events_output.attach(image_server_const.image_storage.request_metadata_output(event_annotations_record, ns_csv, false, &sql));
+			state_intervals_output.attach(image_server_const.image_storage.request_metadata_output(state_intervals_record, ns_csv, false, &sql));
 		}
 	}
 	//set analysis id that will uniquely identify all annotations generated by this analysis
 	if (update_db)
 		time_path_quantification_db_record.save_to_db(time_path_quantification_db_record.id, &sql);
 	analysis_id = time_path_quantification_db_record.id;
-	try{
-		if (write_options == ns_write_data) {
-			save_movement_data_to_disk(*time_path_quantification_output);
-			time_path_quantification_output->close();
-			write_internal_annotation_data(*events_output);
-			events_output->close();
-			write_internal_intervals_data(*state_intervals_output);
-			state_intervals_output->close();
-		}
-		ns_safe_delete(time_path_quantification_output);
-		ns_safe_delete(state_intervals_output);
-		ns_safe_delete(events_output);
+	
+	if (write_options == ns_write_data) {
+		save_movement_data_to_disk(time_path_quantification_output()());
+		time_path_quantification_output.release();
+		write_internal_annotation_data(events_output()());
+		events_output.release();
+		write_internal_intervals_data(state_intervals_output()());
+		state_intervals_output.release();
 	}
-	catch(...){
-		ns_safe_delete(time_path_quantification_output);
-		ns_safe_delete(state_intervals_output);
-		ns_safe_delete(events_output);
-		throw;
-	}
+	
 	if (update_db){
 		sql << "UPDATE sample_region_image_info SET movement_image_analysis_quantification_id = " << time_path_quantification_db_record.id << " WHERE id = " << region_id;
 		sql.send_query();

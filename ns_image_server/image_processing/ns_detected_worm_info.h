@@ -644,7 +644,7 @@ private:
 	
     ns_image_server_image data_storage_on_disk;
 
-	void save_data_to_disk(std::ofstream & out,const bool interpolated);
+	void save_data_to_disk(std::ostream & out,const bool interpolated);
 
 	void load_data_from_db(ns_sql & sql);
 	void load_data_from_disk(ns_sql & sql);

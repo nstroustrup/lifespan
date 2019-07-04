@@ -642,45 +642,45 @@ void ns_death_time_annotation_set::read_column_format(const  ns_annotation_type_
 		e.time.period_end = atol(val.c_str());
 
 		getline(i,val,',');
-		if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF");
+		if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF 1");
 		e.region_id = ns_atoi64(val.c_str());
 
 		getline(i,val,',');
-		if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF");
+		if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF 2");
 		e.region_info_id  = ns_atoi64(val.c_str());
 		if (e.region_info_id == 0)
 			throw ns_ex("ns_death_time_annotation_set::read_column_format()::Found an annotation with no region info specified");
 
 		getline(i,val,',');
-		if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF");
+		if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF 3");
 		e.position.x  = atol(val.c_str());
 
 		getline(i,val,',');
-		if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF");
+		if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF 4");
 		e.position.y  = atol(val.c_str());
 
 		getline(i,val,',');
-		if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF");
+		if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF 5");
 		e.size.x  = atol(val.c_str());
 
 		getline(i,val,',');
-		if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF");
+		if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF 6");
 		e.size.y = atol(val.c_str());
 
 		getline(i,val,',');
-		if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF");
+		if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF 7");
 		e.annotation_source = (ns_death_time_annotation::ns_annotation_source_type)atol(val.c_str());
 
 		getline(i,val,',');
-		if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF");
+		if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF 8");
 		e.annotation_time  = atol(val.c_str());
 
 		getline(i,val,',');
-		if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF");
+		if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF 9");
 		e.annotation_source_details = val;
 
 		getline(i,val,',');
-		if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF");
+		if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF 10");
 
 		e.excluded = (ns_death_time_annotation::ns_exclusion_type)atol(val.c_str());
 		//if we can specifiy a more specific source for the exclusion, do so.
@@ -693,7 +693,7 @@ void ns_death_time_annotation_set::read_column_format(const  ns_annotation_type_
 
 		getline(i,val,',');
 		bool old_spec_by_hand_worms = false;
-		if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF");
+		if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF 11");
 		if(val==""){
 			old_spec_by_hand_worms = true;
 			e.loglikelihood = 1;
@@ -712,11 +712,11 @@ void ns_death_time_annotation_set::read_column_format(const  ns_annotation_type_
 					events.pop_back();
 				return;
 			}
-			throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF");
+			throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF 12");
 		}
 
 		getline(i,val,',');
-		if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF");
+		if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF 13");
 		e.stationary_path_id.group_id = atol(val.c_str());
 
 	//	if (e.stationary_path_id.group_id == 28)
@@ -730,21 +730,21 @@ void ns_death_time_annotation_set::read_column_format(const  ns_annotation_type_
 		if (!really_old_style_record){
 
 			getline(i,val,',');
-			if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF");
+			if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF 14");
 			e.stationary_path_id.detection_set_id = ns_atoi64(val.c_str());
 
 			getline(i,val,',');
-			if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF");
+			if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF 15");
 			e.time.period_start = atol(val.c_str());
 			if (kind_of_old_record){
 				getline(i,val,'\n');
-				if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF");
+				if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF 16");
 				if (!single_line)
 					continue;
 				else return;
 			}
 			getline(i,val,',');
-			if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF");
+			if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF 17");
 			//if (val.size() == 0)
 			//e.flag = ns_death_time_annotation_flag::none();
 			//else e.flag.id = atol(val.c_str());
@@ -752,18 +752,18 @@ void ns_death_time_annotation_set::read_column_format(const  ns_annotation_type_
 				e.time.from_interval_bound_code(atol(val.c_str()));
 			}
 			getline(i,val,',');
-			if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF");
+			if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF 18");
 			e.flag.label_short = val;
 			//e.flag.label_short = val;
 			//if (e.flag.label_short.size() > 0)
 			//	e.flag.id =
 
 			getline(i,val,',');
-			if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF");
+			if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF 19");
 			e.animal_is_part_of_a_complete_trace = val=="1";
 
 			getline(i,val,',');
-			if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF");
+			if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF 20");
 			e.number_of_worms_at_location_marked_by_machine = atol(val.c_str());
 
 			if (e.number_of_worms_at_location_marked_by_machine > 100)
@@ -776,51 +776,51 @@ void ns_death_time_annotation_set::read_column_format(const  ns_annotation_type_
 			if (!old_style_record){
 				getline(i,val,',');
 				e.multiworm_censoring_strategy = (ns_death_time_annotation::ns_multiworm_censoring_strategy)atol(val.c_str());
-				if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF");
+				if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF 21");
 				getline(i,val,',');
 				e.missing_worm_return_strategy = (ns_death_time_annotation::ns_missing_worm_return_strategy)atol(val.c_str());
-				if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF");
+				if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF 22");
 				getline(i,val,',');
 				e.animal_id_at_position = atol(val.c_str());
-				if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF");
+				if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF 23");
 				getline(i,val,',');
 				e.event_observation_type = (ns_death_time_annotation::ns_event_observation_type)atol(val.c_str());
-				if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF");
+				if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF 24");
 				if (!newest_old_record){
 					getline(i,val,',');
-					if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF");
+					if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF 25");
 					e.longest_gap_without_observation = atol(val.c_str());
 					getline(i,val,',');
-					if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF");
+					if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF 26");
 					e.by_hand_annotation_integration_strategy = (ns_death_time_annotation::ns_by_hand_annotation_integration_strategy)atol(val.c_str());
 
 					getline(i,val,',');
-					if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF");
+					if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF 27");
 					e.inferred_animal_location = (val=="1");
 
 
 
 					getline(i,val,',');
-					if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF");
+					if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF 28");
 					e.subregion_info.plate_subregion_id = atol(val.c_str());
 					getline(i,val,',');
-					if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF");
+					if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF 29");
 					e.subregion_info.nearest_neighbor_subregion_id = atol(val.c_str());
 					getline(i,val,',');
-					if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF");
+					if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF 30");
 					e.subregion_info.nearest_neighbor_subregion_distance.x = atol(val.c_str());
 					getline(i,val,',');
-					if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF");
+					if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF 31");
 					e.subregion_info.nearest_neighbor_subregion_distance.y = atol(val.c_str());
 					getline(i,val,',');
 					e.event_explicitness = (ns_death_time_annotation::ns_event_explicitness)atoi(val.c_str());
-					if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF");
+					if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF 32");
 					getline(i,val,'\n');
-					if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF");
+					if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF 33");
 				}
 				else{
 					getline(i,val,'\n');
-					if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF");
+					if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF 34");
 					e.event_observation_type = ns_death_time_annotation::ns_standard;
 				}
 			}

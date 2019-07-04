@@ -651,8 +651,7 @@ void ns_experiment_storyboard::check_that_all_time_path_information_is_valid(ns_
 			throw ns_ex("Could not find region id ") << *id << " in worm detection table.";*/
 		try {
 			ns_image_server_image im = ns_time_path_image_movement_analyzer<ns_overallocation_resizer>::get_movement_quantification_id(*id, sql);
-			ns_acquire_for_scope<ifstream> i(image_server_const.image_storage.request_metadata_from_disk(im, false, &sql));
-			i().close();
+			ns_acquire_for_scope<ns_istream> i(image_server_const.image_storage.request_metadata_from_disk(im, false, &sql));
 			i.release();
 		}
 		catch (ns_ex & ex) {
@@ -665,8 +664,7 @@ void ns_experiment_storyboard::check_that_all_time_path_information_is_valid(ns_
 
 			try {
 				ns_image_server_image im = image_server_const.image_storage.get_region_movement_metadata_info(*id, "time_path_movement_image_analysis_quantification", sql);
-				ns_acquire_for_scope<ifstream> i(image_server_const.image_storage.request_metadata_from_disk(im, false, &sql));
-				i().close();
+				ns_acquire_for_scope<ns_istream> i(image_server_const.image_storage.request_metadata_from_disk(im, false, &sql));
 				i.release();
 				im.save_to_db(im.id, &sql);
 				sql << "UPDATE sample_region_image_info SET movement_image_analysis_quantification_id = " << im.id << " WHERE id = " << *id;
@@ -2102,9 +2100,8 @@ ns_ex ns_experiment_storyboard::compare(const ns_experiment_storyboard & s){
 bool ns_experiment_storyboard_manager::load_metadata_from_db(const ns_experiment_storyboard_spec & spec, ns_experiment_storyboard & storyboard, ns_sql & sql){
 	load_metadata_from_db(spec,sql);
 	load_subimages_from_db(spec,sql);
-	ns_acquire_for_scope<ifstream> i(image_server.image_storage.request_metadata_from_disk(xml_metadata_database_record,false,&sql));
-	storyboard.read_metadata(i(),sql);
-	i().close();
+	ns_acquire_for_scope<ns_istream> i(image_server.image_storage.request_metadata_from_disk(xml_metadata_database_record,false,&sql));
+	storyboard.read_metadata(i()(),sql);
 	i.release();
 	if (this->sub_images.size() != storyboard.number_of_sub_images())
 		throw ns_ex("ns_experiment_storyboard_manager::load_metadata_from_db()::The database (") << sub_images.size() 
@@ -2126,10 +2123,9 @@ bool ns_experiment_storyboard_manager::load_image_from_db(const unsigned long im
 void ns_experiment_storyboard_manager::save_metadata_to_db(const ns_experiment_storyboard_spec & spec, const ns_experiment_storyboard & storyboard, const ns_image_type & image_type,ns_sql & sql){
 	create_records_and_storage_for_subimages(storyboard.number_of_sub_images(),spec,sql,true);
 	save_metadata_to_db(spec,sql);
-	ns_acquire_for_scope<ofstream> o(image_server.image_storage.request_metadata_output(xml_metadata_database_record, image_type,false,&sql));
-	storyboard.write_metadata(o());
+	ns_acquire_for_scope<ns_ostream> o(image_server.image_storage.request_metadata_output(xml_metadata_database_record, image_type,false,&sql));
+	storyboard.write_metadata(o()());
 	xml_metadata_database_record.save_to_db(xml_metadata_database_record.id,&sql);
-	o().close();
 	o.release();
 }
 

@@ -584,15 +584,15 @@ void ns_time_path_solution::save_to_db(const ns_64_bit region_id, ns_sql & sql) 
 		im = image_server_const.image_storage.get_region_movement_metadata_info(region_id,"time_path_solution_data",sql);
 		update_db = true;
 	}
-	ofstream * o(0);
+	ns_ostream * o(0);
 	try {
-		o = image_server_const.image_storage.request_metadata_output(im, ns_csv, false, &sql);
+		o = image_server_const.image_storage.request_metadata_output(im, ns_csv_gz, false, &sql);
 	}
 	catch (ns_ex & ex) {
 		ns_64_bit old_im_id(im.id);
 			//if there's some problem with the existing filename, create a new one.
 			im = image_server_const.image_storage.get_region_movement_metadata_info(region_id, "time_path_solution_data", sql);
-			o = image_server_const.image_storage.request_metadata_output(im, ns_csv, false, &sql);
+			o = image_server_const.image_storage.request_metadata_output(im, ns_csv_gz, false, &sql);
 
 			sql << "DELETE from images WHERE id = " << old_im_id;
 			sql.send_query();
@@ -602,7 +602,7 @@ void ns_time_path_solution::save_to_db(const ns_64_bit region_id, ns_sql & sql) 
 	im.save_to_db(im.id,&sql);
 
 	try{
-		save_to_disk(*o);
+		save_to_disk((*o)());
 		delete o;
 	}
 	catch(...){
@@ -622,7 +622,7 @@ void ns_time_path_solution::load_from_db(const ns_64_bit region_id, ns_sql & sql
 	if (res.size() == 0)
 		throw ns_ex("ns_time_path_solution::load_from_db():Could not load info from db");
 
-	ns_acquire_for_scope<ifstream> input_file(0);
+	ns_acquire_for_scope<ns_istream> input_file(0);
 
 	if (load_directly_from_disk_without_db){
 		
@@ -651,7 +651,7 @@ void ns_time_path_solution::load_from_db(const ns_64_bit region_id, ns_sql & sql
 	
 
 	try{
-		load_from_disk(input_file());
+		load_from_disk(input_file()());
 		input_file.release();
 	}
 	catch(...){

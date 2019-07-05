@@ -107,10 +107,10 @@ public:
 
 		if (load_by_hand) {
 			//load by hand annotations
-			ns_acquire_for_scope<std::istream> in(annotation_file.input());
+			ns_acquire_for_scope<ns_istream> in(annotation_file.input());
 			if (!in.is_null()) {
 				ns_death_time_annotation_set set;
-				set.read(ns_death_time_annotation_set::ns_all_annotations, in());
+				set.read(ns_death_time_annotation_set::ns_all_annotations, in()());
 
 				std::string error_message;
 				if (matcher.load_timing_data_from_set(set, false, by_hand_timing_data, orphaned_events, error_message)) {
@@ -153,10 +153,10 @@ public:
 		ns_death_time_annotation_set set;
 
 
-		ns_acquire_for_scope<std::ostream> out(annotation_file.output());
+		ns_acquire_for_scope<ns_ostream> out(annotation_file.output());
 		if (out.is_null())
 			throw ns_ex("Could not open output file.");
-		set.write(out());
+		set.write(out()());
 		out.release();
 		//	ns_update_information_bar(ns_to_string(set.events.size()) + " events saved at " + ns_format_time_string_for_human(ns_current_time()));
 		//	saved_=true;
@@ -267,8 +267,12 @@ private:
 			segment_offsets[0] = 0;
 		unsigned long cur_seg_id(0);
 		for (unsigned int i = first_valid_element; i <= last_valid_element; i++) {
+			if (path->element(i).excluded)
+				continue;
 			if (segment_ids[i] != cur_seg_id) {
 				cur_seg_id++;
+				if (cur_seg_id >= segment_offsets.size())
+					throw ns_ex("Encountered an invalid segment id");
 				segment_offsets[cur_seg_id] = i-first_valid_element;
 			}
 		}

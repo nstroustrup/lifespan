@@ -3668,7 +3668,7 @@ ns_image_server_results_file ns_image_server_results_storage::time_path_image_an
 			else fname = spec.experiment_filename();
 		}
 		fname += type + abbreviated;
-		ns_add_image_suffix(fname,ns_csv);
+		ns_add_image_suffix(fname,ns_csv_gz);
 
 		if (store_in_results_directory)
  			return ns_image_server_results_file(results_directory,spec.experiment_name + DIR_CHAR_STR + dir, fname);

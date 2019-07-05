@@ -26,13 +26,13 @@ public:
 
 		annotations.specifiy_region_metadata(metadata.region_id,metadata);
 
-		ns_acquire_for_scope<std::istream> in(image_server.results_storage.hand_curated_death_times(results_subject,sql).input());
+		ns_acquire_for_scope<ns_istream> in(image_server.results_storage.hand_curated_death_times(results_subject,sql).input());
 		if (in.is_null()){
 			in.release();
 			return false;
 		}
 		ns_death_time_annotation_set set;
-		set.read(annotation_type_to_load,in());
+		set.read(annotation_type_to_load,in()());
 		in.release();
 		for (unsigned int i = 0; i < set.size(); i++){
 			if (set[i].annotation_source == ns_death_time_annotation::ns_lifespan_machine){

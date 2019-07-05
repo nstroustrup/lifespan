@@ -272,10 +272,10 @@ public:
 		ns_timing_data_and_death_time_annotation_matcher<ns_timing_data> matcher;
 		matcher.save_death_timing_data_to_set(timing_data,orphaned_events,set,true);
 		set.add(extra_annotations);
-		ns_acquire_for_scope<std::ostream> out(annotation_file.output());
+		ns_acquire_for_scope<ns_ostream> out(annotation_file.output());
 		if (out.is_null())
 			throw ns_ex("Could not open output file.");
-		set.write(out());
+		set.write(out()());
 		out.release();
 		ns_update_main_information_bar(ns_to_string(set.events.size()) + " events saved at " + ns_format_time_string_for_human(ns_current_time()));
 		ns_update_worm_information_bar(ns_to_string(set.events.size()) + " events saved at " + ns_format_time_string_for_human(ns_current_time()));

@@ -35,12 +35,12 @@ bool ns_machine_analysis_region_data::load_from_db(const ns_death_time_annotatio
 	bool could_load_all_files(true);
 	for (unsigned int i = 0; i < files_to_open.size(); i++){
 		ns_image_server_results_file results(image_server.results_storage.machine_death_times(results_subject,files_to_open[i],"time_path_image_analysis",sql));
-		ns_acquire_for_scope<std::istream> tp_i(results.input());
+		ns_acquire_for_scope<ns_istream> tp_i(results.input());
 		if (tp_i.is_null()){
 			could_load_all_files = false;
 			continue;
 		}
-		death_time_annotation_set.read(annotation_type_to_load,tp_i(),details==ns_machine_analysis_region_data::ns_exclude_fast_moving_animals);
+		death_time_annotation_set.read(annotation_type_to_load,tp_i()(),details==ns_machine_analysis_region_data::ns_exclude_fast_moving_animals);
 		tp_i.release();
 	}
 	if (!could_load_all_files)
@@ -111,9 +111,9 @@ bool ns_machine_analysis_region_data::recalculate_from_saved_movement_quantifica
 				"time_path_image_analysis",sql));
 	ns_image_server_results_file state_results(image_server.results_storage.machine_death_times(results_subject,ns_image_server_results_storage::ns_worm_position_annotations,
 				"time_path_image_analysis",sql));
-	ns_acquire_for_scope<std::ostream> censoring_out(censoring_results.output());
-	ns_acquire_for_scope<std::ostream> state_out(state_results.output());
-	death_time_annotation_set.write_split_file_column_format(censoring_out(),state_out());
+	ns_acquire_for_scope<ns_ostream> censoring_out(censoring_results.output());
+	ns_acquire_for_scope<ns_ostream> state_out(state_results.output());
+	death_time_annotation_set.write_split_file_column_format(censoring_out()(),state_out()());
 	censoring_out.release();
 	state_out.release();
 	return true;

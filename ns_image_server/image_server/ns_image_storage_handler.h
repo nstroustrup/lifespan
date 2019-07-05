@@ -10,7 +10,7 @@
 #include "ns_file_location_specification.h"
 
 #include "ns_image_server_sql.h"
-#include "gzstream.h"
+#include "ns_iostream.h"
 
 void ns_image_handler_submit_alert(const ns_alert::ns_alert_type & alert, const std::string & text, const std::string & detailed_text, ns_image_server_sql * sql);
 void ns_image_handler_submit_alert_to_central_db(const ns_alert::ns_alert_type & alert, const std::string & text, const std::string & detailed_text);
@@ -30,50 +30,6 @@ void ns_image_handler_register_server_event(const ns_ex & ev, ns_image_server_sq
 
 
 ns_performance_statistics_analyzer & performance_statistics();
-
-struct ns_istream {
-	ns_istream(std::ifstream* s) : s1(s), s2(0) {}
-	ns_istream(igzstream* s) : s1(0), s2(s) {}
-	std::istream& operator()() {
-		if (s1 != 0) return *s1;
-		else		 return *s2;
-	}
-	~ns_istream() { destroy(); }
-private:
-	std::ifstream* s1;
-	igzstream* s2;
-
-	void destroy() {
-		if (s1 != 0) {
-			s1->close();
-			ns_safe_delete(s1);
-		}
-		if (s2 != 0)
-			ns_safe_delete(s2);
-	}
-};
-
-struct ns_ostream {
-	ns_ostream(std::ofstream* s) : s1(s), s2(0) {}
-	ns_ostream(ogzstream* s) : s1(0), s2(s) {}
-	std::ostream& operator()() {
-		if (s1 != 0) return *s1;
-		else		 return *s2;
-	}
-	~ns_ostream() { destroy(); }
-private:
-	std::ofstream* s1;
-	ogzstream* s2;
-
-	void destroy() {
-		if (s1 != 0) {
-			s1->close();
-			ns_safe_delete(s1);
-		}
-		if (s2 != 0)
-			ns_safe_delete(s2);
-	}
-};
 
 ns_64_bit ns_image_storage_handler_host_id();
 long ns_image_storage_handler_server_timeout_interval();

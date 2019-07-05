@@ -1680,10 +1680,10 @@ void ns_experiment_storyboard::save_by_hand_annotations(ns_sql & sql,const ns_de
 				q = region_annotation_file_cache.insert(ns_region_annotation_file_cache_type::value_type(p->first,
 					image_server.results_storage.hand_curated_death_times(sub,sql))).first;
 			}
-			ns_acquire_for_scope<std::ostream> out(q->second.output());
+			ns_acquire_for_scope<ns_ostream> out(q->second.output());
 			if (out.is_null())
 				throw ns_ex("Could not open output file:") << q->second.output_filename();
-			p->second.write(out());
+			p->second.write(out()());
 			out.release();
 		}
 		catch(ns_ex & ex){

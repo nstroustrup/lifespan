@@ -654,10 +654,10 @@ void ns_worm_learner::generate_scanner_report(unsigned long first_experiment_tim
 	sub.stop_time = last_experiment_time;
 	ns_image_server_results_file f(image_server.results_storage.device_history(sub,sql));
 	
-	ns_acquire_for_scope<ostream> o(f.output());
-	ns_device_history::write_header(o());
+	ns_acquire_for_scope<ns_ostream> o(f.output());
+	ns_device_history::write_header(o()());
 	for (map<string,ns_device_history>::const_iterator p = devices.begin(); p != devices.end(); p++)
-		p->second.write(o());
+		p->second.write(o()());
 	o.release();
 }
 
@@ -695,12 +695,12 @@ void ns_worm_learner::analyze_time_path(const unsigned long region_id){
 	results_subject.region_id = region_id;
 			
 
-	ns_acquire_for_scope<ostream> position_3d_file_output(
+	ns_acquire_for_scope<ns_ostream> position_3d_file_output(
 	image_server.results_storage.animal_position_timeseries_3d(
 		results_subject,sql,ns_image_server_results_storage::ns_3d_plot
 	).output()
 	);
-	time_path_solution.output_visualization_csv(position_3d_file_output());
+	time_path_solution.output_visualization_csv(position_3d_file_output()());
 	position_3d_file_output.release();
 	cout << time_path_solution.paths.size() << " stationary animals detected.\n";
 	cout << "Path lengths:\n";
@@ -719,7 +719,7 @@ void ns_worm_learner::generate_morphology_statistics(const ns_64_bit & experimen
 	sub.experiment_id = experiment_id;
 	ns_image_server_results_file outf(image_server.results_storage.worm_morphology_timeseries(sub, sql, true));
 
-	ns_acquire_for_scope<ostream> o(outf.output());
+	ns_acquire_for_scope<ns_ostream> o(outf.output());
 
 	sql << "SELECT r.id FROM sample_region_image_info as r, capture_samples as s WHERE r.sample_id = s.id AND s.experiment_id = " << experiment_id;
 	ns_sql_result res;
@@ -735,19 +735,19 @@ void ns_worm_learner::generate_morphology_statistics(const ns_64_bit & experimen
 		ns_image_server_results_subject sub;
 		sub.region_id = ns_atoi64(res[i][0].c_str());
 		ns_image_server_results_file f(image_server.results_storage.worm_morphology_timeseries(sub, sql, false));
-		ns_acquire_for_scope<istream> in(f.input());
+		ns_acquire_for_scope<ns_istream> in(f.input());
 		if (in.is_null())
 			continue;
 		char tmp(0);
 		//only write header once
-		while (!in().fail() && tmp != '\n') {
-			tmp = in().get();
+		while (!in()().fail() && tmp != '\n') {
+			tmp = in()().get();
 			if (write_header)
-				o() << tmp;
+				o()() << tmp;
 		}
 		write_header = false;
 		//write out entire file
-		o() << in().rdbuf();
+		o()() << in()().rdbuf();
 	}
 }
 
@@ -779,8 +779,8 @@ void ns_worm_learner::output_region_statistics(const unsigned long experiment_id
 	sub.experiment_id = experiment_id;
 	ns_image_server_results_file f(image_server.results_storage.capture_region_image_statistics(sub,sql,multi_experiment));
 	
-	ns_acquire_for_scope<ostream> o(f.output());
-	ns_capture_sample_region_data::output_region_data_in_jmp_format_header("",o());
+	ns_acquire_for_scope<ns_ostream> o(f.output());
+	ns_capture_sample_region_data::output_region_data_in_jmp_format_header("",o()());
 	
 	for (unsigned int i = 0; i < experiment_ids.size(); i++){
 		if (experiment_names.size() > 0)
@@ -789,7 +789,7 @@ void ns_worm_learner::output_region_statistics(const unsigned long experiment_id
 		set.load_whole_experiment(experiment_ids[i],sql,false);
 
 		for (unsigned int j = 0; j < set.regions.size(); j++)
-			set.regions[j].output_region_data_in_jmp_format(o());
+			set.regions[j].output_region_data_in_jmp_format(o()());
 
 	}
 	
@@ -826,20 +826,20 @@ void ns_worm_learner::output_device_timing_data(const unsigned long experiment_i
 	
 	ns_image_server_results_file f(image_server.results_storage.capture_sample_image_statistics(sub,sql,multiple_experiments_requested));
 
-	ns_acquire_for_scope<ostream> o(f.output());
+	ns_acquire_for_scope<ns_ostream> o(f.output());
 
 
 	std::string filename;
 	
 	ns_sql_result res;
-	ns_capture_sample_image_statistics::output_jmp_header(o());
+	ns_capture_sample_image_statistics::output_jmp_header(o()());
 	for (unsigned int i = 0 ; i < experiment_ids.size(); i++){
 		ns_capture_sample_statistics_set set;
 		set.load_whole_experiment(experiment_ids[i],sql);
 		
 		for (unsigned int j = 0; j < set.samples.size(); j++){
 			cout << (100 * j) / set.samples.size() << "%...";
-			set.samples[j].output_jmp_format(o());
+			set.samples[j].output_jmp_format(o()());
 			cout << "\n";
 		}
 	}
@@ -951,11 +951,11 @@ void ns_worm_learner::generate_survival_curve_from_hand_annotations(){
 	ns_image_server_results_subject results_subject;
 	results_subject.experiment_id = data_selector.current_experiment_id();
 
-	ns_acquire_for_scope<ostream> survival_jmp_file(image_server.results_storage.survival_data(results_subject,"by_hand","by_hand_interval_annotation_jmp",".csv",sql).output());
-	set.output_JMP_file(ns_death_time_annotation::ns_only_by_hand_annotations,ns_lifespan_experiment_set::ns_output_event_intervals,ns_lifespan_experiment_set::ns_days,survival_jmp_file(),ns_lifespan_experiment_set::ns_simple);
+	ns_acquire_for_scope<ns_ostream> survival_jmp_file(image_server.results_storage.survival_data(results_subject,"by_hand","by_hand_interval_annotation_jmp",".csv",sql).output());
+	set.output_JMP_file(ns_death_time_annotation::ns_only_by_hand_annotations,ns_lifespan_experiment_set::ns_output_event_intervals,ns_lifespan_experiment_set::ns_days,survival_jmp_file()(),ns_lifespan_experiment_set::ns_simple);
 	survival_jmp_file.release();
-	ns_acquire_for_scope<ostream> survival_jmp_file2(image_server.results_storage.survival_data(results_subject,"by_hand","by_hand_event_annotation_jmp",".csv",sql).output());
-	set.output_JMP_file(ns_death_time_annotation::ns_only_by_hand_annotations,ns_lifespan_experiment_set::ns_output_single_event_times,ns_lifespan_experiment_set::ns_days,survival_jmp_file2(),ns_lifespan_experiment_set::ns_simple);
+	ns_acquire_for_scope<ns_ostream> survival_jmp_file2(image_server.results_storage.survival_data(results_subject,"by_hand","by_hand_event_annotation_jmp",".csv",sql).output());
+	set.output_JMP_file(ns_death_time_annotation::ns_only_by_hand_annotations,ns_lifespan_experiment_set::ns_output_single_event_times,ns_lifespan_experiment_set::ns_days,survival_jmp_file2()(),ns_lifespan_experiment_set::ns_simple);
 	survival_jmp_file2.release();
 	
 }
@@ -1331,7 +1331,7 @@ void ns_worm_learner::simulate_multiple_worm_clumps(const bool use_waiting_time_
 		fn+="=require_nearly_slow_moving";
 	else fn+="=do_not_require_nearly_slow_moving";
 
-	ns_acquire_for_scope<ostream> o(image_server.results_storage.survival_data(results_subject,"",fn,"csv",sql).output());
+	ns_acquire_for_scope<ns_ostream> o(image_server.results_storage.survival_data(results_subject,"",fn,"csv",sql).output());
 	ns_lifespan_experiment_set singles,
 							   twos,
 							   threes,
@@ -1358,9 +1358,9 @@ void ns_worm_learner::simulate_multiple_worm_clumps(const bool use_waiting_time_
 		four_pluses.curves[i].metadata.technique = "Unchanged";
 	}
 	
-	singles.output_JMP_file(ns_death_time_annotation::ns_only_machine_annotations,ns_lifespan_experiment_set::ns_output_event_intervals,ns_lifespan_experiment_set::ns_days,o(),ns_lifespan_experiment_set::ns_detailed_compact,true);
-	twos.output_JMP_file(ns_death_time_annotation::ns_only_machine_annotations,ns_lifespan_experiment_set::ns_output_event_intervals,ns_lifespan_experiment_set::ns_days,o(),ns_lifespan_experiment_set::ns_detailed_compact,false);
-	threes.output_JMP_file(ns_death_time_annotation::ns_only_machine_annotations,ns_lifespan_experiment_set::ns_output_event_intervals,ns_lifespan_experiment_set::ns_days,o(),ns_lifespan_experiment_set::ns_detailed_compact,false);
+	singles.output_JMP_file(ns_death_time_annotation::ns_only_machine_annotations,ns_lifespan_experiment_set::ns_output_event_intervals,ns_lifespan_experiment_set::ns_days,o()(),ns_lifespan_experiment_set::ns_detailed_compact,true);
+	twos.output_JMP_file(ns_death_time_annotation::ns_only_machine_annotations,ns_lifespan_experiment_set::ns_output_event_intervals,ns_lifespan_experiment_set::ns_days,o()(),ns_lifespan_experiment_set::ns_detailed_compact,false);
+	threes.output_JMP_file(ns_death_time_annotation::ns_only_machine_annotations,ns_lifespan_experiment_set::ns_output_event_intervals,ns_lifespan_experiment_set::ns_days,o()(),ns_lifespan_experiment_set::ns_detailed_compact,false);
 	//four_pluses.output_JMP_file(ns_lifespan_experiment_set::ns_days,o(),true,false);
 	
 		const unsigned long number_of_repeats(25);
@@ -1392,7 +1392,7 @@ void ns_worm_learner::simulate_multiple_worm_clumps(const bool use_waiting_time_
 			
 			simulated_single_worms.generate_survival(simulated_singles);
 			simulated_singles.specify_analysis_type_and_technique( "1 Worm Clusters");
-			simulated_singles.output_JMP_file(ns_lifespan_experiment_set::ns_output_event_intervals,ns_lifespan_experiment_set::ns_days,o(),ns_lifespan_experiment_set::ns_detailed_compact,false);
+			simulated_singles.output_JMP_file(ns_lifespan_experiment_set::ns_output_event_intervals,ns_lifespan_experiment_set::ns_days,o()(),ns_lifespan_experiment_set::ns_detailed_compact,false);
 			simulated_single_worms.clear();
 			simulated_singles.clear();
 			p->second.initialize_for_picking();
@@ -1466,7 +1466,7 @@ void ns_worm_learner::simulate_multiple_worm_clumps(const bool use_waiting_time_
 			
 			simulated_double_worms.generate_survival(simulated_doubles);
 			simulated_doubles.specify_analysis_type_and_technique( "2 Worm Clusters");
-			simulated_doubles.output_JMP_file(ns_lifespan_experiment_set::ns_output_event_intervals,ns_lifespan_experiment_set::ns_days,o(),ns_lifespan_experiment_set::ns_detailed_compact,false);
+			simulated_doubles.output_JMP_file(ns_lifespan_experiment_set::ns_output_event_intervals,ns_lifespan_experiment_set::ns_days,o()(),ns_lifespan_experiment_set::ns_detailed_compact,false);
 			simulated_double_worms.clear();
 			simulated_doubles.clear();
 			p->second.initialize_for_picking();
@@ -1586,7 +1586,7 @@ void ns_worm_learner::simulate_multiple_worm_clumps(const bool use_waiting_time_
 			}
 			simulated_triple_worms.generate_survival(simulated_triples);
 			simulated_triples.specify_analysis_type_and_technique( "3 Worm Clusters");
-			simulated_triples.output_JMP_file(ns_lifespan_experiment_set::ns_output_event_intervals,ns_lifespan_experiment_set::ns_days,o(),ns_lifespan_experiment_set::ns_detailed_compact,false);
+			simulated_triples.output_JMP_file(ns_lifespan_experiment_set::ns_output_event_intervals,ns_lifespan_experiment_set::ns_days,o()(),ns_lifespan_experiment_set::ns_detailed_compact,false);
 			simulated_triple_worms.clear();
 			simulated_triples.clear();
 			p->second.initialize_for_picking();
@@ -1641,10 +1641,10 @@ void ns_worm_learner::compare_machine_and_by_hand_annotations(){
 	//write all strain data to disk
 	ns_image_server_results_subject results_subject;
 	results_subject.experiment_id = data_selector.current_experiment_id();
-	ns_acquire_for_scope<ostream> animal_data_file(image_server.results_storage.animal_event_data(results_subject,"automated_inspected_comparison",sql).output());
+	ns_acquire_for_scope<ns_ostream> animal_data_file(image_server.results_storage.animal_event_data(results_subject,"automated_inspected_comparison",sql).output());
 	double overall_death_msqerr(0), overall_expansion_msqerr(0), overall_contraction_msqerr(0);
 	ns_64_bit overall_death_count(0), overall_expansion_count(0), overall_contraction_count(0);
-	death_time_annotation_compiler.generate_animal_event_method_comparison(animal_data_file(), overall_death_msqerr, overall_expansion_msqerr, overall_contraction_msqerr, 
+	death_time_annotation_compiler.generate_animal_event_method_comparison(animal_data_file()(), overall_death_msqerr, overall_expansion_msqerr, overall_contraction_msqerr, 
 																							overall_death_count, overall_expansion_count, overall_contraction_count);
 	overall_death_msqerr /= (overall_death_count * (60 * 24 * 60 * 24)); 
 	overall_expansion_msqerr /= (overall_expansion_count * (60 * 24 * 60 * 24));
@@ -1711,7 +1711,7 @@ void ns_worm_learner::generate_scanner_lifespan_statistics(bool use_by_hand_cens
 		ns_lifespan_experiment_set set;
 
 		//attempt to load cached info from disk
-		ns_acquire_for_scope<istream> in(results_file.input());
+		ns_acquire_for_scope<ns_istream> in(results_file.input());
 		if (0 && !in.is_null()){
 			//	load_from_disk
 
@@ -1742,16 +1742,16 @@ void ns_worm_learner::generate_scanner_lifespan_statistics(bool use_by_hand_cens
 				survival_curve_compiler.add(loader.annotations);
 			}
 
-			ns_acquire_for_scope<ostream> out(results_file.output());
-			if (out.is_null())
-				throw ns_ex("Could not open file ") << results_file.output_filename() << " for output";
-			survival_curve_compiler.generate_survival_curve_set(set,ns_death_time_annotation::ns_machine_annotations_if_no_by_hand,false,false);
+			//ns_acquire_for_scope<ns_ostream> out(results_file.output());
+			//if (out.is_null())
+			//	throw ns_ex("Could not open file ") << results_file.output_filename() << " for output";
+			//survival_curve_compiler.generate_survival_curve_set(set,ns_death_time_annotation::ns_machine_annotations_if_no_by_hand,false,false);
 
 			//cache for later
 //			set.output_xml_summary_file(out());
 
 			
-			out.release();
+			//out.release();
 		}
 		
 //		for (unsigned int i = 0; i < set.curves.size(); i++)
@@ -1957,14 +1957,14 @@ void ns_worm_learner::output_movement_analysis_optimization_data(const ns_optimi
 		sub.region_id = plate_id;
 	if (!device_name.empty())
 		sub.device_name = device_name;
-	ns_acquire_for_scope<ostream> posture_analysis_optimization_output, expansion_analysis_optimization_output;
+	ns_acquire_for_scope<ns_ostream> posture_analysis_optimization_output, expansion_analysis_optimization_output;
 	if (run_posture) {
 		posture_analysis_optimization_output.attach(image_server.results_storage.time_path_image_analysis_quantification(sub, "threshold_posture_optimization_stats", true, sql).output());
-		ns_analyzed_image_time_path::write_posture_analysis_optimization_data_header(posture_analysis_optimization_output());
+		ns_analyzed_image_time_path::write_posture_analysis_optimization_data_header(posture_analysis_optimization_output()());
 	}
 	if (run_expansion) {
 		expansion_analysis_optimization_output.attach(image_server.results_storage.time_path_image_analysis_quantification(sub, "threshold_expansion_optimization_stats", true, sql).output());
-		ns_analyzed_image_time_path::write_expansion_analysis_optimization_data_header(expansion_analysis_optimization_output());
+		ns_analyzed_image_time_path::write_expansion_analysis_optimization_data_header(expansion_analysis_optimization_output()());
 	}
 	unsigned region_count(0);
 	for (unsigned int i = 0; i < data_selector.samples.size(); i++) {
@@ -2058,9 +2058,9 @@ void ns_worm_learner::output_movement_analysis_optimization_data(const ns_optimi
 					}
 
 					if (run_posture)
-						posture_analysis_optimization_output() << "\n";
+						posture_analysis_optimization_output()() << "\n";
 					if (run_expansion)
-						expansion_analysis_optimization_output() << "\n";
+						expansion_analysis_optimization_output()() << "\n";
 					cerr << metadata.plate_name() << "\n";
 
 					//get current parameters
@@ -2098,14 +2098,14 @@ void ns_worm_learner::output_movement_analysis_optimization_data(const ns_optimi
 								cout << "Adding to record for plate type " << strain_name << "\n";
 						}
 
-						time_path_image_analyzer.write_posture_analysis_optimization_data(time_path_image_analyzer.posture_model_version_used, posture_analysis_thresholds, posture_analysis_hold_times, metadata, posture_analysis_optimization_output(), p->second.new_parameters_results, &(p_all->second.new_parameters_results));
+						time_path_image_analyzer.write_posture_analysis_optimization_data(time_path_image_analyzer.posture_model_version_used, posture_analysis_thresholds, posture_analysis_hold_times, metadata, posture_analysis_optimization_output()(), p->second.new_parameters_results, &(p_all->second.new_parameters_results));
 						
 						//include existing model file
 						vector<double> thresh;
 						vector<unsigned long>hold_t;
 						thresh.push_back(posture_analysis_model_handle().model_specification.threshold_parameters.stationary_cutoff);
 						hold_t.push_back(posture_analysis_model_handle().model_specification.threshold_parameters.permanance_time_required_in_seconds);
-						time_path_image_analyzer.write_posture_analysis_optimization_data(time_path_image_analyzer.posture_model_version_used, thresh, hold_t, metadata, posture_analysis_optimization_output(), p->second.current_parameter_results,&(p_all->second.current_parameter_results));
+						time_path_image_analyzer.write_posture_analysis_optimization_data(time_path_image_analyzer.posture_model_version_used, thresh, hold_t, metadata, posture_analysis_optimization_output()(), p->second.current_parameter_results,&(p_all->second.current_parameter_results));
 					}
 					if (run_expansion) {
 						map<std::string, ns_parameter_set_optimization_record>::iterator p = best_expansion_parameter_sets.find(strain_name);
@@ -2120,14 +2120,14 @@ void ns_worm_learner::output_movement_analysis_optimization_data(const ns_optimi
 							p_all = best_expansion_parameter_sets.insert(best_expansion_parameter_sets.begin(), std::pair<std::string, ns_parameter_set_optimization_record>("all", ns_parameter_set_optimization_record(posture_analysis_thresholds, posture_analysis_hold_times)));
 							p_all->second.best = posture_analysis_model_handle().model_specification.threshold_parameters;   //set default parameters
 						}
-						time_path_image_analyzer.write_expansion_analysis_optimization_data(expansion_analysis_thresholds, expansion_analysis_hold_times, metadata, expansion_analysis_optimization_output(), p->second.new_parameters_results, &(p_all->second.new_parameters_results));
+						time_path_image_analyzer.write_expansion_analysis_optimization_data(expansion_analysis_thresholds, expansion_analysis_hold_times, metadata, expansion_analysis_optimization_output()(), p->second.new_parameters_results, &(p_all->second.new_parameters_results));
 
 
 						vector<double> thresh;
 						vector<unsigned long>hold_t;
 						thresh.push_back(posture_analysis_model_handle().model_specification.threshold_parameters.death_time_expansion_cutoff);
 						hold_t.push_back(posture_analysis_model_handle().model_specification.threshold_parameters.death_time_expansion_time_kernel_in_seconds);
-						time_path_image_analyzer.write_expansion_analysis_optimization_data(thresh, hold_t, metadata, expansion_analysis_optimization_output(), p->second.current_parameter_results, &(p_all->second.current_parameter_results));
+						time_path_image_analyzer.write_expansion_analysis_optimization_data(thresh, hold_t, metadata, expansion_analysis_optimization_output()(), p->second.current_parameter_results, &(p_all->second.current_parameter_results));
 					}
 
 				}
@@ -2243,8 +2243,8 @@ void ns_worm_learner::output_movement_analysis_optimization_data(const ns_optimi
 			expansion_p->second.best.permanance_time_required_in_seconds = posture_p->second.best.permanance_time_required_in_seconds;
 			expansion_p->second.best.posture_cutoff = posture_p->second.best.posture_cutoff;
 			expansion_p->second.best.stationary_cutoff = posture_p->second.best.stationary_cutoff;
-			ns_acquire_for_scope<ostream> both_parameter_set(image_server.results_storage.optimized_posture_analysis_parameter_set(sub, expansion_p->second.filename, sql).output());
-			expansion_p->second.best.write(both_parameter_set());
+			ns_acquire_for_scope<ns_ostream> both_parameter_set(image_server.results_storage.optimized_posture_analysis_parameter_set(sub, expansion_p->second.filename, sql).output());
+			expansion_p->second.best.write(both_parameter_set()());
 			both_parameter_set.release();
 		}
 	}
@@ -2260,16 +2260,16 @@ void ns_worm_learner::output_movement_analysis_optimization_data(const ns_optimi
 		for (map<std::string, ns_parameter_set_optimization_record>::iterator p = best_parameter_sets->begin(); p != best_parameter_sets->end(); p++) {
 			if (p->second.new_parameters_results.number_valid_worms == 0)
 				continue;
-			ns_acquire_for_scope<ostream> parameter_set_output(image_server.results_storage.optimized_posture_analysis_parameter_set(sub, p->second.filename, sql).output());
-			p->second.best.write(parameter_set_output());
+			ns_acquire_for_scope<ns_ostream> parameter_set_output(image_server.results_storage.optimized_posture_analysis_parameter_set(sub, p->second.filename, sql).output());
+			p->second.best.write(parameter_set_output()());
 			parameter_set_output.release();
 		}
 	}
 
 
 
-	ns_acquire_for_scope<ostream> summary(image_server.results_storage.optimized_posture_analysis_parameter_set(sub, "threshold_optimization_summary", sql).output());
-	summary() << results_text;
+	ns_acquire_for_scope<ns_ostream> summary(image_server.results_storage.optimized_posture_analysis_parameter_set(sub, "threshold_optimization_summary", sql).output());
+	summary()() << results_text;
 	summary.release();
 	ns_text_dialog td;
 	td.grid_text.push_back(results_text);
@@ -2565,7 +2565,7 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 	if (!device_name.empty())
 		sub.device_name = device_name;
 	
-	ns_acquire_for_scope<ostream> o_all;
+	ns_acquire_for_scope<ns_ostream> o_all;
 	
 	ns_region_metadata m;
 
@@ -2619,7 +2619,7 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 				if (!r_m.matches(ns_region_metadata::ns_strain_and_conditions_1_2_and_3,m))
 					continue;
 			}
-			ns_acquire_for_scope<istream> in(image_server.results_storage.time_path_image_analysis_quantification(sub,"detailed",false,sql,detail_level==ns_quantification_abbreviated_detailed,false).input());
+			ns_acquire_for_scope<ns_istream> in(image_server.results_storage.time_path_image_analysis_quantification(sub,"detailed",false,sql,detail_level==ns_quantification_abbreviated_detailed,false).input());
 			if (in.is_null()){
 				cerr << "Could not load cached movement quantification analysis for " << res[i][2] << "::" << res[i][1] << "\n";
 				continue;
@@ -2627,19 +2627,19 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 			//remove header
 			char a(0);
 			if (header_written){
-				while(a!='\n' && !in().fail())
-					a = in().get();
-				if (in().fail())
+				while(a!='\n' && !in()().fail())
+					a = in()().get();
+				if (in()().fail())
 					continue;
 				header_written = true;
 			}
 			while(true){
-				char a(in().get());
-				if (in().fail())
+				char a(in()().get());
+				if (in()().fail())
 					break;
-				o_all().put(a);
+				o_all()().put(a);
 			}
-			if (o_all().fail())
+			if (o_all()().fail())
 				throw ns_ex("Error while writing output");
 			in.release();
 		}
@@ -2750,14 +2750,14 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 					if (!header_written){
 						o_all.attach(image_server.results_storage.time_path_image_analysis_quantification(sub,"detailed",true,sql,true).output());
 						if (movement_results.samples[i].regions[j]->time_path_image_analyzer->size() > 0){
-							movement_results.samples[i].regions[j]->time_path_image_analyzer->group(0).paths[0].write_detailed_movement_quantification_analysis_header(o_all());
-							o_all() <<"\n";
+							movement_results.samples[i].regions[j]->time_path_image_analyzer->group(0).paths[0].write_detailed_movement_quantification_analysis_header(o_all()());
+							o_all()() <<"\n";
 						}
 						header_written = true;
 					}
 			
 					movement_results.samples[i].regions[j]->time_path_image_analyzer->write_detailed_movement_quantification_analysis_data(
-																			movement_results.samples[i].regions[j]->metadata,o_all(),false,-1,true);
+																			movement_results.samples[i].regions[j]->metadata,o_all()(),false,-1,true);
 				
 				}
 				else if (detail_level == ns_quantification_detailed_with_by_hand){
@@ -2765,14 +2765,14 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 					if (!header_written){
 						o_all.attach(image_server.results_storage.time_path_image_analysis_quantification(sub,"detailed_with_by_hand",true,sql).output());
 						if (movement_results.samples[i].regions[j]->time_path_image_analyzer->size() > 0){
-							movement_results.samples[i].regions[j]->time_path_image_analyzer->group(0).paths[0].write_detailed_movement_quantification_analysis_header(o_all());
-							o_all() <<"\n";
+							movement_results.samples[i].regions[j]->time_path_image_analyzer->group(0).paths[0].write_detailed_movement_quantification_analysis_header(o_all()());
+							o_all()() <<"\n";
 						}
 						header_written = true;
 					}
 			
 					movement_results.samples[i].regions[j]->time_path_image_analyzer->write_detailed_movement_quantification_analysis_data(
-																	movement_results.samples[i].regions[j]->metadata,o_all(),(detail_level == ns_quantification_detailed_with_by_hand));
+																	movement_results.samples[i].regions[j]->metadata,o_all()(),(detail_level == ns_quantification_detailed_with_by_hand));
 				}
 				else if (detail_level == ns_build_worm_markov_posture_model_from_by_hand_annotations) {
 
@@ -2870,8 +2870,8 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 		for (auto p = base_observation_estimator.begin(); p != base_observation_estimator.end(); p++) {
 			std::cout << ns_to_string_short((100.0 * estimators_compiled) / base_observation_estimator.size(), 2) << "%...";
 			estimators_compiled++;
-			ns_acquire_for_scope<ostream> all_observations(image_server.results_storage.time_path_image_analysis_quantification(sub, std::string("hmm_obs=") + p->first, true, sql).output());
-			p->second.write_observation_data(all_observations(), experiment_name);
+			ns_acquire_for_scope<ns_ostream> all_observations(image_server.results_storage.time_path_image_analysis_quantification(sub, std::string("hmm_obs=") + p->first, true, sql).output());
+			p->second.write_observation_data(all_observations()(), experiment_name);
 			all_observations.release();
 		}
 		bool test_different_state_restrictions_on_viterbi_algorithm = true;
@@ -2901,8 +2901,8 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 
 			ns_image_server_results_file ps(image_server.results_storage.optimized_posture_analysis_parameter_set(sub, std::string("hmm=") + p->first, sql));
 			model_filenames[p->first] = ps.output_filename();
-			ns_acquire_for_scope<ostream> both_parameter_set(ps.output());
-			p->second.all_vs_all().estimator.write(both_parameter_set());
+			ns_acquire_for_scope<ns_ostream> both_parameter_set(ps.output());
+			p->second.all_vs_all().estimator.write(both_parameter_set()());
 			both_parameter_set.release();
 		}
 		cout << "\nTesting HMM models on current experiment...\n";
@@ -2991,13 +2991,13 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 			if (movement_N < 50 || expansion_N < 50)
 				model_building_and_testing_info[p->first] += "Warning: These results will not be meaningful until more worms are annotated by hand.\n";
 			else model_building_and_testing_info[p->first] += "The model file was written to \"" + model_filenames[p->first] + "\"\n";
-			ns_acquire_for_scope<ostream>  performance_stats_output(image_server.results_storage.time_path_image_analysis_quantification(sub, std::string("hmm_performance=") + p->first, true, sql).output());
+			ns_acquire_for_scope<ns_ostream>  performance_stats_output(image_server.results_storage.time_path_image_analysis_quantification(sub, std::string("hmm_performance=") + p->first, true, sql).output());
 			std::vector<std::string > measurement_names;
 			if (p->second.all_vs_all().results.animals.size() > 0)
 				measurement_names = p->second.all_vs_all().results.animals[0].state_info_variable_names;
-			p->second.all_vs_all().results.write_error_header(performance_stats_output(), measurement_names);
+			p->second.all_vs_all().results.write_error_header(performance_stats_output()(), measurement_names);
 			for (unsigned int e = 0; e < p->second.estimators.size(); e++) {
-				p->second.estimators[e].results.write_error_data(performance_stats_output(), p->second.estimators[e].description, p->second.estimators[e].replicate_id,metadata_cache);
+				p->second.estimators[e].results.write_error_data(performance_stats_output()(), p->second.estimators[e].description, p->second.estimators[e].replicate_id,metadata_cache);
 			}
 			performance_stats_output.release();
 			unsigned int tmp = 0;
@@ -3008,14 +3008,14 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 				if (tmp > 0)
 					suffix = "=" + ns_to_string(tmp);
 				//cout << "Writing path data for " << p->first << "\n";
-				ns_acquire_for_scope<ostream>  path_stats_output(image_server.results_storage.time_path_image_analysis_quantification(sub, std::string("hmm_path=") + p->first + suffix, true, sql).output());
-				if (path_stats_output().fail()) {
+				ns_acquire_for_scope<ns_ostream>  path_stats_output(image_server.results_storage.time_path_image_analysis_quantification(sub, std::string("hmm_path=") + p->first + suffix, true, sql).output());
+				if (path_stats_output()().fail()) {
 					cout << "Could not open file for " << p->first << "\n";
 					continue;
 				}
 				tmp++;
-				q->results.write_hmm_path_header(path_stats_output());
-				q->results.write_hmm_path_data(path_stats_output(), metadata_cache);
+				q->results.write_hmm_path_header(path_stats_output()());
+				q->results.write_hmm_path_data(path_stats_output()(), metadata_cache);
 				path_stats_output.release();
 				
 			}
@@ -3024,8 +3024,8 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 		for (auto p = model_building_and_testing_info.begin(); p != model_building_and_testing_info.end(); p++) 
 			results_text += model_building_and_testing_info[p->first] + "\n";
 
-		ns_acquire_for_scope<ostream> summary(image_server.results_storage.optimized_posture_analysis_parameter_set(sub, "hmm_optimization_summary", sql).output());
-		summary() << results_text;
+		ns_acquire_for_scope<ns_ostream> summary(image_server.results_storage.optimized_posture_analysis_parameter_set(sub, "hmm_optimization_summary", sql).output());
+		summary()() << results_text;
 		summary.release();
 		ns_text_dialog td;
 		td.grid_text.push_back(results_text);
@@ -3968,10 +3968,10 @@ void ns_worm_learner::test_time_path_analysis_parameters(unsigned long region_id
 
 	ns_image_server_results_subject sub2;
 	sub2.region_id = region_id;
-	ns_acquire_for_scope<std::ostream> quant(image_server.results_storage.animal_position_timeseries_3d(
+	ns_acquire_for_scope<ns_ostream> quant(image_server.results_storage.animal_position_timeseries_3d(
 		sub2,sql,ns_image_server_results_storage::ns_3d_plot,"path_quantification").output());
 
-	quant() << "Min Stationary object path fragment duration (hours),Min Final stationary path duration (hours),"
+	quant()() << "Min Stationary object path fragment duration (hours),Min Final stationary path duration (hours),"
 				"Total objects detected,Number of actual worms, Number of non-worm objects, Number of low-density_paths, Path ID,Center X, Center Y,Start Time,End Time,Duration (hours),Number of Observations in path,Low Density Path,Minimum distance to censored location, Likely censored, New This Round\n";
 	vector<vector<ns_time_path_solution> > solutions(parameters.size());
 	for (unsigned int i = 0; i < parameters.size(); i++){
@@ -3992,12 +3992,12 @@ void ns_worm_learner::test_time_path_analysis_parameters(unsigned long region_id
 			std::string type = "OPFD=" + ns_to_string(parameters[i][j].min_stationary_object_path_fragment_duration_in_seconds) + "&"
 								"SPD=" + ns_to_string(parameters[i][j].min_final_stationary_path_duration_in_minutes);
 		 
-			ns_acquire_for_scope<ostream> position_3d_file_output(
+			ns_acquire_for_scope<ns_ostream> position_3d_file_output(
 			image_server.results_storage.animal_position_timeseries_3d(
 				sub,sql,ns_image_server_results_storage::ns_3d_plot,type
 			).output()
 			);
-			solutions[i][j].output_visualization_csv(position_3d_file_output());
+			solutions[i][j].output_visualization_csv(position_3d_file_output()());
 			position_3d_file_output.release();
 
 			image_server.results_storage.write_animal_position_timeseries_3d_launcher(sub,ns_image_server_results_storage::ns_3d_plot,sql,type);
@@ -4035,7 +4035,7 @@ void ns_worm_learner::test_time_path_analysis_parameters(unsigned long region_id
 			//output metadata for each path in this solution
 			for (unsigned int k = 0; k < s.path_groups.size(); k++){
 				ns_vector_2i center(s.paths[s.path_groups[k].path_ids[0]].center / s.paths[s.path_groups[k].path_ids[0]].stationary_elements.size());
-				quant()  << parameters[i][j].min_stationary_object_path_fragment_duration_in_seconds/(60.0*60.0) << ","
+				quant()()  << parameters[i][j].min_stationary_object_path_fragment_duration_in_seconds/(60.0*60.0) << ","
 						<< parameters[i][j].min_final_stationary_path_duration_in_minutes/60.0 << ","
 						<< s.path_groups.size() << ","
 						<< s.path_groups.size()-num_censored << ","
@@ -4565,11 +4565,11 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 	ns_image_server_results_subject results_subject;
 	results_subject.experiment_id = experiment_id;
 	results_subject.experiment_name = movement_results.experiment_name();
-	vector<map<ns_death_time_annotation::ns_by_hand_annotation_integration_strategy , ns_acquire_for_scope<ostream> > > movement_data_plate_file_with_incomplete(ns_death_time_annotation::ns_number_of_multiworm_censoring_strategies);
-	vector<map<ns_death_time_annotation::ns_by_hand_annotation_integration_strategy , ns_acquire_for_scope<ostream> > > movement_data_plate_file_without_incomplete(ns_death_time_annotation::ns_number_of_multiworm_censoring_strategies);
-	ns_acquire_for_scope<ostream> movement_data_plate_file_with_alternate_missing_return_strategy_1,
+	vector<map<ns_death_time_annotation::ns_by_hand_annotation_integration_strategy , ns_acquire_for_scope<ns_ostream> > > movement_data_plate_file_with_incomplete(ns_death_time_annotation::ns_number_of_multiworm_censoring_strategies);
+	vector<map<ns_death_time_annotation::ns_by_hand_annotation_integration_strategy , ns_acquire_for_scope<ns_ostream> > > movement_data_plate_file_without_incomplete(ns_death_time_annotation::ns_number_of_multiworm_censoring_strategies);
+	ns_acquire_for_scope<ns_ostream> movement_data_plate_file_with_alternate_missing_return_strategy_1,
 								  movement_data_plate_file_with_alternate_missing_return_strategy_2;
-	ns_acquire_for_scope<ostream> censoring_diagnostics_by_plate_machine,
+	ns_acquire_for_scope<ns_ostream> censoring_diagnostics_by_plate_machine,
 								  censoring_diagnostics_by_plate_by_hand;
 
 	const ns_death_time_annotation::ns_missing_worm_return_strategy default_missing_return_strategy(ns_death_time_annotation::ns_censoring_minimize_missing_times),
@@ -4594,7 +4594,7 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 					ns_death_time_annotation::ns_censoring_minimize_missing_times,
 					ns_include_unchanged,
 					results_subject,"grouped_by_plate","movement_timeseries",sql).output());
-				ns_worm_movement_measurement_summary::out_header(movement_data_plate_file_with_incomplete[censoring_strategy][by_hand_annotation_integration_strategy[bhais]]());
+				ns_worm_movement_measurement_summary::out_header(movement_data_plate_file_with_incomplete[censoring_strategy][by_hand_annotation_integration_strategy[bhais]]()());
 				if (output_force_fast) {
 					movement_data_plate_file_without_incomplete[censoring_strategy][by_hand_annotation_integration_strategy[bhais]].attach(
 						image_server.results_storage.movement_timeseries_data(
@@ -4603,7 +4603,7 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 							ns_death_time_annotation::ns_censoring_minimize_missing_times,
 							ns_force_to_fast_moving,
 							results_subject, "grouped_by_plate", "movement_timeseries", sql).output());
-					ns_worm_movement_measurement_summary::out_header(movement_data_plate_file_without_incomplete[censoring_strategy][by_hand_annotation_integration_strategy[bhais]]());
+					ns_worm_movement_measurement_summary::out_header(movement_data_plate_file_without_incomplete[censoring_strategy][by_hand_annotation_integration_strategy[bhais]]()());
 				}
 			}
 		}	
@@ -4619,8 +4619,8 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 			default_missing_return_strategy,
 			ns_include_unchanged,
 			results_subject,"grouped_by_plate","censoring_diagnostics",sql).output());
-		ns_worm_movement_summary_series::output_censoring_diagnostic_header(censoring_diagnostics_by_plate_by_hand());
-		ns_worm_movement_summary_series::output_censoring_diagnostic_header(censoring_diagnostics_by_plate_machine());
+		ns_worm_movement_summary_series::output_censoring_diagnostic_header(censoring_diagnostics_by_plate_by_hand()());
+		ns_worm_movement_summary_series::output_censoring_diagnostic_header(censoring_diagnostics_by_plate_machine()());
 		if (output_alternative_censoring_timings) {
 		movement_data_plate_file_with_alternate_missing_return_strategy_1.attach(image_server.results_storage.movement_timeseries_data(
 			ns_death_time_annotation::ns_machine_annotations_if_no_by_hand,
@@ -4628,14 +4628,14 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 			alternate_missing_return_strategy_1,
 			ns_include_unchanged,
 			results_subject,"grouped_by_plate","movement_timeseries",sql).output());
-		ns_worm_movement_measurement_summary::out_header(movement_data_plate_file_with_alternate_missing_return_strategy_1());	
+		ns_worm_movement_measurement_summary::out_header(movement_data_plate_file_with_alternate_missing_return_strategy_1()());	
 			movement_data_plate_file_with_alternate_missing_return_strategy_2.attach(image_server.results_storage.movement_timeseries_data(
 				ns_death_time_annotation::ns_machine_annotations_if_no_by_hand,
 				ns_death_time_annotation::ns_merge_multiple_worm_clusters_and_missing_and_censor,
 				alternate_missing_return_strategy_2,
 				ns_include_unchanged,
 				results_subject, "grouped_by_plate", "movement_timeseries", sql).output());
-			ns_worm_movement_measurement_summary::out_header(movement_data_plate_file_with_alternate_missing_return_strategy_2());
+			ns_worm_movement_measurement_summary::out_header(movement_data_plate_file_with_alternate_missing_return_strategy_2()());
 		}
 	}
 	
@@ -4705,16 +4705,16 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 							default_missing_return_strategy,
 							compiled_region,ns_force_to_fast_moving);
 						series.generate_censoring_annotations(movement_results.samples[i].regions[j]->metadata,0,set);
-						series.to_file(movement_results.samples[i].regions[j]->metadata,movement_data_plate_file_with_incomplete[censoring_strategy][by_hand_annotation_integration_strategy[bhais]]());
+						series.to_file(movement_results.samples[i].regions[j]->metadata,movement_data_plate_file_with_incomplete[censoring_strategy][by_hand_annotation_integration_strategy[bhais]]()());
 						if (output_force_fast)
-						series.to_file(movement_results.samples[i].regions[j]->metadata,movement_data_plate_file_without_incomplete[censoring_strategy][by_hand_annotation_integration_strategy[bhais]]());
+						series.to_file(movement_results.samples[i].regions[j]->metadata,movement_data_plate_file_without_incomplete[censoring_strategy][by_hand_annotation_integration_strategy[bhais]]()());
 
 						series.from_death_time_annotations(by_hand_annotation_integration_strategy[bhais],
 							(ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy,
 							default_missing_return_strategy,
 							compiled_region,ns_include_unchanged);
 						series.generate_censoring_annotations(movement_results.samples[i].regions[j]->metadata,0,set);
-						series.to_file(movement_results.samples[i].regions[j]->metadata,movement_data_plate_file_with_incomplete[censoring_strategy][by_hand_annotation_integration_strategy[bhais]]());
+						series.to_file(movement_results.samples[i].regions[j]->metadata,movement_data_plate_file_with_incomplete[censoring_strategy][by_hand_annotation_integration_strategy[bhais]]()());
 					
 						if (censoring_strategy == ns_death_time_annotation::ns_merge_multiple_worm_clusters_and_missing_and_censor){
 
@@ -4725,14 +4725,14 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 								compiled_region,ns_include_unchanged);
 							series.generate_censoring_annotations(movement_results.samples[i].regions[j]->metadata,0,set);
 							series.to_file(movement_results.samples[i].regions[j]->metadata,
-									movement_data_plate_file_with_alternate_missing_return_strategy_1());
+									movement_data_plate_file_with_alternate_missing_return_strategy_1()());
 								series.from_death_time_annotations(by_hand_annotation_integration_strategy[bhais],
 									(ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy,
 									alternate_missing_return_strategy_2,
 									compiled_region, ns_include_unchanged);
 
 								series.to_file(movement_results.samples[i].regions[j]->metadata,
-									movement_data_plate_file_with_alternate_missing_return_strategy_2());
+									movement_data_plate_file_with_alternate_missing_return_strategy_2()());
 							}
 
 						}
@@ -4752,13 +4752,13 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 
 	}
 	for (unsigned int i = 0; i < movement_data_plate_file_with_incomplete.size(); i++){
-		for (map<ns_death_time_annotation::ns_by_hand_annotation_integration_strategy , ns_acquire_for_scope<ostream> >::iterator p = 
+		for (map<ns_death_time_annotation::ns_by_hand_annotation_integration_strategy , ns_acquire_for_scope<ns_ostream> >::iterator p = 
 				movement_data_plate_file_with_incomplete[i].begin();
 				p != movement_data_plate_file_with_incomplete[i].end();
 				p++)
 			p->second.release();
 		if (output_force_fast) {
-			for (map<ns_death_time_annotation::ns_by_hand_annotation_integration_strategy, ns_acquire_for_scope<ostream> >::iterator p =
+			for (map<ns_death_time_annotation::ns_by_hand_annotation_integration_strategy, ns_acquire_for_scope<ns_ostream> >::iterator p =
 				movement_data_plate_file_without_incomplete[i].begin();
 				p != movement_data_plate_file_without_incomplete[i].end();
 				p++)
@@ -4779,20 +4779,20 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 	if (vis == ns_survival_curve){
 		//STEP 4 in generating death times: open a bunch of output files
 
-		ns_acquire_for_scope<ostream> survival_jmp_file_detailed_days(image_server.results_storage.survival_data(results_subject,"survival_with_alternate_censoring_schemes","machine_jmp_days","csv",sql).output());
+		ns_acquire_for_scope<ns_ostream> survival_jmp_file_detailed_days(image_server.results_storage.survival_data(results_subject,"survival_with_alternate_censoring_schemes","machine_jmp_days","csv",sql).output());
 		
-		ns_acquire_for_scope<ostream> survival_jmp_file_machine_simple_days(image_server.results_storage.survival_data(results_subject,"survival_simple","machine_jmp_days","csv",sql).output());
-		ns_acquire_for_scope<ostream> survival_jmp_file_machine_hand_simple_days(image_server.results_storage.survival_data(results_subject,"survival_simple","machine_hand_jmp_days","csv",sql).output());
+		ns_acquire_for_scope<ns_ostream> survival_jmp_file_machine_simple_days(image_server.results_storage.survival_data(results_subject,"survival_simple","machine_jmp_days","csv",sql).output());
+		ns_acquire_for_scope<ns_ostream> survival_jmp_file_machine_hand_simple_days(image_server.results_storage.survival_data(results_subject,"survival_simple","machine_hand_jmp_days","csv",sql).output());
 	
-		ns_acquire_for_scope<ostream> survival_jmp_file_simple_with_control_groups_days(image_server.results_storage.survival_data(results_subject,"survival_simple_with_control_groups","machine_jmp_days","csv",sql).output());
+		ns_acquire_for_scope<ns_ostream> survival_jmp_file_simple_with_control_groups_days(image_server.results_storage.survival_data(results_subject,"survival_simple_with_control_groups","machine_jmp_days","csv",sql).output());
 	
-		ns_acquire_for_scope<ostream> survival_jmp_file_time_by_hand_interval_simple_days(image_server.results_storage.survival_data(results_subject,"survival_interval","machine_jmp_time_interval_days","csv",sql).output());
+		ns_acquire_for_scope<ns_ostream> survival_jmp_file_time_by_hand_interval_simple_days(image_server.results_storage.survival_data(results_subject,"survival_interval","machine_jmp_time_interval_days","csv",sql).output());
 	
-		ns_acquire_for_scope<ostream> survival_jmp_file_time_machine_interval_simple_days(image_server.results_storage.survival_data(results_subject,"survival_interval","machine_hand_jmp_time_interval_days","csv",sql).output());
+		ns_acquire_for_scope<ns_ostream> survival_jmp_file_time_machine_interval_simple_days(image_server.results_storage.survival_data(results_subject,"survival_interval","machine_hand_jmp_time_interval_days","csv",sql).output());
 		
-		ns_acquire_for_scope<ostream> annotation_diagnostics(image_server.results_storage.survival_data(results_subject,"survival_simple","annotation_diagnostics","csv",sql).output());
+		ns_acquire_for_scope<ns_ostream> annotation_diagnostics(image_server.results_storage.survival_data(results_subject,"survival_simple","annotation_diagnostics","csv",sql).output());
 		
-		survival_curve_compiler.generate_validation_information(annotation_diagnostics());
+		survival_curve_compiler.generate_validation_information(annotation_diagnostics()());
 		annotation_diagnostics.release();
 	
 
@@ -4817,19 +4817,19 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 		cerr << "Writing Files...\n";
 		//STEP 5 in generating death times: write everything out to disk
 
-		machine_set.output_JMP_file(ns_death_time_annotation::ns_only_machine_annotations,ns_lifespan_experiment_set::ns_output_single_event_times,ns_lifespan_experiment_set::ns_days,survival_jmp_file_machine_simple_days(),ns_lifespan_experiment_set::ns_simple);
+		machine_set.output_JMP_file(ns_death_time_annotation::ns_only_machine_annotations,ns_lifespan_experiment_set::ns_output_single_event_times,ns_lifespan_experiment_set::ns_days,survival_jmp_file_machine_simple_days()(),ns_lifespan_experiment_set::ns_simple);
 		survival_jmp_file_machine_simple_days.release();	
-		machine_hand_set.output_JMP_file(ns_death_time_annotation::ns_machine_annotations_if_no_by_hand,ns_lifespan_experiment_set::ns_output_single_event_times,ns_lifespan_experiment_set::ns_days,survival_jmp_file_machine_hand_simple_days(),ns_lifespan_experiment_set::ns_simple);
+		machine_hand_set.output_JMP_file(ns_death_time_annotation::ns_machine_annotations_if_no_by_hand,ns_lifespan_experiment_set::ns_output_single_event_times,ns_lifespan_experiment_set::ns_days,survival_jmp_file_machine_hand_simple_days()(),ns_lifespan_experiment_set::ns_simple);
 		survival_jmp_file_machine_hand_simple_days.release();	
-		machine_set.output_JMP_file(ns_death_time_annotation::ns_machine_annotations_if_no_by_hand,ns_lifespan_experiment_set::ns_output_single_event_times,ns_lifespan_experiment_set::ns_days,survival_jmp_file_simple_with_control_groups_days(),ns_lifespan_experiment_set::ns_simple_with_control_groups);
+		machine_set.output_JMP_file(ns_death_time_annotation::ns_machine_annotations_if_no_by_hand,ns_lifespan_experiment_set::ns_output_single_event_times,ns_lifespan_experiment_set::ns_days,survival_jmp_file_simple_with_control_groups_days()(),ns_lifespan_experiment_set::ns_simple_with_control_groups);
 		survival_jmp_file_simple_with_control_groups_days.release();
-		machine_set.output_JMP_file(ns_death_time_annotation::ns_machine_annotations_if_no_by_hand,ns_lifespan_experiment_set::ns_output_single_event_times,ns_lifespan_experiment_set::ns_days,survival_jmp_file_detailed_days(),ns_lifespan_experiment_set::ns_detailed_with_censoring_repeats);
+		machine_set.output_JMP_file(ns_death_time_annotation::ns_machine_annotations_if_no_by_hand,ns_lifespan_experiment_set::ns_output_single_event_times,ns_lifespan_experiment_set::ns_days,survival_jmp_file_detailed_days()(),ns_lifespan_experiment_set::ns_detailed_with_censoring_repeats);
 		survival_jmp_file_detailed_days.release();	
 		
 
-		machine_set.output_JMP_file(ns_death_time_annotation::ns_only_machine_annotations,ns_lifespan_experiment_set::ns_output_event_intervals,ns_lifespan_experiment_set::ns_days,survival_jmp_file_time_machine_interval_simple_days(),ns_lifespan_experiment_set::ns_simple);
+		machine_set.output_JMP_file(ns_death_time_annotation::ns_only_machine_annotations,ns_lifespan_experiment_set::ns_output_event_intervals,ns_lifespan_experiment_set::ns_days,survival_jmp_file_time_machine_interval_simple_days()(),ns_lifespan_experiment_set::ns_simple);
 		survival_jmp_file_time_machine_interval_simple_days.release();	
-		machine_set.output_JMP_file(ns_death_time_annotation::ns_machine_annotations_if_no_by_hand,ns_lifespan_experiment_set::ns_output_event_intervals,ns_lifespan_experiment_set::ns_days,survival_jmp_file_time_by_hand_interval_simple_days(),ns_lifespan_experiment_set::ns_simple);
+		machine_set.output_JMP_file(ns_death_time_annotation::ns_machine_annotations_if_no_by_hand,ns_lifespan_experiment_set::ns_output_event_intervals,ns_lifespan_experiment_set::ns_days,survival_jmp_file_time_by_hand_interval_simple_days()(),ns_lifespan_experiment_set::ns_simple);
 		survival_jmp_file_time_by_hand_interval_simple_days.release();	
 		
 		cerr << "Writing Detailed Animal Files\n";
@@ -4849,8 +4849,8 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 			r_set.set_sample_data(s_set);
 		}
 	*/
-		ns_acquire_for_scope<ostream> animal_data_file(image_server.results_storage.animal_event_data(results_subject,"detailed_animal_data",sql).output());
-		survival_curve_compiler.generate_detailed_animal_data_file(include_region_image_info,animal_data_file());
+		ns_acquire_for_scope<ns_ostream> animal_data_file(image_server.results_storage.animal_event_data(results_subject,"detailed_animal_data",sql).output());
+		survival_curve_compiler.generate_detailed_animal_data_file(include_region_image_info,animal_data_file()());
 		animal_data_file.release();
 		
 		cerr << "Done\n";
@@ -4900,14 +4900,14 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 					ns_image_server_results_subject sub;
 					sub.experiment_id = movement_results.experiment_id();
 					std::string subdirectory = separate_scanners ? "strain_aggregates_per_scanner" : "strain_aggregates";
-					ns_acquire_for_scope<ostream> output_data_with_incomplete(image_server.results_storage.movement_timeseries_data(
+					ns_acquire_for_scope<ns_ostream> output_data_with_incomplete(image_server.results_storage.movement_timeseries_data(
 						by_hand_annotation_integration_strategy[bhais],
 						(ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy,
 						default_missing_return_strategy,
 						ns_include_unchanged,
 						sub,
 						subdirectory , "movement_timeseries", sql).output());
-					ns_acquire_for_scope<ostream> output_data_without_incomplete;
+					ns_acquire_for_scope<ns_ostream> output_data_without_incomplete;
 					if (output_force_fast) {
 						output_data_without_incomplete.attach(image_server.results_storage.movement_timeseries_data(
 							by_hand_annotation_integration_strategy[bhais],
@@ -4920,22 +4920,22 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 					if (output_data_with_incomplete.is_null() || (output_force_fast && output_data_without_incomplete.is_null()))
 						throw ns_ex("Could not open aggregate data file");
 
-					ns_acquire_for_scope<ostream> censoring_diagnostics(image_server.results_storage.movement_timeseries_data(
+					ns_acquire_for_scope<ns_ostream> censoring_diagnostics(image_server.results_storage.movement_timeseries_data(
 						by_hand_annotation_integration_strategy[bhais],
 						ns_death_time_annotation::ns_merge_multiple_worm_clusters_and_missing_and_censor,
 						default_missing_return_strategy,
 						ns_include_unchanged,
 						sub, subdirectory, "censoring_diagnostics", sql).output());
 
-					ns_worm_movement_summary_series::output_censoring_diagnostic_header(censoring_diagnostics());
+					ns_worm_movement_summary_series::output_censoring_diagnostic_header(censoring_diagnostics()());
 
-					ns_worm_movement_measurement_summary::out_header(output_data_with_incomplete());
+					ns_worm_movement_measurement_summary::out_header(output_data_with_incomplete()());
 					if (output_force_fast)
-						ns_worm_movement_measurement_summary::out_header(output_data_without_incomplete());
+						ns_worm_movement_measurement_summary::out_header(output_data_without_incomplete()());
 
 
-					ns_acquire_for_scope<ostream> output_data_alternate_missing_return_strategy_1;
-					ns_acquire_for_scope<ostream> output_data_alternate_missing_return_strategy_2;
+					ns_acquire_for_scope<ns_ostream> output_data_alternate_missing_return_strategy_1;
+					ns_acquire_for_scope<ns_ostream> output_data_alternate_missing_return_strategy_2;
 					if (censoring_strategy == ns_death_time_annotation::ns_merge_multiple_worm_clusters_and_missing_and_censor) {
 						if (output_alternative_censoring_timings) {
 							output_data_alternate_missing_return_strategy_1.attach(image_server.results_storage.movement_timeseries_data(
@@ -4944,7 +4944,7 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 								alternate_missing_return_strategy_1,
 								ns_include_unchanged, sub,
 								subdirectory, "movement_timeseries", sql).output());
-							ns_worm_movement_measurement_summary::out_header(output_data_alternate_missing_return_strategy_1());
+							ns_worm_movement_measurement_summary::out_header(output_data_alternate_missing_return_strategy_1()());
 
 							output_data_alternate_missing_return_strategy_2.attach(image_server.results_storage.movement_timeseries_data(
 								by_hand_annotation_integration_strategy[bhais],
@@ -4952,7 +4952,7 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 								alternate_missing_return_strategy_2,
 								ns_include_unchanged, sub,
 								subdirectory, "movement_timeseries", sql).output());
-							ns_worm_movement_measurement_summary::out_header(output_data_alternate_missing_return_strategy_2());
+							ns_worm_movement_measurement_summary::out_header(output_data_alternate_missing_return_strategy_2()());
 						}
 					}
 					//go through each strain and output all death times annotated for that strain.
@@ -4988,7 +4988,7 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 									(ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy,
 									default_missing_return_strategy,
 									p->second, ns_force_to_fast_moving);
-								strain_series.to_file(aggregated_metadata, output_data_without_incomplete());
+								strain_series.to_file(aggregated_metadata, output_data_without_incomplete()());
 							}
 							strain_series.from_death_time_annotations(
 								by_hand_annotation_integration_strategy[bhais],
@@ -4996,7 +4996,7 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 								(ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy,
 								default_missing_return_strategy,
 								p->second, ns_include_unchanged);
-							strain_series.to_file(aggregated_metadata, output_data_with_incomplete());
+							strain_series.to_file(aggregated_metadata, output_data_with_incomplete()());
 
 							if (censoring_strategy == ns_death_time_annotation::ns_merge_multiple_worm_clusters_and_missing_and_censor) {
 								//		strain_series.generate_censoring_diagnostic_file(aggregated_metadata,censoring_diagnostics());
@@ -5007,7 +5007,7 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 										(ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy,
 										alternate_missing_return_strategy_1,
 										p->second, ns_include_unchanged);
-									strain_series.to_file(aggregated_metadata, output_data_alternate_missing_return_strategy_1());
+									strain_series.to_file(aggregated_metadata, output_data_alternate_missing_return_strategy_1()());
 
 									//			strain_series.generate_censoring_diagnostic_file(aggregated_metadata,censoring_diagnostics());
 									strain_series.from_death_time_annotations(
@@ -5016,7 +5016,7 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 										(ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy,
 										alternate_missing_return_strategy_2,
 										p->second, ns_include_unchanged);
-									strain_series.to_file(aggregated_metadata, output_data_alternate_missing_return_strategy_2());
+									strain_series.to_file(aggregated_metadata, output_data_alternate_missing_return_strategy_2()());
 								}
 
 								//		strain_series.generate_censoring_diagnostic_file(aggregated_metadata,censoring_diagnostics());

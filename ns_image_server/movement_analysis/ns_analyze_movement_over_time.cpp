@@ -124,12 +124,12 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 
 		invalidate_stored_data_depending_on_movement_analysis(job, sql, invalidated_old_data);
 
-		ns_acquire_for_scope<std::ostream> position_3d_file_output(
+		ns_acquire_for_scope<ns_ostream> position_3d_file_output(
 			image_server->results_storage.animal_position_timeseries_3d(
 				results_subject, sql, ns_image_server_results_storage::ns_3d_plot
 			).output()
 		);
-		time_path_solution.output_visualization_csv(position_3d_file_output());
+		time_path_solution.output_visualization_csv(position_3d_file_output()());
 		position_3d_file_output.release();
 
 		image_server->results_storage.write_animal_position_timeseries_3d_launcher(results_subject, ns_image_server_results_storage::ns_3d_plot, sql);
@@ -186,12 +186,12 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 				time_path_solution.save_to_db(job.region_id, sql);
 
 				invalidate_stored_data_depending_on_movement_analysis(job, sql, invalidated_old_data);
-				ns_acquire_for_scope<std::ostream> position_3d_file_output(
+				ns_acquire_for_scope<ns_ostream> position_3d_file_output(
 					image_server->results_storage.animal_position_timeseries_3d(
 						results_subject, sql, ns_image_server_results_storage::ns_3d_plot
 					).output()
 				);
-				time_path_solution.output_visualization_csv(position_3d_file_output());
+				time_path_solution.output_visualization_csv(position_3d_file_output()());
 				position_3d_file_output.release();
 
 				image_server->results_storage.write_animal_position_timeseries_3d_launcher(results_subject, ns_image_server_results_storage::ns_3d_plot, sql);
@@ -285,9 +285,9 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 							ns_death_time_annotation::ns_censoring_assume_uniform_distribution_of_missing_times,
 							ns_include_unchanged,
 							results_subject, "single_region", "movement_timeseries", sql));
-						ns_acquire_for_scope<std::ostream> movement_out(movement_timeseries.output());
-						ns_worm_movement_measurement_summary::out_header(movement_out());
-						summary_series.to_file(metadata, movement_out());
+						ns_acquire_for_scope<ns_ostream> movement_out(movement_timeseries.output());
+						ns_worm_movement_measurement_summary::out_header(movement_out()());
+						summary_series.to_file(metadata, movement_out()());
 						movement_out.release();
 					}
 					catch (ns_ex & ex) {
@@ -308,9 +308,9 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 							ns_death_time_annotation::ns_censoring_minimize_missing_times,
 							ns_include_unchanged,
 							results_subject, "single_region", "movement_timeseries", sql));
-						ns_acquire_for_scope<std::ostream> movement_out(movement_timeseries.output());
-						ns_worm_movement_measurement_summary::out_header(movement_out());
-						summary_series.to_file(metadata, movement_out());
+						ns_acquire_for_scope<ns_ostream> movement_out(movement_timeseries.output());
+						ns_worm_movement_measurement_summary::out_header(movement_out()());
+						summary_series.to_file(metadata, movement_out()());
 						movement_out.release();
 					}
 					catch (ns_ex & ex) {
@@ -335,9 +335,9 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 	ns_image_server_results_file state_results(image_server->results_storage.machine_death_times(results_subject, ns_image_server_results_storage::ns_worm_position_annotations,
 		"time_path_image_analysis", sql));
 
-	ns_acquire_for_scope<std::ostream> censoring_out(censoring_results.output());
-	ns_acquire_for_scope<std::ostream> state_out(state_results.output());
-	set.write_split_file_column_format(censoring_out(), state_out());
+	ns_acquire_for_scope<ns_ostream> censoring_out(censoring_results.output());
+	ns_acquire_for_scope<ns_ostream> state_out(state_results.output());
+	set.write_split_file_column_format(censoring_out()(), state_out()());
 	censoring_out.release();
 	state_out.release();
 	//output worm movement path summaries to disk
@@ -352,15 +352,15 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 	sub.region_id = job.region_id;
 	try {
 		if (job.maintenance_task != ns_maintenance_recalculate_censoring) {
-			ns_acquire_for_scope<std::ostream> o(image_server->results_storage.time_path_image_analysis_quantification(sub, "detailed", false, sql, false, false).output());
+			ns_acquire_for_scope<ns_ostream> o(image_server->results_storage.time_path_image_analysis_quantification(sub, "detailed", false, sql, false, false).output());
 			if (time_path_image_analyzer.size() > 0) {
-				time_path_image_analyzer.group(0).paths[0].write_detailed_movement_quantification_analysis_header(o());
-				o() << "\n";
-				time_path_image_analyzer.write_detailed_movement_quantification_analysis_data(metadata, o(), false);
+				time_path_image_analyzer.group(0).paths[0].write_detailed_movement_quantification_analysis_header(o()());
+				o()() << "\n";
+				time_path_image_analyzer.write_detailed_movement_quantification_analysis_data(metadata, o()(), false);
 			}
-			else o() << "(No Paths in Solution)\n";
+			else o()() << "(No Paths in Solution)\n";
 
-			o() << "\n";
+			o()() << "\n";
 			o.release();
 		}
 	}
@@ -410,12 +410,12 @@ void ns_refine_image_statistics(const ns_64_bit region_id, const bool recalculat
 		ns_image_server_results_subject results_subject;
 		results_subject.region_id = region_id;
 
-		ns_acquire_for_scope<std::ostream> position_3d_file_output(
+		ns_acquire_for_scope<ns_ostream> position_3d_file_output(
 			image_server.results_storage.animal_position_timeseries_3d(
 				results_subject, sql, ns_image_server_results_storage::ns_3d_plot
 			).output()
 		);
-		morphology_data_integrator.solution.output_visualization_csv(position_3d_file_output());
+		morphology_data_integrator.solution.output_visualization_csv(position_3d_file_output()());
 		position_3d_file_output.release();
 
 		image_server.results_storage.write_animal_position_timeseries_3d_launcher(results_subject, ns_image_server_results_storage::ns_3d_plot, sql);

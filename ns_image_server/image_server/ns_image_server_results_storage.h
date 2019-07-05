@@ -5,8 +5,7 @@
 #include "ns_death_time_annotation.h"
 #include "ns_image_storage.h"
 #include "ns_sql.h"
-#include <iostream>
-#include <fstream>
+#include "ns_iostream.h"
 
 class ns_image_server_results_subject{
 	std::string add_if_extant(const std::string & s){if (s.size() > 0)return s+"="; return "";}
@@ -60,23 +59,31 @@ class ns_image_server_results_subject{
 class ns_image_server_results_file{
 	public:
 	ns_image_server_results_file(const std::string & p,const std::string & d,const std::string & f):long_term_directory(p),relative_directory(d),filename(f){}
-	std::ostream * output(){
+	ns_ostream * output(){
 
 		ns_dir::create_directory_recursive(dir());
-		std::ofstream * o(new std::ofstream(path().c_str()));
-		if (o->fail()){
+		ns_ostream* o;
+		if (filename.find(".gz") != filename.npos) 
+			o = new ns_ostream(new ogzstream(path().c_str()));
+		else
+			o = new ns_ostream(new std::ofstream(path().c_str()));
+		if ((*o)().fail()){
 			delete o;
 			throw ns_ex("ns_image_server_results_file::output()::Could not open ") << filename;
 		}
 		return o;
 	}
-	std::istream * input(){
-		std::ifstream * i(new std::ifstream(path().c_str()));
-		if (i->fail()){
-			delete i;
+	ns_istream * input(){
+		ns_istream* in;
+		if (filename.find(".gz") != filename.npos)
+			in = new ns_istream(new igzstream(path().c_str()));
+		else
+			in = new ns_istream(new std::ifstream(path().c_str()));
+		if ((*in)().fail()){
+			delete in;
 			return 0;
 		}
-		return i;
+		return in;
 	}
 	bool erase(){
 		return ns_dir::delete_file(path());
@@ -182,7 +189,7 @@ public:
 	ns_image_server_results_file machine_death_times(ns_image_server_results_subject & spec, const ns_death_time_annotation_file_type & type,const std::string & analysis_type,ns_sql & sql) const{		
 		spec.get_names(sql);
 		return ns_image_server_results_file(results_directory,ns_image_server_results_subject::create_short_name(spec.experiment_name) + DIR_CHAR_STR + machine_death_time_annotations(),
-											spec.region_filename() + "machine_event_annotations=" + death_time_annotation_file_type_label(type) + "=" + analysis_type + ".csv");
+											spec.region_filename() + "machine_event_annotations=" + death_time_annotation_file_type_label(type) + "=" + analysis_type + ".csv.gz");
 	}
 	ns_image_server_results_file hand_curated_death_times(ns_image_server_results_subject & spec, ns_sql & sql) const{		
 		spec.get_names(sql);
@@ -256,25 +263,25 @@ public:
 		ns_image_server_results_file launcher_file_environment_spec(animal_position_timeseries_3d(spec,sql,ns_3d_plot_launcher_environment,calibration_data));
 		ns_image_server_results_file subject_file_spec(animal_position_timeseries_3d(spec,sql,graph_type,calibration_data));
 
-		ns_acquire_for_scope<std::ostream> out(launcher_file_spec.output());
-		out() << "#" << spec.region_filename() << "\n";
-		out() << "rd <- read.csv(\"";
-		out() << subject_file_spec.filename;
-		out() << "\")\n";
-		out() << "title_text <- \"" << spec.region_filename() << "\"\n";
-		out() << "ns_plot_3d_animal_movement(rd,title_text)\n";
+		ns_acquire_for_scope<ns_ostream> out(launcher_file_spec.output());
+		out()() << "#" << spec.region_filename() << "\n";
+		out()() << "rd <- read.csv(\"";
+		out()() << subject_file_spec.filename;
+		out()() << "\")\n";
+		out()() << "title_text <- \"" << spec.region_filename() << "\"\n";
+		out()() << "ns_plot_3d_animal_movement(rd,title_text)\n";
 		out.release();
 
 		const std::string dir(launcher_file_spec.dir());
-		ns_acquire_for_scope<std::ostream> out2(launcher_file_environment_spec.output());
-		out2() << "#" << dir << "\n";
-		out2() << "setwd(\"";
+		ns_acquire_for_scope<ns_ostream> out2(launcher_file_environment_spec.output());
+		out2()() << "#" << dir << "\n";
+		out2()() << "setwd(\"";
 		for (unsigned int i = 0; i < dir.size(); i++){
 			if (dir[i] == '\\')
-				out2() << "\\\\";
-			else out2() << dir[i];
+				out2()() << "\\\\";
+			else out2()() << dir[i];
 		}
-		out2() << "\")\n";
+		out2()() << "\")\n";
 		out2.release();
 	}
 

@@ -645,10 +645,10 @@ ns_64_bit ns_processing_job_maintenance_processor::run_job(ns_sql & sql) {
 			ns_image_server_results_subject sub;
 			sub.region_id = job.region_id;
 			ns_image_server_results_file f(image_server->results_storage.worm_morphology_timeseries(sub, sql, false));
-			ns_acquire_for_scope<ostream> o(f.output());
+			ns_acquire_for_scope<ns_ostream> o(f.output());
 			const std::string skip_recalc_string = image_server->get_cluster_constant_value("skip_image_loading_during_morphology_stat_recalc", "false", &sql);
 			const bool recalc = skip_recalc_string != "true" &&  skip_recalc_string != "yes"  &&  skip_recalc_string != "1";
-			ns_refine_image_statistics(job.region_id, recalc,o(), sql);
+			ns_refine_image_statistics(job.region_id, recalc,o()(), sql);
 			o.release();
 		}
 		case ns_maintenance_delete_movement_data:{
@@ -715,11 +715,11 @@ ns_64_bit ns_processing_job_maintenance_processor::run_job(ns_sql & sql) {
 				ns_capture_sample_region_statistics_set set;
 				set.load_whole_experiment(job.experiment_id, sql, true);
 
-				ns_acquire_for_scope<ostream> o(f.output());
-				ns_capture_sample_region_data::output_region_data_in_jmp_format_header("", o());
+				ns_acquire_for_scope<ns_ostream> o(f.output());
+				ns_capture_sample_region_data::output_region_data_in_jmp_format_header("", o()());
 
 				for (unsigned int j = 0; j < set.regions.size(); j++)
-					set.regions[j].output_region_data_in_jmp_format(o());
+					set.regions[j].output_region_data_in_jmp_format(o()());
 
 				o.release();
 

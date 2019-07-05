@@ -4513,7 +4513,7 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 	for (unsigned int i = 0; i < movement_results.samples.size(); i++)
 		for (unsigned int j = 0; j < movement_results.samples[i].regions.size(); j++) {
 			const ns_region_metadata & metadata(movement_results.samples[i].regions[j]->metadata);
-			//if (metadata.by_hand_annotation_timestamp > metadata.movement_rebuild_timestamp && metadata.movement_rebuild_timestamp != 0)
+			if (metadata.by_hand_annotation_timestamp > metadata.movement_rebuild_timestamp && metadata.movement_rebuild_timestamp != 0)
 				regions_needing_censoring_recalculation.push_back(metadata.region_id);
 		}
 	if (!regions_needing_censoring_recalculation.empty()) {

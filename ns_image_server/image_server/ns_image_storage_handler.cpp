@@ -436,9 +436,9 @@ bool ns_image_storage_handler::assign_unique_filename(ns_image_server_image & im
 }
 
 
-ns_istream * ns_image_storage_handler::request_metadata_from_disk(ns_image_server_image & image,const bool binary,ns_image_server_sql * sql) const{
+ns_istream * ns_image_storage_handler::request_metadata_from_disk(ns_image_server_image & image,const bool binary,ns_image_server_sql * sql, bool allow_db_lookup) const{
 	if (image.filename.size() == 0 || image.path.size() == 0 || image.partition.size() == 0) 
-		if (!image.load_from_db(image.id, sql)) 
+		if (!allow_db_lookup || !image.load_from_db(image.id, sql))
 			throw ns_ex("Could not find image record for time path image analyzer metadata");
 
 	ns_file_location_specification spec(look_up_image_location_no_extension_alteration (image, sql));
@@ -1285,14 +1285,26 @@ ns_file_location_specification ns_image_storage_handler::get_file_specification_
 	ns_add_image_suffix(spec.filename, ns_csv);
 	return spec;
 }
-ns_image_server_image ns_image_storage_handler::get_region_movement_metadata_info(ns_64_bit region_info_id,const std::string & data_source,ns_sql & sql) const{
-	ns_file_location_specification spec(get_file_specification_for_movement_data(region_info_id,data_source,&sql));
+
+
+ns_image_server_image ns_image_storage_handler::get_region_movement_metadata(ns_64_bit region_info_id, const std::string& metadata_type, ns_sql& sql) const {
+	ns_file_location_specification spec(get_file_specification_for_movement_data(region_info_id, metadata_type, &sql));
 	ns_image_server_image im;
 	im.filename = spec.filename;
 	im.partition = spec.partition;
 	im.path = spec.relative_directory;
 	return im;
 }
+ns_time_path_movement_result_files ns_image_storage_handler::get_region_movement_quantification_metadata(ns_64_bit region_info_id,ns_sql & sql) const{
+	ns_time_path_movement_result_files files;
+	ns_image_server_image im(get_region_movement_metadata(region_info_id, files.base_name(), sql));
+	files.set_from_base_db_record(im);
+	files.only_quantification_specified = false;
+	
+	return files;
+}
+
+
 ns_file_location_specification  ns_image_storage_handler::get_file_specification_for_path_data(const ns_file_location_specification & region_spec) const{
 	ns_file_location_specification spec(region_spec);
 	spec.relative_directory += DIR_CHAR_STR;

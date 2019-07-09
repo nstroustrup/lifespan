@@ -3086,7 +3086,7 @@ void ns_run_startup_routines() {
 	//image_server.set_sql_database("image_server_archive_2017", false, &worm_learner.get_sql_connection());
 	get_menu_handler()->update_experiment_choice(*get_menu_bar());
 	//worm_learner.data_selector.set_current_experiment(1090, worm_learner.get_sql_connection());
-	worm_learner.data_selector.set_current_experiment(77, worm_learner.get_sql_connection());
+	//worm_learner.data_selector.set_current_experiment(77, worm_learner.get_sql_connection());
 	update_region_choice_menu();
 	update_strain_choice_menu();
 	update_exclusion_choice_menu();
@@ -3095,7 +3095,7 @@ void ns_run_startup_routines() {
 	ns_worm_browser_output_debug(__LINE__, __FILE__, "Setting default sample and region");
 	worm_learner.data_selector.select_default_sample_and_region();
 	//worm_learner.data_selector.select_region("azure_a::3");
-	worm_learner.data_selector.select_region("ken_a::3");
+//	worm_learner.data_selector.select_region("ken_a::3");
 
 	ns_worm_browser_output_debug(__LINE__, __FILE__, "Updating information bar");
 	main_window->update_information_bar();

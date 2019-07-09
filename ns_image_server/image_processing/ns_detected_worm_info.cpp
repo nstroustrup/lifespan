@@ -2052,7 +2052,7 @@ void ns_image_worm_detection_results::load_from_db_internal(const bool load_worm
 		ns_acquire_for_scope<ns_istream> in;
 
 		try{
-			in.attach(image_server.image_storage.request_metadata_from_disk(data_storage_on_disk,true,&sql));
+			in.attach(image_server.image_storage.request_metadata_from_disk(data_storage_on_disk,true,&sql,true));
 		}
 		catch(...){
 			if (delete_from_db_on_error){

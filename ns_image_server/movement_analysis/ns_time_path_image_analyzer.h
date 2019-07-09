@@ -705,6 +705,8 @@ struct ns_region_area {
 	ns_64_bit total_exclusion_time_in_seconds, total_inclusion_time_in_seconds, average_annotation_time_for_region;
 };
 
+
+
 struct ns_movement_analysis_shared_state;
 template<class allocator_T>
 class ns_time_path_image_movement_analyzer {
@@ -823,7 +825,9 @@ public:
 	unsigned long number_of_timepoints_in_analysis()const { return number_of_timepoints_in_analysis_;}
 	ns_64_bit db_analysis_id() const{return analysis_id;}
 	bool try_to_rebuild_after_failure() const;
-	static ns_image_server_image get_movement_quantification_id(const ns_64_bit region_info_id, ns_sql & sql);
+
+	typedef enum { ns_use_existing_format, ns_force_new_record_format } ns_record_style_options;
+	static ns_time_path_movement_result_files get_movement_quantification_files(const ns_64_bit region_info_id, ns_sql & sql, const ns_analysis_db_options& analysis_options, const ns_record_style_options & record_options);
 
 	void match_plat_areas_to_paths(std::vector<ns_region_area> & areas);
 	template<class T2>friend class ns_worm_morphology_data_integrator;

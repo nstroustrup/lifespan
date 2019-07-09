@@ -28,6 +28,13 @@ void ns_image_handler_register_server_event(const ns_image_server_event & ev,ns_
 void ns_image_handler_register_server_event(const ns_ex & ev, ns_image_server_sql * sql);
 
 
+struct ns_time_path_movement_result_files {
+	ns_image_server_image movement_quantification, intervals_data, annotation_events;
+	ns_image_server_image base_db_record;
+	bool only_quantification_specified;
+	void set_from_base_db_record(const ns_image_server_image& base_db_record);
+	static std::string base_name() { return "time_path_image_analysis"; }
+};
 
 ns_performance_statistics_analyzer & performance_statistics();
 
@@ -83,7 +90,7 @@ public:
 	bool image_exists(ns_image_server_image & image, ns_image_server_sql * sql, bool only_long_term_storage=false) const;
 
 	bool assign_unique_filename(ns_image_server_image & image, ns_image_server_sql * sql) const;
-	ns_istream * request_metadata_from_disk(ns_image_server_image & image,const bool binary,ns_image_server_sql * sql)const;
+	ns_istream * request_metadata_from_disk(ns_image_server_image & image,const bool binary,ns_image_server_sql * sql,bool allow_db_lookup)const;
 
 	void fix_orphaned_captured_images(ns_image_server_sql * sql)const;
 
@@ -271,7 +278,8 @@ public:
 
 	ns_file_location_specification get_file_specification_for_image(ns_image_server_image & image,ns_image_server_sql * sql) const;
 	bool move_file(const ns_file_location_specification & source, const ns_file_location_specification & dest,bool volatile_storage);
-	ns_image_server_image get_region_movement_metadata_info(ns_64_bit region_info_id,const std::string & data_source,ns_sql & sql) const;
+	ns_image_server_image get_region_movement_metadata(ns_64_bit region_info_id,const std::string & metadata_type,ns_sql & sql) const;
+	ns_time_path_movement_result_files get_region_movement_quantification_metadata(ns_64_bit region_info_id, ns_sql& sql) const;
 
 	ns_file_location_specification get_path_for_region(ns_64_bit region_image_info_id,ns_image_server_sql * sql, const ns_processing_task task= ns_unprocessed) const;
 	ns_file_location_specification get_base_path_for_region(ns_64_bit region_image_info_id,ns_image_server_sql * sql) const;

@@ -581,7 +581,7 @@ void ns_time_path_solution::save_to_db(const ns_64_bit region_id, ns_sql & sql) 
 	im.id = ns_atoi64(res[0][0].c_str());
 	bool update_db(false);
 	if (im.id == 0){
-		im = image_server_const.image_storage.get_region_movement_metadata_info(region_id,"time_path_solution_data",sql);
+		im = image_server_const.image_storage.get_region_movement_metadata(region_id,"time_path_solution_data",sql);
 		update_db = true;
 	}
 	ns_ostream * o(0);
@@ -591,7 +591,7 @@ void ns_time_path_solution::save_to_db(const ns_64_bit region_id, ns_sql & sql) 
 	catch (ns_ex & ex) {
 		ns_64_bit old_im_id(im.id);
 			//if there's some problem with the existing filename, create a new one.
-			im = image_server_const.image_storage.get_region_movement_metadata_info(region_id, "time_path_solution_data", sql);
+			im = image_server_const.image_storage.get_region_movement_metadata(region_id, "time_path_solution_data", sql);
 			o = image_server_const.image_storage.request_metadata_output(im, ns_csv_gz, false, &sql);
 
 			sql << "DELETE from images WHERE id = " << old_im_id;
@@ -627,16 +627,16 @@ void ns_time_path_solution::load_from_db(const ns_64_bit region_id, ns_sql & sql
 	if (load_directly_from_disk_without_db){
 		
 		ns_image_server_image im;
-		im = image_server_const.image_storage.get_region_movement_metadata_info(region_id,"time_path_solution_data",sql);
+		im = image_server_const.image_storage.get_region_movement_metadata(region_id,"time_path_solution_data",sql);
 		try{
-			input_file.attach(image_server_const.image_storage.request_metadata_from_disk(im,false,&sql));
+			input_file.attach(image_server_const.image_storage.request_metadata_from_disk(im,false,&sql,true));
 		}catch(ns_ex & ex){
 			cerr << ex.text() << "\n";
 			ns_image_server_image im;
 			im.id = ns_atoi64(res[0][0].c_str());
 			if (im.id == 0)
 				throw ns_ex("Solution data has not been stored in db");
-			input_file.attach(image_server_const.image_storage.request_metadata_from_disk(im, false, &sql));
+			input_file.attach(image_server_const.image_storage.request_metadata_from_disk(im, false, &sql,true));
 
 		}
 	}else{
@@ -644,7 +644,7 @@ void ns_time_path_solution::load_from_db(const ns_64_bit region_id, ns_sql & sql
 		im.id = ns_atoi64(res[0][0].c_str());
 		if (im.id == 0)
 			throw ns_ex("Solution data has not been stored in db");
-		input_file.attach(image_server_const.image_storage.request_metadata_from_disk(im,false,&sql));
+		input_file.attach(image_server_const.image_storage.request_metadata_from_disk(im,false,&sql,true));
 	}
 
 

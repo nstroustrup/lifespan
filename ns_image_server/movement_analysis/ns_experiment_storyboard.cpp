@@ -643,15 +643,27 @@ void ns_experiment_storyboard::check_that_all_time_path_information_is_valid(ns_
 	}
 	std::vector<ns_ex> unfixable_errors;
 	for (std::set<ns_64_bit>::iterator id = region_ids.begin(); id != region_ids.end(); id++) {
-	//	cout << " Validating region " << *id << "\n";
-	//	if (*id == 53771)
-	//		cerr << "checking it!";
-		/*std::map<ns_64_bit, std::map<ns_64_bit, ns_reg_info> >::const_iterator p = worm_detection_id_lookup.find(*id);
-		if (p == worm_detection_id_lookup.end())
-			throw ns_ex("Could not find region id ") << *id << " in worm detection table.";*/
+		//this will fix records in which the db analysis id has been set to zero.
+		//if the analysis method is the old format, only_quantification_specified is set to true. this is unfixeable and will fail with an error.
 		try {
-			ns_image_server_image im = ns_time_path_image_movement_analyzer<ns_overallocation_resizer>::get_movement_quantification_id(*id, sql);
-			ns_acquire_for_scope<ns_istream> i(image_server_const.image_storage.request_metadata_from_disk(im, false, &sql));
+			ns_time_path_movement_result_files files = ns_time_path_image_movement_analyzer<ns_overallocation_resizer>::get_movement_quantification_files(*id, sql,
+				ns_time_path_image_movement_analyzer<ns_overallocation_resizer>::ns_require_existing_record,
+				ns_time_path_image_movement_analyzer<ns_overallocation_resizer>::ns_use_existing_format);
+			ns_acquire_for_scope<ns_istream> i(image_server_const.image_storage.request_metadata_from_disk(files.movement_quantification, false, &sql,false));
+			i.release();
+			if (files.only_quantification_specified) {
+				sql << "SELECT r.name,s.name FROM sample_region_image_info as r, capture_samples as s WHERE r.id = " << *id << " AND r.sample_id = s.id";
+				ns_sql_result res;
+				sql.get_rows(res);
+				std::string name = ns_to_string(*id);
+				if (res.size() > 0)
+					name = res[0][1] + "::" + res[0][0];
+				unfixable_errors.push_back(ns_ex("Could not fix the error in region " + name + ": Old style movement format"));
+				continue;
+			}
+			i.attach(image_server_const.image_storage.request_metadata_from_disk(files.annotation_events, false, &sql, false));
+			i.release();
+			i.attach(image_server_const.image_storage.request_metadata_from_disk(files.intervals_data, false, &sql, false));
 			i.release();
 		}
 		catch (ns_ex & ex) {
@@ -663,11 +675,16 @@ void ns_experiment_storyboard::check_that_all_time_path_information_is_valid(ns_
 				name = res[0][1] + "::" + res[0][0];
 
 			try {
-				ns_image_server_image im = image_server_const.image_storage.get_region_movement_metadata_info(*id, "time_path_movement_image_analysis_quantification", sql);
-				ns_acquire_for_scope<ns_istream> i(image_server_const.image_storage.request_metadata_from_disk(im, false, &sql));
+				ns_time_path_movement_result_files files = ns_time_path_image_movement_analyzer<ns_overallocation_resizer>::get_movement_quantification_files(*id, sql,
+									ns_time_path_image_movement_analyzer<ns_overallocation_resizer>::ns_force_creation_of_new_db_record,
+									ns_time_path_image_movement_analyzer<ns_overallocation_resizer>::ns_force_new_record_format);
+				ns_acquire_for_scope<ns_istream> i(image_server_const.image_storage.request_metadata_from_disk(files.movement_quantification, false, &sql,false));
 				i.release();
-				im.save_to_db(im.id, &sql);
-				sql << "UPDATE sample_region_image_info SET movement_image_analysis_quantification_id = " << im.id << " WHERE id = " << *id;
+				i.attach(image_server_const.image_storage.request_metadata_from_disk(files.annotation_events, false, &sql,false));
+				i.release();
+				i.attach(image_server_const.image_storage.request_metadata_from_disk(files.intervals_data, false, &sql, false));
+				i.release();
+				sql << "UPDATE sample_region_image_info SET movement_image_analysis_quantification_id = " << files.base_db_record.id << " WHERE id = " << *id;
 				sql.send_query();
 				image_server.add_subtext_to_current_event(std::string("Fixed bad db record for region ") + name + ".  This is probably OK, but you may want to regenerate the region if further problems are encountered.", &sql);
 			}
@@ -2100,7 +2117,7 @@ ns_ex ns_experiment_storyboard::compare(const ns_experiment_storyboard & s){
 bool ns_experiment_storyboard_manager::load_metadata_from_db(const ns_experiment_storyboard_spec & spec, ns_experiment_storyboard & storyboard, ns_sql & sql){
 	load_metadata_from_db(spec,sql);
 	load_subimages_from_db(spec,sql);
-	ns_acquire_for_scope<ns_istream> i(image_server.image_storage.request_metadata_from_disk(xml_metadata_database_record,false,&sql));
+	ns_acquire_for_scope<ns_istream> i(image_server.image_storage.request_metadata_from_disk(xml_metadata_database_record,false,&sql,true));
 	storyboard.read_metadata(i()(),sql);
 	i.release();
 	if (this->sub_images.size() != storyboard.number_of_sub_images())

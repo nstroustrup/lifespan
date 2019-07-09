@@ -296,8 +296,14 @@ void ns_identify_region_files_to_delete(const ns_64_bit & region_id,const bool e
 		if (!operations[(int)ns_process_region_interpolation_vis])
 			files.push_back(image_server_const.image_storage.get_path_for_region(region_id, &sql, ns_process_region_interpolation_vis));
 		files.push_back(image_server_const.image_storage.get_file_specification_for_path_data(image_server_const.image_storage.get_base_path_for_region(region_id, &sql)));
+		//old-style movement analysis data
 		files.push_back(image_server_const.image_storage.get_file_specification_for_movement_data(region_id, "time_path_movement_image_analysis_quantification.csv", &sql));
-		files.push_back(image_server_const.image_storage.get_file_specification_for_movement_data(region_id, "time_path_solution_data.csv", &sql));
+		//new style record
+		ns_time_path_movement_result_files analysis_files;
+		analysis_files.set_from_base_db_record(ns_image_server_image());
+		files.push_back(image_server_const.image_storage.get_file_specification_for_movement_data(region_id, analysis_files.movement_quantification.filename, &sql));
+		files.push_back(image_server_const.image_storage.get_file_specification_for_movement_data(region_id, analysis_files.intervals_data.filename, &sql));
+		files.push_back(image_server_const.image_storage.get_file_specification_for_movement_data(region_id, analysis_files.annotation_events.filename, &sql));
 		files.push_back(image_server_const.image_storage.get_detection_data_path_for_region(region_id, &sql));
 
 		ns_image_server_results_subject spec;

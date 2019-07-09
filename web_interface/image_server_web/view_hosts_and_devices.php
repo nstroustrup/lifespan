@@ -58,17 +58,20 @@ if (!$show_host_nodes)
    $host_where_statement = "base_host_name = '$base_host_name' AND system_hostname = '$system_host_name' AND system_parallel_process_id = $system_parallel_process_id";
 
 if (ns_param_spec($_POST,'update_database_name')){
-	$comments = ($_POST['comments']);
+	//$comments = ($_POST['comments']);
 
 	$update_database_name = $_POST['update_database_name']=='1';
 	$dname = '';
 	$requested_database_name = $_POST['requested_database_name'];
 	if ($update_database_name){
-		$dname = ",database_used='$requested_database_name'";
-	}
-	$query = "UPDATE hosts SET comments='$comments' $dname WHERE $host_where_statement";	
+		$dname = "database_used='$requested_database_name'";
+	
+
+	$query = "UPDATE hosts SET $dname WHERE $host_where_statement";	
+	//die($query);
 	$sql->send_query($query);
 	$refresh = true;
+}
 }
 if (ns_param_spec($_POST,'save_device')){
 	$comments = ($_POST['comments']);
@@ -370,7 +373,6 @@ if ($show_offline_nodes)
 <input name="pause_none" type="submit" value="Un-Pause All Nodes"></td></TR></table>
 <input name="device_name" type="hidden" value="all">
 </form>
-<form action="view_hosts_and_devices.php" method="post">
 <table bgcolor="#555555" cellspacing='0' cellpadding='1'><tr><td>
 <table cellspacing='0' cellpadding='3' >
 <tr <?php echo $table_header_color?>><td>Host Name</td>
@@ -389,7 +391,7 @@ foreach ($base_hosts as $base_host_name => $host){
 	for ($i = 0; $i < sizeof($host); $i++){
 		$clrs = $table_colors[$k%2];
 		$edit_host = ($host_id == $host[$i][0]);
-		echo "<tr><td bgcolor=\"$clrs[0]\">";
+		echo "\n<tr><td bgcolor=\"$clrs[0]\">";
 		$current = $cur_time - $host[$i][3] < $current_device_cutoff;
 		if ($current) echo "<b>";
 		if ($highlight_host_id == $host[$i][0]) echo "<i>";
@@ -438,6 +440,8 @@ foreach ($base_hosts as $base_host_name => $host){
 		//echo output_editable_field("comments",$host[$i][4],$edit_host,'',TRUE);
 			echo "Disk: " . (floor($host[$i][13]/1024)) . " gb free</br>";
 		echo "</td><td bgcolor=\"$clrs[0]\">";
+		
+		echo "<form action=\"view_hosts_and_devices.php?host_id={$host[$i][0]}\" method=\"post\">\n";
 		if (0 &&!$edit_host)
 		  echo "<a href=\"view_hosts_and_devices.php?show_host_nodes=" . ($show_host_nodes?"1":"0") . "&host_id={$host[$i][0]}\">[View Details]</a>";
 		else{
@@ -459,7 +463,7 @@ foreach ($base_hosts as $base_host_name => $host){
 			//echo '<td valign="bottom" align="right"><input name="cancel" type="submit" value="Cancel"></td></tr>';
 			//echo '</table>';
 		}
-		echo "</td></tr>";
+		echo "\n</form>\n</td></tr>";
 
 		$k++;
 		$clrs = $table_colors[1];
@@ -534,13 +538,11 @@ foreach ($base_hosts as $base_host_name => $host){
 </table>
 </td></tr></table>
 <form action="view_hosts_and_devices.php?<?php echo "show_host_nodes=" . ($show_host_nodes?"1":"0")?>" method="post">
-
 <table border = 0 bgcolor="#FFFFFF"><TR><td width="100%">
 &nbsp;</td>
 <td nowrap bgcolor="#FFFFFF">
 <input name="shut_down_all" type="submit" value="Shut Down All Nodes"><input name="shut_down_none" type="submit" value="Cancel all Shut Down Requests"><br><input name="delete_all_hosts" type="submit" value="Clear old host records"></td></TR></table>
 
-</form>
 
 </td><td valign="top">
 <span class="style1">Image Capture Devices</span>
@@ -556,9 +558,6 @@ foreach ($base_hosts as $base_host_name => $host){
 <?php
 $k = 0;
 
-echo "<form id=\"incubator_form\" action=\"view_hosts_and_devices.php?show_host_nodes=" . ($show_host_nodes?"1":"0") . "\" method=\"post\">\n";
-
-
 foreach ($device_inventory as $incubator => $devices){
 	if(sizeof($devices) == 0) continue;
 	$clrs = $table_colors[$k%2];
@@ -566,11 +565,12 @@ foreach ($device_inventory as $incubator => $devices){
 		$incubator_display = "[No Incubator Specified]";
 	else $incubator_display = "Incubator $incubator";
 	echo "<tr><td bgcolor=\"$clrs[0]\" colspan = 5>\n\t<b>$incubator_display</b></td><td colspan= 2 nowrap bgcolor = \"$clrs[0]\" align=\"right\"><input type=\"checkbox\" name=\"checkall\" onClick=\"ns_check_all(document.getElementById('incubator_form'),'incubator_$incubator',this.checked)\"></td></tr>\n";
+
 	foreach ($devices as $device){
 		//if ($device[2] == 0) continue;
 		$dev =& $connected_devices[$device[0]];
 		$k++;
-		echo "\t<td bgcolor=\"$clrs[1]\">$device[0]</a></td>\n";
+		echo "\t<tr><td bgcolor=\"$clrs[1]\">$device[0]</a></td>\n";
 	
 		echo "\t<td bgcolor=\"$clrs[1]\">";
 		if ($device[2] == 1){
@@ -635,10 +635,10 @@ foreach ($unregistered_device_inventory as $device){
 	$clrs = $table_colors[$k%2];
 	$dev =& $unregistered_device_inventory[$device[0]];
 	$k++;
-	echo "\t<td bgcolor=\"$clrs[1]\">$device[0]</a></td>\n";
+	echo "\t<tr><td bgcolor=\"$clrs[1]\">$device[0]</td>\n";
 
 	echo "\t<td bgcolor=\"$clrs[1]\" colspan=3>&nbsp;</td>\n";
-	echo "</td>\n";
+	//echo "</t>\n";
 	echo "\t<td bgcolor=\"$clrs[1]\">";
 
 	if ((int) $dev[10]>0)

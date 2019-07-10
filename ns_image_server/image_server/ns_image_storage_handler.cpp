@@ -1290,7 +1290,7 @@ ns_file_location_specification ns_image_storage_handler::get_file_specification_
 ns_image_server_image ns_image_storage_handler::get_region_movement_metadata(ns_64_bit region_info_id, const std::string& metadata_type, ns_sql& sql) const {
 	ns_file_location_specification spec(get_file_specification_for_movement_data(region_info_id, metadata_type, &sql));
 	ns_image_server_image im;
-	im.filename = ns_dir::extract_filename_without_extension(spec.filename);
+	im.filename = spec.filename;
 	im.partition = spec.partition;
 	im.path = spec.relative_directory;
 	return im;
@@ -1298,6 +1298,7 @@ ns_image_server_image ns_image_storage_handler::get_region_movement_metadata(ns_
 ns_time_path_movement_result_files ns_image_storage_handler::get_region_movement_quantification_metadata(ns_64_bit region_info_id,ns_sql & sql) const{
 	ns_time_path_movement_result_files files;
 	ns_image_server_image im(get_region_movement_metadata(region_info_id, files.base_name(), sql));
+	im.filename = ns_dir::extract_filename_without_extension(im.filename);
 	files.set_from_base_db_record(im);
 	files.only_quantification_specified = false;
 	

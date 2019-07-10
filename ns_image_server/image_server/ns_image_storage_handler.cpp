@@ -1290,7 +1290,7 @@ ns_file_location_specification ns_image_storage_handler::get_file_specification_
 ns_image_server_image ns_image_storage_handler::get_region_movement_metadata(ns_64_bit region_info_id, const std::string& metadata_type, ns_sql& sql) const {
 	ns_file_location_specification spec(get_file_specification_for_movement_data(region_info_id, metadata_type, &sql));
 	ns_image_server_image im;
-	im.filename = spec.filename;
+	im.filename = ns_dir::extract_filename_without_extension(spec.filename);
 	im.partition = spec.partition;
 	im.path = spec.relative_directory;
 	return im;

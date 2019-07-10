@@ -301,47 +301,165 @@
     <ClCompile Include="..\external_compile_libraries\jpeg-8d\wrrle.c" />
     <ClCompile Include="..\external_compile_libraries\jpeg-8d\wrtarga.c" />
     <ClCompile Include="..\external_compile_libraries\libdmtx-0.7.4\dmtx.c">
-      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Default</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">CompileAsC</CompileAs>
     </ClCompile>
-    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_aux.c" />
-    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_close.c" />
-    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_codec.c" />
-    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_color.c" />
-    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_compress.c" />
-    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_dir.c" />
-    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_dirinfo.c" />
-    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_dirread.c" />
-    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_dirwrite.c" />
-    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_dumpmode.c" />
-    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_error.c" />
-    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_extension.c" />
-    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_fax3.c" />
-    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_fax3sm.c" />
-    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_flush.c" />
-    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_getimage.c" />
-    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_jbig.c" />
-    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_jpeg.c" />
-    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_jpeg_12.c" />
-    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_luv.c" />
-    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_lzma.c" />
-    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_lzw.c" />
-    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_next.c" />
-    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_ojpeg.c" />
-    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_open.c" />
-    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_packbits.c" />
-    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_pixarlog.c" />
-    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_predict.c" />
-    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_print.c" />
-    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_read.c" />
-    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_strip.c" />
-    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_swab.c" />
-    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_thunder.c" />
-    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_tile.c" />
-    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_version.c" />
-    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_warning.c" />
-    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_win32.c" />
-    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_write.c" />
-    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_zip.c" />
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_aux.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_close.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_codec.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_color.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_compress.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_dir.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_dirinfo.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_dirread.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_dirwrite.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_dumpmode.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_error.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_extension.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_fax3.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_fax3sm.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_flush.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_getimage.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_jbig.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_jpeg.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_jpeg_12.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_luv.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_lzma.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_lzw.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_next.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_ojpeg.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_open.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_packbits.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_pixarlog.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_predict.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_print.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_read.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_strip.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_swab.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_thunder.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_tile.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_version.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_warning.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_win32.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_write.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_zip.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">CompileAsC</CompileAs>
+    </ClCompile>
     <ClCompile Include="..\external_libraries\ctmf\ctmf.c">
       <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
       <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">CompileAsC</CompileAs>
@@ -356,6 +474,7 @@
     <ClCompile Include="..\external_libraries\tinyxml\tinyxmlparser.cpp" />
     <ClCompile Include="..\external_libraries\triangle\triangle.cpp">
       <RuntimeLibrary Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">MultiThreadedDebug</RuntimeLibrary>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
     </ClCompile>
     <ClCompile Include="..\external_libraries\wm4_bspline\Wm4BSplineBasis.cpp" />
     <ClCompile Include="..\external_libraries\wm4_bspline\Wm4BSplineCurve2.cpp" />
@@ -372,18 +491,54 @@
     <ClCompile Include="..\external_libraries\wm4_bspline\Wm4SingleCurve2.cpp" />
     <ClCompile Include="..\external_libraries\wm4_bspline\Wm4System.cpp" />
     <ClCompile Include="..\external_libraries\wm4_bspline\Wm4Vector2.cpp" />
-    <ClCompile Include="..\external_compile_libraries\zlib\adler32.c" />
-    <ClCompile Include="..\external_compile_libraries\zlib\compress.c" />
-    <ClCompile Include="..\external_compile_libraries\zlib\crc32.c" />
-    <ClCompile Include="..\external_compile_libraries\zlib\deflate.c" />
-    <ClCompile Include="..\external_compile_libraries\zlib\gzio.c" />
-    <ClCompile Include="..\external_compile_libraries\zlib\infback.c" />
-    <ClCompile Include="..\external_compile_libraries\zlib\inffast.c" />
-    <ClCompile Include="..\external_compile_libraries\zlib\inflate.c" />
-    <ClCompile Include="..\external_compile_libraries\zlib\inftrees.c" />
-    <ClCompile Include="..\external_compile_libraries\zlib\trees.c" />
-    <ClCompile Include="..\external_compile_libraries\zlib\uncompr.c" />
-    <ClCompile Include="..\external_compile_libraries\zlib\zutil.c" />
+    <ClCompile Include="..\external_compile_libraries\zlib\adler32.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\zlib\compress.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\zlib\crc32.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\zlib\deflate.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\zlib\gzio.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\zlib\infback.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\zlib\inffast.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\zlib\inflate.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\zlib\inftrees.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\zlib\trees.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\zlib\uncompr.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\zlib\zutil.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">CompileAsC</CompileAs>
+    </ClCompile>
     <ClCompile Include="..\ns_image_server\data_annotation\ns_death_time_annotation.cpp" />
     <ClCompile Include="..\ns_image_server\image_acquisition\ns_barcode.cpp" />
     <ClCompile Include="..\ns_image_server\image_acquisition\ns_buffered_capture_scheduler.cpp" />
@@ -401,7 +556,10 @@
     <ClCompile Include="..\ns_image_server\image_base\ns_image_socket.cpp" />
     <ClCompile Include="..\ns_image_server\image_base\ns_image_tools.cpp" />
     <ClCompile Include="..\ns_image_server\image_base\ns_jpeg.cpp" />
-    <ClCompile Include="..\ns_image_server\image_base\ns_libtiff_interface.c" />
+    <ClCompile Include="..\ns_image_server\image_base\ns_libtiff_interface.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">CompileAsC</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+    </ClCompile>
     <ClCompile Include="..\ns_image_server\image_base\ns_ojp2k.cpp" />
     <ClCompile Include="..\ns_image_server\image_base\ns_svg.cpp" />
     <ClCompile Include="..\ns_image_server\image_base\ns_tiff.cpp" />

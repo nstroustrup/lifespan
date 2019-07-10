@@ -1412,7 +1412,6 @@ ns_time_path_movement_result_files ns_time_path_image_movement_analyzer<allocato
 				throw ns_ex("Movement quantification data has not been stored in db");
 			files = image_server_const.image_storage.get_region_movement_quantification_metadata(region_info_id, sql);
 			files.base_db_record.save_to_db(0, &sql);
-			files.set_from_base_db_record(files.base_db_record);
 			sql << "UPDATE sample_region_image_info SET movement_image_analysis_quantification_id = " << files.base_db_record.id << " WHERE id = " << region_info_id;
 			sql.send_query();
 			if (im.id != 0) {	//delete old record if it existed
@@ -1423,12 +1422,11 @@ ns_time_path_movement_result_files ns_time_path_image_movement_analyzer<allocato
 			
 		}
 		else im.load_from_db(im.id, &sql);
-		files.only_quantification_specified = im.filename.find("_quantification") != im.filename.npos;
+		files.only_quantification_specified = im.filename.find("_quantification") != im.filename.npos || im.filename.find(".csv") != im.filename.npos || im.filename == files.base_name();
 		if (files.only_quantification_specified) {
 			if (record_options == ns_force_new_record_format) {
-				im.filename = files.base_name();
-				files.set_from_base_db_record(im);
-				files.base_db_record.save_to_db(files.base_db_record.id, &sql);
+				files = image_server_const.image_storage.get_region_movement_quantification_metadata(region_info_id, sql);
+				files.base_db_record.save_to_db(im.id, &sql);
 				return files;
 			}
 			files.movement_quantification = im;
@@ -1448,12 +1446,14 @@ const ns_movement_event ns_hmm_movement_analysis_optimizatiom_stats_record::stat
 
 
 void ns_time_path_movement_result_files::set_from_base_db_record(const ns_image_server_image& im) {
+	
+	if (ns_dir::extract_filename_without_extension(im.filename) != im.filename)
+		throw ns_ex("ns_time_path_movement_result_files::set_from_base_db_record::Base name has a file extension! : ") << im.filename;
 
 	base_db_record = movement_quantification = annotation_events = intervals_data = im;
-	base_db_record.filename = base_name();
-	movement_quantification.filename = "movement_analysis_quantification.csv.gz";
-	annotation_events.filename = "movement_analysis_events.csv.gz";
-	intervals_data.filename = "movement_analysis_intervals.csv.gz";
+	movement_quantification.filename = base_db_record.filename + "_quantification.csv.gz";
+	annotation_events.filename = base_db_record.filename + "_events.csv.gz";
+	intervals_data.filename = base_db_record.filename + "_intervals.csv.gz";
 	only_quantification_specified = false;
 }
 

@@ -3,6 +3,7 @@
 #include "ns_image_processing_pipeline.h"
 #endif
 #include "ns_processing_job_processor.h"
+#include "ns_time_path_image_analyzer.h"
 
 using namespace std;
 
@@ -299,12 +300,9 @@ void ns_identify_region_files_to_delete(const ns_64_bit & region_id,const bool e
 		//old-style movement analysis data
 		files.push_back(image_server_const.image_storage.get_file_specification_for_movement_data(region_id, "time_path_movement_image_analysis_quantification.csv", &sql));
 		//new style record
-		ns_time_path_movement_result_files analysis_files;
-		analysis_files.set_from_base_db_record(ns_image_server_image());
-		files.push_back(image_server_const.image_storage.get_file_specification_for_movement_data(region_id, analysis_files.movement_quantification.filename, &sql));
-		files.push_back(image_server_const.image_storage.get_file_specification_for_movement_data(region_id, analysis_files.intervals_data.filename, &sql));
-		files.push_back(image_server_const.image_storage.get_file_specification_for_movement_data(region_id, analysis_files.annotation_events.filename, &sql));
-		files.push_back(image_server_const.image_storage.get_detection_data_path_for_region(region_id, &sql));
+		files.push_back(image_server_const.image_storage.get_file_specification_for_movement_data(region_id, "time_path_image_analysis_quantification.csv.gz", &sql));
+		files.push_back(image_server_const.image_storage.get_file_specification_for_movement_data(region_id, "time_path_image_analysis_events.csv.gz", &sql));
+		files.push_back(image_server_const.image_storage.get_file_specification_for_movement_data(region_id, "time_path_image_analysis_intervals.csv.gz", &sql));
 
 		ns_image_server_results_subject spec;
 		spec.region_id = region_id;

@@ -12,7 +12,7 @@
 #include "ns_experiment_storyboard.h"
 #include "ns_analyze_movement_over_time.h"
 #include "ns_hand_annotation_loader.h"
-#define IDLE_THROTTLE_FPS 40
+#define IDLE_THROTTLE_FPS 90
 #define SCALE_FONTS_WITH_WINDOW_SIZE 0
 
 bool output_debug_messages = false;
@@ -1151,12 +1151,9 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 	Configuration Tasks
 	*****************************/
 	static void show_extra_menus(const std::string & value);
-	static void do_not_overwrite_schedules(const std::string & value){worm_learner.overwrite_submitted_specification(false);}
-	static void overwrite_schedules(const std::string & value){worm_learner.overwrite_submitted_specification(true);}
-	static void do_not_overwrite_existing_masks(const std::string & value){worm_learner.overwrite_existing_masks(false);}
-	static void overwrite_existing_masks(const std::string & value){worm_learner.overwrite_existing_masks(true);}
-	static void generate_mp4(const std::string & value){worm_learner.generate_mp4(true);}
-	static void generate_wmv(const std::string & value){worm_learner.generate_mp4(false);}
+	
+	static void precache_storyboard_images(const std::string& value) { worm_learner.precache_solo_worm_images = value.find("Pre-Cache") != value.npos; }
+	static void generate_mp4(const std::string & value){worm_learner.generate_mp4(value=="MP4");}
 	static void update_sql_schema(const std::string & value){worm_learner.upgrade_tables();}
 	
 	static void create_experiment_from_filenames(const std::string & value){
@@ -1544,8 +1541,6 @@ public:
 
 			add(ns_menu_item_spec(analyze_worm_position, "Testing/Movement Analysis/Analyze worm positions for current region"));
 		}
-	//	add(ns_menu_item_spec(compile_schedule_to_disk,"Config/Compile Submitted Capture Schedules to Disk"));
-	//	add(ns_menu_item_spec(submit_schedule_to_db,"Config/_Submit Capture Schedules to Database"));	
 		string version("Worm Browser v");
 		version = version + ns_to_string(image_server.software_version_major()) + "." + ns_to_string(image_server.software_version_minor()) + "." + ns_to_string(image_server.software_version_compile()) + " (2019)";
 		add(ns_menu_item_spec(set_database,string("&Config/") + version,0,FL_MENU_INACTIVE));
@@ -1556,11 +1551,14 @@ public:
 			db_spec.options.push_back(worm_learner.databases_available[i]);
 		add(db_spec);
 		add(ns_menu_item_spec(show_extra_menus, "Config/Set Behavior/_Show Image Analysis Diagnostic Tools"));
-		//add(ns_menu_item_spec(do_not_overwrite_existing_masks,"Config/Set Behavior/Do not overwrite existing sample masks"));
-		//add(ns_menu_item_spec(overwrite_existing_masks,"Config/Set Behavior/_Overwrite existing sample masks"));
-		
-		add(ns_menu_item_spec(generate_mp4,"Config/Set Behavior/Generate Mp4 Videos"));
-		add(ns_menu_item_spec(generate_wmv,"Config/Set Behavior/_Generate WMV Videos"));
+		ns_menu_item_spec caching(precache_storyboard_images, "Config/Set Behavior/_Storyboard pre-caching");
+		caching.options.push_back(std::string("Pre-Cache to speed up image loading"));
+		caching.options.push_back(std::string("Do not cache"));
+		add(caching);
+		ns_menu_item_spec video (generate_mp4,"Config/Set Behavior/_Video Output Encoding");
+		video.options.push_back(std::string("MP4"));
+		video.options.push_back(std::string("WMV"));
+		add(video);
 		add(ns_menu_item_spec(upload_strain_metadata,"Config/_Set Behavior/Upload Strain Metadata to the Database"));
 		add(ns_menu_item_spec(update_sql_schema,"Config/Update database schema"));
 }

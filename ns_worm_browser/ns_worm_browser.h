@@ -568,7 +568,7 @@ public:
 		movement_data_is_strictly_decreasing_(false),overwrite_existing_mask_when_submitting(false),output_svg_spines(false),static_mask(0),generate_mp4_(false),
 		/*submit_capture_specification_to_db_when_recieved(false),*/overwrite_submitted_capture_specification(false),maximum_window_size(1024,768),
 	  storyboard_annotater(2),main_window("Main Window"), persistant_sql_connection(0), persistant_sql_lock("psl"), show_testing_menus(false),
-				worm_window("Worm Window"), worm_image_offset_due_to_telemetry_graph_spacing(0, 0) {
+				worm_window("Worm Window"), worm_image_offset_due_to_telemetry_graph_spacing(0, 0), precache_solo_worm_images(false){
 		storyboard_annotater.set_resize_factor(2);
 		last_button_press.click_type = ns_button_press::ns_none;
 		current_annotater = &storyboard_annotater;
@@ -886,6 +886,8 @@ public:
 	string current_clipboard_filename;
 
 	ns_lock storyboard_lock;
+
+	bool precache_solo_worm_images;
 private:
 	ns_image_standard animation_temp;
 	ns_death_time_annotation_set::ns_annotation_type_to_load last_annotation_type_loaded;

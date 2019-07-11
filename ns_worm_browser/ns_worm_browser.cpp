@@ -7858,9 +7858,9 @@ bool ns_worm_learner::start_death_time_annotation(const ns_behavior_mode m, cons
 					image_server_const.register_server_event_no_db(ns_image_server_event("Display requested"));
 				//set_behavior_mode(m);
 				//We can speed things up if only one region is being considered.
-				if (m == ns_worm_learner::ns_annotate_storyboard_region) {
+				if (m == ns_worm_learner::ns_annotate_storyboard_region && precache_solo_worm_images) {
 					if (image_server.verbose_debug_output())
-						image_server_const.register_server_event_no_db(ns_image_server_event("Trying to pre-cache."));
+						image_server_const.register_server_event_no_db(ns_image_server_event("Starting to pre-cache."));
 					storyboard_annotater.precache_worm_images_asynch();
 				}
 		}

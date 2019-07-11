@@ -1042,7 +1042,7 @@ void ns_time_path_solution::load_from_disk(istream & in){
 				get_int(in,timepoints[s].time);
 				get_int(in,timepoints[s].sample_region_image_id);
 				for (unsigned int i = 0; i < 4; i++) get_int(in,tmp); //room for expansion
-				timepoints[s].elements.reserve(10);
+				timepoints[s].elements.reserve(400);
 				break;
 			}
 			case 'e':{

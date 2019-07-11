@@ -134,7 +134,7 @@ class ns_death_time_annotation_compiler_region{
 
 public:
 
-	ns_death_time_annotation_compiler_region(const unsigned long match_distance_=30):match_distance_squared(match_distance_*match_distance_){}
+	ns_death_time_annotation_compiler_region():match_distance_squared(125*125){}
 	typedef std::vector<ns_death_time_annotation_compiler_location> ns_location_list;
 	void output_visualization_csv(std::ostream & o,const bool output_header) const;
 
@@ -161,7 +161,6 @@ public:
 	void clear(){regions.clear();}
 	ns_region_list regions;
 	
-	enum{match_distance=5};
 	
 	void remove_all_but_specified_event_type(const ns_death_time_annotation_set::ns_annotation_type_to_load & t);
 	void generate_survival_curve_set(ns_lifespan_experiment_set & survival_curves, const ns_death_time_annotation::ns_by_hand_annotation_integration_strategy & death_times_to_use,const bool use_by_hand_worm_cluster_annotations, const bool warn_on_movement_problems) const;

@@ -9,7 +9,7 @@ class ns_hand_annotation_loader{
 public:
 	
 	ns_death_time_annotation_compiler annotations;
-
+	//load by hand annotations for specific region
 	ns_region_metadata load_region_annotations(const ns_death_time_annotation_set::ns_annotation_type_to_load & annotation_type_to_load,const ns_64_bit region_id, ns_sql & sql){
 		ns_region_metadata m;
 		m.load_from_db(region_id,"",sql);

@@ -342,7 +342,7 @@ private:
 
 
 		//now reuse scores memory for another purpose--storing normalized movement scores.
-		scores.resize(number_of_valid_elements);
+		scores.resize(number_of_valid_elements_);
 		//calculate normalized movement scores and find their min and max
 		for (unsigned int i = first_valid_element; i < last_valid_element; i++) {
 			if (path->element(i).excluded)

@@ -633,7 +633,6 @@ private:
 
 	mutable bool saved_;
 
-	void precache_images_for_group(const unsigned long region_id,const unsigned long group_id, ns_sql & sql);
 public:
 
 	enum { default_resize_factor = 1, max_buffer_size = 15, max_zoom_factor = 40 };

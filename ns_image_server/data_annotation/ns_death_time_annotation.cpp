@@ -1156,7 +1156,10 @@ void ns_death_time_annotation_compiler_region::add(const ns_death_time_annotatio
 
 		ns_location_list::iterator unassigned_position_match(locations.end());
 		ns_location_list::iterator assigned_position_match(locations.end());
-
+		double min_useable_dist(DBL_MAX),
+			min_overall_debug_dist(DBL_MAX);
+		unsigned long id_of_min_overall(0);
+		unsigned long debug_id(0);
 		for(ns_location_list::iterator p = locations.begin(); p != locations.end(); p++){
 
 	//		for (unsigned long k = 0; k < p->annotations.size(); k++)
@@ -1166,10 +1169,18 @@ void ns_death_time_annotation_compiler_region::add(const ns_death_time_annotatio
 					assigned_position_match = p;
 					break;
 			}
+			const double dist = (p->properties.position - e.position).squared();
 			if (
 				(!p->properties.stationary_path_id.specified() || p->properties.stationary_path_id.detection_set_id != e.stationary_path_id.detection_set_id)
-				&& p->location_matches(match_distance_squared,e.position))
+				&& p->location_matches(match_distance_squared, e.position) && dist <= min_useable_dist) {
+				min_useable_dist = dist;
 				unassigned_position_match = p;
+			}
+			if (!p->properties.stationary_path_id.specified() || p->properties.stationary_path_id.detection_set_id != e.stationary_path_id.detection_set_id &&
+				dist <= min_overall_debug_dist) {
+				id_of_min_overall = debug_id;
+				min_overall_debug_dist = dist;
+			}
 		}
 //		if (assigned_position_match != locations.end() && assigned_position_match->properties.inferred_animal_location){
 				//cerr << "WHA";
@@ -1181,7 +1192,8 @@ void ns_death_time_annotation_compiler_region::add(const ns_death_time_annotatio
 //				if (e.is_excluded())
 //					cerr << ";";
 //			}
-
+	//	if (e.region_info_id == 56369 && e.stationary_path_id.group_id == 113)
+	//		cerr << "XXX";
 		if (assigned_position_match != locations.end())
 			assigned_position_match->add_event(e);
 		else if (unassigned_position_match != locations.end())
@@ -1286,7 +1298,7 @@ void ns_death_time_annotation_compiler::add(const ns_death_time_annotation_set &
 		if (r == regions.end()){
 			if (creation_type != ns_create_all)
 				continue;
-			r = regions.insert(ns_region_list::value_type(set.events[i].region_info_id,ns_death_time_annotation_compiler_region(match_distance))).first;
+			r = regions.insert(ns_region_list::value_type(set.events[i].region_info_id,ns_death_time_annotation_compiler_region())).first;
 		}
 		r->second.add(set.events[i],creation_type != ns_do_not_create_regions_or_locations);
 	}
@@ -1310,7 +1322,7 @@ void ns_death_time_annotation_compiler::add(const ns_death_time_annotation & e,c
 
 	ns_region_list::iterator r(regions.find(e.region_info_id));
 	if (r == regions.end())
-		r = regions.insert(ns_region_list::value_type(e.region_info_id,ns_death_time_annotation_compiler_region(match_distance))).first;
+		r = regions.insert(ns_region_list::value_type(e.region_info_id,ns_death_time_annotation_compiler_region())).first;
 
 	r->second.add(e,true);
 	r->second.metadata = metadata;
@@ -1328,7 +1340,7 @@ void ns_death_time_annotation_compiler::add(const ns_death_time_annotation_set &
 
 	ns_region_list::iterator r(regions.find(region_info_id));
 	if (r == regions.end())
-		r = regions.insert(ns_region_list::value_type(region_info_id,ns_death_time_annotation_compiler_region(match_distance))).first;
+		r = regions.insert(ns_region_list::value_type(region_info_id,ns_death_time_annotation_compiler_region())).first;
 
 	for (unsigned int i = 0; i < set.events.size(); i++){
 		if (set.events[i].number_of_worms_at_location_marked_by_machine > 100)
@@ -1345,7 +1357,7 @@ void ns_death_time_annotation_compiler::specifiy_region_metadata(const ns_64_bit
 		throw ns_ex("Attempting to insert inconsistant metadata");
 	ns_region_list::iterator r(regions.find(region_id));
 	if (r == regions.end())
-		r = regions.insert(ns_region_list::value_type(region_id,ns_death_time_annotation_compiler_region(match_distance))).first;
+		r = regions.insert(ns_region_list::value_type(region_id,ns_death_time_annotation_compiler_region())).first;
 	r->second.metadata = metadata;
 }
 

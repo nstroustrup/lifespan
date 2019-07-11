@@ -7861,7 +7861,7 @@ bool ns_worm_learner::start_death_time_annotation(const ns_behavior_mode m, cons
 				if (m == ns_worm_learner::ns_annotate_storyboard_region) {
 					if (image_server.verbose_debug_output())
 						image_server_const.register_server_event_no_db(ns_image_server_event("Trying to pre-cache."));
-					//storyboard_annotater.precache_worm_images_asynch();
+					storyboard_annotater.precache_worm_images_asynch();
 				}
 		}
 		else{

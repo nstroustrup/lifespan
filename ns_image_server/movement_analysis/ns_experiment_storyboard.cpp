@@ -983,6 +983,7 @@ bool ns_experiment_storyboard::load_events_from_annotation_compiler(const ns_loa
 						p->annotation_source == ns_death_time_annotation::ns_storyboard
 						)) {
 					//we keep by hand movement annotations saved to disk and never delete them, even if they aren't included in desired output.
+				
 					annotation_subject->by_hand_movement_annotations_for_element.push_back(ns_by_hand_movement_annotation(*p, true));
 				}
 			}

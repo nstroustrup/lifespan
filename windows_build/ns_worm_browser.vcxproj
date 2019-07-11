@@ -474,7 +474,7 @@
     <ClCompile Include="..\external_libraries\tinyxml\tinyxmlparser.cpp" />
     <ClCompile Include="..\external_libraries\triangle\triangle.cpp">
       <RuntimeLibrary Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">MultiThreadedDebug</RuntimeLibrary>
-      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsCpp</CompileAs>
     </ClCompile>
     <ClCompile Include="..\external_libraries\wm4_bspline\Wm4BSplineBasis.cpp" />
     <ClCompile Include="..\external_libraries\wm4_bspline\Wm4BSplineCurve2.cpp" />

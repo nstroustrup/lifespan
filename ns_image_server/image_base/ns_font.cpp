@@ -16,7 +16,6 @@ FT_Pos ns_font::render_glyph(const char& c, int& previous_index, FT_Glyph & glyp
 	delta.x = delta.y = 0;
 
 	/* load glyph image into the slot (erase previous one) */
-	if (error) throw ns_ex("ns_font::Error Loading Glyph");
 	ns_glyph_cache_type::iterator p = glyph_cache.find(ns_glyph_cach_entry(c, current_face_height));
 	if (p == glyph_cache.end()) {
 

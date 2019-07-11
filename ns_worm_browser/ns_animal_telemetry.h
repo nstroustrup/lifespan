@@ -240,10 +240,11 @@ private:
 				last_valid_element = i;
 			}
 		}
-		if (last_valid_element == 0 || first_element == path->element_count())
+		if (last_valid_element == 0 || first_valid_element == path->element_count())
 			throw ns_ex("No data to plot");
-		unsigned long number_of_valid_elements_ = last_valid_element - first_element +1;
-
+		unsigned long number_of_valid_elements_ = last_valid_element - first_valid_element +1;
+		number_of_valid_elements = number_of_valid_elements_;
+		first_element = first_valid_element;
 		time_axis.resize(number_of_valid_elements_);
 		segment_ids.resize(number_of_valid_elements_, -1);
 
@@ -269,7 +270,7 @@ private:
 		for (unsigned int i = first_valid_element; i <= last_valid_element; i++) {
 			if (path->element(i).excluded)
 				continue;
-			if (segment_ids[i] != cur_seg_id) {
+			if (segment_ids[i - first_valid_element] != cur_seg_id) {
 				cur_seg_id++;
 				if (cur_seg_id >= segment_offsets.size())
 					throw ns_ex("Encountered an invalid segment id");

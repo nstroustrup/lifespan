@@ -331,9 +331,9 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 	//output worm movement and death time annotations to disk
 
 	ns_image_server_results_file censoring_results(image_server->results_storage.machine_death_times(results_subject, ns_image_server_results_storage::ns_censoring_and_movement_transitions,
-		"time_path_image_analysis", sql));
+		"time_path_image_analysis", sql,true));
 	ns_image_server_results_file state_results(image_server->results_storage.machine_death_times(results_subject, ns_image_server_results_storage::ns_worm_position_annotations,
-		"time_path_image_analysis", sql));
+		"time_path_image_analysis", sql,true));
 
 	ns_acquire_for_scope<ns_ostream> censoring_out(censoring_results.output());
 	ns_acquire_for_scope<ns_ostream> state_out(state_results.output());

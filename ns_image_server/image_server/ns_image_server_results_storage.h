@@ -75,8 +75,13 @@ class ns_image_server_results_file{
 	}
 	ns_istream * input(){
 		ns_istream* in;
-		if (filename.find(".gz") != filename.npos)
-			in = new ns_istream(new igzstream(path().c_str()));
+		if (filename.find(".gz") != filename.npos) {
+			const std::string p(path());
+			if (ns_dir::file_exists(p))
+				in = new ns_istream(new igzstream(p.c_str()));
+			else 
+				return 0;
+		}
 		else
 			in = new ns_istream(new std::ifstream(path().c_str()));
 		if ((*in)().fail()){
@@ -186,10 +191,11 @@ public:
 		default: throw ns_ex("Unknown death time annotation file type");
 		}
 	}
-	ns_image_server_results_file machine_death_times(ns_image_server_results_subject & spec, const ns_death_time_annotation_file_type & type,const std::string & analysis_type,ns_sql & sql) const{		
+	ns_image_server_results_file machine_death_times(ns_image_server_results_subject & spec, const ns_death_time_annotation_file_type & type,const std::string & analysis_type,ns_sql & sql,bool compressed) const{		
 		spec.get_names(sql);
-		return ns_image_server_results_file(results_directory,ns_image_server_results_subject::create_short_name(spec.experiment_name) + DIR_CHAR_STR + machine_death_time_annotations(),
-											spec.region_filename() + "machine_event_annotations=" + death_time_annotation_file_type_label(type) + "=" + analysis_type + ".csv.gz");
+		std::string filename = spec.region_filename() + "machine_event_annotations=" + death_time_annotation_file_type_label(type) + "=" + analysis_type + ".csv";
+		if (compressed)filename += ".gz";
+		return ns_image_server_results_file(results_directory, ns_image_server_results_subject::create_short_name(spec.experiment_name) + DIR_CHAR_STR + machine_death_time_annotations(), filename);
 	}
 	ns_image_server_results_file hand_curated_death_times(ns_image_server_results_subject & spec, ns_sql & sql) const{		
 		spec.get_names(sql);

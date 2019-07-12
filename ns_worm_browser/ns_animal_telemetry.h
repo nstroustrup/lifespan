@@ -632,7 +632,7 @@ private:
 	}
 
 	inline void map_value_from_bottom_graph_onto_image(const float &x, const float &y, unsigned long & x1, unsigned long & y1) {
-		x1 = graph_top_specifics.boundary.x + (unsigned int)(graph_top_specifics.dx*(x - graph_top_specifics.axes.boundary(0) + graph_top_specifics.axes.axis_offset(0)));
+		x1 = graph_bottom_specifics.boundary.x + (unsigned int)(graph_bottom_specifics.dx*(x - graph_bottom_specifics.axes.boundary(0) + graph_bottom_specifics.axes.axis_offset(0)));
 		y1 = base_graph_top.properties().height + border().y + base_graph_bottom.properties().height - graph_bottom_specifics.boundary.y - (unsigned int)(graph_bottom_specifics.dy*(y - graph_bottom_specifics.axes.boundary(2) + graph_bottom_specifics.axes.axis_offset(1)));
 	}
 	inline unsigned long map_pixel_from_image_onto_buffer(const unsigned long &x, const unsigned long &y, const ns_vector_2i &position, const ns_vector_2i &buffer_size) {
@@ -697,7 +697,6 @@ public:
 		time_axis.clear();
 		last_start_time = 0;
 		last_stop_time = 0;
-		ns_posture_analysis_model posture_analysis_model;
 	}
 	unsigned long get_graph_time_from_graph_position(const float x) { //x is in relative time
 		ns_analyzed_image_time_path *path(&region_data->movement_analyzer.group(group_id).paths[0]);

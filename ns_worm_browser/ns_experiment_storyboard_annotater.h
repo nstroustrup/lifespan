@@ -6,6 +6,7 @@
 #include "ns_death_time_annotation.h"
 #include "ns_experiment_storyboard.h"
 #include "ns_time_path_image_analyzer.h"
+#include "ns_population_telemetry.h"
 
 
 //triangle drawing from http://www.sunshine2k.de/coding/java/TriangleRasterization/TriangleRasterization.html
@@ -468,7 +469,33 @@ private:
 	ns_sql * precache_sql_connection;
 	bool run_precaching;
 	ns_lock precaching_lock;
+	ns_death_time_annotation_compiler machine_events_for_telemetry;
 public:
+
+	ns_population_telemetry population_telemetry;
+	void add_machine_events_for_telemetry(const ns_death_time_annotation_set& set,const ns_region_metadata & metadata) {
+		machine_events_for_telemetry.add(set, metadata);
+	}
+	void clear_machine_events_for_telemetry() {
+		machine_events_for_telemetry.clear();
+	}
+	void recalculate_telemetry() {
+		std::map<ns_64_bit, ns_death_time_annotation_set> annotations;
+		get_storyboard().collect_current_annotations(annotations);
+		ns_death_time_annotation_compiler compiler = machine_events_for_telemetry;
+		for (std::map<ns_64_bit, ns_death_time_annotation_set>::const_iterator p = annotations.begin(); p != annotations.end(); p++)
+			compiler.add(p->second,ns_death_time_annotation_compiler::ns_do_not_create_regions_or_locations);
+		population_telemetry.update_annotations_and_build_survival(compiler, strain_to_display);
+		draw_telemetry();
+	}
+	ns_vector_2i telemetry_size(const ns_population_telemetry::ns_graph_contents& contents) {
+		if (contents == ns_population_telemetry::ns_survival)
+			return ns_vector_2i(600, 400);
+		else if (contents == ns_population_telemetry::ns_movement_vs_posture)
+			return ns_vector_2i(600 + 400, 400);
+		else throw ns_ex("Unknown population telemetry contents");
+	}
+	void draw_telemetry();
 	void set_resize_factor(const unsigned long resize_factor_){
 		resize_factor = resize_factor_;
 	}

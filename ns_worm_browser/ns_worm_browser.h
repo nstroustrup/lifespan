@@ -527,7 +527,7 @@ public:
 	void redraw_screen(){
 		redraw_requested = true;
 	}
-
+	void update_display();
 	//void redraw_screen(const unsigned long w, const unsigned long h,const bool resize=true){
 	//	redraw_requested=true;
 	//}	
@@ -568,7 +568,7 @@ public:
 		movement_data_is_strictly_decreasing_(false),overwrite_existing_mask_when_submitting(false),output_svg_spines(false),static_mask(0),generate_mp4_(false),
 		/*submit_capture_specification_to_db_when_recieved(false),*/overwrite_submitted_capture_specification(false),maximum_window_size(1024,768),
 	  storyboard_annotater(2),main_window("Main Window"), persistant_sql_connection(0), persistant_sql_lock("psl"), show_testing_menus(false),
-				worm_window("Worm Window"), worm_image_offset_due_to_telemetry_graph_spacing(0, 0), precache_solo_worm_images(false){
+				worm_window("Worm Window"), stats_window("Statistics Window"), worm_image_offset_due_to_telemetry_graph_spacing(0, 0), precache_solo_worm_images(false){
 		storyboard_annotater.set_resize_factor(2);
 		last_button_press.click_type = ns_button_press::ns_none;
 		current_annotater = &storyboard_annotater;
@@ -745,15 +745,17 @@ public:
 
 	void draw_image(const double x, const double y, ns_image_standard & image);
 	void draw_line_on_overlay(const ns_vector_2i & a, const ns_vector_2i & b);
-	void update_main_window_display();
 	void draw();
 	void touch_main_window_pixel(const ns_button_press & press);
 	bool register_main_window_key_press(int key, const bool shift_key_held,const bool control_key_held,const bool alt_key_held);
 	
 	void draw_worm_window_image(ns_image_standard & image);
-	void update_worm_window_display();
 	void touch_worm_window_pixel(const ns_button_press & press);
 	bool register_worm_window_key_press(int key, const bool shift_key_held,const bool control_key_held,const bool alt_key_held);
+
+	void draw_stats_window_image();
+	void touch_stats_window_pixel(const ns_button_press& press);
+	bool register_stats_window_key_press(int key, const bool shift_key_held, const bool control_key_held, const bool alt_key_held);
 
 	//file i/o
 	void load_file(const std::string & filename);
@@ -870,7 +872,8 @@ public:
 	ns_vector_2i maximum_window_size;
 
 	ns_gl_window_data main_window,
-				worm_window;
+		worm_window,
+		stats_window;
 	ns_vector_2i worm_image_offset_due_to_telemetry_graph_spacing;
 
 	ns_experiment_storyboard_spec::ns_storyboard_flavor current_storyboard_flavor;
@@ -894,6 +897,7 @@ private:
 	ns_button_press last_button_press;
 	void touch_main_window_pixel_internal(const ns_button_press & p);
 	void touch_worm_window_pixel_internal(const ns_button_press & p);
+	void touch_stats_window_pixel_internal(const ns_button_press& p);
 
 	ns_behavior_mode behavior_mode;
 	bool generate_mp4_;

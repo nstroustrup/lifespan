@@ -2263,7 +2263,7 @@ void ns_lifespan_curve_cache_entry::load_from_external_source(const ns_annotatio
 			p->second.compiler.generate_survival_curve_set(set, ns_death_time_annotation::ns_machine_annotations_if_no_by_hand, true, false);
 			
 
-			set.generage_aggregate_risk_timeseries(p->second.metadata, p->second.risk_timeseries, p->second.risk_timeseries_time);
+			set.generate_aggregate_risk_timeseries(p->second.metadata, true, p->second.risk_timeseries, p->second.risk_timeseries_time);
 
 			//here we should identify all possible strain-level risk time series by identifying all values of 
 			//p->second.metadata

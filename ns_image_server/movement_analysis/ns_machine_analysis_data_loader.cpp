@@ -34,11 +34,19 @@ bool ns_machine_analysis_region_data::load_from_db(const ns_death_time_annotatio
 	}
 	bool could_load_all_files(true);
 	for (unsigned int i = 0; i < files_to_open.size(); i++){
-		ns_image_server_results_file results(image_server.results_storage.machine_death_times(results_subject,files_to_open[i],"time_path_image_analysis",sql));
-		ns_acquire_for_scope<ns_istream> tp_i(results.input());
+		ns_acquire_for_scope<ns_istream> tp_i(0);
+
+		ns_image_server_results_file results(image_server.results_storage.machine_death_times(results_subject, files_to_open[i], "time_path_image_analysis", sql,true));
+		tp_i.attach(results.input());
+
 		if (tp_i.is_null()){
-			could_load_all_files = false;
-			continue;
+			//try to load old-style uncompressed if compressed is not found
+			ns_image_server_results_file results(image_server.results_storage.machine_death_times(results_subject, files_to_open[i], "time_path_image_analysis", sql, false));
+			tp_i.attach(results.input());
+			if (tp_i.is_null()) {
+				could_load_all_files = false;
+					continue;
+			}
 		}
 		death_time_annotation_set.read(annotation_type_to_load,tp_i()(),details==ns_machine_analysis_region_data::ns_exclude_fast_moving_animals);
 		tp_i.release();
@@ -108,9 +116,9 @@ bool ns_machine_analysis_region_data::recalculate_from_saved_movement_quantifica
 	ns_image_server_results_subject results_subject;
 	results_subject.region_id = region_id;
 	ns_image_server_results_file censoring_results(image_server.results_storage.machine_death_times(results_subject,ns_image_server_results_storage::ns_censoring_and_movement_transitions,
-				"time_path_image_analysis",sql));
+				"time_path_image_analysis",sql,true));
 	ns_image_server_results_file state_results(image_server.results_storage.machine_death_times(results_subject,ns_image_server_results_storage::ns_worm_position_annotations,
-				"time_path_image_analysis",sql));
+				"time_path_image_analysis",sql,true));
 	ns_acquire_for_scope<ns_ostream> censoring_out(censoring_results.output());
 	ns_acquire_for_scope<ns_ostream> state_out(state_results.output());
 	death_time_annotation_set.write_split_file_column_format(censoring_out()(),state_out()());

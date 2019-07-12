@@ -146,6 +146,8 @@ public:
 	void check_that_all_time_path_information_is_valid(ns_sql & sql);
 	void save_by_hand_annotations(ns_sql & sql,const ns_death_time_annotation_set & extra_annotations) const;
 
+	void collect_current_annotations(std::map<ns_64_bit, ns_death_time_annotation_set>& annotations) const;
+
 	static std::string image_suffix(const ns_experiment_storyboard_spec & spec);
 
 	void write_metadata(std::ostream & o) const;

@@ -1407,33 +1407,19 @@ struct ns_event_count{
 		number_of_events,
 		number_of_censoring_events;
 };
-void ns_lifespan_experiment_set::generage_aggregate_risk_timeseries(const ns_region_metadata & m,ns_survival_data_with_censoring & risk_timeseries, std::vector<unsigned long> & t) const{
+void ns_lifespan_experiment_set::generate_aggregate_risk_timeseries(const ns_region_metadata & m, bool filter_by_metadata, ns_survival_data_with_censoring & risk_timeseries, std::vector<unsigned long> & t) const{
 	std::map<unsigned long,std::vector<ns_survival_timepoint_event> > events; 
 	ns_region_metadata mm(m);
 	mm.genotype.clear();
 	
 	ns_survival_data aggregate_set;
 	for (unsigned int i = 0; i <this->curves.size(); i++){
-		if (mm.device_regression_match_description() != curves[i].metadata.device_regression_match_description() || mm.device != curves[i].metadata.device) {
-		//	cout << mm.device_regression_match_description() << "\n";
-		//	cout << curves[i].metadata.device_regression_match_description() << "\n";
-		//	cout << mm.device << "\n";
-		//	cout << curves[i].metadata.device << "\n";
+		if (filter_by_metadata && (mm.device_regression_match_description() != curves[i].metadata.device_regression_match_description() || mm.device != curves[i].metadata.device) )
 			continue;
 
-		}
 		//add all events except for excluded objects
 		for (unsigned long j = 0; j < curves[i].timepoints.size(); j++){
-		//	for (unsigned int k = 0; k < curves[i].timepoints[j].deaths.events.size(); k++)
 				events[curves[i].timepoints[j].absolute_time].push_back(curves[i].timepoints[j].deaths);
-			//const unsigned long s(events[curves[i].timepoints[j].absolute_time].size());
-			//events[curves[i].timepoints[j].absolute_time].resize(s+1);
-			//for (unsigned int k = 0; k < curves[i].timepoints[j].deaths.events.size(); k++){
-				//if (!curves[i].timepoints[j].deaths.events[k].properties.is_excluded())
-			//	events[curves[i].timepoints[j].absolute_time][s].events.push_back(curves[i].timepoints[j].deaths.events[k]);
-			//}
-			//if (events[curves[i].timepoints[j].absolute_time][s].events.empty())
-			//	events[curves[i].timepoints[j].absolute_time].resize(s);
 		}
 	}
 	aggregate_set.timepoints.resize(events.size());
@@ -1446,10 +1432,7 @@ void ns_lifespan_experiment_set::generage_aggregate_risk_timeseries(const ns_reg
 		for (unsigned int j = 0; j < p->second.size(); j++)
 			aggregate_set.timepoints[i].deaths.add(p->second[j]);
 		p->second.clear();
-	//	risk_timeseries.data.number_of_events[i] = p->second.number_of_events;
-		//risk_timeseries.data.number_of_censoring_events[i] = p->second.number_of_censoring_events;
 		i++;
-		//i++;
 	}
 	events.clear();
 	aggregate_set.genenerate_survival_statistics();

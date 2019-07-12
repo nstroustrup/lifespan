@@ -6759,6 +6759,69 @@ bool ns_worm_learner::register_worm_window_key_press(int key, const bool shift_k
 }
 
 
+
+void ns_worm_learner::touch_stats_window_pixel(const ns_button_press& press) {
+	if (press.screen_position.x < 4 || press.screen_position.y < 4 ||
+		press.screen_position.x + 4 >= stats_window.gl_image_size.x || press.screen_position.y + 4 >= stats_window.gl_image_size.y)
+		return;
+	float z = ((float)stats_window.pre_gl_downsample) / stats_window.image_zoom;
+	ns_button_press p(press);
+	p.image_position = p.screen_position * z;
+	touch_stats_window_pixel_internal(p);
+}
+
+bool ns_worm_learner::register_stats_window_key_press(int key, const bool shift_key_held, const bool control_key_held, const bool alt_key_held) {
+	if (key == ']') {
+		stats_window.display_rescale_factor += .1;
+		return true;
+	}
+	else if (key == '[') {
+		stats_window.display_rescale_factor -= .1;
+		if (stats_window.display_rescale_factor <= 0)
+			stats_window.display_rescale_factor = .1;
+		return true;
+	}
+	else if (key == FL_Left || key == 'a') {
+		ns_worm_learner::navigate_solo_worm_annotation(ns_death_time_solo_posture_annotater::ns_back, true);
+		return true;
+	}
+	else if (key == FL_Right || key == 'd') {
+		ns_worm_learner::navigate_solo_worm_annotation(ns_death_time_solo_posture_annotater::ns_forward, true);
+		return true;
+	}
+	else if (key == 's' && control_key_held) {
+		death_time_solo_annotater.register_click(ns_vector_2i(0, 0), ns_death_time_solo_posture_annotater::ns_output_images, stats_window.display_rescale_factor);
+		return true;
+	}
+	else if (shift_key_held && key == '=' || key == '+') {
+		if (control_key_held)
+			death_time_solo_annotater.register_click(ns_vector_2i(0, 0), ns_death_time_solo_posture_annotater::ns_time_zoom_in, stats_window.display_rescale_factor);
+		else death_time_solo_annotater.register_click(ns_vector_2i(0, 0), ns_death_time_solo_posture_annotater::ns_increase_contrast, stats_window.display_rescale_factor);
+		return true;
+	}
+	else if (key == '-') {
+		if (control_key_held)
+			death_time_solo_annotater.register_click(ns_vector_2i(0, 0), ns_death_time_solo_posture_annotater::ns_time_zoom_out, stats_window.display_rescale_factor);
+		else death_time_solo_annotater.register_click(ns_vector_2i(0, 0), ns_death_time_solo_posture_annotater::ns_decrease_contrast, stats_window.display_rescale_factor);
+		return true;
+	}
+	else if (key == 'g') {
+		death_time_solo_annotater.step_graph_type();
+
+		ns_update_worm_information_bar(string("Plotting ") + death_time_solo_annotater.graph_type_string());
+		return true;
+	}
+	else if (key == 'v') {
+		solo_annotation_visualization_type = death_time_solo_annotater.step_visualization_type(0, stats_window.display_rescale_factor);
+
+		ns_update_worm_information_bar(string("Showing ") + ns_death_time_solo_posture_annotater_timepoint::visulazation_type_string(solo_annotation_visualization_type));
+
+		return true;
+	}
+	return false;
+}
+
+
 void ns_worm_learner::touch_main_window_pixel(const ns_button_press & press){
 	if (press.screen_position.x < 2|| press.screen_position.y < 2 ||
 		press.screen_position.x+2 >= main_window.gl_image_size.x*main_window.display_rescale_factor|| press.screen_position.y+2 >= main_window.gl_image_size.y*main_window.display_rescale_factor)
@@ -6934,13 +6997,13 @@ void ns_worm_learner::touch_main_window_pixel_internal(const ns_button_press & p
 		case ns_worm_learner::ns_annotate_storyboard_experiment:{
 			if (press.click_type == ns_button_press::ns_up){
 				if (press.shift_key_held)
-					current_annotater->register_click(ns_vector_2i(press.image_position.x,press.image_position.y),ns_image_series_annotater::ns_annotate_extra_worm,worm_window.display_rescale_factor);
+					current_annotater->register_click(ns_vector_2i(press.image_position.x,press.image_position.y),ns_image_series_annotater::ns_annotate_extra_worm,main_window.display_rescale_factor);
 				else if (press.control_key_held)
-					current_annotater->register_click(ns_vector_2i(press.image_position.x,press.image_position.y),ns_image_series_annotater::ns_censor_all, worm_window.display_rescale_factor);
+					current_annotater->register_click(ns_vector_2i(press.image_position.x,press.image_position.y),ns_image_series_annotater::ns_censor_all, main_window.display_rescale_factor);
 				else if (press.right_button || press.control_key_held)
-					current_annotater->register_click(ns_vector_2i(press.image_position.x,press.image_position.y),ns_image_series_annotater::ns_censor, worm_window.display_rescale_factor);
+					current_annotater->register_click(ns_vector_2i(press.image_position.x,press.image_position.y),ns_image_series_annotater::ns_censor, main_window.display_rescale_factor);
 				else
-					current_annotater->register_click(ns_vector_2i(press.image_position.x,press.image_position.y),ns_image_series_annotater::ns_load_worm_details, worm_window.display_rescale_factor);
+					current_annotater->register_click(ns_vector_2i(press.image_position.x,press.image_position.y),ns_image_series_annotater::ns_load_worm_details, main_window.display_rescale_factor);
 			
 			}
 			break;
@@ -6951,11 +7014,11 @@ void ns_worm_learner::touch_main_window_pixel_internal(const ns_button_press & p
 		case ns_worm_learner::ns_annotate_death_times_in_death_aligned_posture:{
 			if (press.click_type == ns_button_press::ns_up){
 				if (press.right_button || press.control_key_held)
-					current_annotater->register_click(ns_vector_2i(press.image_position.x,press.image_position.y),ns_image_series_annotater::ns_censor, worm_window.display_rescale_factor);
+					current_annotater->register_click(ns_vector_2i(press.image_position.x,press.image_position.y),ns_image_series_annotater::ns_censor, main_window.display_rescale_factor);
 				else if (press.shift_key_held)
-					current_annotater->register_click(ns_vector_2i(press.image_position.x,press.image_position.y),ns_image_series_annotater::ns_annotate_extra_worm, worm_window.display_rescale_factor);
+					current_annotater->register_click(ns_vector_2i(press.image_position.x,press.image_position.y),ns_image_series_annotater::ns_annotate_extra_worm, main_window.display_rescale_factor);
 				else
-					current_annotater->register_click(ns_vector_2i(press.image_position.x,press.image_position.y),ns_image_series_annotater::ns_cycle_state, worm_window.display_rescale_factor);
+					current_annotater->register_click(ns_vector_2i(press.image_position.x,press.image_position.y),ns_image_series_annotater::ns_cycle_state, main_window.display_rescale_factor);
 			}
 			break;
 		}								
@@ -6977,6 +7040,22 @@ void ns_worm_learner::touch_worm_window_pixel_internal(const ns_button_press & p
 			death_time_solo_annotater.register_click(ns_vector_2i(press.image_position.x, press.image_position.y), ns_image_series_annotater::ns_cycle_state_alt_key_held, worm_window.display_rescale_factor);
 		else
 			death_time_solo_annotater.register_click(ns_vector_2i(press.image_position.x,press.image_position.y),ns_image_series_annotater::ns_cycle_state, worm_window.display_rescale_factor);
+	}
+	current_image_lock.release();
+}
+void ns_worm_learner::touch_stats_window_pixel_internal(const ns_button_press& press) {
+	current_image_lock.wait_to_acquire(__FILE__, __LINE__);
+
+
+	if (press.click_type == ns_button_press::ns_up) {
+		if (press.control_key_held)
+			death_time_solo_annotater.register_click(ns_vector_2i(press.image_position.x, press.image_position.y), ns_image_series_annotater::ns_cycle_flags, stats_window.display_rescale_factor);
+		else if (press.shift_key_held)
+			death_time_solo_annotater.register_click(ns_vector_2i(press.image_position.x, press.image_position.y), ns_image_series_annotater::ns_annotate_extra_worm, stats_window.display_rescale_factor);
+		else if (press.right_button)
+			death_time_solo_annotater.register_click(ns_vector_2i(press.image_position.x, press.image_position.y), ns_image_series_annotater::ns_cycle_state_alt_key_held, stats_window.display_rescale_factor);
+		else
+			death_time_solo_annotater.register_click(ns_vector_2i(press.image_position.x, press.image_position.y), ns_image_series_annotater::ns_cycle_state, stats_window.display_rescale_factor);
 	}
 	current_image_lock.release();
 }
@@ -7164,7 +7243,7 @@ void ns_worm_learner::draw_worm_window_image(ns_image_standard & image){
 			}
 	
 		}
-		//copy over the bottom area of the imate (which contains the image of the worm)
+		//copy over the bottom area of the image (which contains the image of the worm)
 	for (int _y = worm_image_height; _y < new_image_size.height; _y++) {
 			for (unsigned int _x = 0; _x < new_image_size.width; _x++) {
 		     
@@ -7239,6 +7318,142 @@ void ns_worm_learner::draw_worm_window_image(ns_image_standard & image){
 
 	lock.release();
 	worm_window.redraw_screen();
+}
+
+
+void ns_worm_learner::draw_stats_window_image() {
+
+	ns_acquire_lock_for_scope lock(stats_window.display_lock, __FILE__, __LINE__);
+
+	ns_vector_2i telemetry_dimensions = storyboard_annotater.telemetry_size(ns_population_telemetry::ns_survival);
+	ns_image_properties properties(telemetry_dimensions.y, telemetry_dimensions.x, 3);
+	stats_window.pre_gl_downsample = 1;
+
+	ns_image_properties new_image_size = properties;
+	new_image_size.components = 3;
+
+	new_image_size.width /= stats_window.pre_gl_downsample;
+	new_image_size.height /= stats_window.pre_gl_downsample;
+
+
+	ns_vector_2i buffer_size(new_image_size.width, new_image_size.height);
+
+	//we resize the image by an integer factor
+	//but it still needs to be resized by the video card
+	//by a non-integer factor in order to fit into the desired window size.
+	//we calculate this and send it to the video ard
+	double gl_resize(1);
+	if (buffer_size.y > maximum_window_size.y)
+		gl_resize = ((double)maximum_window_size.y) / buffer_size.y;
+	if (buffer_size.x > maximum_window_size.x) {
+		const double r(((double)maximum_window_size.x) / buffer_size.x);
+		if (r < gl_resize)
+			gl_resize = r;
+	}
+	//don't do this, because it always ends up looking messy.
+	gl_resize = 1;
+
+	stats_window.worm_image_size = ns_vector_2i(
+		(unsigned int)floor(new_image_size.width * gl_resize),
+		(unsigned int)floor(new_image_size.height * gl_resize));
+
+	stats_window.gl_image_size = buffer_size;
+
+
+	if (stats_window.gl_buffer_properties.width != stats_window.gl_image_size.x || stats_window.gl_buffer_properties.height != stats_window.gl_image_size.y
+		|| stats_window.gl_buffer_properties.components != 3) {
+
+		if (stats_window.gl_buffer != 0) {
+			delete[] stats_window.gl_buffer;
+			stats_window.gl_buffer = 0;
+		}
+
+		stats_window.gl_buffer = new ns_8_bit[3 * buffer_size.x * buffer_size.y];
+
+		stats_window.gl_buffer_properties.components = 3;
+		stats_window.gl_buffer_properties.width = buffer_size.x;
+		stats_window.gl_buffer_properties.height = buffer_size.y;
+	}
+	const unsigned long worm_image_height = (new_image_size.height - 1) / stats_window.pre_gl_downsample;
+	//cout << "worm_image_height:" << worm_image_height << "\n";
+	/*
+	for (int _y = 0; _y < worm_image_height; _y++) {
+		for (unsigned int _x = 0; _x < new_image_size.width; _x++) {
+			stats_window.gl_buffer[3 * (stats_window.gl_buffer_properties.width * _y + _x)] = 255;
+				image[(image.properties().height - 1 - _y * stats_window.pre_gl_downsample)][3 * _x * stats_window.pre_gl_downsample];
+			stats_window.gl_buffer[3 * (stats_window.gl_buffer_properties.width * _y + _x) + 1] =
+				image[(image.properties().height - 1 - _y * stats_window.pre_gl_downsample)][3 * _x * stats_window.pre_gl_downsample + 1];
+			stats_window.gl_buffer[3 * (stats_window.gl_buffer_properties.width * _y + _x) + 2] =
+				image[(image.properties().height - 1 - _y * stats_window.pre_gl_downsample)][3 * _x * stats_window.pre_gl_downsample + 2];
+		}
+
+	}
+	//copy over the bottom area of the imate (which contains the image of the worm)
+	for (int _y = worm_image_height; _y < new_image_size.height; _y++) {
+		for (unsigned int _x = 0; _x < new_image_size.width; _x++) {
+
+			stats_window.gl_buffer[3 * (stats_window.gl_buffer_properties.width * _y + _x)] =
+				ns_rescale(image[image.properties().height - 1 - _y * stats_window.pre_gl_downsample][3 * _x * stats_window.pre_gl_downsample], stats_window.dynamic_range_rescale_factor);
+			stats_window.gl_buffer[3 * (stats_window.gl_buffer_properties.width * _y + _x) + 1] =
+				ns_rescale(image[(image.properties().height - 1 - _y * stats_window.pre_gl_downsample)][3 * _x * stats_window.pre_gl_downsample + 1], stats_window.dynamic_range_rescale_factor);
+			stats_window.gl_buffer[3 * (stats_window.gl_buffer_properties.width * _y + _x) + 2] =
+				ns_rescale(image[(image.properties().height - 1 - _y * stats_window.pre_gl_downsample)][3 * _x * stats_window.pre_gl_downsample + 2], stats_window.dynamic_range_rescale_factor);
+		}
+		//	stats_window.gl_buffer[3 * (stats_window.gl_buffer_properties.width*_y)] = 255;
+	}
+
+	for (int _y = new_image_size.height; _y < stats_window.gl_buffer_properties.height; _y++)
+		for (unsigned int _x = 0; _x < new_image_size.width; _x++) {
+			stats_window.gl_buffer[3 * (stats_window.gl_buffer_properties.width * _y + _x)] =
+				stats_window.gl_buffer[3 * (stats_window.gl_buffer_properties.width * _y + _x) + 1] =
+				stats_window.gl_buffer[3 * (stats_window.gl_buffer_properties.width * _y + _x) + 2] = 0;
+		}
+*/
+	//	cout << "("<< image.properties().height << "," << image.properties().width << ")\n";
+	
+	/*
+	//now we handle the gl scaling
+	if (stats_window.display_rescale_factor <= 1 && (stats_window.gl_image_size.x * stats_window.display_rescale_factor > this->maximum_window_size.x ||
+		stats_window.gl_image_size.y * stats_window.display_rescale_factor > this->maximum_window_size.y)) {
+		cerr << "Cannot resize, as the current window has hit the maximum size specified in the ns_worm_browser.ini file\n";
+		stats_window.display_rescale_factor = floor(min(maximum_window_size.x / (double)stats_window.gl_image_size.x,
+			maximum_window_size.y / (double)stats_window.gl_image_size.y) * 10) / 10;
+		//cerr << stats_window.display_rescale_factor << " ";
+	}*/
+
+
+
+	
+	try {
+
+
+		storyboard_annotater.population_telemetry.draw(ns_population_telemetry::ns_survival,ns_vector_2i(0, 0),
+			telemetry_dimensions,
+			ns_vector_2i(stats_window.gl_buffer_properties.width,
+				stats_window.gl_buffer_properties.height),stats_window.display_rescale_factor,
+			stats_window.gl_buffer);
+
+		//clear out bottom margin
+		/*for (int _y = telemetry_size.y; _y < stats_window.gl_buffer_properties.height; _y++)
+			for (unsigned int _x = 3 * new_image_size.width; _x < 3 * stats_window.gl_buffer_properties.width; _x++)
+				stats_window.gl_buffer[3 * (stats_window.gl_buffer_properties.height - _y - 1) * stats_window.gl_buffer_properties.width + _x] = 0;
+				*/
+		//		death_time_solo_annotater.draw_registration_debug(ns_vector_2i(new_prop.width, death_time_solo_annotater.telemetry.image_size().y),
+			//		ns_vector_2i(stats_window.gl_buffer_properties.width,
+				//		stats_window.gl_buffer_properties.height),
+					//stats_window.gl_buffer);
+
+	}
+	catch (ns_ex& ex) {
+		for (int _y = 0; _y < stats_window.gl_buffer_properties.height; _y++)
+			for (unsigned int _x = 3 * new_image_size.width; _x < 3 * stats_window.gl_buffer_properties.width; _x++)
+				stats_window.gl_buffer[3 * stats_window.gl_buffer_properties.width * _y + _x] = 0;
+		cout << "Error while drawing population telemetry: " << ex.text();
+	}
+
+
+	lock.release();
+	stats_window.redraw_screen();
 }
 void ns_rotate_image_color(const double f,const ns_image_standard & s, ns_image_standard & d){
 	d.init(s.properties());
@@ -7465,85 +7680,6 @@ public:
 	ns_thermometer_image_processor processor;
 	vector<ns_thermometer_measurement> measurements;
 };
-/*
-void ns_run_first_thermometer_experiment(){
-
-	vector<ns_thermometer_experiment> scanners(10);
-	scanners[0].device_name = "ben";
-	scanners[1].device_name = "gold";
-	scanners[2].device_name = "jerry";
-	scanners[3].device_name = "kiwi";
-	scanners[4].device_name = "maki";
-	scanners[5].device_name = "opal";
-	scanners[6].device_name = "ruby";
-	scanners[7].device_name = "smile";
-	scanners[8].device_name = "snap";
-	scanners[9].device_name = "stone";
-
-	unsigned long experiment_id(201);
-	double calibration_temperature = 23.05;
-
-	double low_differential_temperature = 23.5;
-	string low_differential_time_string = "09:14:00 08/10/2010";
-	double high_differential_temperature = 24.5;
-	string high_differential_time_string = "12:10:00 08/10/2010";
-	
-	unsigned long high_differential_time = ns_time_from_format_string(high_differential_time_string);
-	unsigned long low_differential_time = ns_time_from_format_string(low_differential_time_string);
-
-	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
-	ns_sql_result result;
-
-	string output_filename("c:\\temperature_results.csv");
-	ofstream output(output_filename.c_str());
-	if (output.fail())
-		throw ns_ex("Could not open") << output_filename;
-	ns_thermometer_experiment::output_header(output);
-	output << "\n";
-	
-	//setup all the data
-	for (unsigned long i = 0; i < scanners.size(); i++){
-		scanners[i].calibrated_temperature_image_filename = "Y:\\image_server_storage\\partition_000\\misc\\thermometer_calibration_data\\";
-		scanners[i].calibrated_temperature_image_filename += scanners[i].device_name + "=preview_8_bit.tif";
-		scanners[i].mask_image_filename = "Y:\\image_server_storage\\partition_000\\misc\\thermometer_calibration_data\\masks\\";
-		scanners[i].mask_image_filename += scanners[i].device_name + "=preview_8_bit copy.tif";
-
-		ns_image_standard im;
-		ns_load_image(scanners[i].mask_image_filename,im);
-		scanners[i].processor.specificy_masked_image(im);
-
-		ns_load_image(scanners[i].calibrated_temperature_image_filename,im);
-		scanners[i].processor.specificy_reference_temperature_image(calibration_temperature,im);
-
-
-		sql << "SELECT c.capture_time, c.id,c.image_id FROM captured_images as c, capture_samples as s, capture_schedule as sh "
-			"WHERE c.problem = 0 AND c.sample_id = s.id AND s.name = '" << scanners[i].device_name << "_e' AND s.device_name = '" << scanners[i].device_name << "' AND s.experiment_id = " << experiment_id
-				 << " AND sh.captured_image_id = c.id AND sh.transferred_to_long_term_storage = 3";
-		sql.get_rows(result);
-		scanners[i].measurements.resize(result.size());
-		cerr << scanners[i].device_name << " has " << result.size() << " measurements\n";
-		for (unsigned int j = 0; j < result.size(); j++){
-			scanners[i].measurements[j].capture_time = atol(result[j][0].c_str());
-			scanners[i].measurements[j].image.captured_images_id = atol(result[j][1].c_str());
-			scanners[i].measurements[j].image.capture_images_image_id = atol(result[j][2].c_str());
-		}
-		ns_thermometer_measurement & high_measurement(scanners[i].find_closest_measurement(high_differential_time));
-		ns_thermometer_measurement & low_measurement(scanners[i].find_closest_measurement(low_differential_time));
-		
-		cerr << scanners[i].device_name << " closest time to " << ns_format_time_string_for_human(high_differential_time) << " is " << ns_format_time_string_for_human(high_measurement.capture_time) <<"\n";
-			
-		cerr << scanners[i].device_name << " closest time to " << ns_format_time_string_for_human(low_differential_time) << " is " << ns_format_time_string_for_human(low_measurement.capture_time) <<"\n";
-
-		ns_image_standard high,low;
-		image_server.image_storage.request_from_storage(high_measurement.image,&sql).input_stream().pump(high,1024);
-		image_server.image_storage.request_from_storage(low_measurement.image,&sql).input_stream().pump(low,1024);
-		scanners[i].processor.specifiy_known_differential_temperature(high_differential_temperature-low_differential_temperature,low,high);									
-		scanners[i].estimate_temperatures(sql);
-		scanners[i].output_data(output);
-	}
-	output.close();
-};
-*/
 void ns_worm_learner::draw_animation(const double &t){
 	unsigned long offset(10);
 //	cerr << t << "\n";
@@ -7588,79 +7724,43 @@ void ns_worm_learner::draw_animation(const double &t){
 	//main_window.redraw_screen();
 }
 
-void ns_worm_learner::update_main_window_display(){
+void ns_gl_window_data::update_display() {
 
-	unsigned long	new_gl_image_pane_width = (main_window.gl_image_size.x );
-	unsigned long	new_gl_image_pane_height =  (main_window.gl_image_size.y);
-
-	if (new_gl_image_pane_width == 0)
-		new_gl_image_pane_width = 100;
-	if (new_gl_image_pane_height == 0)
-		new_gl_image_pane_width = 100;
-
-	ns_acquire_lock_for_scope lock(main_window.display_lock,__FILE__,__LINE__);
-//	cerr << "worm_learner has received a request for a gl_window of size " << new_gl_image_pane_width << "x" << new_gl_image_pane_height << "\n";
-	float zoom_x =(float)((float)new_gl_image_pane_width)/main_window.gl_buffer_properties.width;
-	float zoom_y = (float)((float)new_gl_image_pane_height)/main_window.gl_buffer_properties.height;
-	if (zoom_x < .01)
-		zoom_x = .01;
-	
-	
-	//if (zoom_x < zoom_y)
-	main_window.image_zoom = zoom_x;
-	//else main_window.image_zoom = zoom_y;
-		
-
-	main_window.gl_image_size.x = (unsigned int)(main_window.gl_buffer_properties.width * main_window.image_zoom);
-	main_window.gl_image_size.y = (unsigned int)(main_window.gl_buffer_properties.height * main_window.image_zoom);
-	
-	//cerr << "To fit the new dimensions, the ideal window is changed to " << main_window.image_size.x << "x" << main_window.image_size.y<< "\n";
-	glPixelZoom(main_window.image_zoom*main_window.display_rescale_factor,main_window.image_zoom*main_window.display_rescale_factor);
-	glRasterPos2i((GLint)-1 ,(GLint)-1 );
-	glPixelStorei(GL_PACK_ALIGNMENT,1);
-	glPixelStorei(GL_UNPACK_ALIGNMENT,1);
-	glDrawPixels(main_window.gl_buffer_properties.width, main_window.gl_buffer_properties.height,GL_RGB,GL_UNSIGNED_BYTE,main_window.gl_buffer );
-	lock.release();
-	
-}
-
-
-void ns_worm_learner::update_worm_window_display(){
-
-	unsigned long new_gl_image_pane_width = (worm_window.gl_image_size.x);
-	unsigned long new_gl_image_pane_height =  (worm_window.gl_image_size.y);
+	unsigned long new_gl_image_pane_width = (gl_image_size.x);
+	unsigned long new_gl_image_pane_height = (gl_image_size.y);
 
 	if (new_gl_image_pane_width == 0)
 		new_gl_image_pane_width = 100;
 	if (new_gl_image_pane_height == 0)
 		new_gl_image_pane_height = 100;
 
-	ns_acquire_lock_for_scope lock(worm_window.display_lock,__FILE__,__LINE__);
-	float zoom_x =(float)((float)new_gl_image_pane_width)/worm_window.gl_buffer_properties.width;
-	float zoom_y = (float)((float)new_gl_image_pane_height)/worm_window.gl_buffer_properties.height;
+	ns_acquire_lock_for_scope lock(display_lock, __FILE__, __LINE__);
+	float zoom_x = (float)((float)new_gl_image_pane_width) / gl_buffer_properties.width;
+	float zoom_y = (float)((float)new_gl_image_pane_height) / gl_buffer_properties.height;
 	if (zoom_x < .01)
 		zoom_x = .01;
-	
 
-	float cur_resize = (worm_window.gl_buffer_properties.width * worm_window.image_zoom) / (float)worm_window.gl_image_size.x;
-	
-	worm_window.image_zoom = zoom_x;
-	worm_window.gl_image_size.x = (unsigned int)((worm_window.gl_buffer_properties.width * worm_window.image_zoom));
-	worm_window.gl_image_size.y= (unsigned int)((worm_window.gl_buffer_properties.height * worm_window.image_zoom));
 
-	worm_window.worm_image_size = worm_window.worm_image_size*cur_resize;
-	worm_window.telemetry_size = worm_window.gl_image_size - worm_window.worm_image_size;
+	float cur_resize = (gl_buffer_properties.width * image_zoom) / (float)gl_image_size.x;
 
-	
-//	cerr << "update display needs to resize the worm image to " << worm_window.image_size << "\n";
-	//xxxx
-	glPixelZoom(worm_window.image_zoom*worm_window.display_rescale_factor,worm_window.image_zoom*worm_window.display_rescale_factor);
-	glRasterPos2i((GLint)-1 ,(GLint)-1 );
-	glPixelStorei(GL_PACK_ALIGNMENT,1);
-	glPixelStorei(GL_UNPACK_ALIGNMENT,1);
-	glDrawPixels(worm_window.gl_buffer_properties.width, worm_window.gl_buffer_properties.height,GL_RGB,GL_UNSIGNED_BYTE,worm_window.gl_buffer );
+	image_zoom = zoom_x;
+	gl_image_size.x = (unsigned int)((gl_buffer_properties.width * image_zoom));
+	gl_image_size.y = (unsigned int)((gl_buffer_properties.height * image_zoom));
+
+	worm_image_size = worm_image_size * cur_resize;
+	telemetry_size = gl_image_size - worm_image_size;
+
+
+	//	cerr << "update display needs to resize the worm image to " << image_size << "\n";
+		//xxxx
+	glPixelZoom(image_zoom * display_rescale_factor, image_zoom * display_rescale_factor);
+	glRasterPos2i((GLint)-1, (GLint)-1);
+	glPixelStorei(GL_PACK_ALIGNMENT, 1);
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+	glDrawPixels(gl_buffer_properties.width, gl_buffer_properties.height, GL_RGB, GL_UNSIGNED_BYTE, gl_buffer);
 	lock.release();
 }
+
 
 ns_thread_return_type ns_experiment_storyboard_annotater::precache_worm_images_asynch_internal(void *t) {
 	ns_experiment_storyboard_annotater & a(*static_cast<ns_experiment_storyboard_annotater *>(t));
@@ -7718,7 +7818,7 @@ void ns_experiment_storyboard_annotater::load_from_storyboard(const ns_region_me
 		sql.get_rows(res);
 		for (unsigned long i = 0; i < res.size(); i++)
 			excluded_regions[atol(res[i][0].c_str())] = res[i][1] != "0";
-
+		strain_to_display.experiment_id = spec.experiment_id;
 	}
 	else if (spec.sample_id != 0) {
 		sql << "SELECT r.id, r.excluded_from_analysis FROM sample_region_image_info as r, capture_samples as s WHERE r.sample_id = s.id AND s.id = " << spec.sample_id;
@@ -7729,11 +7829,16 @@ void ns_experiment_storyboard_annotater::load_from_storyboard(const ns_region_me
 
 	}
 	else if (spec.region_id != 0) {
-		sql << "SELECT r.excluded_from_analysis FROM sample_region_image_info as r WHERE r.id = " << spec.region_id;
+		sql << "SELECT r.excluded_from_analysis, s.experiment_id FROM sample_region_image_info as r, capture_samples as s WHERE r.sample_id = s.id AND r.id = " << spec.region_id;
 		ns_sql_result res;
 		sql.get_rows(res);
-		for (unsigned long i = 0; i < res.size(); i++)
-			excluded_regions[spec.region_id] = res[i][0] != "0";
+		if (res.size() == 0)
+			throw ns_ex("ns_experiment_storyboard_annotater::load_from_storyboard()::Could not find region");
+		
+		excluded_regions[spec.region_id] = res[0][0] != "0";
+		strain_to_display.region_id = spec.region_id;
+		if (strain_to_display.experiment_id == 0)
+			strain_to_display.experiment_id = ns_atoi64(res[0][1].c_str());
 	}
 	storyboard_manager.load_metadata_from_db(spec, storyboard, sql);
 	unsigned long number_of_nonempty_divisions(0);
@@ -7789,7 +7894,6 @@ void ns_experiment_storyboard_annotater::load_from_storyboard(const ns_region_me
 	//	cerr << divisions.size() << " divisions loaded.\n Loading images...";
 	this->initalize_division_image_population(sql);
 	//cerr << "Done.\n";
-
 	current_timepoint_id = 0;
 	divisions[current_timepoint_id].load_image(0, current_image, sql, local_image_cache,memory_pool, resize_factor);
 	ns_image_properties prop(current_image.im->properties());
@@ -7828,6 +7932,7 @@ bool ns_worm_learner::start_death_time_annotation(const ns_behavior_mode m, cons
 				storyboard_annotater.clear();
 
 				ns_experiment_storyboard_spec subject;
+				subject.region_id = subject.sample_id = subject.experiment_id = 0;
 				switch(m){
 					case ns_worm_learner::ns_annotate_storyboard_region:
 						subject.region_id = data_selector.current_region().region_id;
@@ -7844,7 +7949,10 @@ bool ns_worm_learner::start_death_time_annotation(const ns_behavior_mode m, cons
 				ns_region_metadata metadata;
 				if (data_selector.strain_selected())
 					metadata = data_selector.current_strain();
-
+				else {
+					metadata.region_id = subject.region_id;
+					metadata.experiment_id = subject.experiment_id;
+				}
 				ns_experiment_region_selector::ns_censor_masking c(data_selector.censor_masking());
 				ns_experiment_storyboard_annotater::ns_censor_masking c2;
 
@@ -7854,6 +7962,24 @@ bool ns_worm_learner::start_death_time_annotation(const ns_behavior_mode m, cons
 				if (image_server.verbose_debug_output())
 					image_server_const.register_server_event_no_db(ns_image_server_event("Finished Loading"));
 				storyboard_annotater.display_current_frame();
+
+				if (image_server.verbose_debug_output())
+					image_server_const.register_server_event_no_db(ns_image_server_event("Generating Population Telemetry"));
+				//xxx
+				ns_64_bit region_id = 0;
+				if (m == ns_worm_learner::ns_annotate_storyboard_region)
+					region_id = subject.region_id;
+				movement_results.load(ns_death_time_annotation_set::ns_movement_transitions,region_id,0,subject.experiment_id, get_sql_connection());
+				storyboard_annotater.clear_machine_events_for_telemetry();
+				for (int i = 0; i < movement_results.samples.size(); i++)
+					for (int j = 0; j < movement_results.samples[i].regions.size(); j++) {
+						if (region_id != 0 && movement_results.samples[i].regions[j]->metadata.region_id != region_id)
+							continue;
+						storyboard_annotater.add_machine_events_for_telemetry(movement_results.samples[i].regions[j]->death_time_annotation_set, movement_results.samples[i].regions[j]->metadata);
+					}
+				storyboard_annotater.recalculate_telemetry();
+				draw_stats_window_image();
+
 				if (image_server.verbose_debug_output())
 					image_server_const.register_server_event_no_db(ns_image_server_event("Display requested"));
 				//set_behavior_mode(m);
@@ -7865,25 +7991,7 @@ bool ns_worm_learner::start_death_time_annotation(const ns_behavior_mode m, cons
 				}
 		}
 		else{
-		  /*current_annotater = &death_time_annotater;
-			death_time_annotater.clear();
-
-			unsigned long region_id = data_selector.current_region().region_id;
-			ns_update_main_information_bar(string("Annotating ") + data_selector.current_region().region_name);
-			ns_death_time_posture_annotater::ns_alignment_type type;
-			switch(m){
-				case ns_worm_learner::ns_annotate_death_times_in_time_aligned_posture:
-					type = ns_death_time_posture_annotater::ns_time_aligned_images;
-					break;
-				case ns_worm_learner::ns_annotate_death_times_in_death_aligned_posture:
-					type = ns_death_time_posture_annotater::ns_death_aligned_images;
-					break;
-			}
-
-			death_time_annotater.load_region(data_selector.current_region().region_id, type, this,worm_window.display_rescale_factor);
-			death_time_annotater.display_current_frame();
-			death_time_annotater.request_refresh();
-		  */
+			throw ns_ex("Depreciated!");
 		 }
 		lock.release();
 		ns_fl_lock(__FILE__,__LINE__);
@@ -7995,6 +8103,10 @@ void ns_death_time_solo_posture_annotater::display_current_frame() {
 	//lock.release();
 }
 
+ns_image_standard temp;
+void ns_experiment_storyboard_annotater::draw_telemetry() {
+	worm_learner->draw_stats_window_image();
+}
 void ns_experiment_storyboard_annotater::display_current_frame(){
 	refresh_requested_ = false;
 	ns_acquire_lock_for_scope lock(image_buffer_access_lock,__FILE__,__LINE__);
@@ -8139,6 +8251,8 @@ ns_worm_learner::~ns_worm_learner(){
     delete[] main_window.gl_buffer;
   if (worm_window.gl_buffer != 0)
     delete[] worm_window.gl_buffer;
+  if (stats_window.gl_buffer != 0)
+	  delete[] stats_window.gl_buffer;
   ns_safe_delete(worm_detection_results);
   model_specifications.resize(0);
 	ns_acquire_lock_for_scope lock(persistant_sql_lock, __FILE__, __LINE__);

@@ -1604,24 +1604,22 @@ bool ns_experiment_storyboard::create_storyboard_metadata_from_machine_annotatio
 	return load_events_from_annotation_compiler(ns_creating_from_machine_annotations, compiled_event_set.all_events,spec.use_absolute_time,false,spec.minimum_distance_to_juxtipose_neighbors,sql);
 
 }
-
-void ns_experiment_storyboard::save_by_hand_annotations(ns_sql & sql,const ns_death_time_annotation_set & extra_annotations) const{
+void ns_experiment_storyboard::collect_current_annotations(std::map<ns_64_bit, ns_death_time_annotation_set>& annotations) const{
 	const unsigned long cur_time = ns_current_time();
 
 	//avoid writing duplicates
-	map<ns_64_bit,map<ns_64_bit,bool> > worm_ids_written;
+	map<ns_64_bit, map<ns_64_bit, bool> > worm_ids_written;
 
 	//we make a list of all annotations sorted by region id
-	std::map<ns_64_bit,ns_death_time_annotation_set > annotations;
-	for (unsigned int i = 0; i < divisions.size(); i++){
-		for (unsigned int j = 0; j < divisions[i].events.size(); j++){
+	for (unsigned int i = 0; i < divisions.size(); i++) {
+		for (unsigned int j = 0; j < divisions[i].events.size(); j++) {
 
 			//only output the annotations once for each worm (even if it is included in multiple neighbor groups)
-			map<ns_64_bit,map<ns_64_bit,bool> >::iterator pp = worm_ids_written.find(divisions[i].events[j].event_annotation.region_info_id);
+			map<ns_64_bit, map<ns_64_bit, bool> >::iterator pp = worm_ids_written.find(divisions[i].events[j].event_annotation.region_info_id);
 			if (pp == worm_ids_written.end())
 				worm_ids_written[divisions[i].events[j].event_annotation.region_info_id][divisions[i].events[j].event_annotation.stationary_path_id.group_id] = true;
-			else{
-				map<ns_64_bit,bool>::iterator q = pp->second.find(divisions[i].events[j].event_annotation.stationary_path_id.group_id);
+			else {
+				map<ns_64_bit, bool>::iterator q = pp->second.find(divisions[i].events[j].event_annotation.stationary_path_id.group_id);
 				if (q == pp->second.end())
 					pp->second[divisions[i].events[j].event_annotation.stationary_path_id.group_id] = true;
 				else
@@ -1631,20 +1629,20 @@ void ns_experiment_storyboard::save_by_hand_annotations(ns_sql & sql,const ns_de
 			ns_64_bit region_id(divisions[i].events[j].event_annotation.region_info_id);
 			if (subject().region_id != 0 && region_id != subject().region_id)
 				continue;
-			std::map<ns_64_bit,ns_death_time_annotation_set >::iterator p(annotations.find(region_id));
-			if (p==annotations.end())
-				p = annotations.insert(std::map<ns_64_bit,ns_death_time_annotation_set >::value_type(region_id,ns_death_time_annotation_set())).first;
-			
+			std::map<ns_64_bit, ns_death_time_annotation_set >::iterator p(annotations.find(region_id));
+			if (p == annotations.end())
+				p = annotations.insert(std::map<ns_64_bit, ns_death_time_annotation_set >::value_type(region_id, ns_death_time_annotation_set())).first;
+
 			if (divisions[i].events[j].event_annotation.annotation_source == ns_death_time_annotation::ns_posture_image ||
 				divisions[i].events[j].event_annotation.annotation_source == ns_death_time_annotation::ns_region_image ||
-				divisions[i].events[j].event_annotation.annotation_source == ns_death_time_annotation::ns_storyboard){
-					ns_death_time_annotation a(divisions[i].events[j].event_annotation);
-					a.annotation_time = cur_time;
-					p->second.add(a);
+				divisions[i].events[j].event_annotation.annotation_source == ns_death_time_annotation::ns_storyboard) {
+				ns_death_time_annotation a(divisions[i].events[j].event_annotation);
+				a.annotation_time = cur_time;
+				p->second.add(a);
 			}
-			
+
 			//include an annotation containing sticky properties such as censoring, exclusion, and flags.
-			if (divisions[i].events[j].event_annotation.has_sticky_properties()){
+			if (divisions[i].events[j].event_annotation.has_sticky_properties()) {
 				ns_death_time_annotation a(divisions[i].events[j].event_annotation);
 				a.annotation_source = ns_death_time_annotation::ns_storyboard;
 				a.annotation_source_details = "Worm Terminal::Storyboard Annotation";
@@ -1653,17 +1651,22 @@ void ns_experiment_storyboard::save_by_hand_annotations(ns_sql & sql,const ns_de
 				p->second.add(a);
 			}
 			//add all by hand annotations, including movement event annotations
-			for (unsigned int k = 0; k < divisions[i].events[j].by_hand_movement_annotations_for_element.size(); k++){
-				
+			for (unsigned int k = 0; k < divisions[i].events[j].by_hand_movement_annotations_for_element.size(); k++) {
+
 				ns_death_time_annotation a(divisions[i].events[j].by_hand_movement_annotations_for_element[k].annotation);
 				a.stationary_path_id = divisions[i].events[j].event_annotation.stationary_path_id;
 				a.annotation_source = ns_death_time_annotation::ns_storyboard;
 				a.annotation_source_details = "Worm Terminal::Storyboard Annotation";
 				p->second.add(a);
 			}
-			
+
 		}
 	}
+}
+void ns_experiment_storyboard::save_by_hand_annotations(ns_sql & sql,const ns_death_time_annotation_set & extra_annotations) const{
+	//const unsigned long cur_time = ns_current_time();
+	std::map<ns_64_bit, ns_death_time_annotation_set> annotations;
+	collect_current_annotations(annotations);
 
 	for(unsigned int i = 0; i < orphan_by_hand_annotations.size(); i++){
 		const ns_64_bit region_id(orphan_by_hand_annotations[i].region_info_id);
@@ -2281,8 +2284,11 @@ bool ns_experiment_storyboard_manager::load_subimages_from_db(const ns_experimen
  std::string ns_experiment_storyboard_manager::generate_sql_query_where_clause_for_specification(const ns_experiment_storyboard_spec & spec) {
 	 ns_text_stream_t ex;
 	 ex << "  region_id = " << spec.region_id
-		 << " AND sample_id = " << spec.sample_id << " AND experiment_id = " << spec.experiment_id
-		 << " AND using_by_hand_annotations = " << (spec.use_by_hand_annotations ? "1" : "0")
+		 << " AND sample_id = " << spec.sample_id;
+	 if (spec.region_id == 0)
+		 ex << " AND experiment_id = " << spec.experiment_id;
+	 else ex << " AND experiment_id = 0";
+	ex	 << " AND using_by_hand_annotations = " << (spec.use_by_hand_annotations ? "1" : "0")
 		 << " AND movement_event_used=" << (long)spec.event_to_mark
 		 << " AND aligned_by_absolute_time = " << (spec.use_absolute_time ? "1" : "0")
 		 << " AND images_chosen_from_time_of_last_death = " << (spec.choose_images_from_time_of_last_death ? "1" : "0")

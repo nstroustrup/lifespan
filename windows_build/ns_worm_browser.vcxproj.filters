@@ -1155,6 +1155,9 @@
     <ClInclude Include="..\external_libraries\ctmf\ctmf.h">
       <Filter>misc_lib\cmtf</Filter>
     </ClInclude>
+    <ClInclude Include="..\ns_worm_browser\ns_population_telemetry.h">
+      <Filter>worm_browser</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="start.tif">

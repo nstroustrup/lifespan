@@ -768,7 +768,10 @@ void ns_graph::plot_object(const ns_graph_object & y, const ns_graph_object & x,
 							if (y0 < 0 || y0 >= (int)h)throw ns_ex("ns_graph::Could not draw line due to y0");
 							if (y1 < 0 || y1 >= (int)h)throw ns_ex("ns_graph::Could not draw line due to y1");
 						}
-						image.draw_line_color_thick(ns_vector_2i(x0,y0),ns_vector_2i(x1,y0),y.properties.line.color,y.properties.line.width);
+						int line_connection_offset = 0;
+						if (y.properties.draw_vertical_lines == ns_graph_properties::ns_outline || y.properties.draw_vertical_lines == ns_graph_properties::ns_full_line)
+							line_connection_offset = y.properties.line.width/2;
+						image.draw_line_color_thick(ns_vector_2i(x0- line_connection_offset,y0),ns_vector_2i(x1+line_connection_offset,y0),y.properties.line.color,y.properties.line.width);
 						if (y.properties.draw_vertical_lines == ns_graph_properties::ns_full_line){
 							image.draw_line_color_thick(ns_vector_2i(x0,spec.x_axis_pos),ns_vector_2i(x0,y0),y.properties.line.color,y.properties.line.width);
 							image.draw_line_color_thick(ns_vector_2i(x1,spec.x_axis_pos),ns_vector_2i(x1,y0),y.properties.line.color,y.properties.line.width);

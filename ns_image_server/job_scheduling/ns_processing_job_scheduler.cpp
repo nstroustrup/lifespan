@@ -391,12 +391,22 @@ void ns_delete_movement_analysis(const ns_64_bit region_id, bool delete_files,ns
 	ns_image_server_results_subject sub;
 	sub.region_id = region_id;
 	try {
-		ns_image_server_results_file censoring_results(image_server.results_storage.machine_death_times(sub, ns_image_server_results_storage::ns_censoring_and_movement_transitions,
-			"time_path_image_analysis", sql));
-		ns_image_server_results_file state_results(image_server.results_storage.machine_death_times(sub, ns_image_server_results_storage::ns_worm_position_annotations,
-			"time_path_image_analysis", sql));
-		censoring_results.erase();
-		state_results.erase();
+		{
+			ns_image_server_results_file censoring_results(image_server.results_storage.machine_death_times(sub, ns_image_server_results_storage::ns_censoring_and_movement_transitions,
+				"time_path_image_analysis", sql, true));
+			ns_image_server_results_file state_results(image_server.results_storage.machine_death_times(sub, ns_image_server_results_storage::ns_worm_position_annotations,
+				"time_path_image_analysis", sql, true));
+			censoring_results.erase();
+			state_results.erase();
+		} 
+		{
+			ns_image_server_results_file censoring_results(image_server.results_storage.machine_death_times(sub, ns_image_server_results_storage::ns_censoring_and_movement_transitions,
+				"time_path_image_analysis", sql, false));
+			ns_image_server_results_file state_results(image_server.results_storage.machine_death_times(sub, ns_image_server_results_storage::ns_worm_position_annotations,
+				"time_path_image_analysis", sql, false));
+			censoring_results.erase();
+			state_results.erase();
+		}
 	}
 	catch (ns_ex & ex) {
 		image_server.register_server_event(ex, &sql);

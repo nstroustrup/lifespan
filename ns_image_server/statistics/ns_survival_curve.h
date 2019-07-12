@@ -542,7 +542,7 @@ public:
 
 	typedef enum {ns_do_not_include_control_groups,ns_include_control_groups} ns_control_group_behavior;
 
-	void generage_aggregate_risk_timeseries(const ns_region_metadata & m,ns_survival_data_with_censoring & risk_timeseries, std::vector<unsigned long> & t) const;
+	void generate_aggregate_risk_timeseries(const ns_region_metadata & m,bool filter_by_metadata,ns_survival_data_with_censoring & risk_timeseries, std::vector<unsigned long> & t) const;
 
 	static void out_detailed_JMP_header(const ns_time_handing_behavior & time_handling_behavior, std::ostream & o, const std::string & time_units,const std::string & terminator="\n");
 	static void out_detailed_JMP_event_data(const ns_time_handing_behavior & time_handling_behavior,std::ostream & o, const ns_lifespan_device_normalization_statistics * regression_stats,const ns_region_metadata & metadata,const ns_metadata_worm_properties & prop,const double time_scaling_factor,const std::string & terminator="\n", const bool output_raw_data_as_regression=false,const bool output_full_censoring_detail=false);

@@ -244,8 +244,8 @@ public:
 		ns_sql & sql,
 		ns_simple_local_image_cache & image_cache,
 		ns_annotater_memory_pool & memory_pool, const unsigned long resize_factor_=1){
-
-		movement_analyzer->load_images_for_group(group_id,element_id+10,sql,false,false,image_cache);
+		//all images are being loaded asynchronosuly.  Wait until the requested element is loaded
+		movement_analyzer->wait_until_element_is_loaded(group_id, element_id);
 		if (path_timepoint_element == 0){
 		  cerr << "Path timepoint element not specified";
 		  return;
@@ -735,8 +735,11 @@ public:
 		  //cerr << ex.text() << "\n";
 		}
 		try {
-			if (handle.is_valid())
+			if (handle.is_valid()) {
+				handle().data->movement_analyzer.stop_asynch_group_load();
 				handle().data->clear_images_for_worm(properties_for_all_animals.stationary_path_id, local_image_cache);
+			}
+
 		}
 		catch (ns_ex & ex) {
 			cerr << ex.text() << "\n";
@@ -896,11 +899,17 @@ public:
 	ns_stationary_path_id current_worm_id;
 	
 	void load_worm(const ns_64_bit region_info_id_, const ns_stationary_path_id& worm, const unsigned long current_time, const ns_death_time_solo_posture_annotater_timepoint::ns_visualization_type visualization_type, const ns_experiment_storyboard* storyboard, ns_worm_learner* worm_learner_, const double external_rescale_factor) {
-      		if (sql.is_null()) {
+
+		if (sql.is_null()) {
 
 			if (image_server.verbose_debug_output())
 				image_server_const.register_server_event_no_db(ns_image_server_event("Connecting to sql db"));
 			sql.attach(image_server.new_sql_connection(__FILE__, __LINE__));
+		}
+		if (asynch_loading_sql.is_null()) {
+			if (image_server.verbose_debug_output())
+				image_server_const.register_server_event_no_db(ns_image_server_event("Connecting to sql db 2"));
+			asynch_loading_sql.attach(image_server.new_sql_connection(__FILE__, __LINE__));
 		}
 		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Clearing self."));
 		clear();
@@ -929,8 +938,12 @@ public:
 			
 			ns_death_time_posture_solo_annotater_data_cache_storage::handle_t handle;
 			try {
+
 				if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Loading movement data"));
 				data_cache.get_region_movement_data(region_info_id_, sql(),telemetry.show(),handle);
+
+				//stop any previously started image loading
+				handle().data->movement_analyzer.stop_asynch_group_load();
 
 				if (!handle().data->loaded_path_data_successfully)
 					throw ns_ex("The movement anaylsis data required to inspect this worm is no longer in the database.  You might need to re-analyze movement for this region.");
@@ -1053,6 +1066,11 @@ public:
 				timepoints[i].group_id = properties_for_all_animals.stationary_path_id.group_id;
 				timepoints[i].set_visulaization_type(current_visualization_type);
 			}
+
+
+			if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Starting asynch image load"));
+		
+			handle().data->movement_analyzer.load_images_for_group_asynch(worm.group_id, number_of_valid_elements, &asynch_loading_sql(), false, false, local_image_cache);
 			
 			if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Setting current timepoint"));
 			set_current_timepoint(current_time,handle,current_time!=0, true);

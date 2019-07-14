@@ -6636,7 +6636,89 @@ bool ns_time_path_image_movement_analyzer<allocator_T>::load_movement_image_db_i
 	return true;
 }
 template<class allocator_T>
+void ns_time_path_image_movement_analyzer<allocator_T>::stop_asynch_group_load() {
+	cancel_asynch_group_load = true;
+	while (asynch_group_loading_is_running)
+		ns_thread::sleep_milliseconds(100);
+}
+
+template<class allocator_T>
+bool ns_time_path_image_movement_analyzer<allocator_T>::wait_until_element_is_loaded(const unsigned long group_id, const unsigned long element_id) {
+	if (groups.size() <= group_id)
+		throw ns_ex("Invalid group");
+	if (groups[group_id].paths.size() <= element_id)
+		throw ns_ex("Invalid element");
+	if (groups[group_id].paths[j].elements[element_id].excluded)
+		cout << "Warning: waiting on excluded sample";
+
+	if (groups[group_id].paths[0].number_of_images_loaded > element_id)
+		return true;
+
+	while (true) {
+		//wait until next chunck is loaded
+		ns_acquire_lock_for_scope lock(groups[group_id].paths[j].movement_image_storage_lock, __FILE__, __LINE__);
+		lock.release();
+		if (groups[group_id].paths[0].number_of_images_loaded > element_id)
+			return true;
+		if (!asynch_group_loading_is_running)
+			throw ns_ex("Waiting for an unloaded element even after asynch loading has terminated.");
+	}
+
+}
+
+template<class allocator_T>
+class ns_asynch_image_load_parameters {
+public:
+	unsigned long group_id;
+	unsigned long number_of_images_to_load;
+	bool load_images_after_last_valid_sample;
+	bool load_flow_images;
+	ns_simple_local_image_cache *image_cache;
+	ns_sql * sql;
+	ns_time_path_image_movement_analyzer< allocator_T> * analyzer;
+};
+
+template<class allocator_T>
+ns_thread_return_type ns_time_path_image_movement_analyzer<allocator_T>::load_images_for_group_asynch_internal(void * pr) {
+	try {
+		ns_asynch_image_load_parameters<allocator_T> * p = static_cast<ns_asynch_image_load_parameters<allocator_T> *>(pr);
+		p->analyzer->load_images_for_group(p->group_id, p->number_of_images_to_load, *p->sql, p->load_images_after_last_valid_sample, p->load_flow_images, *p->image_cache);
+		delete p;
+		asynch_group_loading_is_running = false;
+	}
+	catch (ns_ex & ex) {
+		cout << "Problem during asnych image load: " << ex;
+		delete p;
+		asynch_group_loading_is_running = false;
+	}
+	catch (...) {
+		delete p;
+		asynch_group_loading_is_running = false;
+	}
+	return 0;
+}
+
+template<class allocator_T>
+void ns_time_path_image_movement_analyzer<allocator_T>::load_images_for_group_asynch(const unsigned long group_id, unsigned long requested_number_of_images_to_load, ns_sql & sql, const bool load_images_after_last_valid_sample, const bool load_flow_images, ns_simple_local_image_cache & image_cache) {
+	asynch_group_loading_is_running = true;
+	ns_asynch_image_load_parameters<allocator_T> *p = new ns_asynch_image_load_parameters<allocator_T>;
+	p->group_id = group_id;
+	p->requested_number_of_images_to_load = requested_number_of_images_to_load;
+	p->sql = *sql;
+	p->load_images_after_last_valid_sample = load_images_after_last_valid_sample;
+	p->image_cache = &image_cache;
+	p->analyzer = this;
+	ns_thread thread;
+	thread.run(load_images_for_group_asynch_internal, p);
+	thread.detach();
+}
+
+template<class allocator_T>
 void ns_time_path_image_movement_analyzer<allocator_T>::load_images_for_group(const unsigned long group_id, unsigned long requested_number_of_images_to_load,ns_sql & sql, const bool load_images_after_last_valid_sample, const bool load_flow_images, ns_simple_local_image_cache & image_cache){
+	if (cancel_asynch_group_load) {
+		cancel_asynch_group_load = false;
+		return;
+	}
 	#ifdef NS_CALCULATE_OPTICAL_FLOW
 	if (load_flow_images)
 		throw ns_ex("Attempting to load flow images with NS_CALCULATE_OPTICAL_FLOW set to false");
@@ -6695,15 +6777,23 @@ void ns_time_path_image_movement_analyzer<allocator_T>::load_images_for_group(co
 		if (number_of_images_to_load > number_of_valid_elements)
 			number_of_images_to_load = number_of_valid_elements;
 			//throw ns_ex("ns_time_path_image_movement_analyzer::load_images_for_group()::Requesting to many images!");
-		if (number_of_images_to_load == 0) {
+		if (number_of_images_to_load == 0 || cancel_asynch_group_load) {
 			lock.release();
+
+			cancel_asynch_group_load = false;
 			return;
 		}
 
+		lock.release();
 		unsigned long number_of_new_images_to_load(number_of_images_to_load-number_of_images_loaded);
 			
 		//load in chunk by chunk
 		for (unsigned int k = 0; k < number_of_new_images_to_load; k+=chunk_size){
+			if (cancel_asynch_group_load) {
+				cancel_asynch_group_load = false;
+				return;
+			}
+			lock.get(__FILE__, __LINE__);
 			ns_analyzed_time_image_chunk chunk(k,k+chunk_size);
 			if (chunk.stop_i >= number_of_new_images_to_load)
 				chunk.stop_i = number_of_new_images_to_load;
@@ -6715,19 +6805,19 @@ void ns_time_path_image_movement_analyzer<allocator_T>::load_images_for_group(co
 			else
 				groups[group_id].paths[j].load_movement_images(chunk,groups[group_id].paths[j].movement_image_storage,groups[group_id].paths[j].flow_movement_image_storage,memory_pool);
 //			
+			groups[group_id].paths[j].number_of_images_loaded += chunk_size;
+
+			//don't release on last iteration
+			if (k+chunk_size < number_of_new_images_to_load)
+				lock.release();
 		}
 		if (number_of_images_to_load == number_of_valid_elements){
 			groups[group_id].paths[j].end_movement_image_loading();
 			//groups[group_id].paths[j].movement_image_storage.input_stream().close();
 			groups[group_id].paths[j].movement_image_storage.clear();
 		}
-		groups[group_id].paths[j].number_of_images_loaded = number_of_images_to_load;
-		//groups[i].paths[j].analyze_movement(persistance_time,ns_stationary_path_id(i,j,analysis_id));
-			
-	//	debug_name += ".csv";
-	//	ofstream tmp(debug_name.c_str());
-	//	groups[i].paths[j].output_image_movement_summary(tmp);
 		lock.release();
+	
 	}
 }
 

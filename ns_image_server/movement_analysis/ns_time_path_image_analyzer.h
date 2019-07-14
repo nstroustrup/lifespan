@@ -706,7 +706,6 @@ struct ns_region_area {
 };
 
 
-
 struct ns_movement_analysis_shared_state;
 template<class allocator_T>
 class ns_time_path_image_movement_analyzer {
@@ -715,9 +714,10 @@ public:
 	ns_time_path_image_movement_analyzer(ns_time_path_image_movement_analysis_memory_pool<allocator_T> & memory_pool_):paths_loaded_from_solution(false),
 		movement_analyzed(false),region_info_id(0),last_timepoint_in_analysis_(0), _number_of_invalid_images_encountered(0),image_cache(1024*1024*64),
 		number_of_timepoints_in_analysis_(0),image_db_info_loaded(false),externally_specified_plate_observation_interval(0,ULONG_MAX),posture_model_version_used(NS_CURRENT_POSTURE_MODEL_VERSION),
-		memory_pool(memory_pool_){}
+		memory_pool(memory_pool_)asynch_group_loading_is_running(false),cancel_asynch_group_load(false) {}
 
 	~ns_time_path_image_movement_analyzer(){
+		stop_asynch_group_load();
 		for (unsigned int i = 0; i < groups.size(); i++)
 			groups[i].clear_images(memory_pool);
 		groups.clear();//do this first, ensuring all memory is returned to the pools
@@ -754,6 +754,9 @@ public:
 
 	//provide access to group images
 	void load_images_for_group(const unsigned long group_id, const unsigned long number_of_images_to_load,ns_sql & sql,const bool load_images_after_last_valid_sample,const bool load_flow_images,ns_simple_local_image_cache & image_cache);
+	void load_images_for_group_asynch(const unsigned long group_id, const unsigned long number_of_images_to_load, ns_sql & sql, const bool load_images_after_last_valid_sample, const bool load_flow_images, ns_simple_local_image_cache & image_cache);
+	void stop_asynch_group_load();
+	bool wait_until_element_is_loaded(const unsigned long group_id, const unsigned long elemenet_id);
 	template<class handle_t>
 	  void precache_group_images_locally(const unsigned long group_id, const unsigned long path_id, handle_t * handle_to_release,ns_sql & sql, bool nolock) {
 	  ns_acquire_lock_for_scope lock(groups[group_id].paths[path_id].movement_image_storage_lock, __FILE__, __LINE__,false);
@@ -853,6 +856,11 @@ private:
 				 number_of_timepoints_in_analysis_;
 	void load_movement_data_from_disk(std::istream & i,bool skip_movement_data=false);
 	void save_movement_data_to_disk(std::ostream & o) const;
+
+	ns_thread_return_type load_images_for_group_asynch_internal(void *);
+	ns_thread asynch_group_loading_thread;
+	bool asynch_group_loading_is_running;
+	bool cancel_asynch_group_load;
 
 	ns_64_bit analysis_id;
 	void get_processing_stats_from_solution(const ns_time_path_solution & solution_);

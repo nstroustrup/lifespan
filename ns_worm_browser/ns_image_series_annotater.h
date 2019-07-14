@@ -171,11 +171,12 @@ protected:
 	unsigned long current_timepoint_id;
 
 	ns_acquire_for_scope<ns_sql> sql;
+	ns_acquire_for_scope<ns_sql> asynch_loading_sql;
 	static ns_annotater_memory_pool memory_pool;
 public:
 
 	ns_simple_local_image_cache local_image_cache;
-	void clear_sql() { if (!sql.is_null())sql.release(); }
+	void clear_sql() { if (!sql.is_null())sql.release(); if (!asynch_loading_sql.is_null())asynch_loading_sql.release();}
 
 	typedef enum {ns_none,ns_forward, ns_back, ns_fast_forward, ns_fast_back,ns_stop,ns_save,ns_rewind_to_zero,ns_number_of_annotater_actions} ns_image_series_annotater_action;
 
@@ -187,7 +188,7 @@ public:
 		return ns_none;
 	}
 
-	~ns_image_series_annotater(){clear_base();sql.release();}
+	~ns_image_series_annotater() { clear_base(); clear_sql(); }
 	const unsigned long image_bottom_border_size;
 
 	virtual void clear() {}

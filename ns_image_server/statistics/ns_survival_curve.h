@@ -163,8 +163,9 @@ struct ns_survival_timepoint{
 	
 	unsigned long absolute_time;
 	ns_survival_timepoint_event deaths,
-								long_distance_movement_cessations,
-								local_movement_cessations;
+		long_distance_movement_cessations,
+		local_movement_cessations,
+		death_associated_expansions;
 	void add(const ns_survival_timepoint & t);
 };
 
@@ -279,9 +280,10 @@ struct ns_survival_statistics{
 	}
 };
 struct ns_multi_event_survival_statistics{
-	 ns_survival_statistics death,
-								long_distance_movement_cessation,
-								local_movement_cessations;
+	ns_survival_statistics death,
+		long_distance_movement_cessation,
+		local_movement_cessations,
+		death_associated_expansion_start;
 };
 struct ns_survival_data_with_censoring_timeseries{
 	void resize(unsigned long i, const double v);
@@ -311,9 +313,10 @@ struct ns_survival_data_with_censoring{
 	}
 };	
 struct ns_multi_event_survival_data_with_censoring{
-	 ns_survival_data_with_censoring death,
-								long_distance_movement_cessation,
-								local_movement_cessations;
+	ns_survival_data_with_censoring death,
+		long_distance_movement_cessation,
+		local_movement_cessations,
+		death_associated_expansion_start;
 };
 
 class ns_survival_data{
@@ -340,6 +343,7 @@ private:
 		generate_risk_timeseries(ns_movement_cessation,risk_timeseries.death);
 		generate_risk_timeseries(ns_translation_cessation,risk_timeseries.local_movement_cessations);
 		generate_risk_timeseries(ns_fast_movement_cessation,risk_timeseries.long_distance_movement_cessation);
+		generate_risk_timeseries(ns_death_associated_expansion_start, risk_timeseries.death_associated_expansion_start);
 	}
 	void generate_risk_timeseries(const ns_movement_event & event_type,ns_survival_data_with_censoring & survival) const;
 	
@@ -542,7 +546,7 @@ public:
 
 	typedef enum {ns_do_not_include_control_groups,ns_include_control_groups} ns_control_group_behavior;
 
-	void generate_aggregate_risk_timeseries(const ns_region_metadata & m,bool filter_by_metadata,ns_survival_data_with_censoring & risk_timeseries, std::vector<unsigned long> & t) const;
+	void generate_aggregate_risk_timeseries(const ns_region_metadata & m,bool filter_by_metadata, ns_survival_data_with_censoring& movement_based_survival, ns_survival_data_with_censoring& death_associated_expansion_survival, std::vector<unsigned long> & t) const;
 
 	static void out_detailed_JMP_header(const ns_time_handing_behavior & time_handling_behavior, std::ostream & o, const std::string & time_units,const std::string & terminator="\n");
 	static void out_detailed_JMP_event_data(const ns_time_handing_behavior & time_handling_behavior,std::ostream & o, const ns_lifespan_device_normalization_statistics * regression_stats,const ns_region_metadata & metadata,const ns_metadata_worm_properties & prop,const double time_scaling_factor,const std::string & terminator="\n", const bool output_raw_data_as_regression=false,const bool output_full_censoring_detail=false);

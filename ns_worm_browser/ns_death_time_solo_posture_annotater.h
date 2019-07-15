@@ -1070,7 +1070,7 @@ public:
 
 			if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Starting asynch image load"));
 		
-			handle().data->movement_analyzer.load_images_for_group_asynch(worm.group_id, number_of_valid_elements, &asynch_loading_sql(), false, false, local_image_cache);
+			handle().data->movement_analyzer.load_images_for_group_asynch(worm.group_id, number_of_valid_elements, asynch_loading_sql(), false, false, local_image_cache);
 			
 			if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Setting current timepoint"));
 			set_current_timepoint(current_time,handle,current_time!=0, true);

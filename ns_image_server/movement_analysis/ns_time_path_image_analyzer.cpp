@@ -6646,9 +6646,9 @@ template<class allocator_T>
 bool ns_time_path_image_movement_analyzer<allocator_T>::wait_until_element_is_loaded(const unsigned long group_id, const unsigned long element_id) {
 	if (groups.size() <= group_id)
 		throw ns_ex("Invalid group");
-	if (groups[group_id].paths.size() <= element_id)
+	if (groups[group_id].paths[0].elements.size() <= element_id)
 		throw ns_ex("Invalid element");
-	if (groups[group_id].paths[j].elements[element_id].excluded)
+	if (groups[group_id].paths[0].elements[element_id].excluded)
 		cout << "Warning: waiting on excluded sample";
 
 	if (groups[group_id].paths[0].number_of_images_loaded > element_id)
@@ -6656,7 +6656,7 @@ bool ns_time_path_image_movement_analyzer<allocator_T>::wait_until_element_is_lo
 
 	while (true) {
 		//wait until next chunck is loaded
-		ns_acquire_lock_for_scope lock(groups[group_id].paths[j].movement_image_storage_lock, __FILE__, __LINE__);
+		ns_acquire_lock_for_scope lock(groups[group_id].paths[0].movement_image_storage_lock, __FILE__, __LINE__);
 		lock.release();
 		if (groups[group_id].paths[0].number_of_images_loaded > element_id)
 			return true;
@@ -6680,20 +6680,21 @@ public:
 
 template<class allocator_T>
 ns_thread_return_type ns_time_path_image_movement_analyzer<allocator_T>::load_images_for_group_asynch_internal(void * pr) {
+	ns_asynch_image_load_parameters<allocator_T>* p = static_cast<ns_asynch_image_load_parameters<allocator_T>*>(pr);
 	try {
-		ns_asynch_image_load_parameters<allocator_T> * p = static_cast<ns_asynch_image_load_parameters<allocator_T> *>(pr);
 		p->analyzer->load_images_for_group(p->group_id, p->number_of_images_to_load, *p->sql, p->load_images_after_last_valid_sample, p->load_flow_images, *p->image_cache);
+		p->analyzer->asynch_group_loading_is_running = false;
 		delete p;
-		asynch_group_loading_is_running = false;
 	}
 	catch (ns_ex & ex) {
-		cout << "Problem during asnych image load: " << ex;
+		cout << "Problem during asnych image load: " << ex.text() << "\n";
+		p->analyzer->asynch_group_loading_is_running = false;
 		delete p;
-		asynch_group_loading_is_running = false;
 	}
 	catch (...) {
+		cout << "Unknown problem during asnych image load.\n";
+		p->analyzer->asynch_group_loading_is_running = false;
 		delete p;
-		asynch_group_loading_is_running = false;
 	}
 	return 0;
 }
@@ -6703,9 +6704,10 @@ void ns_time_path_image_movement_analyzer<allocator_T>::load_images_for_group_as
 	asynch_group_loading_is_running = true;
 	ns_asynch_image_load_parameters<allocator_T> *p = new ns_asynch_image_load_parameters<allocator_T>;
 	p->group_id = group_id;
-	p->requested_number_of_images_to_load = requested_number_of_images_to_load;
-	p->sql = *sql;
+	p->number_of_images_to_load = requested_number_of_images_to_load;
+	p->sql = &sql;
 	p->load_images_after_last_valid_sample = load_images_after_last_valid_sample;
+	p->load_flow_images = load_flow_images;
 	p->image_cache = &image_cache;
 	p->analyzer = this;
 	ns_thread thread;

@@ -292,6 +292,7 @@ void ns_machine_analysis_data_loader::set_up_spec_to_load(const ns_64_bit & regi
 	}
 	else{
 		//add just the sample
+		samples.resize(0);
 		samples.resize(1,sample_id);
 	}
 	

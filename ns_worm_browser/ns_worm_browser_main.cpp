@@ -131,6 +131,7 @@ class ns_worm_terminal_gl_window : public Fl_Gl_Window {
 	bool have_focus;
 
     void fix_viewport(unsigned long x, unsigned long y, int width,int height) {
+		return;
         glLoadIdentity();
      
     	glShadeModel (GL_FLAT);
@@ -146,12 +147,12 @@ class ns_worm_terminal_gl_window : public Fl_Gl_Window {
     void draw() {
         if (!valid()) { 
 			valid(1); 
-			fix_viewport(x(),y(),w(), h()); 
-			glClearColor(1, 1, 1, 1); 
-			 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear buffer
+			//fix_viewport(x(),y(),w(), h()); 
+			//glClearColor(1, 1, 1, 1); 
+			// glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear buffer
 			 //glLoadIdentity ();             /* clear the matrix */
-			 glTranslatef (0.0, 0.0, -5); /* viewing transformation */
-			 glScalef (1.0, 1.0, 1.0);      /* modeling transformation */
+			// glTranslatef (0.0, 0.0, -5); /* viewing transformation */
+			 //glScalef (1.0, 1.0, 1.0);      /* modeling transformation */
 			 //glColor3f(0,0,0);
 		}      
 
@@ -1949,6 +1950,7 @@ public:
 };
 void ns_handle_death_time_annotation_button(Fl_Widget * w, void * data);
 void ns_handle_death_time_solo_annotation_button(Fl_Widget * w, void * data);
+void ns_handle_stats_annotation_button(Fl_Widget* w, void* data);
 
 class ns_death_event_annotation_group : public Fl_Pack {
 public:
@@ -2578,12 +2580,78 @@ public:
 };
 
 
+class ns_stats_annotation_group : public Fl_Pack {
+public:
+	Fl_Button* recalculate;
+	Fl_Button* cycle_contents;
+	Fl_Button* cycle_graphs;
+	Fl_Output* info_bar;
+	enum {
+		button_width = 50, button_height = 18, recalculate_button_width = 50
+	};
+	static unsigned long all_buttons_width() {
+		return 2 * button_width + recalculate_button_width;
+	}
+	int handle(int e) {
+		//don't claim keystrokes--we want them to be passed on to the glwindow for navigation
+		switch (e) {
+		case FL_KEYDOWN:
+			return 0;
+		case FL_KEYUP:
+			return 0;
+		}
+		return Fl_Pack::handle(e);
+	}
+
+	void resize(int x, int y, int w, int h) {
+
+		const int info_bar_x(all_buttons_width());
+
+		int bw = button_width,
+			calc_bw = recalculate_button_width;
+		const bool squished = (w < info_bar_x);
+		
+		recalculate->resize(x, y, calc_bw, h);
+		cycle_contents->resize(calc_bw + x, y, bw, h);
+		cycle_graphs->resize(calc_bw+ bw + x, y, bw, h);
+		info_bar->resize(info_bar_x + x, y, w - info_bar_x, h);
+		Fl_Pack::resize(x, y, w, h);
+	}
+	ns_stats_annotation_group(int x, int y, int w, int h) : Fl_Pack(x, y, w, h) {
+		type(Fl_Pack::HORIZONTAL);
+		//	spacing(0);
+			//int button_width = 3;
+		//	play_reverse_button = new Fl_Button(0*button_width,0,button_width,button_height,"@-2<<");
+		//	play_reverse_button->callback(ns_handle_death_time_solo_annotation_button,
+		//		new ns_death_time_solo_posture_annotater::ns_image_series_annotater_action(ns_death_time_solo_posture_annotater::ns_fast_back));
+		recalculate = new Fl_Button(0, 0, recalculate_button_width, button_height, "Recalc");
+		recalculate->callback(ns_handle_stats_annotation_button,0);
+
+		cycle_contents = new Fl_Button(recalculate_button_width, 0, button_width, button_height, "Group");
+		cycle_contents->callback(ns_handle_stats_annotation_button, 0);
+
+		cycle_graphs = new Fl_Button(recalculate_button_width+button_width, 0, button_width, button_height, "Graph");
+		cycle_graphs->callback(ns_handle_stats_annotation_button, 0);
+
+		const int info_bar_x(all_buttons_width());
+		info_bar = new Fl_Output(info_bar_x, 0, w - info_bar_x, button_height);
+		info_bar->value("");
+		//	info_bar->textsize(experiment_name_bar->textsize());
+		info_bar->textfont(FL_HELVETICA);
+		info_bar->deactivate();
+
+		end();
+
+		//	clear_visible_focus();
+
+	}
+};
 // APP WINDOW CLASS
 class ns_worm_terminal_stats_window : public Fl_Window {
 	bool have_focus;
 public:
 	ns_worm_stats_gl_window* gl_window;
-	ns_death_event_solo_annotation_group* annotation_group;
+	ns_stats_annotation_group* annotation_group;
 
 	static unsigned long info_bar_height() { return 18; }
 	/*
@@ -2609,7 +2677,7 @@ public:
 
 		gl_window = new  ns_worm_stats_gl_window(30, 30, size.x, size.y);
 
-		annotation_group = new ns_death_event_solo_annotation_group(0,
+		annotation_group = new ns_stats_annotation_group(0,
 			worm_learner.stats_window.gl_image_size.y,
 			W,
 			ns_death_event_solo_annotation_group::button_height);
@@ -2625,7 +2693,7 @@ public:
 	}
 
 	static ns_vector_2i image_window_size_difference(const float menu_d) {
-		return ns_vector_2i(0, (long)menu_d * ns_death_event_solo_annotation_group::button_height);
+		return ns_vector_2i(0, (long)menu_d * ns_stats_annotation_group::button_height);
 	}
 	void size(int w__, int h__) { ns_worm_terminal_stats_window::resize(x(), y(), w__, h__); }
 	void resize(int w__, int h__) {
@@ -2666,7 +2734,7 @@ public:
 		gl_window->redraw();
 
 		ns_vector_2i bar_pos(0, worm_learner.stats_window.gl_image_size.y * d),
-			bar_size(window_size.x, ns_death_event_solo_annotation_group::button_height * menu_d);
+			bar_size(window_size.x, ns_stats_annotation_group::button_height * menu_d);
 
 		annotation_group->resize(bar_pos.x, bar_pos.y, bar_size.x, bar_size.y);
 
@@ -2789,6 +2857,9 @@ void ns_handle_death_time_solo_annotation_button(Fl_Widget * w, void * data){
 	report_changes_made_to_screen();
 //	cerr << "WHA";
 	//Fl::focus(main_window->gl_window);
+}
+void ns_handle_stats_annotation_button(Fl_Widget* w, void* data) {
+	cout << "BOOP";
 }
 
 void all_menu_callback(Fl_Widget*w, void*data) {

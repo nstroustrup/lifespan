@@ -714,7 +714,7 @@ public:
 	ns_time_path_image_movement_analyzer(ns_time_path_image_movement_analysis_memory_pool<allocator_T> & memory_pool_):paths_loaded_from_solution(false),
 		movement_analyzed(false),region_info_id(0),last_timepoint_in_analysis_(0), _number_of_invalid_images_encountered(0),image_cache(1024*1024*64),
 		number_of_timepoints_in_analysis_(0),image_db_info_loaded(false),externally_specified_plate_observation_interval(0,ULONG_MAX),posture_model_version_used(NS_CURRENT_POSTURE_MODEL_VERSION),
-		memory_pool(memory_pool_)asynch_group_loading_is_running(false),cancel_asynch_group_load(false) {}
+		memory_pool(memory_pool_),asynch_group_loading_is_running(false),cancel_asynch_group_load(false) {}
 
 	~ns_time_path_image_movement_analyzer(){
 		stop_asynch_group_load();
@@ -857,7 +857,7 @@ private:
 	void load_movement_data_from_disk(std::istream & i,bool skip_movement_data=false);
 	void save_movement_data_to_disk(std::ostream & o) const;
 
-	ns_thread_return_type load_images_for_group_asynch_internal(void *);
+	static ns_thread_return_type load_images_for_group_asynch_internal(void *);
 	ns_thread asynch_group_loading_thread;
 	bool asynch_group_loading_is_running;
 	bool cancel_asynch_group_load;

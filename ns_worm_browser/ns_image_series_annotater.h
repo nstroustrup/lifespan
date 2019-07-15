@@ -218,6 +218,37 @@ public:
 		image_buffer_access_lock.release();
 	}
 	virtual void save_annotations(const ns_death_time_annotation_set & extra_annotations)const=0 ;
+
+	bool jump_to_position(unsigned long new_timepoint_id,ns_handle_error_handler error_handler, double external_rescale_factor, bool asynch = false) {
+		ns_acquire_lock_for_scope lock(image_buffer_access_lock, __FILE__, __LINE__);
+		if (new_timepoint_id == current_timepoint_id)
+			return true;
+		if (sql.is_null())
+			sql.attach(image_server.new_sql_connection(__FILE__, __LINE__));
+
+		if (number_of_timepoints() == 0 || new_timepoint_id >= number_of_timepoints()) {
+			stop_fast_movement();
+			lock.release();
+			return false;
+		}
+		for (unsigned int i = 0; i < previous_images.size(); i++)
+			previous_images[i].loaded = false;
+		for (unsigned int i = 0; i < next_images.size(); i++)
+			next_images[i].loaded = false;
+			current_timepoint_id = new_timepoint_id;
+
+		if (asynch) {
+			if (debug_handlers) std::cerr << "A";
+			load_image_asynch(timepoint(current_timepoint_id), current_image, error_handler, external_rescale_factor, &current_image, 0);
+		}
+		else {
+			if (debug_handlers) std::cerr << "Q";
+			timepoint(current_timepoint_id)->load_image(asynch_load_specification.bottom_border_size, previous_images[0], sql(), local_image_cache, memory_pool, resize_factor);
+			draw_metadata(timepoint(current_timepoint_id), *previous_images[0].im, external_rescale_factor);
+		}
+		image_buffer_access_lock.release();
+		return true;
+	}
 	bool step_forward(ns_handle_error_handler error_handler, double external_rescale_factor, bool asynch=false){
 		ns_acquire_lock_for_scope lock(image_buffer_access_lock,__FILE__, __LINE__);
 	

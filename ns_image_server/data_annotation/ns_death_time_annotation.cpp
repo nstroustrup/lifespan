@@ -1379,7 +1379,6 @@ public:
 		if (!ns_movement_event_is_a_state_transition_event(e.type))
 			return;
 		if (e.type == ns_stationary_worm_disappearance ||
-			e.type == ns_death_associated_expansion_start ||
 			e.type == ns_death_associated_expansion_stop ||
 			e.type == ns_death_associated_post_expansion_contraction_start ||
 			e.type == ns_death_associated_post_expansion_contraction_stop )
@@ -1415,6 +1414,9 @@ public:
 				break;
 			case ns_movement_cessation:
 				timepoint[0] = &p->second.deaths;
+				break;
+			case ns_death_associated_expansion_start:
+				timepoint[0] = &p->second.death_associated_expansions;
 				break;
 			case ns_moving_worm_disappearance:
 				if (e.excluded == ns_death_time_annotation::ns_not_excluded)
@@ -2366,6 +2368,8 @@ void ns_death_time_annotation_compiler_region::generate_survival_curve(ns_surviv
 		const ns_death_time_annotation * machine_reference(0);
 		if (machine_death.machine.death_annotation != 0)
 			machine_reference = machine_death.machine.death_annotation;
+		else if (machine_death.machine.death_associated_expansion_start != 0)
+			machine_reference = machine_death.machine.death_associated_expansion_start;
 		else if (machine_death.machine.last_slow_movement_annotation != 0)
 			machine_reference = machine_death.machine.last_slow_movement_annotation;
 		else if (machine_death.machine.last_fast_movement_annotation != 0)

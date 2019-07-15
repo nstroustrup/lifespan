@@ -2263,7 +2263,7 @@ void ns_lifespan_curve_cache_entry::load_from_external_source(const ns_annotatio
 			p->second.compiler.generate_survival_curve_set(set, ns_death_time_annotation::ns_machine_annotations_if_no_by_hand, true, false);
 			
 
-			set.generate_aggregate_risk_timeseries(p->second.metadata, true, p->second.risk_timeseries, p->second.risk_timeseries_time);
+			set.generate_aggregate_risk_timeseries(p->second.metadata, true, p->second.movement_survival, p->second.death_associated_expansion_survival, p->second.risk_timeseries_time);
 
 			//here we should identify all possible strain-level risk time series by identifying all values of 
 			//p->second.metadata
@@ -2309,7 +2309,7 @@ void ns_image_processing_pipeline::overlay_graph(const ns_64_bit region_id,ns_im
 	metadata_overlay.prepare_to_recieve_image(metadata_overlay_prop);
 	const ns_lifespan_curve_cache_entry_data & plate_data = lifespan_curve.get_region_entry(region_id);
 
-	vis_gen.create_survival_curve_for_capture_time	(start_time,plate_data.metadata, plate_data.risk_timeseries,lifespan_curve.cached_strain_risk_timeseries,
+	vis_gen.create_survival_curve_for_capture_time	(start_time,plate_data.metadata, plate_data.movement_survival,lifespan_curve.cached_strain_movement_survival,
 																	plate_data.risk_timeseries_time,lifespan_curve.cached_strain_risk_timeseries_time,"Survival",true,optimize_for_small_graph,metadata_overlay,graph);
 	lifespan_curve_graph.init(lifespan_curve_image_prop);
 	graph.draw(lifespan_curve_graph);

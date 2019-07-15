@@ -496,6 +496,7 @@ const ns_survival_timepoint_event & ns_get_correct_event(const unsigned long i, 
 		case 0: return e.deaths;
 		case 1: return e.local_movement_cessations;
 		case 2: return e.long_distance_movement_cessations;
+		case 3: return e.death_associated_expansions;
 		default: throw ns_ex("ns_get_correct_event()::Unknown event spec");
 	}
 }
@@ -505,6 +506,7 @@ ns_survival_timepoint_event & ns_get_correct_event(const unsigned long i, ns_sur
 		case 0: return e.deaths;
 		case 1: return e.local_movement_cessations;
 		case 2: return e.long_distance_movement_cessations;
+		case 3: return e.death_associated_expansions;
 		default: throw ns_ex("ns_get_correct_event()::Unknown event spec");
 	}
 }
@@ -1394,6 +1396,7 @@ void ns_lifespan_experiment_set::include_only_events_detected_by_machine(){
 			curves[i].timepoints[j].deaths.remove_purely_non_machine_events();
 			curves[i].timepoints[j].local_movement_cessations.remove_purely_non_machine_events();
 			curves[i].timepoints[j].long_distance_movement_cessations.remove_purely_non_machine_events();
+			curves[i].timepoints[j].death_associated_expansions.remove_purely_non_machine_events();
 		}
 	}
 }
@@ -1407,8 +1410,8 @@ struct ns_event_count{
 		number_of_events,
 		number_of_censoring_events;
 };
-void ns_lifespan_experiment_set::generate_aggregate_risk_timeseries(const ns_region_metadata & m, bool filter_by_metadata, ns_survival_data_with_censoring & risk_timeseries, std::vector<unsigned long> & t) const{
-	std::map<unsigned long,std::vector<ns_survival_timepoint_event> > events; 
+void ns_lifespan_experiment_set::generate_aggregate_risk_timeseries(const ns_region_metadata & m, bool filter_by_metadata, ns_survival_data_with_censoring & movement_based_survival, ns_survival_data_with_censoring& death_associated_expansion_survival, std::vector<unsigned long> & t) const{
+	std::map<unsigned long, std::vector<ns_survival_timepoint_event> > movement_events, death_associated_expansion_events;
 	ns_region_metadata mm(m);
 	mm.genotype.clear();
 	
@@ -1419,24 +1422,44 @@ void ns_lifespan_experiment_set::generate_aggregate_risk_timeseries(const ns_reg
 
 		//add all events except for excluded objects
 		for (unsigned long j = 0; j < curves[i].timepoints.size(); j++){
-				events[curves[i].timepoints[j].absolute_time].push_back(curves[i].timepoints[j].deaths);
+			movement_events[curves[i].timepoints[j].absolute_time].push_back(curves[i].timepoints[j].deaths);
+			death_associated_expansion_events[curves[i].timepoints[j].absolute_time].push_back(curves[i].timepoints[j].death_associated_expansions);
 		}
 	}
-	aggregate_set.timepoints.resize(events.size());
-	t.resize(events.size());
-	unsigned int i = 0;
-	for (std::map<unsigned long,std::vector<ns_survival_timepoint_event> >::iterator p = events.begin(); p != events.end(); p++){
-		aggregate_set.timepoints[i].absolute_time = p->first;
-		t[i] = p->first;
+	//we need to put both the deaths and the death associated expansion events on the same time steps.
+	//so we find the union of all event times
+	std::set<unsigned long> unique_timepoints;
+	for (std::map<unsigned long, std::vector<ns_survival_timepoint_event> >::iterator p = movement_events.begin(); p != movement_events.end(); p++) 
+		unique_timepoints.insert(p->first);
+	for (std::map<unsigned long, std::vector<ns_survival_timepoint_event> >::iterator p = death_associated_expansion_events.begin(); p != death_associated_expansion_events.end(); p++)
+		unique_timepoints.insert(p->first);
 
-		for (unsigned int j = 0; j < p->second.size(); j++)
-			aggregate_set.timepoints[i].deaths.add(p->second[j]);
-		p->second.clear();
+	aggregate_set.timepoints.resize(unique_timepoints.size());
+	t.resize(unique_timepoints.size());
+	std::map<unsigned long, unsigned long> time_lookup;
+	unsigned int i = 0;
+	for (std::set<unsigned long >::iterator p = unique_timepoints.begin(); p != unique_timepoints.end(); p++) {
+		t[i] = *p;
+		time_lookup[*p] = i;
 		i++;
 	}
-	events.clear();
+
+	for (std::map<unsigned long,std::vector<ns_survival_timepoint_event> >::iterator p = movement_events.begin(); p != movement_events.end(); p++){
+		const unsigned int pos = time_lookup[p->first];
+		aggregate_set.timepoints[pos].absolute_time = p->first;
+		for (unsigned int j = 0; j < p->second.size(); j++)
+			aggregate_set.timepoints[pos].deaths.add(p->second[j]);
+	}
+	movement_events.clear();
+	for (std::map<unsigned long, std::vector<ns_survival_timepoint_event> >::iterator p = death_associated_expansion_events.begin(); p != death_associated_expansion_events.end(); p++) {
+		const unsigned int pos = time_lookup[p->first];
+		aggregate_set.timepoints[pos].absolute_time = p->first;
+		for (unsigned int j = 0; j < p->second.size(); j++)
+			aggregate_set.timepoints[pos].death_associated_expansions.add(p->second[j]);
+	}
 	aggregate_set.genenerate_survival_statistics();
-	risk_timeseries = aggregate_set.risk_timeseries.death;	
+	movement_based_survival = aggregate_set.risk_timeseries.death;
+	death_associated_expansion_survival = aggregate_set.risk_timeseries.death_associated_expansion_start;
 }
 void ns_lifespan_experiment_set::generate_common_time_set(ns_lifespan_experiment_set & new_set) const{
 
@@ -1492,22 +1515,6 @@ void ns_lifespan_experiment_set::generate_common_time_set(ns_lifespan_experiment
 	}
 }
 
-/*
-ns_survival_timepoint_event operator+(const ns_survival_timepoint_event & a, const ns_survival_timepoint_event & b){
-	ns_survival_timepoint_event e(a);
-	e.events.insert(e.events.begin(),b.events.begin(),b.events.end());
-	//e.survival_count += b.survival_count;
-	return e;
-}
-ns_survival_timepoint operator+(const ns_survival_timepoint & a, const ns_survival_timepoint & b){
-	ns_survival_timepoint ret;
-	ret.absolute_time = (a.absolute_time>b.absolute_time)?a.absolute_time:b.absolute_time;
-	ret.deaths = a.deaths + b.deaths;
-	ret.local_movement_cessations = a.local_movement_cessations + b.local_movement_cessations;
-	ret.long_distance_movement_cessations = a.long_distance_movement_cessations + b.long_distance_movement_cessations;
-	return ret;
-}*/
-
 //events that occured at a position detected by the machine have 
 //a special annotation added during survival curve assembly.
 //we check for that annotation
@@ -1534,8 +1541,7 @@ void ns_survival_timepoint::add(const ns_survival_timepoint & t){
 	deaths.add(t.deaths);
 	local_movement_cessations.add(t.local_movement_cessations);
 	long_distance_movement_cessations.add(t.long_distance_movement_cessations);
-
-
+	death_associated_expansions.add(t.death_associated_expansions);
 }
 
 void ns_lifespan_experiment_set::force_common_time_set_to_constant_time_interval(const unsigned long interval_time_in_seconds,ns_lifespan_experiment_set & new_set) const{
@@ -1721,6 +1727,7 @@ void ns_survival_data::genenerate_survival_statistics(){
 	generate_survival_statistics(risk_timeseries.death,survival_statistics.death);
 	generate_survival_statistics(risk_timeseries.local_movement_cessations,survival_statistics.local_movement_cessations);
 	generate_survival_statistics(risk_timeseries.long_distance_movement_cessation,survival_statistics.long_distance_movement_cessation);
+	generate_survival_statistics(risk_timeseries.death_associated_expansion_start, survival_statistics.death_associated_expansion_start);
 }
 void ns_survival_data::generate_survival_statistics(const ns_survival_data_with_censoring & survival_data,ns_survival_statistics & stats) const{
 	if (timepoints.size() == 0)
@@ -1856,6 +1863,8 @@ const ns_survival_timepoint_event * ns_correct_event(const ns_movement_event & e
 				return &s.local_movement_cessations;
 			case ns_fast_movement_cessation:
 				return &s.long_distance_movement_cessations;
+			case ns_death_associated_expansion_start:
+				return &s.death_associated_expansions;
 			default:
 				throw ns_ex("Unknown normalization event specification: ") << (int)e;
 		}

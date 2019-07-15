@@ -7048,14 +7048,7 @@ void ns_worm_learner::touch_stats_window_pixel_internal(const ns_button_press& p
 
 
 	if (press.click_type == ns_button_press::ns_up) {
-		if (press.control_key_held)
-			death_time_solo_annotater.register_click(ns_vector_2i(press.image_position.x, press.image_position.y), ns_image_series_annotater::ns_cycle_flags, stats_window.display_rescale_factor);
-		else if (press.shift_key_held)
-			death_time_solo_annotater.register_click(ns_vector_2i(press.image_position.x, press.image_position.y), ns_image_series_annotater::ns_annotate_extra_worm, stats_window.display_rescale_factor);
-		else if (press.right_button)
-			death_time_solo_annotater.register_click(ns_vector_2i(press.image_position.x, press.image_position.y), ns_image_series_annotater::ns_cycle_state_alt_key_held, stats_window.display_rescale_factor);
-		else
-			death_time_solo_annotater.register_click(ns_vector_2i(press.image_position.x, press.image_position.y), ns_image_series_annotater::ns_cycle_state, stats_window.display_rescale_factor);
+		storyboard_annotater.register_statistics_click(press.image_position, ns_image_series_annotater::ns_cycle_state, stats_window.display_rescale_factor);
 	}
 	current_image_lock.release();
 }
@@ -7325,7 +7318,7 @@ void ns_worm_learner::draw_stats_window_image() {
 
 	ns_acquire_lock_for_scope lock(stats_window.display_lock, __FILE__, __LINE__);
 
-	ns_vector_2i telemetry_dimensions = storyboard_annotater.telemetry_size(ns_population_telemetry::ns_survival);
+	ns_vector_2i telemetry_dimensions = storyboard_annotater.telemetry_size(ns_population_telemetry::ns_movement_vs_posture);
 	ns_image_properties properties(telemetry_dimensions.y, telemetry_dimensions.x, 3);
 	stats_window.pre_gl_downsample = 1;
 
@@ -7427,7 +7420,7 @@ void ns_worm_learner::draw_stats_window_image() {
 	try {
 
 
-		storyboard_annotater.population_telemetry.draw(ns_population_telemetry::ns_survival,ns_vector_2i(0, 0),
+		storyboard_annotater.population_telemetry.draw(ns_population_telemetry::ns_movement_vs_posture,ns_vector_2i(0, 0),
 			telemetry_dimensions,
 			ns_vector_2i(stats_window.gl_buffer_properties.width,
 				stats_window.gl_buffer_properties.height),stats_window.display_rescale_factor,
@@ -7813,23 +7806,29 @@ void ns_experiment_storyboard_annotater::load_from_storyboard(const ns_region_me
 	ns_sql &sql(worm_learner_->get_sql_connection());
 	excluded_regions.clear();
 	if (spec.experiment_id != 0) {
-		sql << "SELECT r.id, r.excluded_from_analysis FROM sample_region_image_info as r, capture_samples as s WHERE r.sample_id = s.id AND s.experiment_id = " << spec.experiment_id;
+		sql << "SELECT r.id, r.excluded_from_analysis+r.censored+s.censored,r.time_at_which_animals_had_zero_age FROM sample_region_image_info as r, capture_samples as s WHERE r.sample_id = s.id AND s.experiment_id = " << spec.experiment_id;
 		ns_sql_result res;
 		sql.get_rows(res);
-		for (unsigned long i = 0; i < res.size(); i++)
+		for (unsigned long i = 0; i < res.size(); i++) {
 			excluded_regions[atol(res[i][0].c_str())] = res[i][1] != "0";
+			if (res[i][1] == "0" && strain_to_display.time_at_which_animals_had_zero_age == 0)
+				strain_to_display.time_at_which_animals_had_zero_age = atol(res[i][2].c_str());
+		}
 		strain_to_display.experiment_id = spec.experiment_id;
 	}
 	else if (spec.sample_id != 0) {
-		sql << "SELECT r.id, r.excluded_from_analysis FROM sample_region_image_info as r, capture_samples as s WHERE r.sample_id = s.id AND s.id = " << spec.sample_id;
+		sql << "SELECT r.id,  r.excluded_from_analysis+r.censored+s.censored,r.time_at_which_animals_had_zero_age FROM sample_region_image_info as r, capture_samples as s WHERE r.sample_id = s.id AND s.id = " << spec.sample_id;
 		ns_sql_result res;
 		sql.get_rows(res);
-		for (unsigned long i = 0; i < res.size(); i++)
+		for (unsigned long i = 0; i < res.size(); i++) {
 			excluded_regions[atol(res[i][0].c_str())] = res[i][1] != "0";
+			if (res[i][1] == "0" && strain_to_display.time_at_which_animals_had_zero_age == 0)
+				strain_to_display.time_at_which_animals_had_zero_age = atol(res[i][2].c_str());
+		}
 
 	}
 	else if (spec.region_id != 0) {
-		sql << "SELECT r.excluded_from_analysis, s.experiment_id FROM sample_region_image_info as r, capture_samples as s WHERE r.sample_id = s.id AND r.id = " << spec.region_id;
+		sql << "SELECT r.excluded_from_analysis+r.censored+s.censored, s.experiment_id,r.time_at_which_animals_had_zero_age FROM sample_region_image_info as r, capture_samples as s WHERE r.sample_id = s.id AND r.id = " << spec.region_id;
 		ns_sql_result res;
 		sql.get_rows(res);
 		if (res.size() == 0)
@@ -7839,6 +7838,8 @@ void ns_experiment_storyboard_annotater::load_from_storyboard(const ns_region_me
 		strain_to_display.region_id = spec.region_id;
 		if (strain_to_display.experiment_id == 0)
 			strain_to_display.experiment_id = ns_atoi64(res[0][1].c_str());
+		if (res[0][0] == "0" && strain_to_display.time_at_which_animals_had_zero_age == 0)
+			strain_to_display.time_at_which_animals_had_zero_age = atol(res[0][2].c_str());
 	}
 	storyboard_manager.load_metadata_from_db(spec, storyboard, sql);
 	unsigned long number_of_nonempty_divisions(0);
@@ -9185,6 +9186,23 @@ void ns_experiment_storyboard_annotater::load_random_worm() {
 
 	ns_launch_worm_window_for_worm(worm->event_annotation.region_info_id, worm->event_annotation.stationary_path_id, worm->storyboard_absolute_time);
 
+}
+
+void ns_output_error(){
+	cout << "Error jumping\n";
+
+}
+void ns_experiment_storyboard_annotater::register_statistics_click(const ns_vector_2i& image_position, const ns_click_request& action, double external_rescale_factor) {
+	ns_population_telemetry::ns_graph_contents contents;
+	ns_vector_2d graph_pos = this->population_telemetry.get_graph_value_from_click_position_(image_position.x, image_position.y, contents);
+	if (contents == ns_population_telemetry::ns_graph_contents::ns_none)
+		return;
+	for (unsigned int i = 0; i < divisions.size(); i++) {
+		if (divisions[i].division->time >= graph_pos.x) {
+			worm_learner->storyboard_annotater.jump_to_position(i, ns_output_error, external_rescale_factor, true);
+			return;
+		}
+	}
 }
 void ns_experiment_storyboard_annotater::register_click(const ns_vector_2i & image_position, const ns_click_request & action, double external_rescale_factor) {
 	if (divisions[current_timepoint_id].division->events.size() == 0)

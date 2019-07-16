@@ -71,7 +71,8 @@ public:
 		if (im.properties().components != 3)
 			throw ns_ex("ns_font::Drawing color on a B&W image");
 		int	previous_glyph_index=0;
-		int _x = 0;
+		FT_Vector d;
+		d.x = d.y = 0;
 		const int c(im.properties().components);
 		ns_vector_3<float> color_v(color.x,color.y,color.z);
 		ns_font_output_dimension dim(0,0);
@@ -81,11 +82,13 @@ public:
 		for (unsigned int i = 0; i < text.size(); i++) {
 			if (text[i] >= 127 || text[i] <= 31)  //ignore invalid characters
 				continue;
-			_x += render_glyph(text[i],previous_glyph_index, rglyph);
+			FT_Vector f = render_glyph(text[i],previous_glyph_index, rglyph);
+			d.x += f.x;
+			d.y += f.y;
 			FT_BitmapGlyph glyph = (FT_BitmapGlyph)rglyph;
 			if (draw &&
-				((x + _x + glyph->left) < 0 || 
-				(x+_x+glyph->bitmap.width+ glyph->left) > (int)im.properties().width ||
+				((x + d.x + glyph->left) < 0 || 
+				(x+d.x+glyph->bitmap.width+ glyph->left) > (int)im.properties().width ||
 				y - glyph->top + glyph->bitmap.rows > (int)im.properties().height ||
 				(int)y - (int)glyph->top < 0))
 				continue;
@@ -103,23 +106,23 @@ public:
 											[(yi)*((glyph->bitmap.width+glyph->bitmap.pitch)/2) +
 												+ xi];
 						v/=255.0;
-						ns_vector_3<float> cur(im[cur_y][3*(x+_x+xi + glyph->left)+0],
-												im[cur_y][3*(x+_x+xi + glyph->left)+1],
-												im[cur_y][3*(x+_x+xi + glyph->left)+2]);
+						ns_vector_3<float> cur(im[cur_y][3*(x+d.x+xi + glyph->left)+0],
+												im[cur_y][3*(x+d.x+xi + glyph->left)+1],
+												im[cur_y][3*(x+d.x+xi + glyph->left)+2]);
 						cur = cur*(1.0-v) + color_v*v;
 
-						im[cur_y][3*(x+_x+xi + glyph->left)+ 0] = (ns_8_bit)cur.x;
-						im[cur_y][3*(x+_x+xi + glyph->left)+ 1] = (ns_8_bit)cur.y;
-						im[cur_y][3*(x+_x+xi + glyph->left)+ 2] = (ns_8_bit)cur.z;
+						im[cur_y][3*(x+d.x+xi + glyph->left)+ 0] = (ns_8_bit)cur.x;
+						im[cur_y][3*(x+d.x+xi + glyph->left)+ 1] = (ns_8_bit)cur.y;
+						im[cur_y][3*(x+d.x+xi + glyph->left)+ 2] = (ns_8_bit)cur.z;
 
 
 					}
 			}
 			/* increment pen position */
-			_x += rglyph->advance.x >> 16;
+			d.x += rglyph->advance.x >> 16;
 		}
 		lock.release();
-		dim.w = _x;
+		dim.w = d.x;
 		return dim;
 	}
 
@@ -143,7 +146,7 @@ public:
 		for (int i = 0; i < (int)text.size(); i++) {
 			if (text[i] >= 127 || text[i] <= 31)  //ignore invalid characters
 				continue;
-			_x += render_glyph(text[i],previous_glyph_index, rglyph);
+			_x += render_glyph(text[i],previous_glyph_index, rglyph).x;
 
 			FT_BitmapGlyph glyph = (FT_BitmapGlyph)rglyph;
 			if (draw && (
@@ -179,7 +182,7 @@ public:
 private:
 	unsigned long current_face_height;
 	static ns_lock render_lock;
-	FT_Pos render_glyph(const char& c, int& previous_index, FT_Glyph & glyph);
+	FT_Vector render_glyph(const char& c, int& previous_index, FT_Glyph & glyph);
 	typedef std::map<ns_glyph_cach_entry, std::pair<int, FT_Glyph> > ns_glyph_cache_type;
 	ns_glyph_cache_type glyph_cache;
 	FT_Face face;

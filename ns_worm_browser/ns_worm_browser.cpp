@@ -9178,6 +9178,13 @@ void ns_death_time_solo_posture_annotater::register_click(const ns_vector_2i & i
 
 
 }
+
+
+bool operator <(const ns_lookup_index& a, const ns_lookup_index& b) {
+	if (a.movement_time != b.movement_time) return a.movement_time < b.movement_time;
+	return a.death_associated_expansion_time < b.death_associated_expansion_time;
+
+}
 void ns_experiment_storyboard_annotater::load_random_worm() {
 	unsigned int i = rand() % divisions.size();
 	unsigned int j = rand() % divisions[i].division->events.size();
@@ -9188,20 +9195,51 @@ void ns_experiment_storyboard_annotater::load_random_worm() {
 
 }
 
-void ns_output_error(){
-	cout << "Error jumping\n";
-
+void ns_worm_learner::load_specific_worm(const ns_64_bit& region_id, const unsigned long& group_id, double external_rescale_factor) {
+	if (region_id == 0)
+		throw ns_ex("Requested a non-specified region id");
+	ns_stationary_path_id path_id;
+	unsigned long division_id = 0;
+	unsigned long time;
+	ns_acquire_lock_for_scope storyboard_lock(worm_learner.storyboard_lock, __FILE__, __LINE__);
+	bool found_worm = worm_learner.storyboard_annotater.find_worm_by_id(region_id,group_id,path_id, division_id, time);
+	storyboard_lock.release();
+	if (!found_worm)
+		cout << "Could not find worm.\n";
+	else {
+		if (division_id != 0) {
+			worm_learner.storyboard_annotater.jump_to_position(division_id, ns_output_error, external_rescale_factor);
+			worm_learner.storyboard_annotater.display_current_frame();
+		}
+		ns_launch_worm_window_for_worm(region_id, path_id,time);
+	
+	}
 }
+
 void ns_experiment_storyboard_annotater::register_statistics_click(const ns_vector_2i& image_position, const ns_click_request& action, double external_rescale_factor) {
 	ns_population_telemetry::ns_graph_contents contents;
 	ns_vector_2d graph_pos = this->population_telemetry.get_graph_value_from_click_position_(image_position.x, image_position.y, contents);
-	if (contents == ns_population_telemetry::ns_graph_contents::ns_none)
+	switch (contents) {
+	case ns_population_telemetry::ns_graph_contents::ns_none:
 		return;
-	for (unsigned int i = 0; i < divisions.size(); i++) {
-		if (divisions[i].division->time >= graph_pos.x) {
-			worm_learner->storyboard_annotater.jump_to_position(i, ns_output_error, external_rescale_factor, true);
-			return;
+	case ns_population_telemetry::ns_graph_contents::ns_survival: {
+		cout << "Atempting to jump to time " << graph_pos.x << "\n";
+		long last_good(-1);
+		for (unsigned int i = 0; i < divisions.size(); i++) {
+			if (divisions[i].division->events.begin()->event_annotation.time.best_estimate_event_time_for_possible_partially_unbounded_interval() <= graph_pos.y) {
+				last_good = i;
+			}
+			else break;
 		}
+		if (last_good != -1)
+			worm_learner->storyboard_annotater.jump_to_position(last_good, ns_output_error, external_rescale_factor, true);
+		return;
+		break;
+	}
+	case ns_population_telemetry::ns_graph_contents::ns_movement_vs_posture: {
+		cout << "Atempting to load region " << graph_pos.x << " worm " << graph_pos.y << "\n";
+		worm_learner->load_specific_worm(graph_pos.x, graph_pos.y, external_rescale_factor);
+	}
 	}
 }
 void ns_experiment_storyboard_annotater::register_click(const ns_vector_2i & image_position, const ns_click_request & action, double external_rescale_factor) {

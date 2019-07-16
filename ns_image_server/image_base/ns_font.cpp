@@ -10,7 +10,7 @@ ns_font_server font_server;
 FT_Library &ns_get_ft_library(){
 	return ns_font_server::ft_lib;
 }
-FT_Pos ns_font::render_glyph(const char& c, int& previous_index, FT_Glyph & glyph) {
+FT_Vector ns_font::render_glyph(const char& c, int& previous_index, FT_Glyph & glyph) {
 	int error;
 	FT_Vector delta;
 	delta.x = delta.y = 0;
@@ -37,7 +37,9 @@ FT_Pos ns_font::render_glyph(const char& c, int& previous_index, FT_Glyph & glyp
 	glyph = p->second.second;
 
 	previous_index = p->second.first;
-	return delta.x >> 6;
+	delta.x = delta.x >> 6;
+	delta.y = delta.y >> 6;
+	return delta;
 }
 bool operator<(const ns_glyph_cach_entry& a, const ns_glyph_cach_entry& b) {
 	if (a.c == b.c) return a.size < b.size;

@@ -178,7 +178,7 @@ public:
 	ns_simple_local_image_cache local_image_cache;
 	void clear_sql() { if (!sql.is_null())sql.release(); if (!asynch_loading_sql.is_null())asynch_loading_sql.release();}
 
-	typedef enum {ns_none,ns_forward, ns_back, ns_fast_forward, ns_fast_back,ns_stop,ns_save,ns_rewind_to_zero,ns_number_of_annotater_actions} ns_image_series_annotater_action;
+	typedef enum {ns_none,ns_forward, ns_back, ns_fast_forward, ns_fast_back,ns_stop,ns_save,ns_rewind_to_zero,ns_recalculate,ns_switch_grouping,ns_cycle_graphs,ns_number_of_annotater_actions} ns_image_series_annotater_action;
 
 	ns_image_series_annotater_action fast_movement_requested()const{
 		if(fast_forward_requested)
@@ -243,8 +243,8 @@ public:
 		}
 		else {
 			if (debug_handlers) std::cerr << "Q";
-			timepoint(current_timepoint_id)->load_image(asynch_load_specification.bottom_border_size, previous_images[0], sql(), local_image_cache, memory_pool, resize_factor);
-			draw_metadata(timepoint(current_timepoint_id), *previous_images[0].im, external_rescale_factor);
+			timepoint(current_timepoint_id)->load_image(asynch_load_specification.bottom_border_size, current_image, sql(), local_image_cache, memory_pool, resize_factor);
+			draw_metadata(timepoint(current_timepoint_id), *current_image.im, external_rescale_factor);
 		}
 		image_buffer_access_lock.release();
 		return true;

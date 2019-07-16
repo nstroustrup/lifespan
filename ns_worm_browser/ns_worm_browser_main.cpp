@@ -1763,42 +1763,83 @@ public:
 		bar.redraw();
 	}
 };
-class ns_worm_terminal_strain_menu_organizer : public ns_menu_organizer{
-	static void pick_strain(const std::string & value){
+
+
+class ns_asynch_menu_picker {
+public:
+	void run(const std::string& value_) {
+		value = value_; 
+		ns_thread t(ns_asynch_menu_picker::run_asynch, this);
+		t.detach();
+	}
+private:
+	std::string value;
+	static ns_thread_return_type run_asynch(void* l) {
+		ns_asynch_menu_picker* p = static_cast<ns_asynch_menu_picker*>(l);
+		p->launch(p->value);
+		delete p;
+		return 0;
+	}
+	virtual void launch(const std::string& value) = 0;
+
+};
+
+class ns_stats_strain_asynch_picker : public ns_asynch_menu_picker {
+
+	void launch(const std::string& value) {
+		worm_learner.statistics_data_selector.select_strain(value);
+		::update_strain_choice_menu();
+		::update_region_choice_menu();
+	}
+};
+class ns_storyboard_strain_asynch_picker : public ns_asynch_menu_picker {
+
+	void launch(const std::string& value) {
 		worm_learner.data_selector.select_strain(value);
 		::update_strain_choice_menu();
 		::update_region_choice_menu();
 		::update_exclusion_choice_menu();
 	}
+};
+
+
+template<class ns_asynch_picker>
+class ns_worm_terminal_strain_menu_organizer : public ns_menu_organizer {
+	static void pick_strain(const std::string& value) {
+		ns_asynch_picker* picker = new ns_asynch_picker;
+		picker->run(value);
+	}
+	ns_experiment_region_selector & data_selector;
 public:
-	std::string strain_menu_name(){return "File/_Select Current Strain";}
-	void update_strain_choice(Fl_Menu_Bar & bar){
+	ns_worm_terminal_strain_menu_organizer(ns_experiment_region_selector& selector_to_use):data_selector(selector_to_use){}
+	std::string strain_menu_name() { return "File/_Select Current Strain"; }
+	void update_strain_choice(Fl_Menu_Bar& bar) {
 		bar.menu(NULL);
 		clear();
-		if (!worm_learner.data_selector.experiment_selected()){
+		if (!data_selector.experiment_selected()) {
 			bar.deactivate();
 			return;
 		}
-		if (worm_learner.data_selector.samples.size() == 0){
+		if (data_selector.samples.size() == 0) {
 			bar.deactivate();
 			return;
 		}
-		if (!worm_learner.data_selector.region_selected()){
-			if (!worm_learner.data_selector.select_default_sample_and_region()){
+		if (!data_selector.region_selected()) {
+			if (!data_selector.select_default_sample_and_region()) {
 				bar.deactivate();
 				return;
 			}
 		}
 		bar.activate();
 		string title("");
-		if (worm_learner.data_selector.strain_selected())
-			title = worm_learner.data_selector.current_strain().device_regression_match_description();
+		if (data_selector.strain_selected())
+			title = data_selector.current_strain().device_regression_match_description();
 		else title = "All Strains";
-		ns_menu_item_spec spec(pick_strain,title);
+		ns_menu_item_spec spec(pick_strain, title);
 		string sep;
-		if (worm_learner.data_selector.strain_selected())
+		if (data_selector.strain_selected())
 			spec.options.push_back(ns_menu_item_options("All Strains"));
-		for (ns_experiment_region_selector::ns_experiment_strain_list::iterator p = worm_learner.data_selector.experiment_strains.begin(); p != worm_learner.data_selector.experiment_strains.end(); p++){
+		for (ns_experiment_region_selector::ns_experiment_strain_list::iterator p = data_selector.experiment_strains.begin(); p != data_selector.experiment_strains.end(); p++) {
 			if (p->first == title)
 				continue;
 			else spec.options.push_back(ns_menu_item_options(p->first));
@@ -1806,46 +1847,146 @@ public:
 		add(spec);
 		build_menus(bar);
 		bar.redraw();
-		/*bar.resize(experiment_bar_width(),
-					h_-info_bar_height(),
-					region_name_bar_width(),
-					info_bar_height());*/
-		/*if (worm_learner.current_behavior_mode() == ns_worm_learner::ns_annotate_death_times_in_time_aligned_posture)
-				ns_start_death_time_annotation(ns_worm_learner::ns_annotate_death_times_in_time_aligned_posture);
-		else if (worm_learner.current_behavior_mode() == ns_worm_learner::ns_annotate_death_times_in_death_aligned_posture)
-				ns_start_death_time_annotation(ns_worm_learner::ns_annotate_death_times_in_death_aligned_posture);
-		else if (worm_learner.current_behavior_mode() == ns_worm_learner::ns_annotate_death_times_in_region)
-			/*do nothing 0;*/
+		on_select();
+	}
+	virtual void on_select() = 0;
+};
+
+class ns_storyboard_strain_menu_organizer : public ns_worm_terminal_strain_menu_organizer< ns_storyboard_strain_asynch_picker> {
+public:
+	ns_storyboard_strain_menu_organizer(ns_experiment_region_selector& selector_to_use) :ns_worm_terminal_strain_menu_organizer< ns_storyboard_strain_asynch_picker>(selector_to_use) {}
+	void on_select() {
+
 	}
 };
 
 
-struct ns_asynch_region_picker{
-	static ns_thread_return_type run_asynch(void * l){
-		ns_asynch_region_picker launcher;
-		std::string * region_name(static_cast<std::string *>(l));
-		launcher.launch(*region_name);
-		delete region_name;
-		return 0;
+class ns_stats_strain_menu_organizer : public ns_worm_terminal_strain_menu_organizer< ns_stats_strain_asynch_picker> {
+public:
+	ns_stats_strain_menu_organizer(ns_experiment_region_selector& selector_to_use) :ns_worm_terminal_strain_menu_organizer< ns_stats_strain_asynch_picker>(selector_to_use) {}
+	void on_select() {
+
 	}
-	void launch(const std::string & region_name){
-		try{
-			if (worm_learner.current_behavior_mode()==ns_worm_learner::ns_annotate_storyboard_region){
+};
+
+
+template<class storyboard_picker_t>
+class ns_worm_terminal_region_menu_organizer : public ns_menu_organizer {
+	static void pick_region(const std::string & value) {
+
+		storyboard_picker_t* picker = new storyboard_picker_t();
+		picker->run(value);
+	}
+	ns_experiment_region_selector & data_selector;
+public:
+	ns_worm_terminal_region_menu_organizer(ns_experiment_region_selector& selector_to_use) :data_selector(selector_to_use){}
+	std::string region_menu_name() { return "File/_Select Current Region"; }
+	void update_region_choice(Fl_Menu_Bar& bar) {
+		bar.menu(NULL);
+		clear();
+		if (!data_selector.experiment_selected()) {
+			bar.deactivate();
+			return;
+		}
+		if (data_selector.samples.size() == 0) {
+			bar.deactivate();
+			return;
+		}
+		/*if (!data_selector.region_selected())
+			if (!data_selector.select_default_sample_and_region()) {
+				bar.deactivate();
+				return;
+			}*/
+		bar.activate();
+
+		//identify devices with no regions that match the strain selection, so we can gray them out.
+		map<string, int> devices_with_valid_regions;
+		if (data_selector.strain_selected()) {
+			for (unsigned int i = 0; i < data_selector.samples.size(); i++) {
+				for (unsigned int j = 0; j < data_selector.samples[i].regions.size(); j++) {
+					if (data_selector.samples[i].regions[j].region_metadata == &data_selector.current_strain()) {
+						devices_with_valid_regions[data_selector.samples[i].device] = 0;
+						break;
+					}
+				}
+			}
+		}
+		
+		std::string menu_name = "All Regions";
+		if (data_selector.region_selected())
+			menu_name = data_selector.current_region().display_name;
+		ns_menu_item_spec spec(pick_region, menu_name);
+		string sep;
+
+		for (unsigned int i = 0; i < data_selector.samples.size(); i++) {
+
+			if (data_selector.strain_selected()) {
+				map<string, int>::const_iterator p = devices_with_valid_regions.find(data_selector.samples[i].device);
+
+				if (p == devices_with_valid_regions.end()) {
+					devices_with_valid_regions[data_selector.samples[i].device] = 1;
+					spec.options.push_back(ns_menu_item_options(data_selector.samples[i].device, true));
+					continue;
+				}
+				if (p->second == 1)
+					continue;
+
+				bool valid_regions_exist(false);
+				for (unsigned int j = 0; j < data_selector.samples[i].regions.size(); j++) {
+					if (data_selector.samples[i].regions[j].region_metadata == &data_selector.current_strain()) {
+						valid_regions_exist = true;
+						break;
+					}
+				}
+				if (!valid_regions_exist) {
+					std::string a = "";
+					if (i + 1 == data_selector.samples.size())
+						a = "_";
+					spec.options.push_back(ns_menu_item_options(a+data_selector.samples[i].device + "/" + data_selector.samples[i].sample_name, true));
+					continue;
+				}
+			}
+
+			for (unsigned int j = 0; j < data_selector.samples[i].regions.size(); j++) {
+
+				if (data_selector.region_selected() && data_selector.samples[i].regions[j].region_id == data_selector.current_region().region_id)
+					continue;
+				const bool unselected_strain(data_selector.strain_selected() && data_selector.samples[i].regions[j].region_metadata != &data_selector.current_strain());
+				std::string a = "";
+				if (i + 1 == data_selector.samples.size() && j ==0)
+					a = "_";
+				spec.options.push_back(ns_menu_item_options(data_selector.samples[i].device + "/" + data_selector.samples[i].sample_name + "/" + data_selector.samples[i].regions[j].display_name, unselected_strain));
+
+			}
+		}
+		if (data_selector.region_selected())
+			spec.options.push_back(ns_menu_item_options("All Regions", false));
+		add(spec);
+		build_menus(bar);
+		bar.redraw();
+		on_select();
+	}
+	virtual void on_select() = 0;
+};
+struct ns_storyboard_annotation_region_picker : public ns_asynch_menu_picker {
+	void launch(const std::string& region_name) {
+		try {
+			if (worm_learner.current_behavior_mode() == ns_worm_learner::ns_annotate_storyboard_region) {
 				if (!worm_learner.prompt_to_save_death_time_annotations())
 					return;
 				worm_learner.stop_death_time_annotation();
 				worm_learner.data_selector.select_region(region_name);
 				::update_region_choice_menu();
-				worm_learner.start_death_time_annotation(ns_worm_learner::ns_annotate_storyboard_region,worm_learner.current_storyboard_flavor);
+				worm_learner.start_death_time_annotation(ns_worm_learner::ns_annotate_storyboard_region, worm_learner.current_storyboard_flavor);
 				report_changes_made_to_screen();
 				return;
 			}
-			else{
+			else {
 				worm_learner.data_selector.select_region(region_name);
 				::update_region_choice_menu();
 			}
 		}
-		catch(ns_ex & ex){
+		catch (ns_ex& ex) {
 			cerr << "Error switching to a different region:" << ex.text();
 			worm_learner.death_time_solo_annotater.close_worm();
 			show_worm_window = false;
@@ -1853,93 +1994,11 @@ struct ns_asynch_region_picker{
 		}
 	}
 };
-
-
-class ns_worm_terminal_region_menu_organizer : public ns_menu_organizer {
-	static void pick_region(const std::string & value) {
-		std::string *n(new std::string(value));
-		ns_thread t(ns_asynch_region_picker::run_asynch, n);
-		t.detach();
-	}
+class ns_storyboard_region_selector : public ns_worm_terminal_region_menu_organizer<ns_storyboard_annotation_region_picker>{
 public:
-	std::string region_menu_name() { return "File/_Select Current Region"; }
-	void update_region_choice(Fl_Menu_Bar & bar) {
-		bar.menu(NULL);
-		clear();
-		if (!worm_learner.data_selector.experiment_selected()) {
-			bar.deactivate();
-			return;
-		}
-		if (worm_learner.data_selector.samples.size() == 0) {
-			bar.deactivate();
-			return;
-		}
-		if (!worm_learner.data_selector.region_selected())
-			if (!worm_learner.data_selector.select_default_sample_and_region()) {
-				bar.deactivate();
-				return;
-			}
-		bar.activate();
-		ns_menu_item_spec spec(pick_region, worm_learner.data_selector.current_region().display_name);
-		string sep;
+	ns_storyboard_region_selector(ns_experiment_region_selector& selector_to_use) :ns_worm_terminal_region_menu_organizer<ns_storyboard_annotation_region_picker>(selector_to_use) {}
 
-		//identify devices with no regions that match the strain selection, so we can gray them out.
-		map<string, int> devices_with_valid_regions;
-		if (worm_learner.data_selector.strain_selected()) {
-			for (unsigned int i = 0; i < worm_learner.data_selector.samples.size(); i++) {
-				for (unsigned int j = 0; j < worm_learner.data_selector.samples[i].regions.size(); j++) {
-					if (worm_learner.data_selector.samples[i].regions[j].region_metadata == &worm_learner.data_selector.current_strain()) {
-						devices_with_valid_regions[worm_learner.data_selector.samples[i].device] = 0;
-						break;
-					}
-				}
-			}
-		}
-
-		for (unsigned int i = 0; i < worm_learner.data_selector.samples.size(); i++) {
-
-			if (worm_learner.data_selector.strain_selected()) {
-
-				map<string, int>::const_iterator p = devices_with_valid_regions.find(worm_learner.data_selector.samples[i].device);
-
-				if (p == devices_with_valid_regions.end()) {
-					devices_with_valid_regions[worm_learner.data_selector.samples[i].device] = 1;
-					spec.options.push_back(ns_menu_item_options(worm_learner.data_selector.samples[i].device, true));
-					continue;
-				}
-				if (p->second == 1)
-					continue;
-
-				bool valid_regions_exist(false);
-				for (unsigned int j = 0; j < worm_learner.data_selector.samples[i].regions.size(); j++) {
-					if (worm_learner.data_selector.samples[i].regions[j].region_metadata == &worm_learner.data_selector.current_strain()) {
-						valid_regions_exist = true;
-						break;
-					}
-				}
-				if (!valid_regions_exist) {
-					spec.options.push_back(ns_menu_item_options(worm_learner.data_selector.samples[i].device + "/" + worm_learner.data_selector.samples[i].sample_name, true));
-					continue;
-				}
-			}
-
-			for (unsigned int j = 0; j < worm_learner.data_selector.samples[i].regions.size(); j++) {
-
-				if (worm_learner.data_selector.samples[i].regions[j].region_id == worm_learner.data_selector.current_region().region_id)
-					continue;
-				const bool unselected_strain(worm_learner.data_selector.strain_selected() && worm_learner.data_selector.samples[i].regions[j].region_metadata != &worm_learner.data_selector.current_strain());
-
-				spec.options.push_back(ns_menu_item_options(worm_learner.data_selector.samples[i].device + "/" + worm_learner.data_selector.samples[i].sample_name + "/" + worm_learner.data_selector.samples[i].regions[j].display_name, unselected_strain));
-
-			}
-		}
-		add(spec);
-		build_menus(bar);
-		bar.redraw();
-		/*bar.resize(experiment_bar_width(),
-					h_-info_bar_height(),
-					region_name_bar_width(),
-					info_bar_height());*/
+	void on_select() {
 		if (worm_learner.current_behavior_mode() == ns_worm_learner::ns_annotate_death_times_in_time_aligned_posture)
 			ns_start_death_time_annotation(ns_worm_learner::ns_annotate_death_times_in_time_aligned_posture, worm_learner.current_storyboard_flavor);
 		else if (worm_learner.current_behavior_mode() == ns_worm_learner::ns_annotate_death_times_in_death_aligned_posture)
@@ -1948,6 +2007,27 @@ public:
 			/*do nothing*/0;
 	}
 };
+
+struct ns_stats_region_picker : public ns_asynch_menu_picker {
+	void launch(const std::string& region_name) {
+		try {
+				worm_learner.statistics_data_selector.select_region(region_name);
+				::update_region_choice_menu();
+		}
+		catch (ns_ex& ex) {
+			cerr << "Error switching to a choosing statistics region:" << ex.text();
+		}
+	}
+};
+class ns_stats_region_selector : public ns_worm_terminal_region_menu_organizer<ns_stats_region_picker> {
+public:
+	ns_stats_region_selector(ns_experiment_region_selector& selector_to_use) :ns_worm_terminal_region_menu_organizer<ns_stats_region_picker>(selector_to_use) {}
+
+	void on_select() {
+	}
+};
+
+
 void ns_handle_death_time_annotation_button(Fl_Widget * w, void * data);
 void ns_handle_death_time_solo_annotation_button(Fl_Widget * w, void * data);
 void ns_handle_stats_annotation_button(Fl_Widget* w, void* data);
@@ -2159,8 +2239,8 @@ public:
 	//ns_dialog_window * dialog_window;
 //	Fl_Output * spacer_bar;
 	ns_worm_terminal_main_menu_organizer * main_menu_handler;
-	ns_worm_terminal_region_menu_organizer * region_menu_handler;
-	ns_worm_terminal_strain_menu_organizer * strain_menu_handler;
+	ns_storyboard_region_selector * region_menu_handler;
+	ns_storyboard_strain_menu_organizer* strain_menu_handler;
 	ns_worm_terminal_exclusion_menu_organizer * exclusion_menu_handler;
 
 	static unsigned long menu_height() { return 23; }
@@ -2233,7 +2313,7 @@ public:
 		region_menu->textsize((region_menu->textsize() - 4)*menu_d);
 		region_menu->textfont(FL_HELVETICA);
 
-		region_menu_handler = new ns_worm_terminal_region_menu_organizer();
+		region_menu_handler = new ns_storyboard_region_selector(worm_learner.data_selector);
 		region_menu_handler->update_region_choice(*region_menu);
 
 		strain_menu = new Fl_Menu_Bar(   (int)(d*experiment_bar_width() + menu_d*region_name_bar_width()),												   (int)(H - menu_d*info_bar_height()), (int)(menu_d*strain_bar_width()),    (int)(menu_d*info_bar_height()));
@@ -2241,7 +2321,7 @@ public:
 		worm_id_selector = new Fl_Button((int)(d*experiment_bar_width() + menu_d * (region_name_bar_width() + strain_bar_width()+ exclusion_bar_width())), (int)(H - menu_d*info_bar_height()), (int)(menu_d*worm_input_width()), (int)(menu_d*info_bar_height()),"w");
 		worm_id_selector->callback(ns_handle_worm_selection_button);
 		worm_id_selector->deactivate();
-		strain_menu_handler = new ns_worm_terminal_strain_menu_organizer();
+		strain_menu_handler = new ns_storyboard_strain_menu_organizer(worm_learner.data_selector);
 		strain_menu_handler->update_strain_choice(*strain_menu);
 		exclusion_menu_handler = new ns_worm_terminal_exclusion_menu_organizer();
 		exclusion_menu_handler->update_exclusion_choice(*exclusion_menu);
@@ -2585,7 +2665,6 @@ public:
 	Fl_Button* recalculate;
 	Fl_Button* cycle_contents;
 	Fl_Button* cycle_graphs;
-	Fl_Output* info_bar;
 	enum {
 		button_width = 50, button_height = 18, recalculate_button_width = 50
 	};
@@ -2614,7 +2693,6 @@ public:
 		recalculate->resize(x, y, calc_bw, h);
 		cycle_contents->resize(calc_bw + x, y, bw, h);
 		cycle_graphs->resize(calc_bw+ bw + x, y, bw, h);
-		info_bar->resize(info_bar_x + x, y, w - info_bar_x, h);
 		Fl_Pack::resize(x, y, w, h);
 	}
 	ns_stats_annotation_group(int x, int y, int w, int h) : Fl_Pack(x, y, w, h) {
@@ -2625,20 +2703,14 @@ public:
 		//	play_reverse_button->callback(ns_handle_death_time_solo_annotation_button,
 		//		new ns_death_time_solo_posture_annotater::ns_image_series_annotater_action(ns_death_time_solo_posture_annotater::ns_fast_back));
 		recalculate = new Fl_Button(0, 0, recalculate_button_width, button_height, "Recalc");
-		recalculate->callback(ns_handle_stats_annotation_button,0);
-
+		recalculate->callback(ns_handle_stats_annotation_button, new ns_image_series_annotater::ns_image_series_annotater_action(ns_image_series_annotater::ns_recalculate));
+		
 		cycle_contents = new Fl_Button(recalculate_button_width, 0, button_width, button_height, "Group");
-		cycle_contents->callback(ns_handle_stats_annotation_button, 0);
+		cycle_contents->callback(ns_handle_stats_annotation_button, new ns_image_series_annotater::ns_image_series_annotater_action(ns_image_series_annotater::ns_switch_grouping));
 
 		cycle_graphs = new Fl_Button(recalculate_button_width+button_width, 0, button_width, button_height, "Graph");
-		cycle_graphs->callback(ns_handle_stats_annotation_button, 0);
+		cycle_graphs->callback(ns_handle_stats_annotation_button, new ns_image_series_annotater::ns_image_series_annotater_action(ns_image_series_annotater::ns_cycle_graphs));
 
-		const int info_bar_x(all_buttons_width());
-		info_bar = new Fl_Output(info_bar_x, 0, w - info_bar_x, button_height);
-		info_bar->value("");
-		//	info_bar->textsize(experiment_name_bar->textsize());
-		info_bar->textfont(FL_HELVETICA);
-		info_bar->deactivate();
 
 		end();
 
@@ -2652,13 +2724,17 @@ class ns_worm_terminal_stats_window : public Fl_Window {
 public:
 	ns_worm_stats_gl_window* gl_window;
 	ns_stats_annotation_group* annotation_group;
+	ns_stats_region_selector* region_menu_handler;
+	ns_stats_strain_menu_organizer* strain_menu_handler;
+	Fl_Output* info_bar;
+
+	Fl_Menu_Bar* region_menu, * strain_menu;
 
 	static unsigned long info_bar_height() { return 18; }
-	/*
-	static unsigned long expersent_bar_width(){return 145;}
-	static unsigned long region_name_bar_width(){return 50;}
+
+	static unsigned long region_name_bar_width(){ return 140; }
 	static unsigned long strain_bar_width(){return 140;}
-	*/
+
 	static unsigned long border_height() { return 0; }
 	static unsigned long border_width() { return 0; }
 	~ns_worm_terminal_stats_window() {
@@ -2666,25 +2742,47 @@ public:
 		delete annotation_group;
 	}
 
-	void update_information_bar(const std::string& status) {
-		annotation_group->info_bar->value(status.c_str());
-	}
 	ns_worm_terminal_stats_window(int W, int H, const char* L = 0) : Fl_Window(W, H, L), have_focus(false) {
 		// OpenGL window
 		begin();
 
 		ns_vector_2i size(worm_learner.stats_window.gl_image_size.x, worm_learner.stats_window.gl_image_size.y + image_window_size_difference(worm_learner.stats_window.display_rescale_factor).y);
 
+		float menu_d(worm_learner.main_window.display_rescale_factor);
 		gl_window = new  ns_worm_stats_gl_window(30, 30, size.x, size.y);
 
 		annotation_group = new ns_stats_annotation_group(0,
 			worm_learner.stats_window.gl_image_size.y,
-			W,
+			ns_stats_annotation_group::all_buttons_width(),
 			ns_death_event_solo_annotation_group::button_height);
-		resize(0, 0, 0, 0);
+
+
+		region_menu = new Fl_Menu_Bar(menu_d * ns_stats_annotation_group::all_buttons_width(), worm_learner.stats_window.gl_image_size.y, menu_d * region_name_bar_width(), menu_d * ns_death_event_solo_annotation_group::button_height);
+		region_menu->textsize((region_menu->textsize() - 4));
+		region_menu->textfont(FL_HELVETICA);
+
+		region_menu_handler = new ns_stats_region_selector(worm_learner.statistics_data_selector);
+		region_menu_handler->update_region_choice(*region_menu);
+
+		strain_menu = new Fl_Menu_Bar(menu_d * (ns_stats_annotation_group::all_buttons_width()+ region_name_bar_width()), worm_learner.stats_window.gl_image_size.y, menu_d * strain_bar_width(), menu_d * info_bar_height());
+		strain_menu->textsize((strain_menu->textsize() - 4));
+		strain_menu->textfont(FL_HELVETICA);
+		
+		strain_menu_handler = new ns_stats_strain_menu_organizer(worm_learner.statistics_data_selector);
+		strain_menu_handler->update_strain_choice(*strain_menu);
+
+		const int info_bar_x(menu_d * (ns_stats_annotation_group::all_buttons_width() + region_name_bar_width() + strain_bar_width()));
+		info_bar = new Fl_Output(info_bar_x, worm_learner.stats_window.gl_image_size.y, W - info_bar_x, menu_d * info_bar_height());
+		info_bar->value("");
+		//	info_bar->textsize(experiment_name_bar->textsize());
+		info_bar->textfont(FL_HELVETICA);
+		info_bar->deactivate();
+
+
 		//annotation_group->deactivate();
 		//annotation_group->hide();
 
+		resize(0, 0, 0, 0);
 		end();
 		gl_window->show();
 
@@ -2718,6 +2816,21 @@ public:
 			h = 800;
 
 	}
+
+
+	void update_region_choice_menu() {
+		region_menu_handler->update_region_choice(*region_menu);
+		update_information_bar();
+
+	}
+	void update_information_bar(const std::string& status = "-1") {
+		if (status != "-1")
+			info_bar->value(status.c_str());
+	}
+	void update_strain_choice_menu() {
+		strain_menu_handler->update_strain_choice(*strain_menu);
+		update_information_bar();
+	}
 	void resize(int x, int y, int w_requested, int h_requested) {
 
 		//	ns_acquire_lock_for_scope lock(worm_learner.stats_window.display_lock, __FILE__, __LINE__);
@@ -2734,10 +2847,13 @@ public:
 		gl_window->redraw();
 
 		ns_vector_2i bar_pos(0, worm_learner.stats_window.gl_image_size.y * d),
-			bar_size(window_size.x, ns_stats_annotation_group::button_height * menu_d);
+			bar_size(ns_stats_annotation_group::all_buttons_width()* menu_d, ns_stats_annotation_group::button_height * menu_d);
 
 		annotation_group->resize(bar_pos.x, bar_pos.y, bar_size.x, bar_size.y);
-
+		region_menu->resize(bar_pos.x + ns_stats_annotation_group::all_buttons_width() * menu_d, bar_pos.y, region_name_bar_width() * menu_d, ns_stats_annotation_group::button_height * menu_d);
+		strain_menu->resize(bar_pos.x + (ns_stats_annotation_group::all_buttons_width()  + region_name_bar_width()) * menu_d, bar_pos.y, strain_bar_width() * menu_d, ns_stats_annotation_group::button_height * menu_d);
+		int info_bar_x(bar_pos.x + (ns_stats_annotation_group::all_buttons_width() + region_name_bar_width() + strain_bar_width()) * menu_d);
+		info_bar->resize(info_bar_x, bar_pos.y, window_size.x-info_bar_x, ns_stats_annotation_group::button_height* menu_d);
 		//	lock.release();
 	}
 private:
@@ -2811,6 +2927,11 @@ struct ns_asynch_annotation_saver {
 		}
 	}
 };
+
+void ns_output_error() {
+	cout << "Error jumping\n";
+
+}
 void ns_handle_worm_selection_button(Fl_Widget *w, void * data) {
 	if (!worm_learner.data_selector.region_selected()) {
 		std::cout << "Individual worms can be selected only in single-region storyboards.";
@@ -2826,13 +2947,18 @@ void ns_handle_worm_selection_button(Fl_Widget *w, void * data) {
 	unsigned long worm_id = atol(result);
 	ns_stationary_path_id path_id;
 	unsigned long division_id;
+	unsigned long time;
 	ns_acquire_lock_for_scope storyboard_lock(worm_learner.storyboard_lock,__FILE__,__LINE__);
-	bool found_worm = worm_learner.storyboard_annotater.find_worm_by_id(0,worm_id, path_id, division_id);
+	bool found_worm = worm_learner.storyboard_annotater.find_worm_by_id(0,worm_id, path_id, division_id,time);
 	storyboard_lock.release();
 	if (!found_worm)
 		cout << "Could not find worm.\n";
-	else
-	ns_launch_worm_window_for_worm(worm_learner.data_selector.current_region().region_id, path_id,0);
+	else {
+		if (division_id != 0)
+			worm_learner.storyboard_annotater.jump_to_position(division_id, ns_output_error, worm_learner.worm_window.display_rescale_factor);
+
+		ns_launch_worm_window_for_worm(worm_learner.data_selector.current_region().region_id, path_id, time);
+	}
 
 }
 void ns_handle_death_time_annotation_button(Fl_Widget * w, void * data){
@@ -2859,7 +2985,19 @@ void ns_handle_death_time_solo_annotation_button(Fl_Widget * w, void * data){
 	//Fl::focus(main_window->gl_window);
 }
 void ns_handle_stats_annotation_button(Fl_Widget* w, void* data) {
-	cout << "BOOP";
+	ns_image_series_annotater::ns_image_series_annotater_action action(*static_cast<ns_image_series_annotater::ns_image_series_annotater_action*>(data));
+	switch (action) {
+	case ns_image_series_annotater::ns_recalculate:
+		image_server.register_server_event_no_db(ns_image_server_event("Re-calculating survival statistics"));
+		worm_learner.storyboard_annotater.recalculate_telemetry();
+		break;
+	case ns_image_series_annotater::ns_switch_grouping:
+		break;
+	case ns_image_series_annotater::ns_cycle_graphs:
+		break;
+	}
+
+	report_changes_made_to_screen();
 }
 
 void all_menu_callback(Fl_Widget*w, void*data) {
@@ -2885,9 +3023,11 @@ ns_worm_terminal_main_menu_organizer * get_menu_handler(){
 }
 void update_region_choice_menu(){
 	main_window->update_region_choice_menu();
+	stats_window->update_region_choice_menu();
 }
 void update_strain_choice_menu(){
 	main_window->update_strain_choice_menu();
+	stats_window->update_strain_choice_menu();
 }
 
 void update_exclusion_choice_menu(){
@@ -3533,9 +3673,9 @@ void ns_run_startup_routines() {
 		worm_learner.data_selector.load_experiment_names(sql());
 		worm_learner.load_databases(sql());
 		try {
-
 			ns_worm_browser_output_debug(__LINE__, __FILE__, "Setting current experiment");
 			worm_learner.data_selector.set_current_experiment(-1, sql());
+			worm_learner.statistics_data_selector = worm_learner.data_selector;
 		}
 		catch (ns_ex & ex) {
 			ns_worm_browser_output_debug(__LINE__, __FILE__, std::string("Error setting experiment: ") + ex.text());

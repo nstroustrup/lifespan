@@ -60,8 +60,6 @@ extern bool output_debug_messages;
 extern std::ofstream debug_output;
 
 #include "ns_process_16_bit_images.h"
-void ns_run_first_thermometer_experiment();
-
 void ns_to_lower(std::string & s);
 
 void ns_update_main_information_bar(const std::string & status);
@@ -78,6 +76,7 @@ void ns_fl_lock(const char * file,unsigned long line);
 void ns_fl_unlock(const char * file, unsigned long line);
 void report_changes_made_to_screen();
 
+void ns_output_error();
 void ns_set_main_window_annotation_controls_activity(const bool active);
 
 std::string ns_extract_scanner_name_from_filename(const std::string & filename);
@@ -363,6 +362,11 @@ public:
 	void select_region(const string & sample_region_name){
 		if (experiment_id == 0)
 			return;
+		if (sample_region_name == "All Regions") {
+			cur_sample = 0;
+			cur_region = 0;
+			return;
+		}
 		string sample_name,region_name;
 		std::string::size_type p(sample_region_name.find("::"));
 		if (p == std::string::npos)
@@ -411,7 +415,11 @@ public:
 	bool sample_selected() const{return cur_sample!=0;}
 	bool experiment_selected() const{return experiment_id!=0;}
 	const ns_experiment_region_chooser_sample & current_sample(){if (cur_sample==0)throw ns_ex("No sample selected!"); else return *cur_sample;}
-	const ns_experiment_region_chooser_region & current_region(){if (cur_region==0)throw ns_ex("No region selected!"); else return *cur_region;}
+	const ns_experiment_region_chooser_region & current_region(){
+		if (cur_region==0)
+			throw ns_ex("No region selected!"); 
+		else return *cur_region;
+	}
 
 	void load(const unsigned long experiment_id,ns_sql & sql){
 		if (experiment_id == 0)
@@ -857,6 +865,7 @@ public:
 	const std::string & get_current_clipboard_filename() const {return current_clipboard_filename;}
 	
 	ns_experiment_region_selector data_selector;
+	ns_experiment_region_selector statistics_data_selector;
 
 	//ns_death_time_posture_annotater death_time_annotater;
 	ns_experiment_storyboard_annotater storyboard_annotater;
@@ -891,6 +900,8 @@ public:
 	ns_lock storyboard_lock;
 
 	bool precache_solo_worm_images;
+
+	void load_specific_worm(const ns_64_bit & region_id, const unsigned long& group_id, double external_rescale_factor);
 private:
 	ns_image_standard animation_temp;
 	ns_death_time_annotation_set::ns_annotation_type_to_load last_annotation_type_loaded;

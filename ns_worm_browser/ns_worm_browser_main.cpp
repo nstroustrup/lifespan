@@ -1400,6 +1400,7 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 		ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
 		
 		worm_learner.data_selector.set_current_experiment(value,sql());
+		worm_learner.statistics_data_selector.set_current_experiment(value, sql());
 		sql.release();
 		update_region_choice_menu();
 		update_strain_choice_menu();
@@ -1788,6 +1789,7 @@ class ns_stats_strain_asynch_picker : public ns_asynch_menu_picker {
 
 	void launch(const std::string& value) {
 		worm_learner.statistics_data_selector.select_strain(value);
+
 		::update_strain_choice_menu();
 		::update_region_choice_menu();
 	}
@@ -1796,6 +1798,8 @@ class ns_storyboard_strain_asynch_picker : public ns_asynch_menu_picker {
 
 	void launch(const std::string& value) {
 		worm_learner.data_selector.select_strain(value);
+
+
 		::update_strain_choice_menu();
 		::update_region_choice_menu();
 		::update_exclusion_choice_menu();
@@ -1824,12 +1828,12 @@ public:
 			bar.deactivate();
 			return;
 		}
-		if (!data_selector.region_selected()) {
+		/*if (!data_selector.region_selected()) {
 			if (!data_selector.select_default_sample_and_region()) {
 				bar.deactivate();
 				return;
 			}
-		}
+		}*/
 		bar.activate();
 		string title("");
 		if (data_selector.strain_selected())
@@ -1865,7 +1869,20 @@ class ns_stats_strain_menu_organizer : public ns_worm_terminal_strain_menu_organ
 public:
 	ns_stats_strain_menu_organizer(ns_experiment_region_selector& selector_to_use) :ns_worm_terminal_strain_menu_organizer< ns_stats_strain_asynch_picker>(selector_to_use) {}
 	void on_select() {
-
+		if (worm_learner.current_behavior_mode() != ns_worm_learner::ns_annotate_storyboard_region &&
+			worm_learner.current_behavior_mode() != ns_worm_learner::ns_annotate_storyboard_sample &&
+			worm_learner.current_behavior_mode() != ns_worm_learner::ns_annotate_storyboard_experiment)
+			return;
+		ns_64_bit region_id = 0;
+		ns_region_metadata strain;
+		if (worm_learner.statistics_data_selector.region_selected())
+			worm_learner.statistics_data_selector.current_region().region_id;
+		if (worm_learner.statistics_data_selector.strain_selected())
+			strain = worm_learner.statistics_data_selector.current_strain();
+		worm_learner.storyboard_annotater.population_telemetry.set_subject(region_id, strain);
+		worm_learner.storyboard_annotater.recalculate_telemetry();
+		worm_learner.storyboard_annotater.draw_telemetry();
+		report_changes_made_to_screen();
 	}
 };
 
@@ -2024,6 +2041,21 @@ public:
 	ns_stats_region_selector(ns_experiment_region_selector& selector_to_use) :ns_worm_terminal_region_menu_organizer<ns_stats_region_picker>(selector_to_use) {}
 
 	void on_select() {
+		if (worm_learner.current_behavior_mode() != ns_worm_learner::ns_annotate_storyboard_region &&
+			worm_learner.current_behavior_mode() != ns_worm_learner::ns_annotate_storyboard_sample &&
+			worm_learner.current_behavior_mode() != ns_worm_learner::ns_annotate_storyboard_experiment)
+			return;
+		ns_64_bit region_id = 0;
+		ns_region_metadata strain;
+		if (worm_learner.statistics_data_selector.region_selected())
+			region_id = worm_learner.statistics_data_selector.current_region().region_id;
+		if (worm_learner.statistics_data_selector.strain_selected())
+			strain = worm_learner.statistics_data_selector.current_strain();
+		worm_learner.storyboard_annotater.population_telemetry.set_subject(region_id, strain);
+		worm_learner.storyboard_annotater.recalculate_telemetry();
+		worm_learner.storyboard_annotater.draw_telemetry();
+		report_changes_made_to_screen();
+
 	}
 };
 

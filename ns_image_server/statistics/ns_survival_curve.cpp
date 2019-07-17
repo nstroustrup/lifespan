@@ -1410,14 +1410,15 @@ struct ns_event_count{
 		number_of_events,
 		number_of_censoring_events;
 };
-void ns_lifespan_experiment_set::generate_aggregate_risk_timeseries(const ns_region_metadata & m, bool filter_by_metadata, ns_survival_data_with_censoring & movement_based_survival, ns_survival_data_with_censoring& death_associated_expansion_survival, std::vector<unsigned long> & t) const{
+void ns_lifespan_experiment_set::generate_aggregate_risk_timeseries(const ns_region_metadata & m, bool filter_by_strain, const ns_64_bit & specific_region_id, ns_survival_data_with_censoring & movement_based_survival, ns_survival_data_with_censoring& death_associated_expansion_survival, std::vector<unsigned long> & t) const{
 	std::map<unsigned long, std::vector<ns_survival_timepoint_event> > movement_events, death_associated_expansion_events;
 	ns_region_metadata mm(m);
 	mm.genotype.clear();
 	
 	ns_survival_data aggregate_set;
 	for (unsigned int i = 0; i <this->curves.size(); i++){
-		if (filter_by_metadata && (mm.device_regression_match_description() != curves[i].metadata.device_regression_match_description() || mm.device != curves[i].metadata.device) )
+		if (filter_by_strain && (mm.device_regression_match_description() != curves[i].metadata.device_regression_match_description() || mm.device != curves[i].metadata.device)
+			|| specific_region_id != 0 && curves[i].metadata.region_id != specific_region_id)
 			continue;
 
 		//add all events except for excluded objects

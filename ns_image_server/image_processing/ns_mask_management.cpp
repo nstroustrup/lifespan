@@ -2,6 +2,7 @@
 #include "ns_sql.h"
 #include "ns_processing_job_push_scheduler.h"
 #include "ns_progress_reporter.h"
+#include "ns_image_server_automated_job_scheduler.h"
 
 
 #include <iostream>
@@ -127,6 +128,8 @@ void ns_bulk_experiment_mask_manager::produce_mask_file(const ns_mask_type & mas
 		 sql << "SELECT r.name,r.id,s.id,s.name FROM sample_region_image_info as r, capture_samples as s WHERE r.sample_id = s.id AND s.experiment_id=" << experiment_id << " AND r.censored = 0 AND s.censored=0 ORDER BY s.name ASC, r.name ASC";
 	else sql << "SELECT name,id FROM capture_samples WHERE experiment_id=" << experiment_id << " AND censored = 0 ORDER BY name ASC";
 
+	bool tried_to_protect_jobs = false;
+
 	ns_sql_result subjects;
 	sql.get_rows(subjects);
 	if (subjects.size() == 0)
@@ -162,9 +165,16 @@ void ns_bulk_experiment_mask_manager::produce_mask_file(const ns_mask_type & mas
 			ns_sql_result im_id;
 			sql.get_rows(im_id);
 			if (im_id.size() < 2) {
+				if (!tried_to_protect_jobs) {
+					ns_get_automated_job_scheduler_lock_for_scope lock(0, sql,true);
+					ns_image_server_automated_job_scheduler::identify_experiments_needing_captured_image_protection(sql, 0);
+					lock.release(sql);
+					tried_to_protect_jobs = true;
+					continue;
+				}
 				ns_ex ex("Could not find a sufficient number of captured images for ");
 				ex << subject_type << " ";
-				ex << (*p)[0] << "(" << (*p)[1] << ").";
+				ex << (*p)[0] << "(" << (*p)[1] << "). This could be because no images have been acquired, or because no image analysis server has run recently, or because the images have been marked as \"problem\" or as \"Currently under processing\"";
 				if (mask_time != 0)
 					ex << "Note that the experiment has a mask time specified: " << ns_format_time_string_for_human(mask_time);
 				cerr << " Miss! ";

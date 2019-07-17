@@ -1424,6 +1424,8 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 	static void set_database(const std::string & data){
 		image_server.set_sql_database(data,false,&worm_learner.get_sql_connection());
 		worm_learner.reset_sql_connections();
+		worm_learner.data_selector.load_experiment_names(worm_learner.get_sql_connection());
+		worm_learner.statistics_data_selector.load_experiment_names(worm_learner.get_sql_connection());
 		cerr << "Switching to database " << data << "\n";
 		//ns_thread::sleep(15);
 		get_menu_handler()->update_experiment_choice(*get_menu_bar());
@@ -3457,11 +3459,12 @@ void idle_main_window_update_callback(void * force_redraw) {
     cerr << "Unknown idle error\n";
       }
 }
-void ns_hide_worm_window(){
-	hide_worm_window = true;
-}
 void ns_hide_stats_window() {
 	hide_stats_window = true;
+}
+void ns_hide_worm_window(){
+	hide_worm_window = true;
+	ns_hide_stats_window();
 }
 
 void idle_worm_window_update_callback(void * force_redraw){

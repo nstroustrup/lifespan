@@ -257,123 +257,111 @@ void ns_image_server::calculate_experiment_disk_usage(const ns_64_bit experiment
 
 
 #ifndef NS_MINIMAL_SERVER_BUILD
-
 #ifndef NS_ONLY_IMAGE_ACQUISITION
-class ns_get_automated_job_scheduler_lock_for_scope{
-public:
-	ns_get_automated_job_scheduler_lock_for_scope(const unsigned long second_delay_until_next_run , ns_sql & sql):current_time(0),next_run_time(0),lock_held(false){
-		wait_for_lock(second_delay_until_next_run,sql);
-	};
-	void release(ns_sql & sql){release_lock(sql);}
-	bool run_requested(){return lock_held;}
-	~ns_get_automated_job_scheduler_lock_for_scope(){if (lock_held)release();}
-private:
-	unsigned long next_run_time,current_time;
+void ns_get_automated_job_scheduler_lock_for_scope::release() {
+	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__, __LINE__));
+	release_lock(sql());
+	sql.release();
+}
 
-	void release(){
-		ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
-		release_lock(sql());
-		sql.release();
-	}
-	bool lock_held;
+void ns_get_automated_job_scheduler_lock_for_scope::release_lock(ns_sql& sql) {
+	if (!lock_held) return;
+	//ns_sql_full_table_lock lock(sql,"automated_job_scheduling_data");
+	ns_sql_table_lock lock(image_server.sql_table_lock_manager.obtain_table_lock("automated_job_scheduling_data", &sql, true, __FILE__, __LINE__));
 
-	void release_lock(ns_sql & sql){
-		if (!lock_held) return;
-		//ns_sql_full_table_lock lock(sql,"automated_job_scheduling_data");
-		ns_sql_table_lock lock (image_server.sql_table_lock_manager.obtain_table_lock("automated_job_scheduling_data", &sql, true,__FILE__,__LINE__));
+	sql << "SELECT currently_running_host_id FROM automated_job_scheduling_data";
+	ns_sql_result res;
+	sql.get_rows(res);
 
-		sql << "SELECT currently_running_host_id FROM automated_job_scheduling_data";
-		ns_sql_result res;
-		sql.get_rows(res);
-
-		if (res.size() == 0){
-			lock.release(__FILE__,__LINE__);
-			image_server.register_server_event(ns_image_server_event("This client's lock on the automation process was deleted!"),&sql);
-			return;
-		}
-
-		if (ns_atoi64(res[0][0].c_str()) != image_server.host_id()){
-			lock.release(__FILE__, __LINE__);
-			image_server.register_server_event(ns_image_server_event("This client's lock on the automation process was usurped!"),&sql);
-			return;
-		}
-
-		sql << "UPDATE automated_job_scheduling_data SET currently_running_host_id = 0";
-		sql.send_query();
+	if (res.size() == 0) {
 		lock.release(__FILE__, __LINE__);
-		lock_held = false;
+		image_server.register_server_event(ns_image_server_event("This client's lock on the automation process was deleted!"), &sql);
+		return;
 	}
-	void wait_for_lock(const unsigned long second_delay_until_next_run, ns_sql & sql){
-		if (lock_held)
-			throw ns_ex("Attempting to take a automation lock that is already held!");
-		//unsigned long counter(0);
-		//while (true){
-		ns_sql_table_lock lock(image_server.sql_table_lock_manager.obtain_table_lock("automated_job_scheduling_data", &sql, true, __FILE__, __LINE__));
 
-		sql << "SELECT currently_running_host_id, acquisition_time, next_run_time,UNIX_TIMESTAMP() FROM automated_job_scheduling_data";
-			ns_sql_result res;
-			sql.get_rows(res);
-
-			if(res.size() == 0){
-				sql << "INSERT INTO automated_job_scheduling_data SET currently_running_host_id = 0";
-				sql.send_query();
-				get_ownership(second_delay_until_next_run,sql);
-				lock.release(__FILE__, __LINE__);
-				return;
-			}
-			if (res.size() > 1)
-				throw ns_ex("ns_get_automated_job_scheduler_lock_for_scope::wait_for_lock()::Multiple entries for lock : ") << res.size();
-			const ns_64_bit current_running_id(ns_atoi64(res[0][0].c_str())),
-								acquisition_time(atol(res[0][1].c_str())),
-								next_run_time(atol(res[0][2].c_str())),
-								cur_time(atol(res[0][3].c_str()));
-
-			//if no event has been registered as having been run, prepare to run it immediately
-			if (next_run_time == 0){
-				get_ownership(second_delay_until_next_run,sql);
-				lock.release(__FILE__, __LINE__);
-				return;
-			}
-			if (current_running_id != 0 && cur_time - acquisition_time >= image_server.automated_job_timeout_in_seconds()){
-				get_ownership(second_delay_until_next_run,sql);
-				lock.release(__FILE__, __LINE__);
-				image_server.register_server_event(ns_image_server_event("ns_get_automated_job_scheduler_lock_for_scope()::Claiming abandoned lock."),&sql);
-				return;
-			}
-			if (cur_time > next_run_time){
-				get_ownership(second_delay_until_next_run,sql);
-				lock.release(__FILE__, __LINE__);
-				return;
-			}
-			lock.release(__FILE__, __LINE__);
-
-		//	ns_thread::sleep(2);
-		//	counter++;
-		//	if (counter == 30)
-		//		throw ns_ex("Giving up waiting for automation lock!");
-		//}
+	if (ns_atoi64(res[0][0].c_str()) != image_server.host_id()) {
+		lock.release(__FILE__, __LINE__);
+		image_server.register_server_event(ns_image_server_event("This client's lock on the automation process was usurped!"), &sql);
+		return;
 	}
-	inline ns_64_bit id(){
-		ns_64_bit id = image_server.host_id();
-		if (id == 0) id = 666;
-		return id;
-	}
-	inline void get_ownership(const unsigned long second_delay_until_next_run, ns_sql & sql){
-		sql << "SELECT UNIX_TIMESTAMP()";
-		current_time = sql.get_integer_value();
-		next_run_time = current_time + second_delay_until_next_run;
 
-		sql << "UPDATE automated_job_scheduling_data SET currently_running_host_id = " << id()
-			<< ", acquisition_time = " << current_time
-			<< ", next_run_time = " << next_run_time;
+	sql << "UPDATE automated_job_scheduling_data SET currently_running_host_id = 0";
+	sql.send_query();
+	lock.release(__FILE__, __LINE__);
+	lock_held = false;
+}
+void ns_get_automated_job_scheduler_lock_for_scope::wait_for_lock(const unsigned long second_delay_until_next_run, ns_sql& sql, bool ignore_time_limits) {
+	if (lock_held)
+		throw ns_ex("Attempting to take a automation lock that is already held!");
+	//unsigned long counter(0);
+	//while (true){
+	ns_sql_table_lock lock(image_server.sql_table_lock_manager.obtain_table_lock("automated_job_scheduling_data", &sql, true, __FILE__, __LINE__));
 
+	sql << "SELECT currently_running_host_id, acquisition_time, next_run_time,UNIX_TIMESTAMP() FROM automated_job_scheduling_data";
+	ns_sql_result res;
+	sql.get_rows(res);
+
+	if (res.size() == 0) {
+		sql << "INSERT INTO automated_job_scheduling_data SET currently_running_host_id = 0";
 		sql.send_query();
-		lock_held = true;
+		get_ownership(second_delay_until_next_run, sql);
+		lock.release(__FILE__, __LINE__);
+		return;
 	}
-};
-void ns_image_server_automated_job_scheduler::scan_for_tasks(ns_sql & sql) {
+	if (res.size() > 1)
+		throw ns_ex("ns_get_automated_job_scheduler_lock_for_scope::wait_for_lock()::Multiple entries for lock : ") << res.size();
+	const ns_64_bit current_running_id(ns_atoi64(res[0][0].c_str())),
+		acquisition_time(atol(res[0][1].c_str())),
+		next_run_time(atol(res[0][2].c_str())),
+		cur_time(atol(res[0][3].c_str()));
+	//if no event has been registered as having been run, prepare to run it immediately
+	if (next_run_time == 0) {
+		get_ownership(second_delay_until_next_run, sql);
+		lock.release(__FILE__, __LINE__);
+		return;
+	}
+	if (current_running_id != 0 && cur_time - acquisition_time >= image_server.automated_job_timeout_in_seconds()) {
+		get_ownership(second_delay_until_next_run, sql);
+		lock.release(__FILE__, __LINE__);
+		image_server.register_server_event(ns_image_server_event("ns_get_automated_job_scheduler_lock_for_scope()::Claiming abandoned lock."), &sql);
+		return;
+	}
+	if (ignore_time_limits || cur_time > next_run_time) {
+		get_ownership(second_delay_until_next_run, sql);
+		lock.release(__FILE__, __LINE__);
+		return;
+	}
+	lock.release(__FILE__, __LINE__);
 
-	ns_get_automated_job_scheduler_lock_for_scope lock(image_server.automated_job_interval(),sql);
+	//	ns_thread::sleep(2);
+	//	counter++;
+	//	if (counter == 30)
+	//		throw ns_ex("Giving up waiting for automation lock!");
+	//}
+}
+ns_64_bit ns_get_automated_job_scheduler_lock_for_scope::id() {
+	ns_64_bit id = image_server.host_id();
+	if (id == 0) id = 666;
+	return id;
+}
+void ns_get_automated_job_scheduler_lock_for_scope::get_ownership(const unsigned long second_delay_until_next_run, ns_sql& sql) {
+	sql << "SELECT UNIX_TIMESTAMP()";
+	current_time = sql.get_integer_value();
+	next_run_time = current_time + second_delay_until_next_run;
+
+	sql << "UPDATE automated_job_scheduling_data SET currently_running_host_id = " << id()
+		<< ", acquisition_time = " << current_time
+		<< ", next_run_time = " << next_run_time;
+
+	sql.send_query();
+	lock_held = true;
+}
+
+void ns_image_server_automated_job_scheduler::scan_for_tasks(ns_sql & sql, bool ignore_timers_and_run_now) {
+	unsigned long timer_interval = image_server.automated_job_interval();
+	if (ignore_timers_and_run_now)
+		timer_interval = 0;
+	ns_get_automated_job_scheduler_lock_for_scope lock(timer_interval,sql);
 	if (!lock.run_requested()){
 		lock.release(sql);
 		return;
@@ -519,7 +507,7 @@ void ns_image_server_automated_job_scheduler::schedule_detection_jobs_for_region
 
 
 void ns_image_server::perform_experiment_maintenance(ns_sql & sql) const{
-	automated_job_scheduler.scan_for_tasks(sql);
+	automated_job_scheduler.scan_for_tasks(sql,false);
 }
 #endif
 #endif

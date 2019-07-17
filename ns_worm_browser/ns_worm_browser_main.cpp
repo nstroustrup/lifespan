@@ -1873,6 +1873,8 @@ public:
 			worm_learner.current_behavior_mode() != ns_worm_learner::ns_annotate_storyboard_sample &&
 			worm_learner.current_behavior_mode() != ns_worm_learner::ns_annotate_storyboard_experiment)
 			return;
+
+		ns_set_menu_bar_activity(false);
 		ns_64_bit region_id = 0;
 		ns_region_metadata strain;
 		if (worm_learner.statistics_data_selector.region_selected())
@@ -1882,6 +1884,7 @@ public:
 		worm_learner.storyboard_annotater.population_telemetry.set_subject(region_id, strain);
 		worm_learner.storyboard_annotater.recalculate_telemetry();
 		worm_learner.storyboard_annotater.draw_telemetry();
+		ns_set_menu_bar_activity(true);
 		report_changes_made_to_screen();
 	}
 };
@@ -2045,6 +2048,7 @@ public:
 			worm_learner.current_behavior_mode() != ns_worm_learner::ns_annotate_storyboard_sample &&
 			worm_learner.current_behavior_mode() != ns_worm_learner::ns_annotate_storyboard_experiment)
 			return;
+		ns_set_menu_bar_activity(false);
 		ns_64_bit region_id = 0;
 		ns_region_metadata strain;
 		if (worm_learner.statistics_data_selector.region_selected())
@@ -2055,6 +2059,7 @@ public:
 		worm_learner.storyboard_annotater.recalculate_telemetry();
 		worm_learner.storyboard_annotater.draw_telemetry();
 		report_changes_made_to_screen();
+		ns_set_menu_bar_activity(true);
 
 	}
 };
@@ -3018,6 +3023,7 @@ void ns_handle_death_time_solo_annotation_button(Fl_Widget * w, void * data){
 }
 void ns_handle_stats_annotation_button(Fl_Widget* w, void* data) {
 	ns_image_series_annotater::ns_image_series_annotater_action action(*static_cast<ns_image_series_annotater::ns_image_series_annotater_action*>(data));
+	ns_set_menu_bar_activity(false);
 	switch (action) {
 	case ns_image_series_annotater::ns_recalculate:
 		image_server.register_server_event_no_db(ns_image_server_event("Re-calculating survival statistics"));
@@ -3028,7 +3034,7 @@ void ns_handle_stats_annotation_button(Fl_Widget* w, void* data) {
 	case ns_image_series_annotater::ns_cycle_graphs:
 		break;
 	}
-
+	ns_set_menu_bar_activity(true);
 	report_changes_made_to_screen();
 }
 
@@ -3968,6 +3974,8 @@ void ns_set_menu_bar_activity_internal(bool activate){
 		stats_window->activate();
 		stats_window->annotation_group->activate();
 		stats_window->gl_window->activate();
+		stats_window->region_menu->activate();
+		stats_window->strain_menu->activate();
 		main_window->main_menu->redraw();
 		if (worm_learner.current_behavior_mode() != ns_worm_learner::ns_draw_boxes)
 			ns_set_main_window_annotation_controls_activity(true);
@@ -3991,6 +3999,8 @@ void ns_set_menu_bar_activity_internal(bool activate){
 		stats_window->deactivate();
 		stats_window->gl_window->deactivate();
 		stats_window->annotation_group->deactivate();
+		stats_window->region_menu->deactivate();
+		stats_window->strain_menu->deactivate();
 		ns_set_main_window_annotation_controls_activity(false);
 		main_window->main_menu->redraw();
 	}

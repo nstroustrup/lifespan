@@ -274,7 +274,7 @@ ns_graph_specifics ns_graph::draw(ns_image_standard & image) {
 			if (y_axis_properties.text_decimal_places == -1)
 				longest_axis_label = ns_to_string_short((float)(axes.boundary(3)));
 			else longest_axis_label = ns_to_string_short((float)((float)(axes.boundary(3))), y_axis_properties.text_decimal_places);
-			y_text_size = font_server.get_default_font().get_render_size(longest_axis_label);
+			y_text_size = font_server.get_default_font().get_render_size(longest_axis_label,ns_pi/2);
 			y_text_size.w *= 1.25;
 			if (!y_axis_label.empty())
 				y_text_size.w = y_text_size.w * 2 + MAJOR_TICK_HEIGHT*y_axis_properties.tick_mark_rescale_factor;
@@ -366,12 +366,15 @@ ns_graph_specifics ns_graph::draw(ns_image_standard & image) {
 			ns_font_output_dimension d = font_server.get_default_font().get_render_size(text);
 			int yp = y + d.h / 2;
 			//if (yp < 0) yp = 0;
-			font_server.get_default_font().draw(border.x-d.w- 2*MAJOR_TICK_HEIGHT*y_axis_properties.tick_mark_rescale_factor,yp,y_axis_properties.text.color,text,image);
+			font_server.get_default_font().draw(border.x-d.w- 3*MAJOR_TICK_HEIGHT*y_axis_properties.tick_mark_rescale_factor,yp,y_axis_properties.text.color,text,image);
 		}
 	}
+
+	 //y axis height (h-2*border.y)
 	if (y_axis_properties.text.draw) {
-		ns_font_output_dimension d = font_server.get_default_font().get_render_size(y_axis_label);
-		font_server.get_default_font().draw(MAJOR_TICK_HEIGHT*y_axis_properties.tick_mark_rescale_factor, (image.properties().height + d.h) / 2, y_axis_properties.text.color, y_axis_label, image);
+		ns_font_output_dimension d = font_server.get_default_font().get_render_size(y_axis_label, ns_pi / 2);
+		int height_offset_between_y_axis_and_text = h - 2 * border.y - (d.h);
+		font_server.get_default_font().draw(MAJOR_TICK_HEIGHT*y_axis_properties.tick_mark_rescale_factor,border.y + height_offset_between_y_axis_and_text/2, ns_pi / 2, y_axis_properties.text.color, y_axis_label, image);
 	}
 	font_lock.release();
 	//draw minor ticks

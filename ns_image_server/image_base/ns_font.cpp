@@ -10,38 +10,53 @@ ns_font_server font_server;
 FT_Library &ns_get_ft_library(){
 	return ns_font_server::ft_lib;
 }
-FT_Vector ns_font::render_glyph(const char& c, int& previous_index, FT_Glyph & glyph) {
+FT_Vector ns_font::render_glyph(const char& c, const float& angle, int& previous_index,FT_Glyph & glyph) {
 	int error;
 	FT_Vector delta;
 	delta.x = delta.y = 0;
 
 	/* load glyph image into the slot (erase previous one) */
-	ns_glyph_cache_type::iterator p = glyph_cache.find(ns_glyph_cach_entry(c, current_face_height));
+	ns_glyph_cache_type::iterator p = glyph_cache.find(ns_glyph_cach_entry(c, angle,current_face_height));
 	if (p == glyph_cache.end()) {
 
 		int glyph_index = FT_Get_Char_Index(face, c);
-		p = glyph_cache.insert(ns_glyph_cache_type::value_type(ns_glyph_cach_entry(c, current_face_height), ns_glyph_cache_type::mapped_type(glyph_index, FT_Glyph()))).first;
+		p = glyph_cache.insert(ns_glyph_cache_type::value_type(ns_glyph_cach_entry(c, angle,current_face_height), ns_glyph_cache_type::mapped_type(glyph_index, FT_Glyph()))).first;
 		error = FT_Load_Glyph(face, glyph_index, FT_LOAD_DEFAULT);
 		if (error != 0) throw ns_ex("ns_font::Error loading glyph");
 		error = FT_Get_Glyph(face->glyph, &p->second.second);
 		if (error != 0) throw ns_ex("ns_font::Error copying glyph");
+		FT_Matrix  matrix;
+		matrix.xx = (FT_Fixed)(cos(angle) * 0x10000L);
+		matrix.xy = (FT_Fixed)(-sin(angle) * 0x10000L);
+		matrix.yx = (FT_Fixed)(sin(angle) * 0x10000L);
+		matrix.yy = (FT_Fixed)(cos(angle) * 0x10000L);
+		FT_Vector d;
+		d.x = d.y = 0;
+		FT_Glyph_Transform(p->second.second, &matrix, &d);
+
 		error = FT_Glyph_To_Bitmap(&p->second.second, FT_RENDER_MODE_NORMAL, 0, false);
 		if (error != 0) throw ns_ex("ns_font::Error rendering glyph");
 	}
 
-	if (FT_HAS_KERNING(face) && previous_index && p->second.first) {
+	if (angle == 0 && FT_HAS_KERNING(face) && previous_index && p->second.first) {
 		error = FT_Get_Kerning(face, previous_index, p->second.first, ft_kerning_default, &delta);
 		if (error != 0)
 			throw ns_ex("ns_font::Error getting Kerning");
+		delta.x = delta.x >> 6;
+		delta.y = delta.y >> 6;
+	}
+	if (angle != 0 && previous_index && p->second.first){
+		//delta = p->second.second->advance;
+		delta.x = 0;
+		delta.y = 0;
 	}
 	glyph = p->second.second;
 
 	previous_index = p->second.first;
-	delta.x = delta.x >> 6;
-	delta.y = delta.y >> 6;
 	return delta;
 }
 bool operator<(const ns_glyph_cach_entry& a, const ns_glyph_cach_entry& b) {
+	if (a.c == b.c && a.size == b.size) return a.angle < b.angle;
 	if (a.c == b.c) return a.size < b.size;
 	return a.c < b.c;
 }

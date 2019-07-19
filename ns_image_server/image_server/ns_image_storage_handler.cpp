@@ -464,7 +464,7 @@ ns_istream * ns_image_storage_handler::request_metadata_from_disk(ns_image_serve
 			try {	//gzstream does not fail properly on non-existant files.
 				if (!ns_dir::file_exists(spec.absolute_long_term_filename().c_str()))
 					file_does_not_exist = true;
-				if (binary) i = new ns_istream(new igzstream(spec.absolute_long_term_filename().c_str(), ios_base::binary));
+				if (binary) i = new ns_istream(new igzstream(spec.absolute_long_term_filename().c_str(), ios_base::binary | ios_base::in));
 				else i = new ns_istream(new igzstream(spec.absolute_long_term_filename().c_str()));
 			}
 			catch (const std::exception & ex) {

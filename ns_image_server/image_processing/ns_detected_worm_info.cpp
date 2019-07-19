@@ -1971,7 +1971,8 @@ void ns_image_worm_detection_results::save_data_to_disk(std::ostream & out, cons
 				<< actual_worms[i]->region_size.y << ","
 				<< actual_worms[i]->context_image_size.x << ","
 				<< actual_worms[i]->context_image_size.y << "\n";
-
+			if (out.fail())
+				throw ns_ex("ns_image_worm_detection_results::save_data_to_disk():Failed during write");
 		}
 	}
 

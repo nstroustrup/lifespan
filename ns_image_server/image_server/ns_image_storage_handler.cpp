@@ -454,13 +454,16 @@ ns_istream * ns_image_storage_handler::request_metadata_from_disk(ns_image_serve
 
 	ns_istream * i(0);
 	ns_image_type type = ns_image_type_from_filename(spec.filename);
+	bool file_does_not_exist(false);
 	try {
 		if (type != ns_csv_gz && type != ns_wrm_gz && type != ns_xml_gz) {
 			if (binary) i = new ns_istream(new std::ifstream(spec.absolute_long_term_filename().c_str(), ios_base::binary));
 			else i = new ns_istream(new std::ifstream(spec.absolute_long_term_filename().c_str()));
 		}
 		else {
-			try {
+			try {	//gzstream does not fail properly on non-existant files.
+				if (!ns_dir::file_exists(spec.absolute_long_term_filename().c_str()))
+					file_does_not_exist = true;
 				if (binary) i = new ns_istream(new igzstream(spec.absolute_long_term_filename().c_str(), ios_base::binary));
 				else i = new ns_istream(new igzstream(spec.absolute_long_term_filename().c_str()));
 			}
@@ -474,7 +477,7 @@ ns_istream * ns_image_storage_handler::request_metadata_from_disk(ns_image_serve
 		throw;
 	}
 
-	if ((*i)().fail()){
+	if (file_does_not_exist || (*i)().fail()){
 		delete i;
 		throw ns_ex("ns_image_storage_handler::request_metadata_from_disk()::Could not open file ") << spec.absolute_long_term_filename() << ns_file_io;
 	}
@@ -502,20 +505,23 @@ ns_ostream * ns_image_storage_handler::request_metadata_output(ns_image_server_i
 			throw ns_ex("ns_image_storage_handler:: request_metadata_output()::Long term storage location is not writeable: ") << spec.absolute_long_term_filename() << ns_network_io;
 		}
 		ns_ostream * o;
+		bool file_is_not_writeable = false;
 		if (image_type != ns_wrm_gz && image_type != ns_csv_gz && image_type != ns_xml_gz) {
 			if (binary) o = new ns_ostream(new std::ofstream(spec.absolute_long_term_filename().c_str(), ios_base::binary));
 			else o = new ns_ostream(new std::ofstream(spec.absolute_long_term_filename().c_str()));
 		}
 		else {
 			try {
-				if (binary) o = new ns_ostream(new ogzstream(spec.absolute_long_term_filename().c_str(), ios_base::binary));
+				if (!ns_dir::file_is_writeable(spec.absolute_long_term_filename().c_str()))
+					file_is_not_writeable = true;
+				if (binary) o = new ns_ostream(new ogzstream(spec.absolute_long_term_filename().c_str(), std::ios::out | ios_base::binary));
 				else o = new ns_ostream(new ogzstream(spec.absolute_long_term_filename().c_str()));
 			}
 			catch (const std::exception & ex) {
 				throw ns_ex(ex.what());
 			}
 		}
-		if ((*o)().fail()){
+		if (file_is_not_writeable || (*o)().fail()){
 			delete o;
 			ns_image_handler_submit_alert(ns_alert::ns_long_term_storage_error,
 				"Could not access long term storage.",

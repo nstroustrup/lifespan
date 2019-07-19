@@ -586,13 +586,13 @@ void ns_time_path_solution::save_to_db(const ns_64_bit region_id, ns_sql & sql) 
 	}
 	ns_ostream * o(0);
 	try {
-		o = image_server_const.image_storage.request_metadata_output(im, ns_csv_gz, false, &sql);
+		o = image_server_const.image_storage.request_metadata_output(im, ns_csv, false, &sql);
 	}
 	catch (ns_ex & ex) {
 		ns_64_bit old_im_id(im.id);
 			//if there's some problem with the existing filename, create a new one.
 			im = image_server_const.image_storage.get_region_movement_metadata(region_id, "time_path_solution_data", sql);
-			o = image_server_const.image_storage.request_metadata_output(im, ns_csv_gz, false, &sql);
+			o = image_server_const.image_storage.request_metadata_output(im, ns_csv, false, &sql);
 
 			sql << "DELETE from images WHERE id = " << old_im_id;
 			sql.send_query();

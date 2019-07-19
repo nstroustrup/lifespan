@@ -48,10 +48,10 @@ public:
 		lock.release();
     }
 
-	ns_font_output_dimension get_render_size(const std::string& text, float angle = 0) {
+	ns_font_output_dimension get_render_size(const std::string& text, float angle = 0, bool lock=true) {
 		ns_image_standard im;
 		im.prepare_to_recieve_image(ns_image_properties(1,1,3,-1));
-		return draw_color(0,0,angle,ns_color_8(0,0,0),text,im,false);
+		return draw_color(0,0,angle,ns_color_8(0,0,0),text,im,false,lock);
 	}
 
 	//renders the specified text at (x,y) in the output image.
@@ -73,10 +73,10 @@ public:
 
 	///renders the specified text at (x,y) in the output image.
 	///segfaults if the specified image does not have the RGB colorspace
-	ns_font_output_dimension draw_color(const int x, const int y, const ns_color_8& color, const std::string& text, ns_image_standard& im, const bool draw = true) {
-		return draw_color(x, y, 0, color, text, im, draw);
+	ns_font_output_dimension draw_color(const int x, const int y, const ns_color_8& color, const std::string& text, ns_image_standard& im, const bool draw = true, const bool lock = true) {
+	  return draw_color(x, y, 0, color, text, im, draw,lock);
 	}
-	ns_font_output_dimension draw_color(const int x, const int y, const float angle,const ns_color_8 & color, const std::string & text, ns_image_standard & im, const bool draw=true){
+	ns_font_output_dimension draw_color(const int x, const int y, const float angle,const ns_color_8 & color, const std::string & text, ns_image_standard & im, const bool draw=true,const bool lock=true){
 		
 		if (im.properties().components != 3)
 			throw ns_ex("ns_font::Drawing color on a B&W image");
@@ -86,12 +86,14 @@ public:
 		const int c(im.properties().components);
 		ns_vector_3<float> color_v(color.x,color.y,color.z);
 		ns_font_output_dimension dim(0,0);
-		ns_acquire_lock_for_scope lock(render_lock, __FILE__, __LINE__);
+		ns_acquire_lock_for_scope render_locker(render_lock,__FILE__,__LINE__,false);
+		if (lock)
+		  render_locker.get( __FILE__, __LINE__);
 
 		//get the offset so that nothing runs less than x and y
 		ns_font_output_dimension offset;
 		if (draw) {
-			offset = get_render_size(text, angle);
+		  offset = get_render_size(text, angle,false);
 			d.x = -offset.offset_x;
 			d.y = -offset.offset_y;
 			if (angle == 0)
@@ -162,7 +164,8 @@ public:
 			d.x += rglyph->advance.x >> 16;
 			d.y += rglyph->advance.y >> 16;
 		}
-		lock.release();
+		if (lock)
+		render_locker.release();
 		if (!draw) {	//enlarge the final size to allow for the offset shift
 			dim.w -= dim.offset_x;
 			dim.h -= dim.offset_y;

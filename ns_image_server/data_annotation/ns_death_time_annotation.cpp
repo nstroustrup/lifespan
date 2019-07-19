@@ -2375,7 +2375,7 @@ void ns_death_time_annotation_compiler_region::generate_survival_curve(ns_surviv
 		else if (machine_death.machine.last_fast_movement_annotation != 0)
 			machine_reference = machine_death.machine.last_fast_movement_annotation;
 		if (machine_reference == 0) {	//discard by hand annotations without machine annotations
-			cout << "Discarding a stray by hand annotation.\n";
+			//cout << "Discarding a stray by hand annotation.\n";
 				continue;
 		}
 		if (machine_reference != 0 && 

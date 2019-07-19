@@ -1410,15 +1410,16 @@ struct ns_event_count{
 		number_of_events,
 		number_of_censoring_events;
 };
-void ns_lifespan_experiment_set::generate_aggregate_risk_timeseries(const ns_region_metadata & m, bool filter_by_strain, const ns_64_bit & specific_region_id, ns_survival_data_with_censoring & movement_based_survival, ns_survival_data_with_censoring& death_associated_expansion_survival, std::vector<unsigned long> & t) const{
+void ns_lifespan_experiment_set::generate_aggregate_risk_timeseries(const ns_region_metadata & m, bool filter_by_strain, const std::string & specific_device, const ns_64_bit & specific_region_id, ns_survival_data_with_censoring & movement_based_survival, ns_survival_data_with_censoring& death_associated_expansion_survival, std::vector<unsigned long> & timepoints,bool use_external_time) const{
 	std::map<unsigned long, std::vector<ns_survival_timepoint_event> > movement_events, death_associated_expansion_events;
 	ns_region_metadata mm(m);
 	mm.genotype.clear();
 	
 	ns_survival_data aggregate_set;
 	for (unsigned int i = 0; i <this->curves.size(); i++){
-		if (filter_by_strain && (mm.device_regression_match_description() != curves[i].metadata.device_regression_match_description() || mm.device != curves[i].metadata.device)
-			|| specific_region_id != 0 && curves[i].metadata.region_id != specific_region_id)
+		if (filter_by_strain && (mm.device_regression_match_description() != curves[i].metadata.device_regression_match_description())
+			|| specific_region_id != 0 && curves[i].metadata.region_id != specific_region_id ||
+			!specific_device.empty() && specific_device != curves[i].metadata.device)
 			continue;
 
 		//add all events except for excluded objects
@@ -1434,15 +1435,34 @@ void ns_lifespan_experiment_set::generate_aggregate_risk_timeseries(const ns_reg
 		unique_timepoints.insert(p->first);
 	for (std::map<unsigned long, std::vector<ns_survival_timepoint_event> >::iterator p = death_associated_expansion_events.begin(); p != death_associated_expansion_events.end(); p++)
 		unique_timepoints.insert(p->first);
+	if (!use_external_time) {
+		aggregate_set.timepoints.resize(unique_timepoints.size());
+		timepoints.resize(unique_timepoints.size());
+	}
+	else {
+		aggregate_set.timepoints.resize(timepoints.size());
+		for (unsigned int i = 0; i < aggregate_set.timepoints.size(); i++)
+			aggregate_set.timepoints[i].absolute_time = timepoints[i];
+	}
 
-	aggregate_set.timepoints.resize(unique_timepoints.size());
-	t.resize(unique_timepoints.size());
+
 	std::map<unsigned long, unsigned long> time_lookup;
 	unsigned int i = 0;
 	for (std::set<unsigned long >::iterator p = unique_timepoints.begin(); p != unique_timepoints.end(); p++) {
-		t[i] = *p;
-		time_lookup[*p] = i;
-		i++;
+		if (!use_external_time) {
+			timepoints[i] = *p;
+			time_lookup[*p] = i;
+			i++;
+		}
+		else {
+			for (i; i < timepoints.size(); i++)
+				if (timepoints[i] == *p) {
+					time_lookup[*p] = i;
+					break;
+				}
+			if (i == timepoints.size())
+				throw ns_ex("ns_lifespan_experiment_set::generate_aggregate_risk_timeseries()::Could not find a timepoint in externally specified timepoint list");
+		}
 	}
 
 	for (std::map<unsigned long,std::vector<ns_survival_timepoint_event> >::iterator p = movement_events.begin(); p != movement_events.end(); p++){

@@ -149,7 +149,7 @@ private:
 };
 
 struct ns_survival_timepoint_event{
-	ns_survival_timepoint_event(){}
+	ns_survival_timepoint_event() { events.reserve(50); }
 	std::vector<ns_survival_timepoint_event_count> events;
 	void add(const ns_survival_timepoint_event_count & );
 	void add(const ns_survival_timepoint_event & e);
@@ -546,7 +546,7 @@ public:
 
 	typedef enum {ns_do_not_include_control_groups,ns_include_control_groups} ns_control_group_behavior;
 
-	void generate_aggregate_risk_timeseries(const ns_region_metadata & m, bool filter_by_strain, const ns_64_bit& specific_region_id, ns_survival_data_with_censoring& movement_based_survival, ns_survival_data_with_censoring& death_associated_expansion_survival, std::vector<unsigned long> & t) const;
+	void generate_aggregate_risk_timeseries(const ns_region_metadata & m, bool filter_by_strain, const std::string& specific_device, const ns_64_bit& specific_region_id, ns_survival_data_with_censoring& movement_based_survival, ns_survival_data_with_censoring& death_associated_expansion_survival, std::vector<unsigned long> & t, bool use_external_time) const;
 
 	static void out_detailed_JMP_header(const ns_time_handing_behavior & time_handling_behavior, std::ostream & o, const std::string & time_units,const std::string & terminator="\n");
 	static void out_detailed_JMP_event_data(const ns_time_handing_behavior & time_handling_behavior,std::ostream & o, const ns_lifespan_device_normalization_statistics * regression_stats,const ns_region_metadata & metadata,const ns_metadata_worm_properties & prop,const double time_scaling_factor,const std::string & terminator="\n", const bool output_raw_data_as_regression=false,const bool output_full_censoring_detail=false);

@@ -672,7 +672,7 @@ void ns_graph::plot_object(const ns_graph_object & y, const ns_graph_object & x,
 				}
 				if (pixel_bottom < 0 && !y.properties.draw_negatives)
 					continue; 
-				const unsigned long screen_position_x = pixel_x + (-axes.boundary(0) + spec.axes.axis_offset(0))*dx + border.x;
+				const unsigned long screen_position_x = pixel_x + border.x;
 				for (unsigned int _y = pixel_top; _y < pixel_bottom; _y++){
 					for (unsigned int c = 0; c < 3; c++) {
 						if (debug_range_checking && (_y >= h || (screen_position_x)+c >= w)) {

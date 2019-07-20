@@ -408,7 +408,7 @@ private:
 			const double time = path->element(i).relative_time / 60.0 / 60 / 24;
 			if (time < min_rounded_time) min_rounded_time = time;
 			if (time > max_rounded_time) max_rounded_time = time;
-			time_axis[i] = time;
+			time_axis[i- first_valid_element] = time;
 			if (path->element(i).excluded || segment_ids[i-first_valid_element] == -1)
 				continue;
 			//scale denoised movement score to a value between 0 and 1

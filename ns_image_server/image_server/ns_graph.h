@@ -16,7 +16,7 @@ struct ns_graph_color_set{
 	ns_graph_color_set():width(1),opacity(1.0){}
 	ns_graph_color_set(const bool _draw, const ns_color_8 & _color, const unsigned char _width, const unsigned char _edge_width, const float _opacity):
 							draw(_draw),color(_color),width(_width),edge_width(_edge_width),opacity(_opacity),point_shape(ns_square){}
-	typedef enum {ns_square,ns_vertical_line} ns_point_shape;
+	typedef enum {ns_square,ns_vertical_line,ns_circle} ns_point_shape;
 	bool draw;
 	ns_color_8 color;
 	ns_color_8 edge_color;

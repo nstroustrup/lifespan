@@ -12,7 +12,7 @@ using namespace std;
 #include <stdio.h>
 #include <stdlib.h>
 
-#define NS_SNPRINTF_BUFFER_SIZE 256
+#define NS_SNPRINTF_BUFFER_SIZE 1024
 
 #ifdef _WIN32 
 #define snprintf _snprintf_s

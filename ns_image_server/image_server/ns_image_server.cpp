@@ -3367,16 +3367,17 @@ void ns_posture_analysis_model_entry::load_from_external_source(const std::strin
 	name = name_;
 	model_specification.name = name_;
 	model_specification.posture_analysis_method = external_source.analysis_method;
-	if (model_specification.posture_analysis_method == ns_posture_analysis_model::ns_hidden_markov) {
+	if (model_specification.posture_analysis_method == ns_posture_analysis_model::ns_hidden_markov || model_specification.posture_analysis_method == ns_posture_analysis_model::ns_threshold_and_hmm) {
 		ifstream moving((external_source.model_directory + name + ".csv").c_str());
 		if (moving.fail())
 			throw ns_ex("Could not load ") << external_source.model_directory + name + ".csv";
 
 		model_specification.hmm_posture_estimator.read(moving);
 		moving.close();
+		if (model_specification.posture_analysis_method == ns_posture_analysis_model::ns_hidden_markov)
 		return;
 	}
-	if (model_specification.posture_analysis_method == ns_posture_analysis_model::ns_threshold) {
+	if (model_specification.posture_analysis_method == ns_posture_analysis_model::ns_threshold || model_specification.posture_analysis_method == ns_posture_analysis_model::ns_threshold_and_hmm) {
 		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("ns_posture_analysis_model_entry::threshold"));
 		ifstream thresh((external_source.model_directory + name + "_threshold.csv").c_str());
 		if (thresh.fail()) {

@@ -9215,7 +9215,7 @@ void ns_worm_learner::load_specific_worm(const ns_64_bit& region_id, const unsig
 	
 	}
 }
-
+void ns_set_menu_bar_activity(bool a);
 void ns_experiment_storyboard_annotater::register_statistics_click(const ns_vector_2i& image_position, const ns_click_request& action, double external_rescale_factor) {
 	ns_population_telemetry::ns_graph_contents contents;
 	ns_vector_2d graph_pos = this->population_telemetry.get_graph_value_from_click_position_(image_position.x, image_position.y, contents);
@@ -9231,13 +9231,19 @@ void ns_experiment_storyboard_annotater::register_statistics_click(const ns_vect
 			}
 			else break;
 		}
-		if (last_good != -1)
+		if (last_good != -1) {
+			ns_set_menu_bar_activity(false);
 			worm_learner->storyboard_annotater.jump_to_position(last_good, ns_output_error, external_rescale_factor, true);
+
+			ns_set_menu_bar_activity(true);
+		}
 		return;
 		break;
 	}
 	case ns_population_telemetry::ns_graph_contents::ns_movement_vs_posture: {
+		ns_set_menu_bar_activity(false);
 		cout << "Atempting to load region " << graph_pos.x << " worm " << graph_pos.y << "\n";
+
 		worm_learner->load_specific_worm(graph_pos.x, graph_pos.y, external_rescale_factor);
 	}
 	}

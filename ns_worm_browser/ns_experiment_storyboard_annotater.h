@@ -574,6 +574,7 @@ public:
 		storyboard.clear();
 		strain_to_display.clear();
 		display_events_from_region.clear();
+		clear_machine_events_for_telemetry();
 		excluded_regions.clear();
 	}
 

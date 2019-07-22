@@ -844,6 +844,37 @@ void ns_graph::plot_object(const ns_graph_object & y, const ns_graph_object & x,
 					}
 					break;
 				}
+				case ns_graph_color_set::ns_circle: {
+					int point_half_width = y.properties.point.width / 2;
+					int edge_width = y.properties.point.edge_width;
+					for (unsigned int i = 0; i < y.y.size(); i++) {
+						if (y.y[i] < 0 && !y.properties.draw_negatives)
+							continue;
+						for (int shape_y = -point_half_width - edge_width; shape_y <= point_half_width + edge_width; shape_y++) {
+							for (int shape_x = -point_half_width - edge_width; shape_x <= point_half_width + edge_width; shape_x++) {
+								const ns_color_8* color(&y.properties.point.edge_color);
+								bool in_circle(shape_y* shape_y + shape_x * shape_x <= (point_half_width + edge_width) * (point_half_width + edge_width));
+								if (!in_circle)
+									continue;
+								bool edge(shape_y* shape_y + shape_x * shape_x >= (point_half_width ) * (point_half_width ));
+									if (!edge)
+										color = &y.properties.point.color;
+								for (unsigned int c = 0; c < 3; c++) {
+									int rx = 3 * (border.x + (int)(dx * (x.x[i] - axes.boundary(0) + spec.axes.axis_offset(0)) + shape_x)) + c,
+										ry = (int)(h - border.y) - (int)(dy * (y.y[i] - axes.boundary(2) + spec.axes.axis_offset(1))) + shape_y;
+									if (debug_range_checking) {
+										if (ry < 0 || ry >= (int)h)
+											throw ns_ex("ns_graph::Could not draw point due to ry");
+										if (rx < 0 || rx >= (int)(3 * w))
+											throw ns_ex("ns_graph::Could not draw point due to rx");
+									}
+									image[ry][rx] = (ns_8_bit)((1.0 - y.properties.point.opacity) * image[ry][rx] + y.properties.point.opacity * (*color)[c]);
+								}
+							}
+						}
+					}
+					break;
+				}
 				case ns_graph_color_set::ns_vertical_line:{
 					int point_half_width= y.properties.point.width/2;
 					int line_width= y.properties.point.edge_width;

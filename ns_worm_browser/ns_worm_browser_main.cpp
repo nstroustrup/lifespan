@@ -3398,7 +3398,7 @@ void demand_window_redraw_from_main_thread() {
 
 void report_changes_made_to_screen() {
 	if (debug_handlers) cout << "z";
-	//this will also call idle_window_update_callbacl
+	//this will also call idle_window_update_callback
 	Fl::awake(idle_main_window_update_callback,(void *) 1);
 
 }
@@ -3432,7 +3432,7 @@ ns_thread_return_type run_startup_routines_asynch(void* d) {
 	return 0;
 }
 void idle_main_window_update_callback(void * force_redraw) {
-
+	//cerr << "IDLE";
 	if (!startup_routines_completed) {
 		startup_routines_completed = true;
 		ns_set_menu_bar_activity(false);
@@ -3647,23 +3647,27 @@ void idle_worm_window_update_callback(void * force_redraw){
 		cur_size = cur_size/worm_learner.worm_window.display_rescale_factor;
 
 		bool something_done(false);
-		ns_acquire_lock_for_scope storyboard_lock(worm_learner.storyboard_lock,__FILE__,__LINE__);
-		ns_image_series_annotater::ns_image_series_annotater_action a(worm_learner.death_time_solo_annotater.fast_movement_requested());
-		if (a == ns_image_series_annotater::ns_fast_forward){
-			worm_learner.death_time_solo_annotater.step_forward(ns_hide_worm_window, worm_learner.worm_window.display_rescale_factor);
-			worm_learner.death_time_solo_annotater.display_current_frame();
-			something_done = true;
-		}
-		else if (a==ns_image_series_annotater::ns_fast_back){
-			worm_learner.death_time_solo_annotater.step_back(ns_hide_worm_window, worm_learner.worm_window.display_rescale_factor);
-			worm_learner.death_time_solo_annotater.display_current_frame();
-			something_done = true;
-		}
-		else if (worm_learner.death_time_solo_annotater.refresh_requested(), worm_learner.worm_window.display_rescale_factor) {
+		ns_try_to_acquire_lock_for_scope storyboard_lock(worm_learner.storyboard_lock);
+		if (storyboard_lock.try_to_get( __FILE__, __LINE__) ){
+			ns_image_series_annotater::ns_image_series_annotater_action a(worm_learner.death_time_solo_annotater.fast_movement_requested());
+			if (a == ns_image_series_annotater::ns_fast_forward) {
+				worm_learner.death_time_solo_annotater.step_forward(ns_hide_worm_window, worm_learner.worm_window.display_rescale_factor);
 				worm_learner.death_time_solo_annotater.display_current_frame();
 				something_done = true;
 			}
-		storyboard_lock.release();
+			else if (a == ns_image_series_annotater::ns_fast_back) {
+				worm_learner.death_time_solo_annotater.step_back(ns_hide_worm_window, worm_learner.worm_window.display_rescale_factor);
+				worm_learner.death_time_solo_annotater.display_current_frame();
+				something_done = true;
+			}
+			else if (worm_learner.death_time_solo_annotater.refresh_requested(), worm_learner.worm_window.display_rescale_factor) {
+				worm_learner.death_time_solo_annotater.display_current_frame();
+				something_done = true;
+			}
+			storyboard_lock.release();
+		}
+		else 
+			something_done = true;
 		if (force_redraw)
 			demand_window_redraw_from_main_thread();
 		if (something_done){
@@ -3691,28 +3695,33 @@ void idle_stats_window_update_callback(void* force_redraw) {
 		cur_size = cur_size / worm_learner.stats_window.display_rescale_factor;
 
 		bool something_done(false);
-		ns_acquire_lock_for_scope storyboard_lock(worm_learner.storyboard_lock, __FILE__, __LINE__);
-		ns_image_series_annotater::ns_image_series_annotater_action a(worm_learner.death_time_solo_annotater.fast_movement_requested());
-		if (a == ns_image_series_annotater::ns_fast_forward) {
-			worm_learner.death_time_solo_annotater.step_forward(ns_hide_stats_window, worm_learner.stats_window.display_rescale_factor);
-			worm_learner.death_time_solo_annotater.display_current_frame();
-			something_done = true;
+		ns_try_to_acquire_lock_for_scope storyboard_lock(worm_learner.storyboard_lock);
+		if (storyboard_lock.try_to_get(__FILE__, __LINE__)) {
+			ns_image_series_annotater::ns_image_series_annotater_action a(worm_learner.death_time_solo_annotater.fast_movement_requested());
+			if (a == ns_image_series_annotater::ns_fast_forward) {
+				worm_learner.death_time_solo_annotater.step_forward(ns_hide_stats_window, worm_learner.stats_window.display_rescale_factor);
+				worm_learner.death_time_solo_annotater.display_current_frame();
+				something_done = true;
+			}
+			else if (a == ns_image_series_annotater::ns_fast_back) {
+				worm_learner.death_time_solo_annotater.step_back(ns_hide_stats_window, worm_learner.stats_window.display_rescale_factor);
+				worm_learner.death_time_solo_annotater.display_current_frame();
+				something_done = true;
+			}
+			else if (worm_learner.death_time_solo_annotater.refresh_requested(), worm_learner.stats_window.display_rescale_factor) {
+				worm_learner.death_time_solo_annotater.display_current_frame();
+				something_done = true;
+			}
+			storyboard_lock.release();
 		}
-		else if (a == ns_image_series_annotater::ns_fast_back) {
-			worm_learner.death_time_solo_annotater.step_back(ns_hide_stats_window, worm_learner.stats_window.display_rescale_factor);
-			worm_learner.death_time_solo_annotater.display_current_frame();
+		else
 			something_done = true;
-		}
-		else if (worm_learner.death_time_solo_annotater.refresh_requested(), worm_learner.stats_window.display_rescale_factor) {
-			worm_learner.death_time_solo_annotater.display_current_frame();
-			something_done = true;
-		}
-		storyboard_lock.release();
 		if (force_redraw)
 			demand_window_redraw_from_main_thread();
 		if (something_done) {
 			request_rate_limited_window_redraw_from_main_thread();
 		}
+		
 	}
 	catch (...) {
 		//	ns_fl_unlock(__FILE__,__LINE__);
@@ -4119,9 +4128,9 @@ ns_menu_bar_request set_menu_bar_request;
 //must have fl::lock before calling!
 void ns_set_menu_bar_activity_internal(bool activate){
 
-	if (activate)
+	if (activate) {
 		main_window->draw_animation = false;
-
+	}
 //	ns_fl_lock(__FILE__,__LINE__);
 	if (activate){
 		for (unsigned int i = 0; i < main_window->main_menu->size(); i++){
@@ -4148,7 +4157,7 @@ void ns_set_menu_bar_activity_internal(bool activate){
 			ns_set_main_window_annotation_controls_activity(true);
 	}
 	else {
-
+		cerr << "starting animation drawing\n";
 		main_window->draw_animation = true;
 		schedule_repeating_callback(0);
 

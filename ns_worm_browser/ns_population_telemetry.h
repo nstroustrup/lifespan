@@ -235,8 +235,10 @@ private:
 			movement_vs_posture_vals[i].vals.properties.line.draw = false;
 			movement_vs_posture_vals[i].vals.properties.point.draw = true;
 			movement_vs_posture_vals[i].vals.properties.point.color = movement_vs_posture_vals[i].color;
-			movement_vs_posture_vals[i].vals.properties.point.width = 3;
-			movement_vs_posture_vals[i].vals.properties.point.point_shape = ns_graph_color_set::ns_square;
+			movement_vs_posture_vals[i].vals.properties.point.width = 4;
+			movement_vs_posture_vals[i].vals.properties.point.edge_color = ns_color_8(0, 0, 0);
+			movement_vs_posture_vals[i].vals.properties.point.edge_width = 1;
+			movement_vs_posture_vals[i].vals.properties.point.point_shape = ns_graph_color_set::ns_circle;
 			movement_vs_posture.add_reference(&movement_vs_posture_vals[i].vals);
 		}
 
@@ -574,7 +576,6 @@ public:
 			for (long i = 0; i < time_axis.size(); i++)
 				time_axis[i] -= time_at_which_animals_were_age_zero;
 
-			movement_vs_posture_vals.resize(0);
 			movement_vs_posture_vals.resize(0);
 
 

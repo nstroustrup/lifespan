@@ -8072,6 +8072,7 @@ void ns_time_path_image_movement_analyzer<allocator_T>::load_region_visualizatio
 
 #include "ns_threshold_movement_posture_analyzer.h"
 #include "ns_hidden_markov_model_posture_analyzer.h"
+#include "ns_threshold_and_hmm_posture_analyzer.h"
 ns_time_path_posture_movement_solution ns_threshold_movement_posture_analyzer::operator() (ns_analyzed_image_time_path * path, const bool fill_in_loglikelihood_timeseries,std::ostream * debug_output)const{
 	return run(path,(std::ostream * )debug_output);
 }
@@ -8388,6 +8389,9 @@ ns_analyzed_image_time_path_death_time_estimator * ns_get_death_time_estimator_f
 	else if (m.posture_analysis_method == ns_posture_analysis_model::ns_threshold){
 	  // cout <<"THRESH";
 		p = new ns_threshold_movement_posture_analyzer(m.threshold_parameters);
+	}
+	else if (m.posture_analysis_method == ns_posture_analysis_model::ns_threshold_and_hmm) {
+		p = new ns_threshold_and_hmm_posture_analyzer(m);
 	}
 	else if (m.posture_analysis_method == ns_posture_analysis_model::ns_not_specified)
 		throw ns_ex("ns_get_death_time_estimator_from_posture_analysis_model()::No posture analysis method specified.");

@@ -2,6 +2,7 @@
 #include "ns_time_path_image_analyzer.h"
 #include "ns_normal_distribution.h"
 #include "ns_posture_analysis_models.h"
+#include "ns_threshold_and_hmm_posture_analyzer.h"
 #include "GMM.h"
 	
 
@@ -1480,4 +1481,25 @@ void ns_threshold_movement_posture_analyzer_parameters::write(std::ostream & o)c
 		"software_version, " <<  version_flag << "\n"
 		"death_time_expansion_cutoff, " << death_time_expansion_cutoff << "\n"
 		"death_time_expansion_time_kernel, " << death_time_expansion_time_kernel_in_seconds << "\n";
+}
+
+
+
+unsigned long ns_threshold_and_hmm_posture_analyzer::latest_possible_death_time(const ns_analyzed_image_time_path* path, const unsigned long last_observation_time) const {
+	return  last_observation_time - model->threshold_parameters.permanance_time_required_in_seconds;
+}
+ns_time_path_posture_movement_solution ns_threshold_and_hmm_posture_analyzer::estimate_posture_movement_states(int software_version, const ns_analyzed_image_time_path* path, std::vector<double >& tmp_storage_1, std::vector<unsigned long >& tmp_storage_2, ns_analyzed_image_time_path* output_path, std::ostream* debug_output)const {
+
+	ns_hmm_solver hmm_solver;
+	hmm_solver.solve(*path, model->hmm_posture_estimator, tmp_storage_1, tmp_storage_2);
+
+	ns_threshold_movement_posture_analyzer threshold_solver(model->threshold_parameters);
+	ns_time_path_posture_movement_solution threshold_solution = threshold_solver(path, debug_output);
+	
+	ns_time_path_posture_movement_solution blended_solution =hmm_solver.movement_state_solution;
+	blended_solution.dead = threshold_solution.dead;
+	blended_solution.moving = threshold_solution.moving;
+	blended_solution.slowing = threshold_solution.slowing;
+
+	return blended_solution;
 }

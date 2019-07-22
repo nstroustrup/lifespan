@@ -79,7 +79,7 @@ struct ns_threshold_movement_posture_analyzer_parameters{
 };
 
 struct ns_posture_analysis_model{
-	typedef enum{ns_not_specified,ns_threshold,ns_hidden_markov,ns_unknown} ns_posture_analysis_method;
+	typedef enum{ns_not_specified,ns_threshold,ns_hidden_markov,ns_threshold_and_hmm,ns_unknown} ns_posture_analysis_method;
 	static ns_posture_analysis_method method_from_string(const std::string & s){
 		if (s.size() == 0)
 			return ns_not_specified;
@@ -87,6 +87,8 @@ struct ns_posture_analysis_model{
 			return ns_threshold;
 		if (s == "hm" || s == "hmm")
 			return ns_hidden_markov;
+		if (s == "thr_hm")
+			return ns_threshold_and_hmm;
 		return ns_unknown;
 	}
 	ns_emperical_posture_quantification_value_estimator hmm_posture_estimator;

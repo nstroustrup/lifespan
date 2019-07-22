@@ -830,11 +830,11 @@ struct ns_intensity_emission_accessor_4x {
 };
 struct ns_movement_accessor {
 	double operator()(const ns_analyzed_image_time_path_element_measurements & e) const {
-		double d = e.death_time_posture_analysis_measure_v2_uncropped()+1;
+		double d = e.death_time_posture_analysis_measure_v2_cropped()+1;
 		return log(d);
 	}
 	bool is_zero(const ns_analyzed_image_time_path_element_measurements & e) const {
-		return e.death_time_posture_analysis_measure_v2_uncropped() <= 0;
+		return e.death_time_posture_analysis_measure_v2_cropped() <= 0;
 	}
 };
 struct ns_movement_emission_accessor {

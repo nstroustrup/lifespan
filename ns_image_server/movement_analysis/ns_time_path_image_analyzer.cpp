@@ -8087,8 +8087,13 @@ void ns_analyzed_image_time_path::identify_expansion_time(const unsigned long de
 	std::vector<unsigned long> hold_times,
 	std::vector<ns_death_time_expansion_info> & results,
 	std::vector<ns_s64_bit> & intensity_changes) const {
-	results.resize(thresholds.size()*hold_times.size());
 
+
+	results.resize(thresholds.size()*hold_times.size());
+	for (unsigned int i = 0; i < results.size(); i++)
+		results[i].found_death_time_expansion = false;
+	return;
+	/*
 	for (unsigned int ht = 0; ht < hold_times.size(); ht++) {
 		double max_intensity_change(-DBL_MAX);
 		unsigned long time_of_max_intensity_change(death_index);
@@ -8185,7 +8190,7 @@ void ns_analyzed_image_time_path::identify_expansion_time(const unsigned long de
 			if (result.time_point_at_which_death_time_expansion_started == result.time_point_at_which_death_time_expansion_stopped)
 				result.found_death_time_expansion = false;
 		}
-	}
+	}*/
 }
 
 ns_time_path_posture_movement_solution ns_threshold_movement_posture_analyzer::run(const ns_analyzed_image_time_path * path, std::ostream * debug_output) const{

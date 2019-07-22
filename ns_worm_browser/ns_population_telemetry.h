@@ -28,6 +28,7 @@ public:
 	typedef enum { ns_group_by_device, ns_group_by_strain, ns_aggregate_all, ns_group_by_death_type, ns_survival_grouping_num} ns_survival_grouping;
 	typedef enum { ns_plot_death_times_absolute, ns_plot_death_times_residual,ns_movement_plot_num } ns_movement_plot_type;
 	typedef enum { ns_plot_movement_death,ns_plot_expansion_death, ns_death_plot_num } ns_death_plot_type;
+	typedef enum { ns_plot_death_types, ns_by_hand_machine,ns_regression_type_num } ns_regression_type;
 	static std::string survival_grouping_name(const ns_survival_grouping& g) {
 		switch (g) {
 		case ns_group_by_strain:
@@ -58,6 +59,14 @@ public:
 			return "Residuals";
 		default: throw ns_ex("Unknown movement plot type");
 		}
+	}static std::string regression_type_name(const ns_regression_type& g) {
+		switch (g) {
+		case ns_plot_death_types:
+			return "Death Types";
+		case ns_by_hand_machine:
+			return "By hand vs Machine";
+		default: throw ns_ex("Unknown movement plot type");
+		}
 	}
 	static ns_survival_grouping survival_grouping_type(const std::string& s) {
 		for (unsigned int i = 0; i < (int)ns_survival_grouping_num; i++) {
@@ -74,9 +83,16 @@ public:
 		throw ns_ex("Unknown death type:") << s;
 	}
 	static ns_movement_plot_type movement_plot_type(const std::string& s) {
-		for (unsigned int i = 0; i < (int)ns_death_plot_num; i++) {
+		for (unsigned int i = 0; i < (int)ns_movement_plot_num; i++) {
 			if (s == movement_plot_name((ns_movement_plot_type)i))
 				return (ns_movement_plot_type)i;
+		}
+		throw ns_ex("Unknown death type:") << s;
+	}	
+	static ns_regression_type regression_plot_type(const std::string& s) {
+		for (unsigned int i = 0; i < (int)ns_regression_type_num; i++) {
+			if (s == regression_type_name((ns_regression_type)i))
+				return (ns_regression_type)i;
 		}
 		throw ns_ex("Unknown death type:") << s;
 	}
@@ -88,6 +104,7 @@ public:
 	ns_survival_grouping survival_grouping;
 	ns_death_plot_type death_plot;
 	ns_movement_plot_type movement_plot;
+	ns_regression_type regression_plot;
 
 private:
 
@@ -98,7 +115,10 @@ private:
 	ns_graph survival,movement_vs_posture;
 	ns_graph_specifics survival_specifics, movement_vs_posture_specifics;
 	std::vector<ns_survival_graph> survival_curves;
-	ns_graph_object movement_vs_posture_vals, time_vals, unity_line;
+	std::vector<ns_survival_graph> movement_vs_posture_vals;
+	std::string movement_vs_posture_x_axis_label, movement_vs_posture_y_axis_label;
+	ns_color_8 movement_vs_posture_x_axis_color, movement_vs_posture_y_axis_color;
+	ns_graph_object time_vals, unity_line;
 	vector <unsigned long> time_axis;
 	unsigned long time_at_which_animals_were_age_zero;
 	std::vector<double> temp1, temp2;
@@ -162,56 +182,64 @@ private:
 		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Rendering movement v posture graph"));
 
 		double tmax(0), tmin(DBL_MAX), ymax(0), ymin(DBL_MAX);
-		for (unsigned int i = 0; i < movement_vs_posture_vals.x.size(); i++) {
-			if (movement_vs_posture_vals.x[i] < tmin)
-				tmin = movement_vs_posture_vals.x[i];
-			if (movement_plot == ns_plot_death_times_absolute && movement_vs_posture_vals.y[i] < tmin)
-				tmin = movement_vs_posture_vals.y[i];
-			if (movement_vs_posture_vals.y[i] < ymin)
-				ymin = movement_vs_posture_vals.y[i];
-			if (movement_vs_posture_vals.x[i] > tmax)
-				tmax = movement_vs_posture_vals.x[i];
-			if (movement_plot == ns_plot_death_times_absolute && movement_vs_posture_vals.y[i] > tmax)
-				tmax = movement_vs_posture_vals.y[i];
-			if (movement_vs_posture_vals.y[i] > ymax)
-				ymax = movement_vs_posture_vals.y[i];
+		unsigned long number_of_points(0);
+		for (unsigned int j = 0; j < movement_vs_posture_vals.size(); j++) {
+			for (unsigned int i = 0; i < movement_vs_posture_vals[j].vals.x.size(); i++) {
+				number_of_points++;
+				if (movement_vs_posture_vals[j].vals.x[i] < tmin)
+					tmin = movement_vs_posture_vals[j].vals.x[i];
+				if (movement_plot == ns_plot_death_times_absolute && movement_vs_posture_vals[j].vals.y[i] < tmin)
+					tmin = movement_vs_posture_vals[j].vals.y[i];
+				if (movement_vs_posture_vals[j].vals.y[i] < ymin)
+					ymin = movement_vs_posture_vals[j].vals.y[i];
+				if (movement_vs_posture_vals[j].vals.x[i] > tmax)
+					tmax = movement_vs_posture_vals[j].vals.x[i];
+				if (movement_plot == ns_plot_death_times_absolute && movement_vs_posture_vals[j].vals.y[i] > tmax)
+					tmax = movement_vs_posture_vals[j].vals.y[i];
+				if (movement_vs_posture_vals[j].vals.y[i] > ymax)
+					ymax = movement_vs_posture_vals[j].vals.y[i];
+			}
+		}
+		if (number_of_points != 0) {
+			unity_line.x.resize(2);
+			unity_line.y.resize(2);
+			if (movement_plot == ns_plot_death_times_absolute) {
+				unity_line.x[0] = unity_line.y[0] = tmin;
+				unity_line.x[1] = unity_line.y[1] = tmax;
+			}
+			else {
+				if (ymax < 0)
+					ymax = 0;
+				if (ymin > 0)
+					ymin = 0;
+				unity_line.y[0] = unity_line.y[1] = 0;
+				unity_line.x[0] = tmin;
+				unity_line.x[1] = tmax;
+
+			}
+			unity_line.properties.line.draw = true;
+			unity_line.properties.line.color = ns_color_8(100, 100, 100);
+			unity_line.properties.line.width = 2;
+			unity_line.properties.point.draw = false;
+			movement_vs_posture.add_reference(&unity_line);
 		}
 
-		movement_vs_posture_vals.type = ns_graph_object::ns_graph_dependant_variable;
-		movement_vs_posture_vals.properties.line.draw = false;
-		movement_vs_posture_vals.properties.point.draw = true;
-		movement_vs_posture_vals.properties.point.color = ns_color_8(255, 0, 0);
-		movement_vs_posture_vals.properties.point.width = 3;
-		movement_vs_posture_vals.properties.point.point_shape = ns_graph_color_set::ns_square;
 		movement_vs_posture.x_axis_properties.text_decimal_places = 1;
 		movement_vs_posture.y_axis_properties.text_decimal_places = 2;
 		movement_vs_posture.x_axis_properties.text.color = ns_color_8(255, 0, 0);
-		movement_vs_posture.x_axis_label = "Movement Cessation Time (days)";
+		movement_vs_posture.x_axis_label = movement_vs_posture_x_axis_label;
 		movement_vs_posture.y_axis_properties.text.color = ns_color_8(0, 0, 255);
-		movement_vs_posture.y_axis_label = "Death-Associated Expansion (days)";
-
-		unity_line.x.resize(2);
-		unity_line.y.resize(2);
-		if (movement_plot == ns_plot_death_times_absolute) {
-			unity_line.x[0] = unity_line.y[0] = tmin;
-			unity_line.x[1] = unity_line.y[1] = tmax;
+		movement_vs_posture.y_axis_label = movement_vs_posture_y_axis_label;
+		for (unsigned int i = 0; i < movement_vs_posture_vals.size(); i++) {
+			movement_vs_posture_vals[i].vals.type = ns_graph_object::ns_graph_dependant_variable;
+			movement_vs_posture_vals[i].vals.properties.line.draw = false;
+			movement_vs_posture_vals[i].vals.properties.point.draw = true;
+			movement_vs_posture_vals[i].vals.properties.point.color = movement_vs_posture_vals[i].color;
+			movement_vs_posture_vals[i].vals.properties.point.width = 3;
+			movement_vs_posture_vals[i].vals.properties.point.point_shape = ns_graph_color_set::ns_square;
+			movement_vs_posture.add_reference(&movement_vs_posture_vals[i].vals);
 		}
-		else {
-			if (ymax < 0)
-				ymax = 0;
-			if (ymin > 0)
-				ymin = 0;
-			unity_line.y[0] = unity_line.y[1] = 0;
-			unity_line.x[0] = tmin;
-			unity_line.x[1] = tmax;
 
-		}
-		unity_line.properties.line.draw = true;
-		unity_line.properties.line.color = ns_color_8(100, 100, 100);
-		unity_line.properties.line.width = 2;
-		unity_line.properties.point.draw = false;
-		movement_vs_posture.add_reference(&unity_line);
-		movement_vs_posture.add_reference(&movement_vs_posture_vals);
 
 		ns_graph_axes axes2;
 		if (movement_plot == ns_plot_death_times_absolute) {
@@ -358,7 +386,7 @@ public:
 		return res;
 	}
 
-	ns_population_telemetry() :_show(false), last_graph_contents(ns_none), movement_plot(ns_plot_death_times_absolute),survival_grouping((ns_survival_grouping)0),unity_line(ns_graph_object::ns_graph_dependant_variable), movement_vs_posture_vals(ns_graph_object::ns_graph_dependant_variable), time_vals(ns_graph_object::ns_graph_independant_variable) {
+	ns_population_telemetry() :_show(false), last_graph_contents(ns_none), movement_plot(ns_plot_death_times_absolute),survival_grouping((ns_survival_grouping)0),unity_line(ns_graph_object::ns_graph_dependant_variable), time_vals(ns_graph_object::ns_graph_independant_variable) {
 		survival_image.init(ns_image_properties(0, 0, 3));
 		movement_vs_posture_image.init(ns_image_properties(0, 0, 3));
 	}
@@ -546,13 +574,13 @@ public:
 			for (long i = 0; i < time_axis.size(); i++)
 				time_axis[i] -= time_at_which_animals_were_age_zero;
 
-			movement_vs_posture_vals.x.resize(0);
-			movement_vs_posture_vals.y.resize(0);
+			movement_vs_posture_vals.resize(0);
+			movement_vs_posture_vals.resize(0);
 
 
 			movement_id_lookup.clear();
 
-
+			std::vector<ns_color_8> colors;
 			for (ns_death_time_annotation_compiler::ns_region_list::const_iterator r = compiler.regions.begin(); r != compiler.regions.end(); r++) {
 				if (region_to_view != 0 && r->first != region_to_view)
 					continue;
@@ -563,31 +591,61 @@ public:
 					l->generate_dying_animal_description_const(true, set);
 					for (unsigned int i = 0; i < set.descriptions.size(); i++) {
 
-						const ns_death_time_annotation* expansion(0), * movement(0);
-						if (set.descriptions[i].by_hand.death_associated_expansion_start != 0)
-							expansion = set.descriptions[i].by_hand.death_associated_expansion_start;
-						else expansion = set.descriptions[i].machine.death_associated_expansion_start;
-						if (set.descriptions[i].by_hand.death_annotation != 0)
-							movement = set.descriptions[i].by_hand.death_annotation;
-						else movement = set.descriptions[i].machine.death_annotation;
-						if (expansion != 0 && movement != 0 &&
-							movement->time.best_estimate_event_time_for_possible_partially_unbounded_interval() != 0 &&
-							expansion->time.best_estimate_event_time_for_possible_partially_unbounded_interval() != 0) {
-							if (l->properties.is_excluded() || l->properties.is_censored() || l->properties.flag.event_should_be_excluded())
-								continue;
-							unsigned long mtt(movement->time.best_estimate_event_time_for_possible_partially_unbounded_interval()),
-								ett(expansion->time.best_estimate_event_time_for_possible_partially_unbounded_interval());
-							double mt((mtt - metadata.time_at_which_animals_had_zero_age) / 60.0 / 60.0 / 24),
-								et((ett - metadata.time_at_which_animals_had_zero_age) / 60.0 / 60.0 / 24);
-							if (movement_plot == ns_plot_death_times_residual) {
-								et -= mt;
-								ett -= mtt;
+						std::vector<const ns_death_time_annotation*> x_axis, y_axis;
+						if (regression_plot == ns_plot_death_types) {
+							if (colors.size() == 0) {
+								colors.push_back(ns_color_8(255, 0, 0));
+								movement_vs_posture_x_axis_color = ns_color_8(255, 0, 0);
+								movement_vs_posture_y_axis_color = ns_color_8(0, 0, 255);
+							}
+							
+							movement_vs_posture_x_axis_label= "Movement Cessation Time (days)"; 
+							movement_vs_posture_y_axis_label= "Death-Associated Expansion (days)";
+							if (set.descriptions[i].by_hand.death_associated_expansion_start != 0)
+								y_axis.push_back(set.descriptions[i].by_hand.death_associated_expansion_start);
+							else y_axis.push_back(set.descriptions[i].machine.death_associated_expansion_start);
+							if (set.descriptions[i].by_hand.death_annotation != 0)
+								x_axis.push_back(set.descriptions[i].by_hand.death_annotation);
+							else x_axis.push_back(set.descriptions[i].machine.death_annotation);
+						}
+						else if (regression_plot == ns_by_hand_machine){
+							if (colors.size() == 0) {
+								colors.push_back(ns_color_8(255, 0, 0));
+								colors.push_back(ns_color_8(0, 0, 255));
+								movement_vs_posture_x_axis_color = movement_vs_posture_y_axis_color = ns_color_8(0, 0, 0);
 							}
 
-							//cout << "Adding " << mt << "," << et << "\n";
-							movement_id_lookup[ns_lookup_index(mtt, ett)].push_back(ns_worm_lookup_info(movement->region_info_id, l->properties.stationary_path_id));
-							movement_vs_posture_vals.x.push_back(mt);
-							movement_vs_posture_vals.y.push_back(et);
+							movement_vs_posture_x_axis_label = "By Hand Event Time (days)";
+							movement_vs_posture_y_axis_label = "Machine Event Time (days)";
+							x_axis.push_back(set.descriptions[i].by_hand.death_annotation);
+							y_axis.push_back(set.descriptions[i].machine.death_annotation);
+							x_axis.push_back(set.descriptions[i].by_hand.death_associated_expansion_start);
+							y_axis.push_back(set.descriptions[i].machine.death_associated_expansion_start);
+						}
+						if (x_axis.size() == 0)
+							throw ns_ex("Malformed expression");
+						movement_vs_posture_vals.resize(x_axis.size());
+						for (int i = 0; i < x_axis.size(); i++) {
+							if (y_axis[i] != 0 && x_axis[i] != 0 &&
+								x_axis[i]->time.best_estimate_event_time_for_possible_partially_unbounded_interval() != 0 &&
+								y_axis[i]->time.best_estimate_event_time_for_possible_partially_unbounded_interval() != 0) {
+								if (l->properties.is_excluded() || l->properties.is_censored() || l->properties.flag.event_should_be_excluded())
+									continue;
+								unsigned long mtt(x_axis[i]->time.best_estimate_event_time_for_possible_partially_unbounded_interval()),
+									ett(y_axis[i]->time.best_estimate_event_time_for_possible_partially_unbounded_interval());
+								double mt((mtt - metadata.time_at_which_animals_had_zero_age) / 60.0 / 60.0 / 24),
+									et((ett - metadata.time_at_which_animals_had_zero_age) / 60.0 / 60.0 / 24);
+								if (movement_plot == ns_plot_death_times_residual) {
+									et -= mt;
+									ett -= mtt;
+								}
+
+								//cout << "Adding " << mt << "," << et << "\n";
+								movement_id_lookup[ns_lookup_index(mtt, ett)].push_back(ns_worm_lookup_info(x_axis[i]->region_info_id, l->properties.stationary_path_id));
+								movement_vs_posture_vals[i].vals.x.push_back(mt);
+								movement_vs_posture_vals[i].vals.y.push_back(et);
+								movement_vs_posture_vals[i].color = colors[i];
+							}
 						}
 					}
 

@@ -1799,7 +1799,17 @@ class ns_movement_graph_plotting_menu_organizer : public ns_menu_organizer {
 	static void select_spec(const std::string& s) {
 
 		ns_set_menu_bar_activity(false);
-		worm_learner.storyboard_annotater.population_telemetry.movement_plot = ns_population_telemetry::movement_plot_type(s);
+		std::string::size_type p = s.find("Plot");
+		if (p != s.npos) {
+			worm_learner.storyboard_annotater.population_telemetry.movement_plot = ns_population_telemetry::movement_plot_type(s.substr(p + 5));
+		}
+		else {
+			p = s.find("Compare");
+			if (p != s.npos) {
+				worm_learner.storyboard_annotater.population_telemetry.regression_plot = ns_population_telemetry::regression_plot_type(s.substr(p + 8));
+
+			}
+		}
 		::update_stats_menus();
 		worm_learner.storyboard_annotater.recalculate_telemetry();
 		//worm_learner.storyboard_annotater.draw_telemetry();
@@ -1807,7 +1817,7 @@ class ns_movement_graph_plotting_menu_organizer : public ns_menu_organizer {
 		ns_set_menu_bar_activity(true);
 	}
 public:
-	void update_choice(Fl_Menu_Bar& bar) {
+	void update_choice(Fl_Menu_Bar & bar) {
 		bar.menu(NULL);
 		clear();
 		update_menus();
@@ -1817,14 +1827,16 @@ public:
 	ns_movement_graph_plotting_menu_organizer() {
 		update_menus();
 	}
-	void update_menus(){
+	void update_menus() {
 		ns_menu_item_spec spec(select_spec, "Regression Plot");
 
 		for (unsigned int i = 0; i < (int)ns_population_telemetry::ns_death_plot_num; i++) {
 			ns_population_telemetry::ns_movement_plot_type g = (ns_population_telemetry::ns_movement_plot_type)i;
-			//if (g == worm_learner.storyboard_annotater.population_telemetry.movement_plot)
-			//	continue;
-			spec.options.push_back(ns_population_telemetry::movement_plot_name(g));
+			spec.options.push_back("Plot/Plot " + ns_population_telemetry::movement_plot_name(g));
+		}
+		for (unsigned int i = 0; i < (int)ns_population_telemetry::ns_regression_type_num; i++) {
+			ns_population_telemetry::ns_regression_type g = (ns_population_telemetry::ns_regression_type)i;
+			spec.options.push_back("Compare/Compare " + ns_population_telemetry::regression_type_name(g));
 		}
 		add(spec);
 	}

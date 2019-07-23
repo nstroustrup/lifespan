@@ -7146,7 +7146,7 @@ void ns_worm_learner::draw_image(const double x, const double y, ns_image_standa
 
 
 void ns_worm_learner::draw_worm_window_image(ns_image_standard & image){
-
+	//cerr << "R";
 	ns_acquire_lock_for_scope lock(worm_window.display_lock,__FILE__,__LINE__);
 
 	ns_vector_2i telemetry_size;

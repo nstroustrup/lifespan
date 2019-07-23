@@ -322,17 +322,19 @@ public:
 	}
 	//currently does not return a correct y value.
 	ns_vector_2d get_graph_value_from_click_position_(const unsigned long& x, const unsigned long& y, ns_graph_contents& graph_selected) const {
+		const unsigned long permissible_time_error(12 * 60 * 60);
 		ns_vector_2d res;
 		const int movement_vs_posture_offset = survival_image.properties().width + 2 * border().x;
 		if (x <= movement_vs_posture_offset) {
 			graph_selected = ns_survival;
+			const unsigned long permissable_error(permissible_time_error * survival_specifics.dx); //how far away the user can click from the exact right position
 			res.x = ((long)x - (long)survival_specifics.boundary.x - (long)border().x) / (survival_specifics.dx) + survival_specifics.axes.boundary(0) - survival_specifics.axes.axis_offset(0);
-			if (x < border().x + survival_specifics.boundary.x || x - border().x >= survival_image.properties().width - survival_specifics.boundary.x) {
+			if (x + permissable_error < border().x + survival_specifics.boundary.x || x - border().x >= survival_image.properties().width - survival_specifics.boundary.x+ permissable_error) {
 				res.x = 0;
 				graph_selected = ns_none;
 			}
 			res.y = ((long)survival_image.properties().height - survival_specifics.boundary.y - (y - border().y)) / survival_specifics.dy + survival_specifics.axes.boundary(2) - survival_specifics.axes.axis_offset(1);
-			if (y < border().y + survival_specifics.boundary.y || y - border().y >= survival_image.properties().height - survival_specifics.boundary.y) {
+			if (y +permissable_error < border().y + survival_specifics.boundary.y || y - border().y >= survival_image.properties().height - survival_specifics.boundary.y+permissable_error) {
 				res.y = 0;
 				graph_selected = ns_none;
 			}
@@ -340,13 +342,14 @@ public:
 		}
 		else {
 			graph_selected = ns_movement_vs_posture;
+			const unsigned long permissable_error(permissible_time_error * movement_vs_posture_specifics.dx);
 			res.x = ((long)x - movement_vs_posture_offset - (long)movement_vs_posture_specifics.boundary.x) / (movement_vs_posture_specifics.dx) + movement_vs_posture_specifics.axes.boundary(0) - movement_vs_posture_specifics.axes.axis_offset(0);
-			if (x < movement_vs_posture_offset + movement_vs_posture_specifics.boundary.x || x - movement_vs_posture_offset >= movement_vs_posture_image.properties().width - movement_vs_posture_specifics.boundary.x) {
+			if (x + permissable_error < movement_vs_posture_offset + movement_vs_posture_specifics.boundary.x || x - movement_vs_posture_offset >= movement_vs_posture_image.properties().width - movement_vs_posture_specifics.boundary.x+ permissable_error) {
 				res.x = 0;
 				graph_selected = ns_none;
 			}
 			res.y = ((long)movement_vs_posture_image.properties().height - movement_vs_posture_specifics.boundary.y - (y - border().y)) / movement_vs_posture_specifics.dy + movement_vs_posture_specifics.axes.boundary(2) - movement_vs_posture_specifics.axes.axis_offset(1);
-			if (y < border().y + movement_vs_posture_specifics.boundary.y || y - border().y >= movement_vs_posture_image.properties().height - movement_vs_posture_specifics.boundary.y) {
+			if (y + permissable_error < border().y + movement_vs_posture_specifics.boundary.y || y - border().y >= movement_vs_posture_image.properties().height - movement_vs_posture_specifics.boundary.y+ permissable_error) {
 				res.y = 0;
 				graph_selected = ns_none;
 			}
@@ -371,7 +374,7 @@ public:
 				}
 			}
 			//cout << "Min dist = " << sqrt(min_d) / 60 / 60 << "\n";
-			if (sqrt(min_d) / 60 / 60 < 12) { //less than 12 hours
+			if (sqrt(min_d) < permissible_time_error) { //less than 12 hours
 				if (info->second.size() > 1) {
 					cout << "The click matches multiple individuals:\n";
 					for (unsigned int i = 0; i < info->second.size(); i++)
@@ -572,7 +575,7 @@ public:
 					survival_curves[survival_curve_id].vals.type = ns_graph_object::ns_graph_dependant_variable;
 					survival_curves[survival_curve_id].vals.y.resize(survival_data->probability_of_surviving_up_to_interval.size() + time_offset);
 					if (time_offset!=0)
-					survival_curves[survival_curve_id].vals.y[0] = 0;
+					survival_curves[survival_curve_id].vals.y[0] = 1;
 					bool plotted_zero(false);
 					for (unsigned int i = 0; i < survival_data->probability_of_surviving_up_to_interval.size(); i++) {
 						if (survival_data->probability_of_surviving_up_to_interval[i] < .001) {

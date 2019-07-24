@@ -1613,11 +1613,9 @@ public:
 		//add(ns_menu_item_spec(generate_survival_curve_from_hand_annotations,"&Calibration/Generate Survival Curves from by hand annotations"));
 		add(ns_menu_item_spec(compare_machine_and_by_hand_annotations,"&Calibration/_Compare Storyboard annotations to fully-automated results"));
 
-		add(ns_menu_item_spec(generate_worm_markov_posture_model_from_by_hand_annotations, "Calibration/_Build new posture analysis model from storyboard annotations/_New HMM Model/From this experiment"));
-		add(ns_menu_item_spec(generate_worm_markov_posture_model_from_by_hand_annotations, "Calibration/_Build new posture analysis model from storyboard annotations/_New HMM Model/From Observation Files"));
-		add(ns_menu_item_spec(generate_movement_image_analysis_optimization_data, "Calibration/_Build new posture analysis model from storyboard annotations/Old Thresholding Model/Death Time Posture Changes"));
-		add(ns_menu_item_spec(generate_movement_image_analysis_optimization_data, "Calibration/_Build new posture analysis model from storyboard annotations/Old Thresholding Model/Death Time Size Changes"));
-		add(ns_menu_item_spec(generate_movement_image_analysis_optimization_data, "Calibration/_Build new posture analysis model from storyboard annotations/Old Thresholding Model/Both Posture and Size Changes"));
+		add(ns_menu_item_spec(generate_worm_markov_posture_model_from_by_hand_annotations, "Calibration/_Build new posture analysis model from storyboard annotations/_HMM Model/From this experiment"));
+		add(ns_menu_item_spec(generate_worm_markov_posture_model_from_by_hand_annotations, "Calibration/_Build new posture analysis model from storyboard annotations/_HMM Model/From Observation Files"));
+		add(ns_menu_item_spec(generate_movement_image_analysis_optimization_data, "Calibration/_Build new posture analysis model from storyboard annotations/Threshold Model/Death Time Posture Changes"));
 		add(ns_menu_item_spec(masks_generate_composite, "Calibration/_Define Subregions/Generate Subregion Mask Composite"));
 		add(ns_menu_item_spec(masks_generate_composite, "Calibration/_Define Subregions/(Draw Plate Locations on Subregion Mask using Photoshop)", 0, FL_MENU_INACTIVE));
 		add(ns_menu_item_spec(masks_process_composite, "Calibration/_Define Subregions/Analyze Subregion Labels Drawn on Subregion Mask Composite"));

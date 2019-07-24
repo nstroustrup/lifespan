@@ -274,7 +274,7 @@ private:
 				cur_seg_id++;
 				if (cur_seg_id >= segment_offsets.size())
 					throw ns_ex("Encountered an invalid segment id");
-				segment_offsets[cur_seg_id] = i-first_valid_element;
+				segment_offsets[cur_seg_id] = i - first_valid_element;
 			}
 		}
 

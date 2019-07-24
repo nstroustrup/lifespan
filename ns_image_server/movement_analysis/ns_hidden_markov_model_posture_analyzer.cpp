@@ -58,7 +58,7 @@ void ns_hmm_solver::solve(const ns_analyzed_image_time_path & path, const ns_emp
 		}
 		else {
 			for (unsigned int i = solution.moving.start_index; i <= solution.moving.end_index; i++) {
-				std::cout << "weakly from " << solution.moving.start_index << " to " << solution.moving.end_index << "\n";;
+				//std::cout << "weakly from " << solution.moving.start_index << " to " << solution.moving.end_index << "\n";;
 				movement_states[i] = ns_hmm_moving_weakly;
 			}
 		}
@@ -840,12 +840,12 @@ struct ns_movement_accessor {
 };
 struct ns_movement_emission_accessor {
 	double operator()(const ns_hmm_emission & e) const {
-		double d = e.measurement.death_time_posture_analysis_measure_v2_uncropped();
+		double d = e.measurement.death_time_posture_analysis_measure_v2_cropped();
 		if (d <= 0) return -DBL_MAX;
 		else return log(d);
 	}
 	bool is_zero(const ns_hmm_emission & e) const {
-		return e.measurement.death_time_posture_analysis_measure_v2_uncropped() <= 0;
+		return e.measurement.death_time_posture_analysis_measure_v2_cropped() <= 0;
 	}
 };
 class ns_emission_probabiliy_model{

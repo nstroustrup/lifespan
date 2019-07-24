@@ -618,10 +618,12 @@ void ns_graph::plot_object(const ns_graph_object & y, const ns_graph_object & x,
 			for (int pixel_x = l; pixel_x < r; pixel_x++){
 				int data_index = 1; // if index < 0 is an error condition below it should be signed
 
+				const double data_x = (pixel_x) / dx + axes[0];
+				if (data_x < x.x[0] || data_x > *x.x.rbegin())
+					continue;
 				if (x.x.size() == 1)
 					data_index = 0;
 				else {
-					double data_x = (pixel_x) / dx + axes[0];
 					switch (y.properties.line_hold_order) {
 					case ns_graph_properties::ns_first:
 					case ns_graph_properties::ns_zeroth_centered: {

@@ -467,7 +467,7 @@ public:
 				survival_curves[0].vals.y[0] = 1;
 				bool plotted_zero(false);
 				for (unsigned int i = 0; i < survival_data->probability_of_surviving_up_to_interval.size(); i++) {
-					if (survival_data->probability_of_surviving_up_to_interval[i] < .001) {
+					if (survival_data->probability_of_surviving_up_to_interval[i] < .00001) {
 						if (plotted_zero) {
 							survival_curves[0].vals.y[i + time_offset] = -1;
 							continue;
@@ -501,7 +501,7 @@ public:
 						survival_curves[j].vals.y[0] = 1;
 					bool plotted_zero(false);
 					for (unsigned int i = 0; i < survival_data[j]->probability_of_surviving_up_to_interval.size(); i++) {
-						if (survival_data[j]->probability_of_surviving_up_to_interval[i] < .001) {
+						if (survival_data[j]->probability_of_surviving_up_to_interval[i] < .00001) {
 							if (plotted_zero) {
 								survival_curves[j].vals.y[i + time_offset] = -1;
 								continue;
@@ -536,7 +536,7 @@ public:
 					survival_curves[survival_curve_id].vals.y[0] = 1;
 					bool plotted_zero(false);
 					for (unsigned int i = 0; i < survival_data->probability_of_surviving_up_to_interval.size(); i++) {
-						if (survival_data->probability_of_surviving_up_to_interval[i] < .001) {
+						if (survival_data->probability_of_surviving_up_to_interval[i] < .00001) {
 							if (plotted_zero) {
 								survival_curves[survival_curve_id].vals.y[i+ time_offset] = -1;
 								continue;
@@ -574,13 +574,13 @@ public:
 
 					survival_curves[survival_curve_id].vals.type = ns_graph_object::ns_graph_dependant_variable;
 					survival_curves[survival_curve_id].vals.y.resize(survival_data->probability_of_surviving_up_to_interval.size() + time_offset);
-					if (time_offset!=0)
-					survival_curves[survival_curve_id].vals.y[0] = 1;
+					if (time_offset != 0)
+						survival_curves[survival_curve_id].vals.y[0] = 1;
 					bool plotted_zero(false);
 					for (unsigned int i = 0; i < survival_data->probability_of_surviving_up_to_interval.size(); i++) {
-						if (survival_data->probability_of_surviving_up_to_interval[i] < .001) {
+						if (survival_data->probability_of_surviving_up_to_interval[i] < .00001) {
 							if (plotted_zero) {
-								survival_curves[survival_curve_id].vals.y[i+ time_offset] = -1;
+								survival_curves[survival_curve_id].vals.y[i + time_offset] = -1;
 								continue;
 							}
 							plotted_zero = true;
@@ -598,8 +598,8 @@ public:
 					for (unsigned int i = 0; i < survival_curves.size(); i++)
 						survival_curves[i].vals.y.resize(max_t_i);
 				}
-
 			}
+			
 			unsigned long first_valid_timepoint(0);
 			for (long i = 0; i < time_axis.size(); i++) {
 				if (time_axis[i] >= time_at_which_animals_were_age_zero) {

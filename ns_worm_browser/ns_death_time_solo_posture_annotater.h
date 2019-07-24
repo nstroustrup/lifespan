@@ -635,7 +635,7 @@ private:
 
 public:
 
-	enum { default_resize_factor = 1, max_buffer_size = 15, max_zoom_factor = 40 };
+	enum { default_resize_factor = 1, max_buffer_size = 1, max_zoom_factor = 40 };
 	float telemetry_zoom_factor;
 	ns_vector_2i telemetry_size() { return ns_vector_2i(500, 500)*ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor; }
 

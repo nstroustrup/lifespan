@@ -1651,7 +1651,7 @@ void ns_worm_learner::compare_machine_and_by_hand_annotations(){
 	overall_contraction_msqerr /= (overall_contraction_count * (60 * 24 * 60 * 24));
 	animal_data_file.release();
 
-	std::string results_text("===Comparrison between Storyboard By-Hand Annotations and Fully-Automated Machine Results===\n");
+	std::string results_text("===Comparison between Storyboard By-Hand Annotations and Fully-Automated Machine Results===\n");
 	results_text += "Calculated at " + ns_format_time_string_for_human(ns_current_time()) + "\n\n";
 	for (map<std::string, ns_machine_by_hand_comp>::iterator p = per_strain_analysis.begin(); p != per_strain_analysis.end(); p++) {
 		results_text += "**For plates of type " + p->first + " **\n";
@@ -2354,7 +2354,7 @@ public:
 	unsigned long replicate_id;
 	bool model_building_completed;
 	ns_emperical_posture_quantification_value_estimator::ns_states_permitted states_permitted;
-	void build_model(std::string & output, const ns_emperical_posture_quantification_value_estimator & source_estimator) {
+	void build_model(std::string & output, const ns_emperical_posture_quantification_value_estimator & source_estimator, bool output_all_state_counts) {
 		model_building_completed = false;
 		estimator.normalization_stats = source_estimator.normalization_stats;
 
@@ -2371,7 +2371,11 @@ public:
 		if (estimator.observed_values.size() == 0)
 			throw ns_ex("No valid training data was specified for the model");
 		output += "= Cross Validation strategy: " + description + " =\n";
-		estimator.build_estimator_from_observations(output,states_permitted);
+		std::string tmp;
+		std::string* out = &output;
+		if (!output_all_state_counts)
+			out = &tmp;
+		estimator.build_estimator_from_observations(*out,states_permitted);
 		model_building_completed = true;
 		//free up memory
 		estimator.observed_values.clear();
@@ -2412,10 +2416,10 @@ private:
 };
 struct ns_hmm_cross_validation_set {
 	std::vector<ns_cross_validation_run> estimators;
-	void build_models(std::string & output, const ns_emperical_posture_quantification_value_estimator & source_estimator) {
+	void build_models(std::string& output, const ns_emperical_posture_quantification_value_estimator& source_estimator, bool output_verbose_state_counts) {
 		for (unsigned int i = 0; i < estimators.size(); i++) {
 			try {
-				estimators[i].build_model(output, source_estimator);
+				estimators[i].build_model(output, source_estimator, output_verbose_state_counts);
 			}
 			catch (ns_ex & ex) {
 				output += "**Error: " + ex.text() + "\n";
@@ -2477,7 +2481,7 @@ struct ns_hmm_cross_validation_set {
 				replicate_id++;
 			}
 		}
-
+		/*
 		//if there are not many plates, systematically remove each plate
 		if (subject_list.plate_ids.size() > 1 && subject_list.plate_ids.size() <= mmin) {
 			unsigned long replicate_id = 0;
@@ -2523,7 +2527,7 @@ struct ns_hmm_cross_validation_set {
 				replicate_id++;
 			}
 
-		}
+		}*/
 		//if there are many animals, drop them randomly
 		if (subject_list.animal_group_ids.size() > mmin) {
 			unsigned long replicate_id = 0;
@@ -2874,7 +2878,7 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 			p->second.write_observation_data(all_observations()(), experiment_name);
 			all_observations.release();
 		}
-		bool test_different_state_restrictions_on_viterbi_algorithm = true;
+		const bool test_different_state_restrictions_on_viterbi_algorithm = false;
 		cout << "\nPrepping for Cross Validation...\n";
 		//set up models for cross validation
 		estimators_compiled = 0;
@@ -2897,7 +2901,8 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 				const std::string plate_type_long = metadata_cache_by_name[p->first].device_regression_match_description();
 				model_building_and_testing_info[p->first] = "== HMM model for group \"" + plate_type_long + "\" ==\n";
 			}
-			p->second.build_models(model_building_and_testing_info[p->first], base_observation_estimator[p->first]);
+			bool output_all_states = p->first == "all";
+			p->second.build_models(model_building_and_testing_info[p->first], base_observation_estimator[p->first], output_all_states);
 
 			ns_image_server_results_file ps(image_server.results_storage.optimized_posture_analysis_parameter_set(sub, std::string("hmm=") + p->first, sql));
 			model_filenames[p->first] = ps.output_filename();
@@ -3139,26 +3144,19 @@ void ns_calculate_running_extrema(const ns_extrema_plot_type & plot_type, const 
 		dest[j].y.resize(dest[j].x.size());
 		dest[j].y_min.resize(dest[j].x.size());
 
-
+		bool too_short = false;;
 		const int minmax_kernel_half_width((source[j].x.size() >= kernel_absolute_width) ? kernel_absolute_width / 2 : 1);
 		if (minmax_kernel_half_width > 1) {
 			ns_sliding_window_max(source[j].y, minmax_kernel_half_width, temp1);
 			ns_sliding_window_min(source[j].y, minmax_kernel_half_width, temp2);
 		}
-		else {
-			temp1.resize(0);
-			temp2.resize(0);
-			temp1.insert(temp1.begin(), source[j].y.begin(), source[j].y.end());
-			temp2.insert(temp2.begin(), source[j].y.begin(), source[j].y.end());
-		}
+		else 
+			too_short = true;
+		//calulate new x and y
 		ns_bspline bspline;
 		const unsigned long num_steps(source[j].x.size()*time_step_resample_factor);
-		if (source[j].x.size() < 3) {
-			temp1.resize(0);
-			temp2.resize(0);
-			temp1.insert(temp1.begin(), source[j].y.begin(), source[j].y.end());
-			temp2.insert(temp2.begin(), source[j].y.begin(), source[j].y.end());
-		}
+		if (too_short || source[j].x.size() < 3)
+			too_short = true;
 		else {
 			if (plot_type == ns_connect_to_bottom)
 				bspline.calculate_intersecting_all_points(source[j].x.size() > 2 ? 2 : 1, true, false, source[j].x, temp1, num_steps);
@@ -3176,10 +3174,15 @@ void ns_calculate_running_extrema(const ns_extrema_plot_type & plot_type, const 
 						dest[j].x[i] = *source[j].x.rbegin();
 				}
 			}
-
-			//bspline.calculate_intersecting_all_points(source[j].x.size() > 2 ? 2:1, true, false, source[j].x, temp2, num_steps);
-
 		}
+		if (too_short) {
+			for (unsigned int i = 0; i < dest[j].x.size(); i++) {
+				dest[j].x[i] = source[j].x[i / time_step_resample_factor];
+				dest[j].y[i] = source[j].y[i / time_step_resample_factor];
+			}
+		}
+
+		//now set y_min
 		if (plot_type == ns_band) {
 			if (source[j].x.size() >= 3) {
 				bspline.calculate_with_standard_params(source[j].x, temp2, num_steps, ns_bspline::ns_very_low);
@@ -3189,7 +3192,7 @@ void ns_calculate_running_extrema(const ns_extrema_plot_type & plot_type, const 
 			}
 			else {
 				for (unsigned int i = 0; i < dest[j].y_min.size(); i++) {
-					dest[j].y_min[i] = source[j].x[i/ time_step_resample_factor];
+					dest[j].y_min[i] = source[j].y[i/ time_step_resample_factor];
 				}
 			}
 		}
@@ -6771,7 +6774,7 @@ void ns_worm_learner::touch_stats_window_pixel(const ns_button_press& press) {
 }
 
 bool ns_worm_learner::register_stats_window_key_press(int key, const bool shift_key_held, const bool control_key_held, const bool alt_key_held) {
-	if (key == ']') {
+	/*if (key == ']') {
 		stats_window.display_rescale_factor += .1;
 		return true;
 	}
@@ -6817,7 +6820,7 @@ bool ns_worm_learner::register_stats_window_key_press(int key, const bool shift_
 		ns_update_worm_information_bar(string("Showing ") + ns_death_time_solo_posture_annotater_timepoint::visulazation_type_string(solo_annotation_visualization_type));
 
 		return true;
-	}
+	}*/
 	return false;
 }
 

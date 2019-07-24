@@ -387,6 +387,26 @@ class ns_movement_analysis_result {
 public:
 	ns_movement_analysis_result() { state_intervals.resize((int)ns_movement_number_of_states); }
 	
+	ns_movement_state_time_interval_indicies first_valid_element_id, last_valid_element_id;
+
+	//the state interval list has the transition times marked in absolute chronological time
+	typedef std::vector<ns_movement_state_observation_boundary_interval> ns_state_interval_list;
+	ns_state_interval_list state_intervals;
+
+	//the movement solution has the transition times marked in respect to indicies in the path object
+	ns_time_path_posture_movement_solution machine_movement_state_solution;
+
+	ns_death_time_annotation_set death_time_annotation_set;
+	ns_analyzed_time_path_quantification_summary quantification_summary;
+
+	bool animal_died() const {
+		return !state_intervals[(int)ns_movement_stationary].skipped;
+	}
+	bool animal_contracted() const {
+		return !state_intervals[(int)ns_movement_death_associated_post_expansion_contraction].skipped;
+	}
+
+
 	void write_intervals(std::ostream& o) const {
 		first_valid_element_id.write(o);
 		o << ",";
@@ -407,11 +427,10 @@ public:
 		state_intervals.resize(num_intervals);
 		for (unsigned int i = 0; i < state_intervals.size(); i++) {
 			state_intervals[i].read(in);
-			if (i+1 != state_intervals.size() && in.fail())
+			if (i + 1 != state_intervals.size() && in.fail())
 				throw ns_ex("Malformed intervals file");
 		}
 	}
-
 	void clear() {
 		first_valid_element_id.clear();
 		last_valid_element_id.clear();
@@ -419,26 +438,9 @@ public:
 		state_intervals.resize((int)ns_movement_number_of_states);
 		death_time_annotation_set.clear();
 	}
-	ns_movement_state_time_interval_indicies first_valid_element_id, last_valid_element_id;
-
-	//the state interval list has the transition times marked in absolute chronological time
-	typedef std::vector<ns_movement_state_observation_boundary_interval> ns_state_interval_list;
-	ns_state_interval_list state_intervals;
-
-	//the movement solution has the transition times marked in respect to indicies in the path object
-	ns_time_path_posture_movement_solution machine_movement_state_solution;
-
-	ns_death_time_annotation_set death_time_annotation_set;
-
-	bool animal_died() const {
-		return !state_intervals[(int)ns_movement_stationary].skipped;
-	}
-	bool animal_contracted() const {
-		return !state_intervals[(int)ns_movement_death_associated_post_expansion_contraction].skipped;
-	}
-
-
-	ns_analyzed_time_path_quantification_summary quantification_summary;
+	bool compare_intervals(const ns_movement_analysis_result & res) const;
+	bool compare_set(const ns_death_time_annotation_set& death_time_annotation_set) const;
+	bool compare(const ns_movement_analysis_result& res) const;
 };
 class ns_analyzed_image_time_path {
 public:

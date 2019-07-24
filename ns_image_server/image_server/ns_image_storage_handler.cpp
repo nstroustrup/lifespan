@@ -464,8 +464,8 @@ ns_istream * ns_image_storage_handler::request_metadata_from_disk(ns_image_serve
 			try {	//gzstream does not fail properly on non-existant files.
 				if (!ns_dir::file_exists(spec.absolute_long_term_filename().c_str()))
 					file_does_not_exist = true;
-				if (binary) i = new ns_istream(new igzstream(spec.absolute_long_term_filename().c_str(), ios_base::binary | ios_base::in));
-				else i = new ns_istream(new igzstream(spec.absolute_long_term_filename().c_str()));
+				//if (binary) i = new ns_istream(new igzstream(spec.absolute_long_term_filename().c_str()));	//always load binary!
+				else i = new ns_istream(new igzstream(spec.absolute_long_term_filename().c_str(), ios_base::binary | ios_base::in));
 			}
 			catch (const std::exception & ex) {
 				throw ns_ex(ex.what());
@@ -515,7 +515,9 @@ ns_ostream * ns_image_storage_handler::request_metadata_output(ns_image_server_i
 				if (!ns_dir::file_is_writeable(spec.absolute_long_term_filename().c_str()))
 					file_is_not_writeable = true;
 				if (binary) o = new ns_ostream(new ogzstream(spec.absolute_long_term_filename().c_str(), std::ios::out | ios_base::binary));
-				else o = new ns_ostream(new ogzstream(spec.absolute_long_term_filename().c_str()));
+				else 
+					throw ns_ex("ns_image_storage_handler:: request_metadata_output()::gzip files must be opened as binary!");
+				//o = new ns_ostream(new ogzstream(spec.absolute_long_term_filename().c_str()));
 			}
 			catch (const std::exception & ex) {
 				throw ns_ex(ex.what());

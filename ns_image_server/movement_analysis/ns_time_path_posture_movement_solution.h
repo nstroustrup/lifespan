@@ -48,8 +48,10 @@ struct ns_movement_state_time_interval_indicies{
 		get_int(i, interval_occurs_before_observation_interval);
 	}
 };
+bool operator==(const ns_movement_state_time_interval_indicies& a, const ns_movement_state_time_interval_indicies& b);
+bool operator!=(const ns_movement_state_time_interval_indicies& a, const ns_movement_state_time_interval_indicies& b);
 struct ns_movement_state_observation_boundary_interval{
-	ns_movement_state_observation_boundary_interval():skipped(false){}
+	ns_movement_state_observation_boundary_interval():skipped(false), longest_observation_gap_within_interval(0){}
 	
 	ns_movement_state_time_interval_indicies entrance_interval,
 											exit_interval;
@@ -69,6 +71,8 @@ struct ns_movement_state_observation_boundary_interval{
 		get_int(i,skipped);
 	}
 };
+bool operator==(const ns_movement_state_observation_boundary_interval& a, const ns_movement_state_observation_boundary_interval& b);
+bool operator!=(const ns_movement_state_observation_boundary_interval& a, const ns_movement_state_observation_boundary_interval& b);
 
 class ns_analyzed_image_time_path;
 

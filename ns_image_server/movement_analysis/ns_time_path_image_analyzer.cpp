@@ -1473,14 +1473,14 @@ void ns_time_path_image_movement_analyzer<allocator_T>::load_stored_movement_ana
 
 		if (movement_data_to_load == ns_all_results || movement_data_to_load == ns_all_results_no_movement) {
 			try{
-				e_i.attach(image_server_const.image_storage.request_metadata_from_disk(analysis_files.annotation_events, false, &sql,false));
+				e_i.attach(image_server_const.image_storage.request_metadata_from_disk(analysis_files.annotation_events,false, &sql,false));
 				 i_i.attach(image_server_const.image_storage.request_metadata_from_disk(analysis_files.intervals_data, false, &sql,false));
 			}
 			catch (ns_ex & ex) {
 				throw ns_ex("Some stored movement analysis could not be found.  Please re-run the job \"Rebuild Movement Analysis from cached image analysis\": ") << ex.text();
 			}
 		}
-		q_i.attach(image_server_const.image_storage.request_metadata_from_disk(analysis_files.movement_quantification, false, &sql,false));
+		q_i.attach(image_server_const.image_storage.request_metadata_from_disk(analysis_files.movement_quantification,false, &sql,false));
 		load_movement_data_from_disk(q_i()(), movement_data_to_load == ns_only_quantification_no_movement || movement_data_to_load == ns_all_results_no_movement);
 		q_i.release();
 		if (movement_data_to_load == ns_all_results || movement_data_to_load == ns_all_results_no_movement) {
@@ -1509,6 +1509,75 @@ void ns_time_path_image_movement_analyzer<allocator_T>::load_stored_movement_ana
 
 	}
 };
+
+
+bool operator!=(const ns_movement_state_time_interval_indicies& a, const ns_movement_state_time_interval_indicies& b) {
+	return !(a == b);
+}
+bool operator==(const ns_movement_state_time_interval_indicies& a, const ns_movement_state_time_interval_indicies& b) {
+	if (a.interval_occurs_after_observation_interval != b.interval_occurs_after_observation_interval)
+		return false;
+	if (a.interval_occurs_before_observation_interval != b.interval_occurs_before_observation_interval)
+		return false;
+	if (a.period_end_index != b.period_end_index)
+		return false;
+	if (a.period_start_index != b.period_start_index)
+		return false;
+	return true;
+}
+bool operator!=(const ns_movement_state_observation_boundary_interval& a, const ns_movement_state_observation_boundary_interval& b) {
+	return !(a == b);
+}
+bool operator==(const ns_movement_state_observation_boundary_interval& a, const ns_movement_state_observation_boundary_interval& b) {
+	if (a.entrance_interval != b.entrance_interval)
+		return false;
+	if (a.exit_interval != b.exit_interval)
+		return false;
+	if (a.longest_observation_gap_within_interval != b.longest_observation_gap_within_interval)
+		return false;
+	if (a.skipped != b.skipped)
+		return false;
+}
+
+bool ns_movement_analysis_result::compare_set(const ns_death_time_annotation_set& a) const {
+	bool same = true;
+	if (death_time_annotation_set.size() != a.size()){
+		cout << "different size!";
+		same = false;
+	}
+	for (unsigned int i = 0; i < a.size(); i++)
+		if (death_time_annotation_set[i].to_string() != a[i].to_string()){
+			cout << "Different annotation!";
+			same = false;
+		}
+	return same;
+}
+bool ns_movement_analysis_result::compare(const ns_movement_analysis_result& res) const {
+	bool same = compare_set(res.death_time_annotation_set);
+	bool same2 = compare_intervals(res);
+	return same && same2;
+}
+bool ns_movement_analysis_result::compare_intervals(const ns_movement_analysis_result& a) const{
+	bool same = true;
+	if (state_intervals.size() != a.state_intervals.size()) {
+		cout << "Different size!";
+		same = false;
+	}
+	for (unsigned int i = 0; i < state_intervals.size(); i++)
+		if (state_intervals[i] != a.state_intervals[i]){
+			cout << "Different interval!";
+			same = false;
+		}
+	if (first_valid_element_id != a.first_valid_element_id){
+		cout << "Different first element";
+		same = false;
+	}
+	if (last_valid_element_id != a.last_valid_element_id){
+		cout << "different last ";
+		same = false;
+	}
+	return same;
+}
 
 template<class allocator_T>
 void ns_time_path_image_movement_analyzer<allocator_T>::calculate_optimzation_stats_for_current_hmm_estimator(ns_hmm_movement_analysis_optimizatiom_stats & s, const ns_emperical_posture_quantification_value_estimator * e, std::set<ns_stationary_path_id> & paths_to_test, bool generate_path_info) {
@@ -1869,9 +1938,9 @@ void ns_time_path_image_movement_analyzer<allocator_T>::obtain_analysis_id_and_s
 	ns_acquire_for_scope<ns_ostream> time_path_quantification_output(0), events_output(0), state_intervals_output(0);
 	try {
 		if (write_options == ns_write_data) {
-			events_output.attach(image_server_const.image_storage.request_metadata_output(movement_analysis_files.annotation_events, ns_csv_gz, false, &sql));
-			state_intervals_output.attach(image_server_const.image_storage.request_metadata_output(movement_analysis_files.intervals_data, ns_csv_gz, false, &sql));
-			time_path_quantification_output.attach(image_server_const.image_storage.request_metadata_output(movement_analysis_files.movement_quantification, ns_csv_gz, false, &sql));
+			events_output.attach(image_server_const.image_storage.request_metadata_output(movement_analysis_files.annotation_events, ns_csv_gz, true, &sql));
+			state_intervals_output.attach(image_server_const.image_storage.request_metadata_output(movement_analysis_files.intervals_data, ns_csv_gz, true, &sql));
+			time_path_quantification_output.attach(image_server_const.image_storage.request_metadata_output(movement_analysis_files.movement_quantification, ns_csv_gz, true, &sql));
 		}
 	}
 	catch (ns_ex & ex) {
@@ -1881,9 +1950,9 @@ void ns_time_path_image_movement_analyzer<allocator_T>::obtain_analysis_id_and_s
 
 		movement_analysis_files = get_movement_quantification_files(region_id, sql, ns_force_creation_of_new_db_record, ns_force_new_record_format);
 		if (write_options == ns_write_data) {
-			events_output.attach(image_server_const.image_storage.request_metadata_output(movement_analysis_files.annotation_events, ns_csv_gz, false, &sql));
-			state_intervals_output.attach(image_server_const.image_storage.request_metadata_output(movement_analysis_files.intervals_data, ns_csv_gz, false, &sql));
-			time_path_quantification_output.attach(image_server_const.image_storage.request_metadata_output(movement_analysis_files.movement_quantification, ns_csv_gz, false, &sql));
+			events_output.attach(image_server_const.image_storage.request_metadata_output(movement_analysis_files.annotation_events, ns_csv_gz, true, &sql));
+			state_intervals_output.attach(image_server_const.image_storage.request_metadata_output(movement_analysis_files.intervals_data, ns_csv_gz, true, &sql));
+			time_path_quantification_output.attach(image_server_const.image_storage.request_metadata_output(movement_analysis_files.movement_quantification, ns_csv_gz, true, &sql));
 		}
 	}
 	//set analysis id that will uniquely identify all annotations generated by this analysis
@@ -1896,6 +1965,20 @@ void ns_time_path_image_movement_analyzer<allocator_T>::obtain_analysis_id_and_s
 		events_output.release();
 		write_internal_intervals_data(state_intervals_output()());
 		state_intervals_output.release();
+
+		std::map<int, ns_movement_analysis_result> saved_result;
+
+		for (unsigned int i = 0; i < groups.size(); i++) {
+			saved_result[i] = groups[i].paths[0].movement_analysis_result;
+		}
+		///xxx debug testing
+		ns_istream* in = image_server_const.image_storage.request_metadata_from_disk(movement_analysis_files.intervals_data, true, &sql,false);
+		this->read_internal_intervals_data((*in)());
+		delete in;
+		for (auto p = saved_result.begin(); p != saved_result.end(); p++) {
+			if (!p->second.compare(groups[p->first].paths[0].movement_analysis_result))
+				cerr << "Invalid write";
+		}
 	}
 
 }

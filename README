@@ -6,12 +6,11 @@ Important!  V2.0 of the lifespan machine software is in beta,
 and is strongly recommended over v1 for all new installations.
 For more information, please refer to git repository branch "flow"
 
-Copyright 2014 Harvard University
-Reservation of Rights
-All Rights Reserved
+V1.0 has now been released under GPLv3.  We are currently looking into V2.0 .
 
 Major Revisions
 10.17.2006: Dawn of history
 2.24.2013: First commit to github
 3.14.2013: Stability update, switch to mainline SANE drivers
 8.1.2018: v2.0 branch is declared stable
+7.25.2019 v1.0 branch is released under GPLv3.

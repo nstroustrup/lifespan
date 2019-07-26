@@ -107,7 +107,7 @@ protected:
 template<class storage_buffer>
 class ns_image_stream_reciever{
 public:
-	ns_image_stream_reciever(const long max_line_block_height, const ns_image_stream_reciever * reciever):_max_line_block_height(max_line_block_height),_properties(ns_image_properties(0,0,0)){}
+	ns_image_stream_reciever(const long max_line_block_height, const ns_image_stream_reciever * reciever):_max_line_block_height(max_line_block_height),_properties(ns_image_properties(0,0,0)),output_buffer(0){}
 	typedef storage_buffer storage_buffer_type;
 
 	///verify that derived objects can instantiate the ability

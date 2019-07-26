@@ -141,7 +141,7 @@ public:
 		std::string key, value;
 		bool state = 0;
 		bool escape = false;
-		char cur_char;
+		char cur_char = 0;
 		for (unsigned int i = 0; i < str.size(); i++){
 			if (!escape){
 				//if you've found an escape character, move on to see what character was escaped

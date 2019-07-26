@@ -300,6 +300,8 @@ struct ns_analyzed_image_specification{
 	bool region_vis_required,
 		  interpolated_region_vis_required;
 };
+bool operator==(const ns_analyzed_image_specification& a, const ns_analyzed_image_specification& b);
+bool operator!=(const ns_analyzed_image_specification& a, const ns_analyzed_image_specification& b);
 
 class ns_analyzed_image_time_path;
 
@@ -686,6 +688,8 @@ private:
 
 	ns_lock movement_image_storage_lock;
 };
+bool operator==(const ns_analyzed_image_time_path& a, const ns_analyzed_image_time_path& b);
+bool operator!=(const ns_analyzed_image_time_path& a, const ns_analyzed_image_time_path& b);
 
 template<class allocator_T>
 class ns_analyzed_image_time_path_group{
@@ -714,7 +718,7 @@ class ns_time_path_image_movement_analyzer {
 public:
 	enum { ns_spatially_averaged_movement_threshold = 4, ns_spatially_averaged_movement_kernal_half_size=2};
 	ns_time_path_image_movement_analyzer(ns_time_path_image_movement_analysis_memory_pool<allocator_T> & memory_pool_):paths_loaded_from_solution(false),
-		movement_analyzed(false),region_info_id(0),last_timepoint_in_analysis_(0), _number_of_invalid_images_encountered(0),image_cache(1024*1024*64),
+		region_info_id(0),last_timepoint_in_analysis_(0), _number_of_invalid_images_encountered(0),image_cache(1024*1024*64),
 		number_of_timepoints_in_analysis_(0),image_db_info_loaded(false),externally_specified_plate_observation_interval(0,ULONG_MAX),posture_model_version_used(NS_CURRENT_POSTURE_MODEL_VERSION),
 		memory_pool(memory_pool_),asynch_group_loading_is_running(false),cancel_asynch_group_load(false) {}
 
@@ -735,6 +739,8 @@ public:
 	void add_by_hand_annotations(const ns_death_time_annotation_compiler & annotations);
 	void output_allocation_state(const std::string & stage, long timepoint, std::ostream & out) const;
 	void output_allocation_state_header(std::ostream & out) const;
+
+	bool compare(const ns_time_path_image_movement_analyzer<allocator_T> & t) const;
 
 	typedef enum { ns_use_existing_record_if_possible, ns_force_creation_of_new_db_record, ns_require_existing_record } ns_analysis_db_options;
 
@@ -890,7 +896,6 @@ private:
 	ns_death_time_annotation_set extra_non_path_events;
 	
 	ns_image_standard image_loading_temp,image_loading_temp2;
-	bool movement_analyzed;
 	ns_64_bit region_info_id;
 
 	ns_time_path_image_movement_analysis_memory_pool<allocator_T> & memory_pool;

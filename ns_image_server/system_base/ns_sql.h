@@ -166,7 +166,7 @@ class ns_sql_connection{
 };
 
 struct ns_table_to_lock{
-	ns_table_to_lock(){}
+	ns_table_to_lock():write(false){}
 	ns_table_to_lock(const std::string & n,const bool w):table_name(n),write(w){}
 	std::string table_name;
 	bool write;

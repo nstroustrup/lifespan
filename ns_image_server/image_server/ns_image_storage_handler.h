@@ -65,7 +65,7 @@ public:
 	  output_file_permissions = readable ?ns_dir::ns_group_read: ns_dir::ns_no_special_permissions;
 	}
 
-	ns_image_storage_handler() :network_lock("ns_ish::network"),
+	ns_image_storage_handler() :network_lock("ns_ish::network"),currently_sending_over_network(false),output_file_permissions(ns_dir::ns_no_special_permissions),
 		request_storage_lock("ns_ish::storage"),
 		experiment_partition_cache_lock("ns_ish::partition"),
 		cache(512 * 1024), experiment_partition_cache_update_period(5 * 60), last_check_showed_write_access_to_long_term_storage(false), time_of_last_successful_write_check(0),

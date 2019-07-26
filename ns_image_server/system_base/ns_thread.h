@@ -167,7 +167,10 @@ public:
 	#ifndef _WIN32
 	ns_external_execute():child_pid(-1){c_stdout[0] = c_stdout[1] = c_stderr[0] = c_stderr[1] = c_stdin[0] = c_stdin[1] =  -1;}
 	#else
-		ns_external_execute():closed(true){}
+	ns_external_execute() : closed(true),
+		hChildStdinRd(0), hChildStdinWr(0),
+		hChildStdoutRd(0), hChildStdoutWr(0),
+		hChildStderrRd(0), hChildStderrWr(0) {}
 	#endif
 	void wait_for_termination();
 	bool run(const std::string & command, const std::string & parameters, const ns_external_execute_options & opt);

@@ -357,7 +357,7 @@ struct ns_lifespan_device_normalization_statistics{
 		multiplicative_additive_device_regression_additive_coefficient(0),
 		multiplicative_additive_device_regression_multiplicative_coefficient(0),
 		multiplicative_device_regression_coefficient(0),external_control_mean_fix_point_specified(false),
-		device_censoring_count_used(0),device_death_count_used(0){}
+		device_censoring_count_used(0),device_death_count_used(0), grand_strain_mean_used(0), device_strain_mean_used(0), is_a_control_plate(false){}
 
 	ns_region_metadata strain_info;
 	ns_survival_statistics grand_strain_mean,
@@ -386,7 +386,7 @@ struct ns_lifespan_device_normalization_statistics{
 	//bool external_fix_point_specified()const{return control_mean_external_fix_point >=0;}
 };
 struct ns_lifespan_device_normalization_statistics_for_device{
-	ns_lifespan_device_normalization_statistics_for_device(){}
+	ns_lifespan_device_normalization_statistics_for_device():device_had_control_plates(false) {}
 //	std::vector<ns_lifespan_device_normalization_statistics *> control_strains;
 	ns_survival_statistics device_control_plate_statistics;
 	ns_lifespan_device_normalization_statistics regression_statistics;
@@ -418,7 +418,7 @@ struct ns_lifespan_device_normalization_statistics_set{
 	ns_survival_statistics grand_control_mean;
 	std::map<std::string,ns_survival_statistics> grand_strain_mean;
 	ns_device_stats_list devices;
-	ns_lifespan_device_normalization_statistics_set(const ns_movement_event & e):normalization_event_type(e){}
+	ns_lifespan_device_normalization_statistics_set(const ns_movement_event & e):normalization_event_type(e), produce_identity(false){}
 	ns_movement_event normalization_event_type;
 	bool produce_identity;
 
@@ -513,7 +513,7 @@ struct ns_lifespan_device_normalization_statistics_set{
 	}
 };
 struct ns_device_temperature_normalization_data{
-	ns_device_temperature_normalization_data():produce_identity_(false){}
+	ns_device_temperature_normalization_data():produce_identity_(false), external_fixed_control_mean_lifespan(0), fix_control_mean_lifespan(false){}
 	void produce_identity(){produce_identity_ = true;}
 	std::vector<ns_region_metadata> control_strains;
 	ns_region_metadata::ns_strain_description_detail_type strain_description_detail_type;

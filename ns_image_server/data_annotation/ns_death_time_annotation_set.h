@@ -31,12 +31,10 @@ public:
 	void read_xml(const ns_annotation_type_to_load & t,std::istream & i);
 	void write_xml(std::ostream & o) const;
 
-	void add(const ns_death_time_annotation & a){events.push_back(a);}
-	void add(const ns_death_time_annotation_set & s){
-		events.insert(events.end(),s.events.begin(),s.events.end());
-	}
+	void add(const ns_death_time_annotation& a);
+	void add(const ns_death_time_annotation_set& s);
 	std::vector<ns_death_time_annotation> events;
-
+	bool compare(const ns_death_time_annotation_set& set) const;
 	//make the set act like a vector
 	ns_death_time_annotation & operator[](const unsigned long i){return events[i];}
 	const ns_death_time_annotation & operator[](const unsigned long i) const{return events[i];}
@@ -113,6 +111,7 @@ public:
 	ns_death_time_annotation_set annotations;
 	
 	ns_death_time_annotation_compiler_location(const ns_death_time_annotation & a);
+	void add_location(ns_stationary_path_id& id);
 	bool location_matches(const unsigned long distance_cutoff_squared,const ns_vector_2i & position) const;
 	bool attempt_to_add(const unsigned long distance_cutoff_squared,const ns_death_time_annotation & a);
 	bool add_event(const ns_death_time_annotation & a);
@@ -143,6 +142,7 @@ public:
 	ns_death_time_annotation_set non_location_events;
 	ns_death_time_annotation_set fast_moving_animals;
 	void add(const ns_death_time_annotation & e, const bool create_new_location);
+	void create_location(const ns_stationary_path_id & s, const ns_vector_2i& position, const ns_vector_2i& size);
 	void clear();
 	ns_region_metadata metadata;
 
@@ -175,6 +175,7 @@ public:
 	void add(const ns_death_time_annotation_set & set,const ns_region_metadata & metadata);
 	void add(const ns_death_time_annotation_compiler & compiler, const ns_creation_type = ns_create_all);
 	void add(const ns_death_time_annotation & e,const ns_region_metadata & metadata);
+	void add_path(const ns_64_bit &region_info_id, const ns_stationary_path_id &p, const ns_vector_2i & position, const ns_vector_2i & size, const ns_region_metadata & metadata);
 	
 
 	void generate_validation_information(std::ostream & o) const;

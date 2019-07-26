@@ -5,7 +5,7 @@
 #include "ns_xml.h"
 
 struct ns_region_metadata{
-	ns_region_metadata():time_at_which_animals_had_zero_age(0),
+	ns_region_metadata():time_at_which_animals_had_zero_age(0),experiment_id(0),
 		time_of_last_valid_sample(0),region_id(0),sample_id(0), position_of_region_in_sample(0,0),position_of_sample_on_scanner(0,0),size(0,0),movement_rebuild_timestamp(0),by_hand_annotation_timestamp(0){}
 
 	std::string device,

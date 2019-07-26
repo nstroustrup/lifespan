@@ -29,7 +29,7 @@ typedef enum{ ns_detected_worm_unsorted, ns_detected_worm_actual_worm, ns_detect
 
 ///contains information about a stored image.
 struct ns_image_server_image{
-	ns_image_server_image():id(0),host_id(0),capture_time(0),processed_output_storage(0){}
+	ns_image_server_image():id(0),host_id(0),capture_time(0),processed_output_storage(0),detected_worm_state(ns_detected_worm_unsorted){}
 	ns_64_bit id,
 		host_id;
 	unsigned long capture_time;
@@ -234,7 +234,9 @@ struct ns_image_server_captured_image_region : public ns_image_server_captured_i
 		region_interpolation_results_id(0),
 		movement_characterization_id(0),
 		problem_id(0),
-		processor_id(0){}
+		processor_id(0),
+		mask_color(0),
+	detected_worm_state(ns_detected_worm_unsorted){}
 	ns_64_bit region_images_id,
 			 region_images_image_id,
 			 region_info_id,

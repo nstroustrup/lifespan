@@ -203,7 +203,7 @@ class ns_by_hand_lifespan_experiment_specification{
 							ns_current_time(),
 							ns_death_time_annotation::ns_lifespan_machine,
 							ns_death_time_annotation::ns_single_worm,
-							ns_stationary_path_id(0,0,0),true,false,ns_plate_subregion_info());
+							ns_stationary_path_id(0,0,0),true,false,ns_plate_subregion_info(), ns_death_time_annotation::ns_explicitly_observed);
 				if (plates[i].events[j].deaths > 0){
 					for (unsigned int k = 0; k < plates[i].events[j].deaths; k++){
 						c.events.push_back(d);

@@ -296,6 +296,8 @@ struct ns_worm_movement_measurement_description{
 private:
 	const ns_detected_worm_info * worm_;
 };
+bool operator==(const ns_worm_movement_measurement_description& a, const ns_worm_movement_measurement_description& b);
+bool operator!=(const ns_worm_movement_measurement_description& a, const ns_worm_movement_measurement_description& b);
 struct ns_worm_movement_measurement_description_timepoint{
 	unsigned long time;
 	std::vector<ns_worm_movement_measurement_description> worms;
@@ -314,6 +316,8 @@ struct ns_worm_movement_description_series_element{
 	ns_vector_2i position_on_visualization_grid;
 	ns_vector_2i metadata_position_on_visualization_grid;
 };
+bool operator==(const ns_worm_movement_description_series_element& a, const ns_worm_movement_description_series_element & b);
+bool operator!=(const ns_worm_movement_description_series_element& a, const ns_worm_movement_description_series_element& b);
 struct ns_worm_movement_description_series{
 	std::vector<ns_worm_movement_measurement_description_timepoint> timepoints;  //information on worms in each image over the timecourse 
 	std::vector<ns_worm_movement_description_series_element> items;				 //each position on the grid in all images
@@ -327,6 +331,8 @@ struct ns_worm_movement_description_series{
 	friend class ns_movement_summarizer;
 	template<class T> friend class ns_time_path_image_movement_analyzer;
 };
+bool operator==(const ns_worm_movement_description_series& a, const ns_worm_movement_description_series& b);
+bool operator!=(const ns_worm_movement_description_series& a, const ns_worm_movement_description_series& b);
 
 class ns_movement_series_summary_producer{
 public:

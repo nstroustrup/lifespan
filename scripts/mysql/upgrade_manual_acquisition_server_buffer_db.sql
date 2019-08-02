@@ -1,0 +1,2 @@
+ALTER TABLE buffered_host_event_log` ADD COLUMN `sub_text` MEDIUMTEXT NOT NULL AFTER `processing_duration`, ADD COLUMN `node_id` INT NOT NULL DEFAULT ‘0' AFTER `sub_text`;
+ALTER TABLE `buffered_experiments` ADD COLUMN `mask_time` BIGINT(20) UNSIGNED NOT NULL DEFAULT '0' AFTER `number_of_regions_in_latest_storyboard_build`, ADD COLUMN `compression_type` CHAR(50) NOT NULL DEFAULT 'jp2k' AFTER `mask_time`, ADD COLUMN `compression_ratio` FLOAT NOT NULL DEFAULT '0.05' AFTER `compression_type`;

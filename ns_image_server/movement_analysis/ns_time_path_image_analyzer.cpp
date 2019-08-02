@@ -814,7 +814,8 @@ void ns_time_path_image_movement_analyzer::process_raw_images(const ns_64_bit re
 						//if we find an image error, we go back and go through /all/ images to root out all errors.  
 						//Aftwerwards, the _number_of_invalid_images_encountered field can be inspected to see if an attempt to rebuild is worthwhile.
 						ns_ex ex_f(ex);
-						image_server_const.add_subtext_to_current_event(ns_image_server_event("Found an error; doing a consistancy check on all images in the region: ") << ex.text(),&sql);
+						image_server_const.add_subtext_to_current_event(ns_image_server_event("Found an error; : ") << ex.text(),&sql);
+						image_server_const.add_subtext_to_current_event(ns_image_server_event("Now performing a consistancy check on all images in the region.  All images with missing data will be marked with the (problem) flag, viewable in the web interface.  Often, deleting worm detection images and re-running worm detection will resolve this issue."), &sql);
 						try {
 							load_region_visualization_images(0, region_image_specifications.size(), 0, groups.size(), sql, true, true, ns_analyzed_image_time_path::ns_lrv_flag_and_images);
 						}
@@ -6886,10 +6887,10 @@ void ns_time_path_image_movement_analyzer::load_region_visualization_images(cons
 		try {
 			if (region_image_specifications[i].interpolated_region_vis_required &&
 				region_image_specifications[i].interpolated_region_vis_image.id==0)
-				throw ns_ex("Required Worm Detection information could not be loaded for this image (Interpolated region visualization requested with no id specified)");
+				throw ns_ex("Required worm detection information could not be loaded for this image (Interpolated region visualization requested with no id specified)");
 			if (region_image_specifications[i].region_vis_required &&
 				region_image_specifications[i].region_vis_image.id==0)
-				throw ns_ex("Required Worm Detection information could not be loaded for this image (Region visualization requested with no id specified)");
+				throw ns_ex("Required worm detection information could not be loaded for this image (Region visualization requested with no id specified)");
 		
 
 			if (load_type != ns_analyzed_image_time_path::ns_lrv_just_flag) {

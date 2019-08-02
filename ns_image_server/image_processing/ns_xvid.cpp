@@ -69,6 +69,7 @@ void ns_xvid_parameters::choose_bitrate_to_match_resolution(const long width, co
 	bitrates_in_kbps[2160] = 45 * 1024;
 
 	vector<ns_dimensions_to_vid_type> dim_mapping;
+	const int min_bit_rate = 350;
 	dim_mapping.push_back(ns_dimensions_to_vid_type(640, 360, 360));
 	dim_mapping.push_back(ns_dimensions_to_vid_type(854, 480, 480));
 	dim_mapping.push_back(ns_dimensions_to_vid_type(1280, 720, 720));
@@ -76,13 +77,11 @@ void ns_xvid_parameters::choose_bitrate_to_match_resolution(const long width, co
 	dim_mapping.push_back(ns_dimensions_to_vid_type(2560, 1440, 1440));
 	dim_mapping.push_back(ns_dimensions_to_vid_type(3840, 2160, 2160));
 
-	int dim_i = 0;
+	int dim_i = min_bit_rate;
 	for (int i = 0; i < dim_mapping.size(); i++) {
 		if (width*height >= dim_mapping[i].x*dim_mapping[i].y)
 			dim_i = dim_mapping[i].type;
 	}
-	if (dim_i + 1 < dim_mapping.size())
-		dim_i++;
 	if (bitrates_in_kbps.find(dim_i) == bitrates_in_kbps.end())
 		throw ns_ex("ns_xvid_parameters::default_parameters()::Could not deduce bitrate for video with dimensions ") << width << " " << height;
 	ARG_BITRATE = bitrates_in_kbps[dim_i]*1024;

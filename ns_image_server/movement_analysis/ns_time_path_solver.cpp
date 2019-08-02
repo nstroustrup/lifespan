@@ -498,8 +498,9 @@ bool ns_time_path_solution::remove_invalidated_points(const ns_64_bit region_id,
 	ns_sql_result time_point_result;
 	ns_time_path_solver::load_worm_detection_ids(region_id, sql, time_of_last_valid_sample, time_point_result);
 	std::set<unsigned long> extant_times;
-	for (unsigned int i = 0; i < time_point_result.size(); i++)
+	for (unsigned int i = 0; i < time_point_result.size(); i++) 
 		extant_times.insert(extant_times.end(), atol(time_point_result[i][1].c_str()));
+
 	bool something_changed(false);
 	//go through each timepoint and see if it still has a valid record
 	for (std::vector<ns_time_path_timepoint>::iterator t = timepoints.begin(); t != timepoints.end();) {
@@ -2196,7 +2197,7 @@ void ns_time_path_solver::load_worm_detection_ids(const ns_64_bit region_id, ns_
 
 
 	sql << "SELECT worm_detection_results_id,capture_time, id FROM sample_region_images WHERE region_info_id = "
-		<< region_id << " AND worm_detection_results_id != 0 AND problem = 0 AND currently_under_processing = 0 "
+		<< region_id << " AND worm_detection_results_id != 0 AND " <<ns_processing_step_db_column_name(ns_process_region_vis) << "!= 0 AND problem = 0 AND currently_under_processing = 0 "
 		<< "AND censored = 0";
 	if (time_of_last_valid_sample != 0)
 		sql << " AND capture_time <= " << time_of_last_valid_sample;

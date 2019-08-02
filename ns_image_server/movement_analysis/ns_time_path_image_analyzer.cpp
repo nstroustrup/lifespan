@@ -6886,10 +6886,10 @@ void ns_time_path_image_movement_analyzer::load_region_visualization_images(cons
 		try {
 			if (region_image_specifications[i].interpolated_region_vis_required &&
 				region_image_specifications[i].interpolated_region_vis_image.id==0)
-				throw ns_ex("Interpolated region visualization requested with no id specified");
+				throw ns_ex("Required Worm Detection information could not be loaded for this image (Interpolated region visualization requested with no id specified)");
 			if (region_image_specifications[i].region_vis_required &&
 				region_image_specifications[i].region_vis_image.id==0)
-				throw ns_ex("Region visualization requested with no id specified");
+				throw ns_ex("Required Worm Detection information could not be loaded for this image (Region visualization requested with no id specified)");
 		
 
 			if (load_type != ns_analyzed_image_time_path::ns_lrv_just_flag) {

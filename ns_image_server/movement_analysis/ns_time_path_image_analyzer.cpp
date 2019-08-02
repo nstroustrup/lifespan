@@ -902,7 +902,9 @@ void ns_time_path_image_movement_analyzer<allocator_T>::process_raw_images(const
 
 							}
 							else {
-								image_server_const.add_subtext_to_current_event(std::string("Group ") + ns_to_string(i) + " was never opened.\n",&sql);
+								groups[i].paths[j].find_first_labeled_stationary_timepoint();
+								if (groups[i].paths[j].first_stationary_timepoint_ != 0)
+									image_server_const.add_subtext_to_current_event(std::string("Group ") + ns_to_string(i) + " was never opened.\n",&sql);
 							//	cout << "defined across" << ns_format_time_string_for_human(groups[i].paths[j].elements[0].absolute_time) << "-" << ns_format_time_string_for_human(groups[i].paths[j].elements[groups[i].paths[j].first_stationary_timepoint()].absolute_time) << "\n";
 
 							}

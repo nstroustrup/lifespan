@@ -118,6 +118,7 @@ void ns_worm_learner::decode_mask_file(const std::string & filename, const std::
 	ns_acquire_lock_for_scope lock(current_image_lock,__FILE__,__LINE__);
 	vis.resample(prop,current_image);
 	lock.release();
+	draw_image(-1, -1, current_image);
 	vis.clear();
 //	draw();
 }
@@ -8054,6 +8055,7 @@ void ns_worm_learner::display_splash_image() {
 	ns_load_image_from_resource(IDR_BIN1, tmp_filename);
 	ns_load_image(tmp_filename, im);
 	im.resample(ns_image_properties(600, 800, 3), current_image);
+	draw_image(-1, -1, current_image);
 	ns_dir::delete_file(tmp_filename);
 #else
 	// note: using implicit string-literal concatenation after preprocessor substitution of NS_DATA_PATH

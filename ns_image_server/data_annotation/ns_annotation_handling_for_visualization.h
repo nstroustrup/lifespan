@@ -166,15 +166,17 @@ public:
 		const float pre_current_time_scaling((marker_type == ns_highlight_up_until_current_time) ? 0.5 : 1);
 
 		const float dt(size.x / (float)total_time);
-		const unsigned long worm_arrival_time(fast_movement_cessation.time.period_end);
+		unsigned long worm_arrival_time(fast_movement_cessation.time.period_end);
 		//we push death relaxation back in time as we find more data
 		unsigned long death_relaxation_start_time = worm_arrival_time;
 
 		unsigned int x;
 		ns_color_8 c;
 		c = ns_movement_colors::color(ns_movement_fast)*scaling;
-		if (worm_arrival_time < path_start_time)
-			throw ns_ex("Invalid time of additional worm entry into cluster");
+		if (worm_arrival_time < path_start_time) {
+			image_server.register_server_event_no_db(ns_image_server_event("Invalid time of additional worm entry into cluster\n"));
+			worm_arrival_time = path_start_time;
+		}
 		for (x = 0; x < (worm_arrival_time - path_start_time)*dt; x++) {
 			if (x + pos.x >= im.properties().width || im.properties().components != 3)
 				throw ns_ex("Yikes! 1");

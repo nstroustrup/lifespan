@@ -4,7 +4,6 @@
 #include "ns_time_path_image_analyzer.h"
 
 
-
 void ns_crop_time(const ns_time_path_limits & limits, const ns_death_time_annotation_time_interval & first_observation_in_path, const ns_death_time_annotation_time_interval & last_observation_in_path, ns_death_time_annotation_time_interval & target);
 
 void ns_zero_death_interval(ns_death_time_annotation & e);

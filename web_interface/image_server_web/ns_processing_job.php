@@ -195,7 +195,11 @@ $ns_video_timestamp_types = array( 0=>"No Timestamp",
 				  1=>"Date Timestamp",
 				  2=>"Age Timestamp"
 				  );
-
+$ns_posture_analysis_model_type = array(0=>"Not Specified",
+1=>"Threshold",
+2=>"Hidden Markov",
+3=>"Blended Hidden Markov",
+4=>"Unknown Model Type");
 class ns_processing_job{
 
 	public $id,

@@ -5,8 +5,41 @@ require_once('ns_dir.php');
 require_once('ns_experiment.php');
 require_once('ns_processing_job.php');
 
-try{
+function output_model_choice($field_name,$model_selected,$model_analysis_method,$disabled,&$sql){
+	global $db_name, $ns_posture_analysis_model_type;
+	$query = "SELECT * FROM information_schema.tables WHERE table_name = 'analysis_model_registry' AND table_schema = '$db_name'";
+	$sql->get_row($query,$res);
+	if (sizeof($res)==0){
+		echo "No model registry exists. Update your sql db.";
+		return;
+	}
+	$query = "SELECT name, version, analysis_method FROM analysis_model_registry WHERE analysis_step='posture'";
+	$sql->get_row($query,$res);
+	$model_tree = array();
+	for ($i = 0; $i < sizeof($res); $i++){
+		$model_tree[$ns_posture_analysis_model_type[$res[$i][2]]] = array();
+	}
+	$model_tree = array_reverse($model_tree);
+	for ($i = 0; $i < sizeof($res); $i++)
+                array_push($model_tree[$ns_posture_analysis_model_type[$res[$i][2]]],$res[$i]);
+        //echo "zzz".$model_analysis_method."zzz";
+	echo "<select name=\"$field_name\"";
+	if ($disabled) echo "disabled";
+	echo ">\n";
+	foreach($model_tree as $model_type=>&$models){
+		echo "<optgroup label=\"$model_type\">\n";
+		foreach($models as $model){
+			echo '<option value="' . $model[0] . "_".$model[2].'"';
+			if ($model_selected == $model[0] && $model_analysis_method == $model[2])
+				echo " selected";
+			echo '>' . $model[0] ." (" . $model[1] . ")</option>\n";
+		}	
+		echo "</optgroup>\n";
+	}
+	echo "</select>";
+}
 
+try{
 if (!ns_param_spec($query_string,'experiment_id'))
 	throw new ns_exception('No experiment id specified!');
 else $experiment_id = (int)$query_string['experiment_id'];
@@ -192,7 +225,7 @@ $strain = $exps[$i][1];
    $region_strains[$exps[$i][0]] = array($exps[$i][1],$exps[$i][2],$exps[$i][3],$exps[$i][4]);
 
    if (!array_key_exists($strain,$strain_posture_models) || $strain_posture_models[$strain] == '')
-     $strain_posture_models[$strain] = $exps[$i][5];
+     $strain_posture_models[$strain] = array($exps[$i][5],$exps[$i][6]);
    if (!array_key_exists($strain,$strain_detection_models) || $strain_detection_models[$strain] == '')
      $strain_detection_models[$strain] = $exps[$i][7];
 
@@ -212,13 +245,16 @@ $strain = $exps[$i][1];
    $is_single_posture_model = false;
    // die("WHA");
  }
- else{
-   $is_single_posture_model = true;
+ else{   
+$is_single_posture_model = true;
    $single_posture_model_name = "";
    foreach ($strain_posture_models as $s => $m){
-     if ($single_posture_model_name === "")
-       $single_posture_model_name = $m;
-     else if ($single_posture_model_name != $m){
+    //	var_dump($m);
+	 if ($single_posture_model_name === ""){
+       $single_posture_model_name = $m[0];
+	$single_posture_model_method = $m[1];
+}
+     else if ($single_posture_model_name != $m[0]){
        $is_single_posture_model = FALSE;
        break;
      }
@@ -238,6 +274,7 @@ $strain = $exps[$i][1];
    foreach ($strain_position_models as $s => $m){
      if ($single_position_model_name === ""){
        $single_position_model_name = $m;
+       
 
      }
      else if ($single_position_model_name != $m){
@@ -271,7 +308,9 @@ $strain = $exps[$i][1];
  if (ns_param_spec_true($_POST,'set_posture_models')){
    if ($is_single_posture_model){
      $model_name = $_POST['single_posture_model_name'];
-     $posture_analysis_method = $_POST['posture_analysis_method'];
+     $posture_analysis_method = substr($model_name,-1);
+     $model_name = substr($model_name,0,strlen($model_name)-2);
+    
      //die($posture_analysis_method);
      $query = "UPDATE sample_region_image_info as i, capture_samples as s SET posture_analysis_model ='$model_name',posture_analysis_method='$posture_analysis_method' WHERE i.sample_id = s.id AND s.experiment_id = $experiment_id";
      // die($query);
@@ -284,7 +323,6 @@ $strain = $exps[$i][1];
      }
    }
    else{
-     $posture_analysis_method = $_POST['posture_analysis_method'];
      foreach($_POST as $k => $v){
        if (substr($k,0,14) == "posture_model_"){
 	 $region_id = substr($k,14);
@@ -299,6 +337,9 @@ $strain = $exps[$i][1];
 	   }
 	 }
 	 //	 	 echo $region_id . ": " . $model . "<br>";
+
+      $posture_analysis_method = substr($model,-1);
+     $model = substr($model,0,strlen($model)-2);
 	$query =  " UPDATE sample_region_image_info as i, capture_samples as s SET posture_analysis_model ='$model',posture_analysis_method='$posture_analysis_method' WHERE $strain_condition AND i.sample_id = s.id AND s.experiment_id = $experiment_id";
 	//		echo $query . "<BR>";
 
@@ -539,7 +580,7 @@ output_editable_field("conversion_16_bit_upper_bound",$conversion_16_bit_upper_b
 
 <table align="center" border="0" cellpadding="0" cellspacing="1" bgcolor="#000000"><tr><td><table border="0" cellpadding="4" cellspacing="0" width="100%"><tr <?php echo $table_header_color?> ><td colspan=2><b>Posture Analysis Parameter Sets</b></td></tr>
 
-<tr><td bgcolor="<?php echo $table_colors[1][0] ?>">Posture Analysis Method</td><td bgcolor="<?php echo $table_colors[1][1] ?>">
+<!-- <tr><td bgcolor="<?php echo $table_colors[1][0] ?>">Posture Analysis Method</td><td bgcolor="<?php echo $table_colors[1][1] ?>">
 
       <select name="posture_analysis_method" <?php if ($number_of_regions == 0) echo "disabled"?>>
       <option value=""<?php if ($posture_analysis_method == '') echo "selected"?> >None Specified</option>
@@ -547,13 +588,15 @@ output_editable_field("conversion_16_bit_upper_bound",$conversion_16_bit_upper_b
 <option value="hm" <?php if ($posture_analysis_method == 'hm') echo "selected"?> >Pure Hidden Markov Model</option>
 <option value="thresh"<?php if ($posture_analysis_method == 'thresh') echo "selected"?> >Old Thresholding</option>
 </select></td></tr>
-
+-->
 <tr><td bgcolor="<?php echo $table_colors[0][0] ?>">Single Model for All Plates</td><TD bgcolor="<?php echo $table_colors[0][1] ?>">
 						      <select name="is_single_posture_model" onchange='this.form.submit()' <?php if ($number_of_regions == 0) echo "disabled"?>><option value="1" <?php if ($is_single_posture_model)echo "selected";?>>All plates use the same model</option><option value="0" <?php if (!$is_single_posture_model)echo "selected";?>>Each strain has its own model</option></select>
 							     </td></tr>
 							     <?php if ($is_single_posture_model){?>
+
       <tr><td bgcolor="<?php echo $table_colors[0][0] ?>">All Plate Model:</td><TD bgcolor="<?php echo $table_colors[0][1] ?>">
-	<?php output_editable_field("single_posture_model_name",$single_posture_model_name,$number_of_regions>0,30);?>
+	<?php  output_model_choice("single_posture_model_name",$single_posture_model_name,$single_posture_model_method,$number_of_regions==0,$sql); ?>
+	<?php //output_editable_field("single_posture_model_name",$single_posture_model_name,$number_of_regions>0,30);-?>
 							     </td></tr>
 																	   <?php } else{?>
 
@@ -571,7 +614,8 @@ output_editable_field("conversion_16_bit_upper_bound",$conversion_16_bit_upper_b
 	echo
 	"<tr><td bgcolor=\"".$table_colors[$c][0] . "\">$strain</td>" .
 	"<td bgcolor=\"" . $table_colors[$c][1] . "\">";
-	output_editable_field("posture_model_" . $region_id ,$strain_posture_models[$strain],$number_of_regions>0,30);
+	 output_model_choice("posture_model_" . $region_id,$strain_posture_models[$strain][0],$strain_posture_models[$strain][1],$number_of_regions==0,$sql);
+	//output_editable_field("posture_model_" . $region_id ,$strain_posture_models[$strain],$number_of_regions>0,30);
 	echo "</td></tr>\n";
 	$c =!$c;
     }

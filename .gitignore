@@ -2,3 +2,10 @@
 *.o
 .deps
 .dirstamp
+*.obj
+*.cmake
+build/CMakeCache.txt
+build/CMakeFiles/*
+windows_build/x64/*
+windows_build/.vs/*
+windows_build/Release/*

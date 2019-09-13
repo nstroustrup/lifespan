@@ -367,7 +367,9 @@ void ns_image_server_automated_job_scheduler::scan_for_tasks(ns_sql & sql, bool 
 		return;
 	}
 	image_server.register_server_event(ns_image_server_event("Running automated job scheduler"),&sql);
+
 	unsigned long start_time(ns_current_time());
+	image_server.update_posture_analysis_model_registry(sql,false);
 	calculate_capture_schedule_boundaries(sql);
 	identify_experiments_needing_captured_image_protection(sql);
 	handle_when_completed_priority_jobs(sql);
@@ -885,7 +887,9 @@ bool ns_image_server::upgrade_tables(ns_sql_connection * sql, const bool just_te
 		sql->send_query();
 		changes_made = true;
 	}
+
 	if (!updating_local_buffer) {
+
 		if (!ns_sql_column_exists("sample_region_image_info", "position_analysis_model", sql)) {
 			if (just_test_if_needed)
 				return true;
@@ -1110,13 +1114,33 @@ bool ns_image_server::upgrade_tables(ns_sql_connection * sql, const bool just_te
 
 		*sql << "SHOW TABLES IN " << schema_name;
 		sql->get_rows(res);
+		bool found_model_registry_table = false;
+		for (unsigned int i = 0; i < res.size(); i++) {
+			cout << "Creating analysis model registry table\n";
+			if (res[i][0] == "analysis_model_registry") {
+				found_model_registry_table = true;
+				break;
+			}
+		}
+		if (!found_model_registry_table) {
+			if (just_test_if_needed)
+				return true;
+			*sql << "CREATE TABLE `analysis_model_registry` ("
+				"`name` TEXT NOT NULL,"
+				"`version` TEXT NOT NULL,"
+				"`analysis_method` INT(11) NOT NULL DEFAULT '0',"
+				"`analysis_step` VARCHAR(10) NOT NULL DEFAULT ''"
+				") ENGINE = InnoDB";
+			sql->send_query();
+			changes_made = true;
+		}
 		if (res.size() > 0) {
 			bool found(false);
 			for (unsigned int i = 0; i < res.size(); i++) {
 				if (res[i][0] == "sample_time_relationships") {
 					if (just_test_if_needed)
 						return true;
-					if (!found) cout << "Dropping Unused tables...";
+					if (!found) cout << "Dropping unused tables...\n";
 					*sql << "DROP TABLE `sample_time_relationships`";
 					sql->send_query();
 					changes_made = true;
@@ -1125,7 +1149,7 @@ bool ns_image_server::upgrade_tables(ns_sql_connection * sql, const bool just_te
 				else if (res[i][0] == "worm_movement") {
 					if (just_test_if_needed)
 						return true;
-					if (!found) cout << "Dropping Unused tables....";
+					if (!found) cout << "Dropping unused tables....\n";
 					*sql << "DROP TABLE `worm_movement`";
 					sql->send_query();
 					changes_made = true;
@@ -1135,7 +1159,7 @@ bool ns_image_server::upgrade_tables(ns_sql_connection * sql, const bool just_te
 				else if (res[i][0] == "processing_job_log") {
 					if (just_test_if_needed)
 						return true;
-					if (!found) cout << "Dropping Unused tables.....";
+					if (!found) cout << "Dropping unused tables.....\n";
 					*sql << "DROP TABLE `processing_job_log`";
 					sql->send_query();
 					changes_made = true;
@@ -3383,7 +3407,7 @@ void ns_posture_analysis_model_entry::load_from_external_source(const std::strin
 		if (thresh.fail()) {
 
 			if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("ns_posture_analysis_model_entry::error!"));
-			throw ns_ex("Could not load ") << external_source.model_directory + name + "_thresh.csv";
+			throw ns_ex("Could not load ") << external_source.model_directory + name + "_threshold.csv";
 		}
 
 		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("ns_posture_analysis_model_entry::reading"));
@@ -3399,7 +3423,118 @@ void ns_posture_analysis_model_entry::load_from_external_source(const std::strin
 	throw ns_ex("The plate has an unrecognized posture analysis method specified.");
 }
 
+struct ns_posture_analysis_model_registry_entry {
+	ns_posture_analysis_model_registry_entry(){}
+	ns_posture_analysis_model_registry_entry(const std::string& n, const ns_posture_analysis_model::ns_posture_analysis_method& m, const std::string& v) :
+		name(n), method(m), version(v){}
+	std::string name;
+	ns_posture_analysis_model::ns_posture_analysis_method method;
+	std::string version;
+};
+void ns_image_server::update_posture_analysis_model_registry(ns_sql& sql, bool force) {
 
+	ns_posture_analysis_model_entry_source source;
+	source.model_directory = image_server.long_term_storage_directory + DIR_CHAR_STR + image_server.posture_analysis_model_directory() + DIR_CHAR_STR;
+	std::vector<ns_posture_analysis_model_registry_entry> models;
+
+	ns_dir dir;
+	std::vector<std::string> files;
+	dir.load_masked(source.model_directory, ".csv", files);
+	std::vector< ns_posture_analysis_model::ns_posture_analysis_method> models_to_try;
+
+	sql << "SELECT name, analysis_method FROM analysis_model_registry WHERE analysis_step='posture'";
+	ns_sql_result models_in_registry;
+	sql.get_rows(models_in_registry);
+
+	std::vector<std::string> names;
+	std::vector<char>is_threshold;
+	for (unsigned int i = 0; i < files.size(); i++) {
+		models_to_try.resize(0);
+		std::string::size_type threshold_pos = files[i].find("_threshold.csv");
+		std::string name;
+		if (threshold_pos != files[i].npos) {
+			names.push_back(files[i].substr(0, threshold_pos));
+			is_threshold.push_back(1);
+		}
+		else {
+			names.push_back(files[i].substr(0, files[i].size() - 4)); //remove .csv
+			is_threshold.push_back(0);
+		}
+	}
+	bool need_to_reset_registry = force;
+	if (!force)
+	for (unsigned int i = 0; i < names.size(); i++) {
+		bool found_in_registry = false;
+		for (unsigned int j = 0; j < models_in_registry.size(); j++) {
+			if (names[i] == models_in_registry[j][0]) {
+				found_in_registry = true;
+				break;
+			}
+		}
+		if (!found_in_registry)
+			need_to_reset_registry = true;
+	}
+	if (!force && !need_to_reset_registry) {
+		for (unsigned int j = 0; j < models_in_registry.size(); j++) {
+			bool found_on_disk = false;
+			for (unsigned int i = 0; i < names.size(); i++) {
+				if (names[i] == models_in_registry[j][0]) {
+					found_on_disk = true;
+					break;
+				}
+			}
+			if (!found_on_disk)
+				need_to_reset_registry = true;
+		}
+	}
+	if (!need_to_reset_registry)
+		return;
+	cout << "Updating Analysis Model Registry\n";
+	for (unsigned int i = 0; i < names.size(); i++){
+		models_to_try.resize(0);
+		const std::string& name = names[i];
+		if (is_threshold[i])
+			models_to_try.push_back(ns_posture_analysis_model::ns_threshold);
+		else{
+			models_to_try.push_back(ns_posture_analysis_model::ns_threshold_and_hmm);
+			models_to_try.push_back(ns_posture_analysis_model::ns_hidden_markov);
+		}
+
+		bool found = false;
+		for (int j = 0; j < models_to_try.size(); j++){
+			try {
+				source.analysis_method = models_to_try[j];
+				ns_posture_analysis_model_cache::const_handle_t handle;
+				posture_analysis_model_cache.get_for_read(name, handle, source);
+
+				models.push_back(ns_posture_analysis_model_registry_entry(name, source.analysis_method,handle().model_specification.threshold_parameters.version_flag));
+				handle.release();
+				found = true;
+				break;
+			}
+			catch (ns_ex & ex) {
+				cout << ".";
+				//not a valid model of this type.
+			}
+		}
+		if (!found) {
+			cout << "Encountered an un-parseable file in the model directory:" << name << "\n";
+			models.push_back(ns_posture_analysis_model_registry_entry(name, ns_posture_analysis_model::ns_unknown, "?"));
+		}
+	}
+	if (models.size() > 0) {
+		sql.set_autocommit(false);
+		sql.send_query("START TRANSACTION");
+		sql.send_query("LOCK TABLES analysis_model_registry WRITE");
+		sql.send_query("DELETE FROM analysis_model_registry");
+		for (unsigned int i = 0; i < models.size(); i++) {
+			sql << "INSERT INTO analysis_model_registry SET name='" << models[i].name << "', analysis_method=" << (int)models[i].method << ", version='" << models[i].version << "', analysis_step='posture'";
+			sql.send_query();
+		}
+		sql.send_query("COMMIT");
+		sql.send_query("UNLOCK TABLES");
+	}
+}
 
 ns_time_path_solver_parameters ns_image_server::get_position_analysis_model(const std::string & model_name,bool create_default_if_does_not_exist,const ns_64_bit region_info_id_for_default, ns_sql * sql_for_default) const{
 

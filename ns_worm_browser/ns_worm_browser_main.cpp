@@ -1430,6 +1430,7 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 		cerr << "Switching to database " << data << "\n";
 		//ns_thread::sleep(15);
 		get_menu_handler()->update_experiment_choice(*get_menu_bar());
+		image_server.update_posture_analysis_model_registry(worm_learner.get_sql_connection(), false);
 	}
 	static void file_open(const std::string & data){
 		//cout << ns_get_input_string("TITLE","GOBER");
@@ -3934,6 +3935,8 @@ void ns_run_startup_routines() {
 
 	ns_worm_browser_output_debug(__LINE__, __FILE__, "Updating information bar");
 	main_window->update_information_bar();
+
+	image_server.update_posture_analysis_model_registry(worm_learner.get_sql_connection(),false);
 	
 }
 
@@ -4002,7 +4005,6 @@ int main() {
 	
 		
 		ns_worm_browser_output_debug(__LINE__,__FILE__,"Entering idle loop");
-
 
 	
 		return(Fl::run());

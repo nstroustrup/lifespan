@@ -6918,8 +6918,12 @@ bool ns_time_path_image_movement_analyzer<allocator_T>::wait_until_element_is_lo
 		lock.release();
 		if (groups[group_id].paths[0].number_of_images_loaded > element_id)
 			return true;
-		if (!asynch_group_loading_is_running)
-			throw ns_ex("Waiting for an unloaded element even after asynch loading has terminated.");
+		if (!asynch_group_loading_is_running) {
+			if (asynch_group_loading_failed)
+				return false;
+			else 
+				throw ns_ex("Waiting for an unloaded element even after asynch loading has terminated.");
+		}
 	}
 
 }
@@ -6940,18 +6944,21 @@ template<class allocator_T>
 ns_thread_return_type ns_time_path_image_movement_analyzer<allocator_T>::load_images_for_group_asynch_internal(void * pr) {
 	ns_asynch_image_load_parameters<allocator_T>* p = static_cast<ns_asynch_image_load_parameters<allocator_T>*>(pr);
 	try {
+		p->analyzer->asynch_group_loading_failed = false;
 		p->analyzer->load_images_for_group(p->group_id, p->number_of_images_to_load, *p->sql, p->load_images_after_last_valid_sample, p->load_flow_images, *p->image_cache);
 		p->analyzer->asynch_group_loading_is_running = false;
 		delete p;
 	}
 	catch (ns_ex & ex) {
-		cout << "Problem during asnych image load: " << ex.text() << "\n";
+		cout << "Problem during asynchronous image loading: " << ex.text() << "\n";
 		p->analyzer->asynch_group_loading_is_running = false;
+		p->analyzer->asynch_group_loading_failed = true;
 		delete p;
 	}
 	catch (...) {
 		cout << "Unknown problem during asnych image load.\n";
 		p->analyzer->asynch_group_loading_is_running = false;
+		p->analyzer->asynch_group_loading_failed = true;
 		delete p;
 	}
 	return 0;

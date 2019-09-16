@@ -720,7 +720,7 @@ public:
 	ns_time_path_image_movement_analyzer(ns_time_path_image_movement_analysis_memory_pool<allocator_T> & memory_pool_):paths_loaded_from_solution(false),
 		region_info_id(0),last_timepoint_in_analysis_(0), _number_of_invalid_images_encountered(0),image_cache(1024*1024*64),
 		number_of_timepoints_in_analysis_(0),image_db_info_loaded(false),externally_specified_plate_observation_interval(0,ULONG_MAX),posture_model_version_used(NS_CURRENT_POSTURE_MODEL_VERSION),
-		memory_pool(memory_pool_),asynch_group_loading_is_running(false),cancel_asynch_group_load(false) {}
+		memory_pool(memory_pool_),asynch_group_loading_is_running(false),cancel_asynch_group_load(false), asynch_group_loading_failed(false){}
 
 	~ns_time_path_image_movement_analyzer(){
 		stop_asynch_group_load();
@@ -777,7 +777,14 @@ public:
 		if (handle_to_release != 0)
 			handle_to_release->release();
 		ns_image_cache_data_source source(&image_server.image_storage, &sql);
-		image_cache.get_for_read(groups[group_id].paths[path_id].output_image, groups[group_id].paths[path_id].movement_image_storage_handle, source);
+		try {
+			image_cache.get_for_read(groups[group_id].paths[path_id].output_image, groups[group_id].paths[path_id].movement_image_storage_handle, source);
+		}
+		catch (ns_ex& ex) {
+			ns_ex ex2("Error during pre-caching: ");
+			ex2 << ex.text();
+			throw ex2;
+		}
 		groups[group_id].paths[path_id].movement_image_storage = groups[group_id].paths[path_id].movement_image_storage_handle().source;
 		if (!nolock)
 		lock.release();
@@ -868,6 +875,7 @@ private:
 	static ns_thread_return_type load_images_for_group_asynch_internal(void *);
 	ns_thread asynch_group_loading_thread;
 	bool asynch_group_loading_is_running;
+	bool asynch_group_loading_failed;
 	bool cancel_asynch_group_load;
 
 	ns_64_bit analysis_id;

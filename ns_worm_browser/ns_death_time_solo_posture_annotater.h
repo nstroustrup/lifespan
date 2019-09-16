@@ -245,7 +245,10 @@ public:
 		ns_simple_local_image_cache & image_cache,
 		ns_annotater_memory_pool & memory_pool, const unsigned long resize_factor_=1){
 		//all images are being loaded asynchronosuly.  Wait until the requested element is loaded
-		movement_analyzer->wait_until_element_is_loaded(group_id, element_id);
+		im.loaded = false;
+		if (!movement_analyzer->wait_until_element_is_loaded(group_id, element_id)) {
+			return;
+		}
 		if (path_timepoint_element == 0){
 		  cerr << "Path timepoint element not specified";
 		  return;
@@ -1116,7 +1119,8 @@ public:
 			
 			if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Loading first image."));
 			timepoints[current_timepoint_id].load_image(1024,current_image,sql(),local_image_cache, memory_pool,1);
-			
+			if (!current_image.loaded || current_image.im == 0)
+				throw ns_ex("The current animal's image was not loaded.");
 			const ns_image_properties current_prop = current_image.im->properties();
 			if (previous_images.size() != max_buffer_size || next_images.size() != max_buffer_size) {
 				previous_images.resize(max_buffer_size);

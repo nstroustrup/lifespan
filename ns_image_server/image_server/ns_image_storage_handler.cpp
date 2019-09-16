@@ -877,10 +877,10 @@ std::string ns_image_storage_handler::add_to_local_cache(ns_image_server_image &
 		for (unsigned int i = 0; i < cache_filename.size(); i++)
 			if (cache_filename[i] == '/' || cache_filename[i] == '\\') cache_filename[i] = '_';
 		std::string dir = volatile_storage_directory + DIR_CHAR_STR + ns_image_server_cache_directory();
+		ns_dir::convert_slashes(dir);
+		ns_dir::create_directory_recursive(dir);
 		std::string output_filename = dir + DIR_CHAR_STR + cache_filename;
 		ns_dir::convert_slashes(output_filename);
-
-
 
 
 		//guarentee unique filename for this process
@@ -900,7 +900,7 @@ std::string ns_image_storage_handler::add_to_local_cache(ns_image_server_image &
 
 		//	ns_imag_handler_register_server_event(ns_image_server_event("ns_image_storage_handler::Opening LT ",false) << display_filename << " for input." << ns_ts_minor_event);
 		if (simulate_long_term_storage_errors || !ns_dir::copy_file(file_location.absolute_long_term_filename(), output_filename))
-			throw ns_ex("Could not find file ") << file_location.absolute_long_term_filename();
+			throw ns_ex("Could not copy file ") << file_location.absolute_long_term_filename() << "\n to local cache location: " << output_filename;
 		return cache_filename;
 
 

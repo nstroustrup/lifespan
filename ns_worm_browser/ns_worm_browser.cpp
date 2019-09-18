@@ -4514,9 +4514,11 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 	//people were often forgetting to do this, so we now bug them about it.
 	std::vector<ns_64_bit> regions_needing_censoring_recalculation;
 	regions_needing_censoring_recalculation.reserve(15);
+	unsigned long total_number_of_regions(0);
 	for (unsigned int i = 0; i < movement_results.samples.size(); i++)
 		for (unsigned int j = 0; j < movement_results.samples[i].regions.size(); j++) {
 			const ns_region_metadata & metadata(movement_results.samples[i].regions[j]->metadata);
+			total_number_of_regions++;
 			if (metadata.by_hand_annotation_timestamp > metadata.movement_rebuild_timestamp && metadata.movement_rebuild_timestamp != 0)
 				regions_needing_censoring_recalculation.push_back(metadata.region_id);
 		}
@@ -4534,12 +4536,31 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 		case 1: {
 			image_server.register_server_event(ns_image_server_event("Recalculating censoring"), &sql);
 			ns_image_processing_pipeline p(1024);
+			std::vector<ns_ex> problems;
 			for (unsigned int i = 0; i < regions_needing_censoring_recalculation.size(); i++) {
-				image_server.add_subtext_to_current_event(ns_to_string((int)(i *100.0 / regions_needing_censoring_recalculation.size())) + "%...", &sql);
-				ns_processing_job job;
-				job.region_id = regions_needing_censoring_recalculation[i];
-				job.maintenance_task = ns_maintenance_recalculate_censoring;
-				analyze_worm_movement_across_frames(job, &image_server, sql, false);
+				try {
+					image_server.add_subtext_to_current_event(ns_to_string((int)(i * 100.0 / regions_needing_censoring_recalculation.size())) + "%...", &sql);
+					ns_processing_job job;
+					job.region_id = regions_needing_censoring_recalculation[i];
+					job.maintenance_task = ns_maintenance_recalculate_censoring;
+					analyze_worm_movement_across_frames(job, &image_server, sql, false);
+				}
+				catch (ns_ex& ex) {
+					image_server.add_subtext_to_current_event(ex.text(), &sql);
+					problems.push_back(ex);
+				}
+			}
+			
+			if (problems.size() > 0) {
+				ns_text_dialog td;
+				td.grid_text.push_back("The following issues were encountered: ");
+				td.grid_text.push_back("(You likely will need to re-analyze movement, either from the stored solution or from stored images.)");
+				for (unsigned int i = 0; i < problems.size(); i++)
+					td.grid_text.push_back(problems[i].text());
+				td.title = "Re-calculate censoring immediately";
+				ns_run_in_main_thread_custom_wait<ns_text_dialog> dd(&td);
+				if (problems.size() * 4 > total_number_of_regions)
+					throw ns_ex("Too many errors.  Canceling data export.");
 			}
 			break;
 		}

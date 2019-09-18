@@ -1505,7 +1505,7 @@ void ns_time_path_image_movement_analyzer<allocator_T>::load_stored_movement_ana
 		catch (...) {}
 		ns_ex ex2;
 		ex2 << ex.type();
-		ex2 << "Problem loading stored plate quantification for plate " << data << "(" << this->region_info_id << ").  Consider re-running worm movement analysis for this plate. " << ex.text();
+		ex2 << "Problem loading stored plate quantification for plate " << data << "(" << this->region_info_id << ").  Consider re-running worm movement analysis from cached images for this plate. " << ex.text();
 		throw ex2;
 
 	}

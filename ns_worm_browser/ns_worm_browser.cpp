@@ -4546,8 +4546,15 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 					analyze_worm_movement_across_frames(job, &image_server, sql, false);
 				}
 				catch (ns_ex& ex) {
-					image_server.add_subtext_to_current_event(ex.text(), &sql);
-					problems.push_back(ex);
+					sql << "SELECT s.name, r.name FROM capture_samples as s, sample_region_image_info as r WHERE r.id = " << regions_needing_censoring_recalculation[i] << " AND s.id = r.sample_id";
+					ns_sql_result res;
+					sql.get_rows(res);
+					std::string name = "Region id ";
+					name += ns_to_string(regions_needing_censoring_recalculation[i]);
+					if (res.size() != 0)
+						name = res[0][0] + "_" + res[0][1];
+					image_server.add_subtext_to_current_event("Region " + name + ": " + ex.text(), &sql);
+					problems.push_back("Region " + name + ": " + ex.text());
 				}
 			}
 			

@@ -1675,7 +1675,7 @@ public:
 			//add(ns_menu_item_spec(calculate_slow_movement, "Testing/Worm Detection/Calculate Slow Movement"));
 
 		
-			add(ns_menu_item_spec(generate_SVM_training_data, "Testing/_Worm Detection Model Generation/Process annoated images to produce SVM Training Data"));
+			add(ns_menu_item_spec(generate_SVM_training_data, "Testing/_Worm Detection Model Generation/Process annotated images to produce SVM Training Data"));
 			add(ns_menu_item_spec(analyze_svm_results, "Testing/Worm Detection Model Generation/_Analyze SVM Training Results"));
 			add(ns_menu_item_spec(generate_training_set_from_by_hand_annotations, "Testing/Worm Detection Model Generation/_Generate Training Set from By Hand Movement Annotations"));
 

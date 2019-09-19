@@ -753,6 +753,7 @@ public:
 	}
 	void set_description(const std::string & dsc){
 	  reciever_t::_properties.description = dsc;
+	  sender_t::_properties.description = dsc;
 	}
 	const float finline sample_f(const float y, const float x) const{
 

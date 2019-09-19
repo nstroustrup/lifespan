@@ -824,16 +824,14 @@ void ns_image_processing_pipeline::process_region(const ns_image_server_captured
 																	volatile_behavior);
 
 								ti.pump(a_worm.output_stream(),_image_chunk_size);
+								a_worm_im = region_image.create_storage_for_processed_image(ns_process_add_to_training_set, ns_xml, &sql);
+								ns_acquire_for_scope<ns_ostream> xmp_out(image_server_const.image_storage.request_metadata_output(a_worm_im, ns_xml,false, &sql));
+								xmp_out()() << ti.properties().description;
+								xmp_out.release();
 								a_worm_im = region_image.create_storage_for_processed_image(ns_process_add_to_training_set, ns_csv_gz, &sql);
-								ns_ostream * metadata_out(image_server_const.image_storage.request_metadata_output(a_worm_im,ns_csv_gz,true,&sql));
-								try{
-									detected_worms().output_feature_statistics((*metadata_out)());
-									delete metadata_out;
-								}
-								catch(...){
-									delete metadata_out;
-									throw;
-								}
+								ns_acquire_for_scope<ns_ostream> metadata_out(image_server_const.image_storage.request_metadata_output(a_worm_im,ns_csv_gz,true,&sql));
+								detected_worms().output_feature_statistics(metadata_out()());
+								metadata_out.release();
 							}
 						}
 						else{

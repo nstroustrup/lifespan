@@ -500,9 +500,6 @@ void ns_hmm_solver::build_state_transition_matrix(const ns_emperical_posture_qua
 
 
 
-
-	//if (estimator.states_permitted() != ns_emperical_posture_quantification_value_estimator::ns_all_states)
-	//	std::cerr << "Wha";
 	//if there are any loops anywhere here, the approach will not function
 	//because we set all the transition probabilities equal and this works
 	//only because the all state transitions are irreversable.

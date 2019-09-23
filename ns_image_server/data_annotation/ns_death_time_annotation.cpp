@@ -1201,13 +1201,6 @@ void ns_death_time_annotation_compiler_region::create_location(const ns_stationa
 	}
 }
 void ns_death_time_annotation_compiler_region::add(const ns_death_time_annotation & e, const bool create_new_location){
-//	if (e.stationary_path_id.path_id == 0  && e.stationary_path_id.group_id == 0 && e.stationary_path_id.detection_set_id != 0)
-//			cerr << "WHAA";
-	//if (e.stationary_path_id.group_id == 28)
-	//	cerr << "AH";
-	//fast moving worms aren't linked to any specific location.
-	//if (e.inferred_animal_location)
-	//		cerr << "WHA";
 	if (e.type == ns_fast_moving_worm_observed ){
 		fast_moving_animals.push_back(e);
 		return;
@@ -1252,18 +1245,7 @@ void ns_death_time_annotation_compiler_region::add(const ns_death_time_annotatio
 				min_overall_debug_dist = dist;
 			}
 		}
-//		if (assigned_position_match != locations.end() && assigned_position_match->properties.inferred_animal_location){
-				//cerr << "WHA";
-//				if (e.is_excluded())
-//					cerr << ";";
-//			}
-//		if (unassigned_position_match != locations.end() && unassigned_position_match->properties.inferred_animal_location){
-//				//cerr << "WHA";
-//				if (e.is_excluded())
-//					cerr << ";";
-//			}
-	//	if (e.region_info_id == 56369 && e.stationary_path_id.group_id == 113)
-	//		cerr << "XXX";
+
 		if (assigned_position_match != locations.end())
 			assigned_position_match->add_event(e);
 		else if (unassigned_position_match != locations.end())
@@ -1452,12 +1434,7 @@ class ns_death_time_event_compiler_time_aggregator{
 public:
 	ns_death_time_event_compiler_time_aggregator(const ns_region_metadata & metadata_):metadata(metadata_){}
 	void add(const ns_death_time_annotation & e,bool use_by_hand_data){
-	/*	if (e.type == ns_movement_cessation &&
-			e.excluded == ns_death_time_annotation::ns_censored_at_end_of_experiment){
-				if (e.annotation_source == ns_death_time_annotation::ns_lifespan_machine)
-					cerr << "JA";
-			else cerr << "WHA";
-		}*/
+
 		if (e.type == ns_no_movement_event) return;
 		if (!ns_movement_event_is_a_state_transition_event(e.type))
 			return;

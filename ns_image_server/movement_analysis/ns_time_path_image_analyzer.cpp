@@ -1919,8 +1919,7 @@ bool ns_time_path_image_movement_analyzer<allocator_T>::load_image_quantificatio
 				groups[g].paths[p].entirely_excluded = true;
 				continue;
 			}
-			//	if (g == 5)
-			//		cerr << "WHA";
+			
 				//groups[g].paths[p].denoise_movement_series_and_calculate_intensity_slopes(0,times_series_denoising_parameters);
 		}
 
@@ -1943,8 +1942,6 @@ bool ns_time_path_image_movement_analyzer<allocator_T>::load_image_quantificatio
 				groups[g].paths[p].entirely_excluded = true;
 				continue;
 			}
-			//	if (g == 5)
-			//		cerr << "WHA";
 			groups[g].paths[p].analyze_movement(e, ns_stationary_path_id(g, p, analysis_id), last_timepoint_in_analysis_);
 			groups[g].paths[p].calculate_movement_quantification_summary(groups[g].paths[p].movement_analysis_result);
 		}
@@ -2014,8 +2011,7 @@ bool ns_time_path_image_movement_analyzer<allocator_T>::load_completed_analysis_
 				groups[g].paths[p].entirely_excluded = true;
 				continue;
 			}
-		//	if (g == 5)
-		//		cerr << "WHA";
+	
 			//groups[g].paths[p].denoise_movement_series_and_calculate_intensity_slopes(0,times_series_denoising_parameters);
 		}
 	
@@ -4211,8 +4207,7 @@ bool ns_analyzed_image_time_path::populate_images_from_region_visualization(cons
 		path_aligned_image_image_properties = interpolated_region_visualization.properties();
 	}
 	
-	//	if (group_id == 42)
-	//		cerr << "WHA";
+	
 	//this sets the correct image size based on the solution's information.
 	//the image resolution is taken from the region visualization
 	const bool just_flag_elements_as_loaded = (load_type == ns_lrv_just_flag);
@@ -5759,10 +5754,7 @@ void ns_analyzed_image_time_path::calculate_image_registration(const ns_analyzed
 		if (!elements[i - step*time_kernal].path_aligned_image_is_loaded()) {
 			throw ns_ex("Image for ") << i - step*time_kernal << " isn't loaded. (step - " << step << "\n";
 		}
-#ifdef NS_OUTPUT_ALGINMENT_DEBUG
-		if (i == 34)
-			std::cerr << "WHA";
-#endif
+
 		//xxx add synthetic shift to a random amount up and left.
 		elements[i].synthetic_offset = ns_vector_2d(0, 0);// ns_vector_2d((rand() % 50) / 10.0, (rand() % 50) / 10.0);
 	/*	for (unsigned int y = 0; y < elements[i].path_aligned_images->image.properties().height - ceil(elements[i].synthetic_offset.y)-1; y++){
@@ -5990,8 +5982,7 @@ ns_analyzed_image_time_path_group<allocator_T>::ns_analyzed_image_time_path_grou
 			path.elements[s].context_position_in_region_vis_image = solution_.element(source_path.stationary_elements[ordered_time[j].index]).context_image_position_in_region_vis_image;
 			path.elements[s].inferred_animal_location = solution_.element(source_path.stationary_elements[ordered_time[j].index]).inferred_animal_location;
 			path.elements[s].element_before_fast_movement_cessation = solution_.element(source_path.stationary_elements[ordered_time[j].index]).element_before_fast_movement_cessation;
-	//		if (path.elements[s].element_before_fast_movement_cessation)
-	//			cerr << "WHA";
+
 			path.elements[s].worm_region_size_ = solution_.element(source_path.stationary_elements[ordered_time[j].index]).region_size;
 			path.elements[s].worm_context_size_ = solution_.element(source_path.stationary_elements[ordered_time[j].index]).context_image_size;
 
@@ -6079,15 +6070,9 @@ ns_analyzed_image_time_path_group<allocator_T>::ns_analyzed_image_time_path_grou
 	
 	//	path.worm_size = path.region_size;
 
-		for(unsigned int j = 0; j < path.elements.size(); j++){
+		for(unsigned int j = 0; j < path.elements.size(); j++)
 			path.elements[j].offset_from_path = path.elements[j].context_position_in_source_image - path.path_context_position;
-			/*	if (path.elements[j].region_offset_in_source_image()==ns_vector_2i(2579,300))
-				cerr << "WHA";
-				if (path.elements[j].region_offset_in_source_image()==ns_vector_2i(2579,301))
-				cerr << "WHA";
-				if (path.elements[j].region_offset_in_source_image()==ns_vector_2i(2579,301) && path.elements[j].absolute_time == 1408897604)
-				cerr << "WHA";*/
-		}
+		
 		current_path_id++;
 	}
 }

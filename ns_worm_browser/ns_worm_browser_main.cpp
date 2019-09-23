@@ -397,13 +397,6 @@ class ns_worm_gl_window : public Fl_Gl_Window {
 			cerr << ex.text() << "\n";
 			return 1;
 		}
-
-		//cerr << "Could not handle " << state << "\n";
-	/*	if (state == FL_SHOW) {
-			show();
-			return 1;
-		}*/
-	//		cerr << "WHA";
 		int a = Fl_Gl_Window::handle(state);
 		return a;
 	}
@@ -538,12 +531,7 @@ class ns_worm_stats_gl_window : public Fl_Gl_Window {
 			return 1;
 		}
 
-		//cerr << "Could not handle " << state << "\n";
-	/*	if (state == FL_SHOW) {
-			show();
-			return 1;
-		}*/
-		//		cerr << "WHA";
+
 		int a = Fl_Gl_Window::handle(state);
 		return a;
 	}
@@ -3180,7 +3168,6 @@ void ns_handle_death_time_solo_annotation_button(Fl_Widget * w, void * data){
 	worm_learner.death_time_solo_annotater.request_refresh();
 	storyboard_lock.release();
 	report_changes_made_to_screen();
-//	cerr << "WHA";
 	//Fl::focus(main_window->gl_window);
 }
 void ns_handle_stats_annotation_button(Fl_Widget* w, void* data) {

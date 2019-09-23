@@ -829,8 +829,7 @@ void ns_worm_movement_measurement_summary_timepoint_data::add(const ns_worm_move
 	number_permanantly_lost	+=	s.number_permanantly_lost;	
 	number_permanantly_lost_before_end_of_experiment += s.number_permanantly_lost_before_end_of_experiment;
 	number_of_missing_animals_smoothed += s.number_of_missing_animals_smoothed;
-//	if (observed_multiple_deaths.observed != 0 || observed_multiple_deaths.cumulative !=0)
-//		cerr << "WHA";
+
 	singleton_deaths.add(s.singleton_deaths);
 	observed_multiple_deaths.add(s.observed_multiple_deaths);
 	estimated_multiple_deaths.add(s.estimated_multiple_deaths);
@@ -937,9 +936,7 @@ class ns_problem_object_flagger {
 
 			ns_dying_animal_description_set_const description_set;
 			q->generate_dying_animal_description_const(true, description_set);
-			if (description_set.descriptions.begin()->machine.death_annotation != 0 &&
-				description_set.descriptions.begin()->machine.death_associated_expansion_start != 0)
-				cout << "WHA";
+	
 		}
 	}
 };

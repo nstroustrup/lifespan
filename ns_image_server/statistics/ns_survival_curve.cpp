@@ -514,8 +514,7 @@ ns_survival_timepoint_event & ns_get_correct_event(const unsigned long i, ns_sur
 double ns_lifespan_device_normalization_statistics::calculate_additive_device_regression_residual(const double measurement) const{
 	//if (this->external_fix_point_specified())
 	//	return measurement - additive_device_regression_coefficient - grand_strain_mean + control_mean_external_fix_point;
-	//if (measurement < additive_device_regression_coefficient)
-	//	cerr << "WHA";
+
 	return measurement - (double)additive_device_regression_coefficient;
 }
 double ns_lifespan_device_normalization_statistics::calculate_multiplicative_device_regression_residual(const double measurement) const{
@@ -691,8 +690,7 @@ void ns_lifespan_experiment_set::out_detailed_JMP_event_data(const ns_time_handi
 		
 		const ns_death_time_annotation & properties (prop.properties_override_set?prop.properties_override:prop.events->properties);
 		ns_death_time_annotation a(prop.events->events[i]);
-	//	if (a.position.x == 1983 && a.position.y == 4332)	
-	//		cerr << "WHA";
+
 		if (time_handling_behavior == ns_output_single_event_times){
 			if (a.time.period_start_was_not_observed && time_handling_behavior == ns_lifespan_experiment_set::ns_output_single_event_times){
 				a.time.period_start = a.time.period_end;

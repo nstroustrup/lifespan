@@ -241,8 +241,7 @@ void ns_experiment_storyboard_timepoint::load_images(bool use_color,ns_sql & sql
 					current_worm = worms[j];	
 				//	if (sorted_events[i].e->annotation_whose_image_should_be_used.inferred_animal_location)
 				//		cerr << "Found interpolated worm image.\n";
-		//			if (sorted_events[i].e->event_annotation.position == ns_vector_2i(2579,300))
-	//					cerr << "WHA";
+
 					//images aren't loaded yet--this check does nothing
 					//if (sorted_events[i].e->image.properties().width > sorted_events[i].e->image_image_size().x ||
 					//	sorted_events[i].e->image.properties().height > sorted_events[i].e->image_image_size().y)
@@ -2051,16 +2050,7 @@ ns_ex ns_experiment_storyboard::compare(const ns_experiment_storyboard & s){
 	for (unsigned int i = 0; i < stop; i++){
 		if (s.divisions[i].events.size() != divisions[i].events.size()) {
 			ex << "Storyboards have different number of events in division " << i << ":" << divisions[i].events.size() << " vs " << s.divisions[i].events.size();
-			/*ofstream out("c:\\server\\ev_debug.csv");
-			out << "source,description\n";
-			for (unsigned int j = 0; j < s.divisions[i].events.size(); j++) {
-				out << "s," << s.divisions[i].events[j].event_annotation.brief_description() << "\n";
-			}
-
-			for (unsigned int j = 0; j < divisions[i].events.size(); j++)
-				out << "o," << divisions[i].events[j].event_annotation.brief_description() << "\n";
-			out.close();
-			cout << "WHA";*/
+		
 		}
 		else{
 			for (unsigned int j = 0; j < divisions[i].events.size(); j++){

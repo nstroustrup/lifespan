@@ -2109,16 +2109,26 @@ class ns_dying_animal_description_generator{
 						group->death_associated_expansion_stop = & annotations[i];
 					break;
 				case ns_death_associated_expansion_start:
-						if (annotations[i].time.period_start == annotations[i].time.period_end && (!annotations[i].time.period_end_was_not_observed || !annotations[i].time.period_end_was_not_observed))
-							cerr << "Invalid skipped relaxation state transition\n";
+					if (annotations[i].time.period_start == annotations[i].time.period_end && (!annotations[i].time.period_end_was_not_observed || !annotations[i].time.period_end_was_not_observed)) {
+						if (annotations[i].annotation_source == ns_death_time_annotation::ns_storyboard)
+							;// cerr << "Storyboard annotation yielded a zero duration expansion event that was not flagged as \"not observed\".\n";
+						else if (annotations[i].annotation_source == ns_death_time_annotation::ns_lifespan_machine)
+							cerr << "Automated analysis yielded a zero duration expansion event that was not flagged as \"not observed\".\n";
+						else cerr << "Inproperly flagged annotation expansion event generated from unusual source: " << (int)annotations[i].annotation_source << "\n";
+					}
 						group->death_associated_expansion_start= &annotations[i];
 						break; 
 				case ns_death_associated_post_expansion_contraction_stop:
 							group->death_associated_post_expansion_contraction_stop = &annotations[i];
 							break;
 				case ns_death_associated_post_expansion_contraction_start:
-					if (annotations[i].time.period_start == annotations[i].time.period_end && (!annotations[i].time.period_end_was_not_observed || !annotations[i].time.period_end_was_not_observed))
-						cerr << "Invalid skipped relaxation state transition\n";
+					if (annotations[i].time.period_start == annotations[i].time.period_end && (!annotations[i].time.period_end_was_not_observed || !annotations[i].time.period_end_was_not_observed)) {
+						if (annotations[i].annotation_source == ns_death_time_annotation::ns_storyboard)
+							;// cerr << "Storyboard annotation yielded a zero duration contraction event that was not flagged as \"not observed\".\n";
+						else if (annotations[i].annotation_source == ns_death_time_annotation::ns_lifespan_machine)
+							cerr << "Automated analysis yielded a zero duration contraction event that was not flagged as \"not observed\".\n";
+						else cerr << "Inproperly flagged annotation contraction event generated from unusual source: " << (int)annotations[i].annotation_source << "\n";
+					}
 					group->death_associated_post_expansion_contraction_start = &annotations[i];
 					break;
 				case ns_stationary_worm_disappearance:
@@ -2597,7 +2607,8 @@ void ns_death_time_annotation_compiler_region::generate_survival_curve(ns_surviv
 						if (a[3] != 0 && a[0] != 0) {
 							b.volatile_time_at_death_associated_expansion_start = a[3]->time;
 							if (a[3]->time.period_start == a[3]->time.period_end && (!a[3]->time.period_end_was_not_observed || !a[3]->time.period_end_was_not_observed)) {
-								cout << "Encountered an undefined expansion start time for animal " << b.stationary_path_id.group_id << " in region " << a[3]->region_info_id << "!\n";
+								if (a[3]->annotation_source != ns_death_time_annotation::ns_storyboard)
+									cout << "Encountered an undefined expansion start time for animal " << b.stationary_path_id.group_id << " in region " << a[3]->region_info_id << "!\n";
 								b.volatile_time_at_death_associated_expansion_start.period_end_was_not_observed = b.volatile_time_at_death_associated_expansion_start.period_start_was_not_observed = true;
 							}
 						}
@@ -2606,6 +2617,7 @@ void ns_death_time_annotation_compiler_region::generate_survival_curve(ns_surviv
 						if (a[4] != 0 && a[0] != 0) {
 							b.volatile_time_at_death_associated_expansion_end = a[4]->time;
 							if (a[4]->time.period_start == a[4]->time.period_end && (!a[4]->time.period_end_was_not_observed || !a[4]->time.period_end_was_not_observed)) {
+								if (a[3]->annotation_source != ns_death_time_annotation::ns_storyboard)
 								cout << "Encountered an undefined expansion end time for animal " << b.stationary_path_id.group_id << " in region " << a[3]->region_info_id << "!\n";
 								b.volatile_time_at_death_associated_expansion_end.period_end_was_not_observed = b.volatile_time_at_death_associated_expansion_end.period_start_was_not_observed = true;
 							}
@@ -2616,6 +2628,7 @@ void ns_death_time_annotation_compiler_region::generate_survival_curve(ns_surviv
 						if (a[5] != 0 && a[0] != 0) {
 							b.volatile_time_at_death_associated_post_expansion_contraction_start = a[5]->time;
 							if (a[5]->time.period_start == a[5]->time.period_end && (!a[5]->time.period_end_was_not_observed || !a[5]->time.period_end_was_not_observed)) {
+								if (a[3]->annotation_source != ns_death_time_annotation::ns_storyboard)
 								cout << "Encountered an undefined contraction start time for animal " << b.stationary_path_id.group_id << " in region " << a[5]->region_info_id << "!\n";
 								b.volatile_time_at_death_associated_post_expansion_contraction_start.period_end_was_not_observed = b.volatile_time_at_death_associated_post_expansion_contraction_start.period_start_was_not_observed = true;
 							}

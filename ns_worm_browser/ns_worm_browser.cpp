@@ -4671,7 +4671,6 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 		}
 	}
 	
-	
 	//unsigned long number_of_curves(0);
 	//for (unsigned int i = 0; i < movement_results.samples.size(); i++){
 	//	number_of_curves+= movement_results.samples[i].regions.size();
@@ -9104,7 +9103,7 @@ void ns_death_time_solo_posture_annotater::register_click(const ns_vector_2i & i
 			}
 			
 			if (clicked_on_expansion_button)
-				cur_hand_data->animals[current_animal_id].step_death_posture_relaxation_explicitness(ns_death_timing_data_step_event_specification(
+				cur_hand_data->animals[current_animal_id].step_death_associated_expansion_explicitness(ns_death_timing_data_step_event_specification(
 					current_time_interval(handle), cur_worm->element(current_element_id()),
 					properties_for_all_animals.region_info_id, properties_for_all_animals.stationary_path_id, current_animal_id));
 			else {

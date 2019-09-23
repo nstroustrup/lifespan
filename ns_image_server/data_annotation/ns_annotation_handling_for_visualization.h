@@ -284,7 +284,7 @@ public:
 			return fast_movement_cessation.time;
 		return path_observation_limits.interval_before_first_observation;
 	}
-	void step_death_posture_relaxation_explicitness(const ns_death_timing_data_step_event_specification & e) {
+	void step_death_associated_expansion_explicitness(const ns_death_timing_data_step_event_specification & e) {
 		const ns_death_time_annotation_time_interval start_time = death_associated_expansion_start.time;
 		const ns_death_time_annotation_time_interval stop_time = death_associated_expansion_stop.time;
 		const ns_death_time_annotation::ns_event_explicitness cur_exp(death_associated_expansion_stop.event_explicitness);
@@ -296,14 +296,17 @@ public:
 		switch (cur_exp) {
 		case ns_death_time_annotation::ns_unknown_explicitness:  //deliberate pass-through
 		case ns_death_time_annotation::ns_not_explicit:
-			death_associated_expansion_stop.event_explicitness = ns_death_time_annotation::ns_explicitly_observed; break;
-		case ns_death_time_annotation::ns_explicitly_observed:
-			death_associated_expansion_stop.event_explicitness = ns_death_time_annotation::ns_explicitly_not_observed; break;
+			death_associated_expansion_stop.event_explicitness = ns_death_time_annotation::ns_explicitly_observed; 
+			break;
+		case ns_death_time_annotation::ns_explicitly_observed: 
+			death_associated_expansion_stop.event_explicitness = ns_death_time_annotation::ns_explicitly_not_observed;
+			break;
 		case ns_death_time_annotation::ns_explicitly_not_observed: {
 			death_associated_expansion_stop.event_explicitness = ns_death_time_annotation::ns_not_explicit; 
 			ns_death_time_annotation_time_interval t(0, 0);
 			death_associated_expansion_stop.time = t;
 			death_associated_expansion_start.time = t;
+			death_associated_expansion_stop.time.period_end_was_not_observed = death_associated_expansion_stop.time.period_start_was_not_observed = true;
 			break;
 		}
 		default: throw ns_ex("step_death_posture_relaxation_explicitness()::Unkown state!");
@@ -495,17 +498,49 @@ public:
 			if (ns_death_timing_data::useful_information_in_annotation(p->movement_cessation))
 				set.add(p->movement_cessation);
 
-			if (ns_death_timing_data::useful_information_in_annotation(p->death_associated_expansion_start))
-				set.add(p->death_associated_expansion_start);
+			if (ns_death_timing_data::useful_information_in_annotation(p->death_associated_expansion_start)) {
+				ns_death_time_annotation d(p->death_associated_expansion_start);
+				if (d.event_explicitness == ns_death_time_annotation::ns_explicitly_not_observed) {
+					if (!d.time.period_end_was_not_observed || !d.time.period_start_was_not_observed) {
+						cout << "Fixing improper explicitness marking in death time expansion stop.\n";
+						d.time.period_end_was_not_observed = d.time.period_start_was_not_observed = true;
+					}
+				}
+				set.add(d);
+			}
 
-			if (ns_death_timing_data::useful_information_in_annotation(p->death_associated_expansion_stop))
-				set.add(p->death_associated_expansion_stop);
+			if (ns_death_timing_data::useful_information_in_annotation(p->death_associated_expansion_stop)) {
+				ns_death_time_annotation d(p->death_associated_expansion_stop);
+				if (d.event_explicitness == ns_death_time_annotation::ns_explicitly_not_observed) {
+					if (!d.time.period_end_was_not_observed || !d.time.period_start_was_not_observed) {
+						cout << "Fixing improper explicitness marking in death time expansion stop.\n";
+						d.time.period_end_was_not_observed = d.time.period_start_was_not_observed = true;
+					}
+				}
+				set.add(d);
+			}
 
-			if (ns_death_timing_data::useful_information_in_annotation(p->death_associated_post_expansion_contraction_start))
-				set.add(p->death_associated_post_expansion_contraction_start);
+			if (ns_death_timing_data::useful_information_in_annotation(p->death_associated_post_expansion_contraction_start)) {
+				ns_death_time_annotation d(p->death_associated_post_expansion_contraction_start);
+				if (d.event_explicitness == ns_death_time_annotation::ns_explicitly_not_observed) {
+					if (!d.time.period_end_was_not_observed || !d.time.period_start_was_not_observed) {
+						cout << "Fixing improper explicitness marking in death time contraction start.\n";
+						d.time.period_end_was_not_observed = d.time.period_start_was_not_observed = true;
+					}
+				}
+				set.add(d);
+			}
 
-			if (ns_death_timing_data::useful_information_in_annotation(p->death_associated_post_expansion_contraction_stop))
-				set.add(p->death_associated_post_expansion_contraction_stop);
+			if (ns_death_timing_data::useful_information_in_annotation(p->death_associated_post_expansion_contraction_stop)) {
+				ns_death_time_annotation d(p->death_associated_post_expansion_contraction_stop);
+				if (d.event_explicitness == ns_death_time_annotation::ns_explicitly_not_observed) {
+					if (!d.time.period_end_was_not_observed || !d.time.period_start_was_not_observed) {
+						cout << "Fixing improper explicitness marking in death time contraction stop.\n";
+						d.time.period_end_was_not_observed = d.time.period_start_was_not_observed = true;
+					}
+				}
+				set.add(d);
+			}
 
 		}
 

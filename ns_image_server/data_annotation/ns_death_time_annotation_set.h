@@ -95,6 +95,10 @@ struct ns_dying_animal_description_base {
 template<class annotation_t>
 struct ns_dying_animal_description_set_base {
 	typedef std::vector< ns_dying_animal_description_base<annotation_t> > description_set_type;
+	//each description corresponds to a worm.
+	//normally, each location will have just a worm,
+	//but when users annotate extra worms, then these additional worms
+	//each get their own description.
 	description_set_type descriptions;
 	unsigned long unassigned_multiple_worms;
 };

@@ -160,7 +160,7 @@ void ns_machine_analysis_sample_data::load(const ns_death_time_annotation_set::n
 			//break;
 		}
 		catch(ns_ex & ex){
-			std::cerr << (*regions.rbegin())->metadata.sample_name << "::" << (*regions.rbegin())->metadata.region_name << ": " << ex.text() << "\n";
+			image_server.add_subtext_to_current_event("The following error prevented plate data from being produced for " + (*regions.rbegin())->metadata.sample_name + "::" + (*regions.rbegin())->metadata.region_name + ": " + ex.text() + "\n" , &sql);
 			regions.pop_back();
 		}
 	}

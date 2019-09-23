@@ -149,7 +149,7 @@ struct ns_death_time_annotation{
 				ns_number_of_exclusion_values
 				} ns_exclusion_type;
 
-	typedef enum{ns_single_worm, ns_part_of_a_mutliple_worm_disambiguation_cluster} ns_disambiguation_type;
+	typedef enum{ns_single_worm, ns_part_of_a_mutliple_worm_disambiguation_cluster, ns_inferred_censoring_event} ns_disambiguation_type;
 
 	enum{maximum_number_of_worms_at_position=6};
 

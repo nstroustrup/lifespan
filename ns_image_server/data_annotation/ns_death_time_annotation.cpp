@@ -1704,7 +1704,7 @@ void ns_death_time_annotation_compiler::generate_detailed_animal_data_file(const
 
 	//ns_capture_sample_region_statistics_set::out_header(o);
 	ns_region_metadata::out_JMP_plate_identity_header(o);
-	o << ",Censored,Excluded,Special Flag, Size of by-hand annotated cluster,";
+	o << ",Event Frequency,Censored,Excluded,Special Flag, Size of by-hand annotated cluster,";
 	o << "Machine Fast Movement Cessation Age (Days),Machine Slow Movement Cessation Age (Days), Machine Death Age (Days),"
 		"Machine Slow Movement Duration (Days), Machine Posture Changing Duration (Days), Machine Not Fast Moving Duration (Days),"
 		"By Hand Fast Movement Cessation Age (Days),By Hand Slow Movement Cessation Age (Days),By Hand Death Age (Days),"
@@ -1731,7 +1731,7 @@ void ns_death_time_annotation_compiler::generate_detailed_animal_data_file(const
 					q->properties, animals, set, ns_death_time_annotation::ns_machine_annotations_if_no_by_hand);
 				for (unsigned int i = 0; i < set.size(); i++) {
 					p->second.metadata.out_JMP_plate_identity_data(o);
-					o << ",0,"
+					o << ",1,0,"
 						<< ((set[i].is_excluded() || set[i].flag.event_should_be_excluded()) ? "1" : "0") << ","
 						<< set[i].flag.label() << ","
 						<< set[i].number_of_worms_at_location_marked_by_hand << ",";
@@ -1759,7 +1759,7 @@ void ns_death_time_annotation_compiler::generate_detailed_animal_data_file(const
 			else{
 				ns_dying_animal_description_base<const ns_death_time_annotation> d(animals.descriptions[0]);
 				p->second.metadata.out_JMP_plate_identity_data(o);
-				o << ",0,"
+				o << ",1,0,"
 					<< ((q->properties.is_excluded() || q->properties.flag.event_should_be_excluded()) ? "1" : "0") << ","
 					<< q->properties.flag.label() << ","
 					<< q->properties.number_of_worms_at_location_marked_by_hand << ",";
@@ -1799,24 +1799,24 @@ void ns_death_time_annotation_compiler::generate_detailed_animal_data_file(const
 					p->second.non_location_events.events[i].missing_worm_return_strategy != ns_death_time_annotation::default_missing_return_strategy() )
 					//p->second.non_location_events.events[i].excluded == ns_death_time_annotation::ns_censored_at_end_of_experiment)
 					continue;
-				for (unsigned int j = 0; j < p->second.non_location_events.events[i].number_of_worms(); j++) {
+				o << "," << p->second.non_location_events.events[i].number_of_worms();
 
-					p->second.metadata.out_JMP_plate_identity_data(o);
-					o << ",1,0," //censored,excluded
-						<< "1," // number of worms
-						<< ",," << (p->second.non_location_events.events[i].time.best_estimate_event_time_within_interval() - p->second.metadata.time_at_which_animals_had_zero_age) / (60.0 * 60 * 24) << ",,,," //machine death times
-						<< ",," << (p->second.non_location_events.events[i].time.best_estimate_event_time_within_interval() - p->second.metadata.time_at_which_animals_had_zero_age) / (60.0 * 60 * 24) << ",,,,"; //by hand death times
+				p->second.metadata.out_JMP_plate_identity_data(o);
+				o << ",1,0," //censored,excluded
+					<< "1," // number of worms
+					<< ",," << (p->second.non_location_events.events[i].time.best_estimate_event_time_within_interval() - p->second.metadata.time_at_which_animals_had_zero_age) / (60.0 * 60 * 24) << ",,,," //machine death times
+					<< ",," << (p->second.non_location_events.events[i].time.best_estimate_event_time_within_interval() - p->second.metadata.time_at_which_animals_had_zero_age) / (60.0 * 60 * 24) << ",,,,"; //by hand death times
 
 
-					o << ",,";
-					o << ",,";
-					o << ",,"; //death position
-					o << ",,,";	//likelihood group and path
-					o << ",,"; //details
-					o << "non-location_event,";
-					o << p->second.non_location_events.events[i].censor_description();
-					o << "\n";
-				}
+				o << ",,";
+				o << ",,";
+				o << ",,"; //death position
+				o << ",,,";	//likelihood group and path
+				o << ",,"; //details
+				o << "non-location_event,";
+				o << p->second.non_location_events.events[i].censor_description();
+				o << "\n";
+				
 			}
 		}
 	}

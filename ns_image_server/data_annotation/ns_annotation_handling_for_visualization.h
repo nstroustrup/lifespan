@@ -502,7 +502,7 @@ public:
 				ns_death_time_annotation d(p->death_associated_expansion_start);
 				if (d.event_explicitness == ns_death_time_annotation::ns_explicitly_not_observed) {
 					if (!d.time.period_end_was_not_observed || !d.time.period_start_was_not_observed) {
-						cout << "Fixing improper explicitness marking in death time expansion stop.\n";
+					  std::cout << "Fixing improper explicitness marking in death time expansion stop.\n";
 						d.time.period_end_was_not_observed = d.time.period_start_was_not_observed = true;
 					}
 				}
@@ -513,7 +513,7 @@ public:
 				ns_death_time_annotation d(p->death_associated_expansion_stop);
 				if (d.event_explicitness == ns_death_time_annotation::ns_explicitly_not_observed) {
 					if (!d.time.period_end_was_not_observed || !d.time.period_start_was_not_observed) {
-						cout << "Fixing improper explicitness marking in death time expansion stop.\n";
+					  std::cout << "Fixing improper explicitness marking in death time expansion stop.\n";
 						d.time.period_end_was_not_observed = d.time.period_start_was_not_observed = true;
 					}
 				}
@@ -524,7 +524,7 @@ public:
 				ns_death_time_annotation d(p->death_associated_post_expansion_contraction_start);
 				if (d.event_explicitness == ns_death_time_annotation::ns_explicitly_not_observed) {
 					if (!d.time.period_end_was_not_observed || !d.time.period_start_was_not_observed) {
-						cout << "Fixing improper explicitness marking in death time contraction start.\n";
+					  std::cout << "Fixing improper explicitness marking in death time contraction start.\n";
 						d.time.period_end_was_not_observed = d.time.period_start_was_not_observed = true;
 					}
 				}
@@ -535,7 +535,7 @@ public:
 				ns_death_time_annotation d(p->death_associated_post_expansion_contraction_stop);
 				if (d.event_explicitness == ns_death_time_annotation::ns_explicitly_not_observed) {
 					if (!d.time.period_end_was_not_observed || !d.time.period_start_was_not_observed) {
-						cout << "Fixing improper explicitness marking in death time contraction stop.\n";
+					  std::cout << "Fixing improper explicitness marking in death time contraction stop.\n";
 						d.time.period_end_was_not_observed = d.time.period_start_was_not_observed = true;
 					}
 				}

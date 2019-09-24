@@ -3894,7 +3894,7 @@ void ns_run_startup_routines() {
 		//example code that runns a movement analysis job for a specific region
 		if (0) {
 			ns_processing_job job;
-			const unsigned long region_id(2116);
+			const unsigned long region_id(2211);
 			job.region_id = region_id;
 			job.maintenance_task = ns_maintenance_rebuild_movement_from_stored_image_quantification;
 			analyze_worm_movement_across_frames(job, &image_server, sql(), true);

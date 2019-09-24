@@ -105,7 +105,7 @@ struct ns_survival_timepoint_event_count{
 	
 struct ns_metadata_worm_properties{
 	ns_metadata_worm_properties():events(0),properties_override_set(false),control_group(-1){}
-	typedef enum{ns_long_distance_movement_cessation,ns_local_movement_cessation,ns_death} ns_survival_event_type;
+	typedef enum{ns_long_distance_movement_cessation,ns_local_movement_cessation,ns_death,ns_death_associated_expansion, ns_typeless_censoring_events,ns_number_of_event_types} ns_survival_event_type;
 	long control_group;
 	unsigned long event_period_end_time;
 	ns_survival_event_type event_type;
@@ -119,6 +119,8 @@ struct ns_metadata_worm_properties{
 				case ns_long_distance_movement_cessation: return "Long Distance Movement Cessation";
 				case ns_local_movement_cessation: return "Local Movement Cessation";
 				case ns_death:	return "Death";
+				case ns_death_associated_expansion:	return "Death-Associated Expansion";
+				case ns_typeless_censoring_events:	return "Censoring Event";
 				default: throw ns_ex("ns_region_metadata::event_type_to_string()::Unknown Event Type");
 			}
 	}
@@ -165,7 +167,8 @@ struct ns_survival_timepoint{
 	ns_survival_timepoint_event deaths,
 		long_distance_movement_cessations,
 		local_movement_cessations,
-		death_associated_expansions;
+		death_associated_expansions,
+		typeless_censoring_events;
 	void add(const ns_survival_timepoint & t);
 };
 

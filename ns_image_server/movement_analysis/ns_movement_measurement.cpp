@@ -147,6 +147,8 @@ void ns_worm_movement_summary_series::generate_censoring_annotations(const ns_re
 		if (missing_censored > 0) {
 			if (missing_censored > 25)
 				image_server.register_server_event(ns_image_server::ns_register_in_central_db, ns_ex("In region ") << m.sample_name << "::" << m.region_name << "(" << m.region_id << "): A large number, " << ns_to_string(missing_censored) << ", animals went missing in a single timepoint.  Consider inspecting at the movement timeseries file for this region for unusual population dynamics.");
+			//if (missing_censored == 35)
+			//	cout << "WHA";
 			set.add(
 				ns_death_time_annotation(ns_moving_worm_disappearance,
 					0, m.region_id,

@@ -491,22 +491,24 @@ void ns_lifespan_experiment_set::output_JMP_summary_file(std::ostream & o) const
 	}
 }
 */
-const ns_survival_timepoint_event & ns_get_correct_event(const unsigned long i, const ns_survival_timepoint & e){
-	switch(i){
-		case 0: return e.deaths;
-		case 1: return e.local_movement_cessations;
-		case 2: return e.long_distance_movement_cessations;
-		case 3: return e.death_associated_expansions;
+const ns_survival_timepoint_event& ns_get_correct_event(const ns_metadata_worm_properties::ns_survival_event_type & type, const ns_survival_timepoint& e) {
+	switch(type){
+		case ns_metadata_worm_properties::ns_death: return e.deaths;
+		case ns_metadata_worm_properties::ns_local_movement_cessation: return e.local_movement_cessations;
+		case ns_metadata_worm_properties::ns_long_distance_movement_cessation: return e.long_distance_movement_cessations;
+		case ns_metadata_worm_properties::ns_death_associated_expansion: return e.death_associated_expansions;
+		case ns_metadata_worm_properties::ns_typeless_censoring_events: return e.typeless_censoring_events;
 		default: throw ns_ex("ns_get_correct_event()::Unknown event spec");
 	}
 }
 
-ns_survival_timepoint_event & ns_get_correct_event(const unsigned long i, ns_survival_timepoint & e){
-	switch(i){
-		case 0: return e.deaths;
-		case 1: return e.local_movement_cessations;
-		case 2: return e.long_distance_movement_cessations;
-		case 3: return e.death_associated_expansions;
+ns_survival_timepoint_event & ns_get_correct_event(const ns_metadata_worm_properties::ns_survival_event_type & type, ns_survival_timepoint & e){
+	switch(type){
+			case ns_metadata_worm_properties::ns_death: return e.deaths;
+			case ns_metadata_worm_properties::ns_local_movement_cessation: return e.local_movement_cessations;
+			case ns_metadata_worm_properties::ns_long_distance_movement_cessation: return e.long_distance_movement_cessations;
+			case ns_metadata_worm_properties::ns_death_associated_expansion: return e.death_associated_expansions;
+			case ns_metadata_worm_properties::ns_typeless_censoring_events: return e.typeless_censoring_events;
 		default: throw ns_ex("ns_get_correct_event()::Unknown event spec");
 	}
 }
@@ -883,7 +885,7 @@ void ns_lifespan_experiment_set::out_simple_JMP_event_data(const ns_time_handing
 			continue;
 
 		//don't include censoring events for fast moving worms that go missing.
-		if (a.type != ns_movement_cessation && a.excluded == ns_death_time_annotation::ns_censored_at_end_of_experiment)
+		if (a.type != ns_movement_cessation && a.type != ns_death_associated_expansion_start && a.excluded == ns_death_time_annotation::ns_censored_at_end_of_experiment)
 			continue;
 		if (time_handling_behavior == ns_output_single_event_times){
 			if (a.time.period_start_was_not_observed){	
@@ -911,11 +913,17 @@ void ns_lifespan_experiment_set::out_simple_JMP_event_data(const ns_time_handing
 		ns_output_JMP_time_interval(time_handling_behavior,a.time - metadata.time_at_which_animals_had_zero_age,
 							time_scaling_factor,o);
 		o << ",";
-		if (a.volatile_time_at_death_associated_expansion_start.fully_unbounded())
-			o << (time_handling_behavior == ns_output_single_event_times ? "" : ",");
-		else
-		ns_output_JMP_time_interval(time_handling_behavior, a.volatile_time_at_death_associated_expansion_start - metadata.time_at_which_animals_had_zero_age,
-			time_scaling_factor, o);
+		//output inferred censoring events to both movement and expansion  based death times
+		if (a.disambiguation_type == ns_death_time_annotation::ns_inferred_censoring_event) {
+			ns_output_JMP_time_interval(time_handling_behavior, a.time - metadata.time_at_which_animals_had_zero_age,
+				time_scaling_factor, o);
+		}else{
+			if (a.volatile_time_at_death_associated_expansion_start.fully_unbounded())
+				o << (time_handling_behavior == ns_output_single_event_times ? "" : ",");
+			else
+				ns_output_JMP_time_interval(time_handling_behavior, a.volatile_time_at_death_associated_expansion_start - metadata.time_at_which_animals_had_zero_age,
+					time_scaling_factor, o);
+		}
 		o << ",";
 		o << relaxation_vs_movement_death_times << ",";
 		o << a.volatile_duration_of_time_not_fast_moving/time_scaling_factor << ",";
@@ -961,6 +969,9 @@ void ns_genotype_fetcher::add_information_to_database(const std::vector<ns_genot
 
 
 void ns_lifespan_experiment_set::output_JMP_file(const ns_death_time_annotation::ns_by_hand_annotation_integration_strategy & by_hand_strategy,const ns_lifespan_experiment_set::ns_time_handing_behavior & time_handling_behavior,const ns_time_units & time_units,std::ostream & o,const ns_output_file_type& detail, const bool output_header) const{
+	
+	if (detail == ns_detailed_with_censoring_repeats)
+		throw ns_ex("Depreciated output file");
 	std::string time_unit_string;
 	double time_scaling_factor;
 	switch(time_units){
@@ -999,23 +1010,27 @@ void ns_lifespan_experiment_set::output_JMP_file(const ns_death_time_annotation:
 		}
 	}
 
-	ns_metadata_worm_properties::ns_survival_event_type event_type[3] = {ns_metadata_worm_properties::ns_death, 
+	ns_metadata_worm_properties::ns_survival_event_type event_type[(int)ns_metadata_worm_properties::ns_number_of_event_types] = {
+																ns_metadata_worm_properties::ns_death,
 																ns_metadata_worm_properties::ns_local_movement_cessation, 
-																ns_metadata_worm_properties::ns_long_distance_movement_cessation
+																ns_metadata_worm_properties::ns_long_distance_movement_cessation,
+																ns_metadata_worm_properties::ns_death_associated_expansion,
+																ns_metadata_worm_properties::ns_typeless_censoring_events
 																};
-	for (unsigned int event_t = 0; event_t < 3; event_t++){
+
+	for (unsigned int event_t = 0; event_t < (int)ns_metadata_worm_properties::ns_number_of_event_types; event_t++){
 		
-		if ((detail != ns_multiple_events) &&  event_type[event_t] != ns_metadata_worm_properties::ns_death)
+		if ((detail != ns_multiple_events) &&  event_type[event_t] != ns_metadata_worm_properties::ns_death&& event_type[event_t] != ns_metadata_worm_properties::ns_typeless_censoring_events)
 			continue;
 
-		//we make a list of all censoring strategies included in the data set.
+		/*//we make a list of all censoring strategies included in the data set.
 		std::map<ns_death_time_annotation::ns_multiworm_censoring_strategy,
 			std::set<ns_death_time_annotation::ns_missing_worm_return_strategy> > censoring_strategies;
 
 		if (detail == ns_detailed_with_censoring_repeats){
 			for (unsigned int i = 0; i < curves.size(); i++){
 				for (unsigned int j = 0; j < curves[i].timepoints.size();j++){
-					const ns_survival_timepoint_event & te(ns_get_correct_event(event_t,curves[i].timepoints[j]));
+					const ns_survival_timepoint_event & te(ns_get_correct_event(event_type[event_t],curves[i].timepoints[j]));
 					for (unsigned int k = 0; k < te.events.size(); k++){
 						//ignore boring standard events
 						if (!te.events[k].properties.is_censored() && !te.events[k].properties.is_excluded() &&
@@ -1026,7 +1041,7 @@ void ns_lifespan_experiment_set::output_JMP_file(const ns_death_time_annotation:
 					}
 				}
 			}
-		}
+		}*/
 		
 		const ns_lifespan_device_normalization_statistics_set & normalization_stats((
 			(event_type[event_t] == ns_metadata_worm_properties::ns_death)? normalization_stats_for_death:
@@ -1056,26 +1071,30 @@ void ns_lifespan_experiment_set::output_JMP_file(const ns_death_time_annotation:
 			for (unsigned int j = 0; j < curves[i].timepoints.size(); ++j){
 				
 				if (detail == ns_detailed_compact){
-					//Note that the machine will output one copy of single worm events
-					//and then all possible interpretations of multi-worm clumps.
-					//This is a bit of a tangle, but can be sorted out by grouping events by the appropriatecensoring_strategy column value
-					const ns_survival_timepoint_event & te(ns_get_correct_event(event_t,curves[i].timepoints[j]));
+					
+					//the old behavior here was to output all possibble interpretations of multi-worm clumps.
+					//This is no longer done by default, as it was confusing to everyone and rarely if ever used correctly.
+					const ns_survival_timepoint_event & te(ns_get_correct_event(event_type[event_t],curves[i].timepoints[j]));
 					for (unsigned int k = 0; k < te.events.size(); k++){
-							ns_metadata_worm_properties p;
-							p.events = &te.events[k];
-							p.event_period_end_time =  curves[i].timepoints[j].absolute_time-curves[i].metadata.time_at_which_animals_had_zero_age;
-							p.event_type = event_type[event_t];
-							p.flag = ns_death_time_annotation_flag::none();
-							if (!p.events->empty()){
-									out_detailed_JMP_event_data(time_handling_behavior,o,regression_stats,curves[i].metadata,p,time_scaling_factor,"\n",output_raw_data_as_normalization_data);
-							}
+						//if you want to output all possible strategies, remove this "continue"
+						if (te.events[k].properties.multiworm_censoring_strategy != ns_death_time_annotation::default_censoring_strategy() ||
+							te.events[k].properties.missing_worm_return_strategy != ns_death_time_annotation::default_missing_return_strategy())
+							continue;
+						ns_metadata_worm_properties p;
+						p.events = &te.events[k];
+						p.event_period_end_time =  curves[i].timepoints[j].absolute_time-curves[i].metadata.time_at_which_animals_had_zero_age;
+						p.event_type = event_type[event_t];
+						p.flag = ns_death_time_annotation_flag::none();
+						if (!p.events->empty()){
+								out_detailed_JMP_event_data(time_handling_behavior,o,regression_stats,curves[i].metadata,p,time_scaling_factor,"\n",output_raw_data_as_normalization_data);
 						}
-				}
+					}
+				}/*
 				if (detail == ns_detailed_with_censoring_repeats){
 					//Note that the machine will output both censoring events 
 					//and death events for multi-worm clusters.
 					//the user should figure out which one is best and only use that.
-					const ns_survival_timepoint_event & te(ns_get_correct_event(event_t,curves[i].timepoints[j]));
+					const ns_survival_timepoint_event & te(ns_get_correct_event(event_type[event_t],curves[i].timepoints[j]));
 					for (unsigned int k = 0; k < te.events.size(); k++){
 						//don't output excluded events (for brevity's sake)
 						if (te.events[k].properties.is_excluded())
@@ -1110,11 +1129,11 @@ void ns_lifespan_experiment_set::output_JMP_file(const ns_death_time_annotation:
 						out_detailed_JMP_event_data(time_handling_behavior,o,regression_stats,curves[i].metadata,p,time_scaling_factor,"\n",output_raw_data_as_normalization_data,true);
 
 					}
-				}
+				}*/
 				else if (detail == ns_simple || detail == ns_multiple_events || detail == ns_simple_with_control_groups && regression_stats == 0){
 					//simple
 					//first we get all the events of the required type that occured at this time point
-					const ns_survival_timepoint_event & te(ns_get_correct_event(event_t,curves[i].timepoints[j]));
+					const ns_survival_timepoint_event & te(ns_get_correct_event(event_type[event_t],curves[i].timepoints[j]));
 					//now we output each event one at a time
 					for (unsigned int k = 0; k < te.events.size(); k++){
 							ns_metadata_worm_properties p;
@@ -1146,7 +1165,7 @@ void ns_lifespan_experiment_set::output_JMP_file(const ns_death_time_annotation:
 					//output the controls multiple times, one for each mutant on the same scanner
 					for (ns_control_group_plate_assignment::ns_control_group_membership_list::const_iterator g = control_group_info->second.control_group_memberships.begin(); g != control_group_info->second.control_group_memberships.end(); g++){
 
-						const ns_survival_timepoint_event & te(ns_get_correct_event(event_t,curves[i].timepoints[j]));
+						const ns_survival_timepoint_event & te(ns_get_correct_event(event_type[event_t],curves[i].timepoints[j]));
 						for (unsigned int k = 0; k < te.events.size(); k++){
 							ns_metadata_worm_properties p;
 							p.events = &te.events[k];
@@ -1561,6 +1580,7 @@ void ns_survival_timepoint::add(const ns_survival_timepoint & t){
 	local_movement_cessations.add(t.local_movement_cessations);
 	long_distance_movement_cessations.add(t.long_distance_movement_cessations);
 	death_associated_expansions.add(t.death_associated_expansions);
+	typeless_censoring_events.add(t.typeless_censoring_events);
 }
 
 void ns_lifespan_experiment_set::force_common_time_set_to_constant_time_interval(const unsigned long interval_time_in_seconds,ns_lifespan_experiment_set & new_set) const{

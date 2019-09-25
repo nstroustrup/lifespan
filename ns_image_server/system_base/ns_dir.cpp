@@ -156,6 +156,7 @@ public:
 		return s;
 	}
 };
+#ifdef _WIN32
 LONGLONG FileTime_to_POSIX(FILETIME ft)
 {
 	//from https://www.frenk.com/2009/12/convert-filetime-to-unix-timestamp/
@@ -173,7 +174,7 @@ LONGLONG FileTime_to_POSIX(FILETIME ft)
 	// converts back from 100-nanoseconds to seconds
 	return date.QuadPart / 10000000;
 }
-
+#endif
 unsigned long ns_dir::get_file_timestamp(const std::string & filename) {
 #ifdef _WIN32
 	HANDLE hFile = CreateFile(filename.c_str(), GENERIC_READ,
@@ -187,7 +188,7 @@ unsigned long ns_dir::get_file_timestamp(const std::string & filename) {
 
 	if (!GetFileTime(hFile,&CreationTime,&LastAccessTime,&LastWriteTime)) {
 		CloseHandle(hFile);
-		throw ns_ex("ns_dir::get_file_timestamp()::Could not obtain file timestamp: ") << filename;
+		:q		throw ns_ex("ns_dir::get_file_timestamp()::Could not obtain file timestamp: ") << filename;
 	}
 	CloseHandle(hFile);
 	LONGLONG c(FileTime_to_POSIX(CreationTime)), w(FileTime_to_POSIX(LastWriteTime));
@@ -195,11 +196,11 @@ unsigned long ns_dir::get_file_timestamp(const std::string & filename) {
 	return (unsigned long)(c > w ? c : w);
 
 #else
-	struct stat stat_buf;
-	int rc = stat(filename.c_str(), &stat_buf);
-	if (rc == 0)
-		throw ns_ex("ns_dir::get_file_timestamp()::Could not obtain file size: ") << filename;
-	return buffer.st_mtime > buffer.st_mtimest_ctime ? buffer.st_mtime : buffer.st_mtimest_ctime;
+	struct stat buffer;
+	int rc = stat(filename.c_str(), &buffer);
+	if (rc != 0)
+		throw ns_ex("ns_dir::get_file_timestamp()::Could not obtain file timestamp: ") << filename;
+	return buffer.st_mtime > buffer.st_ctime ? buffer.st_mtime : buffer.st_ctime;
 #endif
 
 }
@@ -224,7 +225,7 @@ ns_64_bit ns_dir::get_file_size(const std::string & filename) {
 #else
 	struct stat stat_buf;
 	int rc = stat(filename.c_str(), &stat_buf);
-	if (rc == 0)
+	if (rc != 0)
 		throw ns_ex("ns_dir::get_file_timestamp()::Could not obtain file size: ") << filename;
 	return stat_buf.st_size;
 #endif

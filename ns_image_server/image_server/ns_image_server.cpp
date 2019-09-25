@@ -3470,9 +3470,11 @@ void ns_image_server::update_posture_analysis_model_registry(ns_sql& sql, bool f
 	bool need_to_reset_registry = force;
 	std::vector<ns_posture_analysis_model_registry_entry> models;
 	models.reserve(names.size());
+	for (unsigned int i = 0; i < names.size(); i++) 
+	  file_modified_times[i] = ns_dir::get_file_timestamp(source.model_directory + files[i]);
+	
 	if (!force)
 	for (unsigned int i = 0; i < names.size(); i++) {
-		file_modified_times[i] = ns_dir::get_file_timestamp(source.model_directory + DIR_CHAR_STR + files[i]);
 		bool found_in_registry = false;
 		for (unsigned int j = 0; j < models_in_registry.size(); j++) {
 			if (names[i] == models_in_registry[j][0]) {

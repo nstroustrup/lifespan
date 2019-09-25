@@ -29,7 +29,7 @@ function output_model_choice($field_name,$model_selected,$model_analysis_method,
 	foreach($model_tree as $model_type=>&$models){
 		echo "<optgroup label=\"$model_type\">\n";
 		foreach($models as $model){
-			echo '<option value="' . $model[0] . "_".$model[2].'"';
+			echo '<option value="' . $model[0] . "=".$model[2].'"';
 			if ($model_selected == $model[0] && $model_analysis_method == $model[2])
 				echo " selected";
 			echo '>' . $model[0] ." (" . $model[1] . ")</option>\n";
@@ -308,8 +308,9 @@ $is_single_posture_model = true;
  if (ns_param_spec_true($_POST,'set_posture_models')){
    if ($is_single_posture_model){
      $model_name = $_POST['single_posture_model_name'];
-     $posture_analysis_method = substr($model_name,-1);
-     $model_name = substr($model_name,0,strlen($model_name)-2);
+     $pos = strrpos($model_name,"=");
+     $posture_analysis_method = substr($model_name,$pos+1);
+     $model_name = substr($model_name,0,$pos);
     
      //die($posture_analysis_method);
      $query = "UPDATE sample_region_image_info as i, capture_samples as s SET posture_analysis_model ='$model_name',posture_analysis_method='$posture_analysis_method' WHERE i.sample_id = s.id AND s.experiment_id = $experiment_id";
@@ -338,8 +339,9 @@ $is_single_posture_model = true;
 	 }
 	 //	 	 echo $region_id . ": " . $model . "<br>";
 
-      $posture_analysis_method = substr($model,-1);
-     $model = substr($model,0,strlen($model)-2);
+     $pos = strrpos($model,"=");
+     $posture_analysis_method = substr($model,$pos+1);
+     $model = substr($model,0,$pos);
 	$query =  " UPDATE sample_region_image_info as i, capture_samples as s SET posture_analysis_model ='$model',posture_analysis_method='$posture_analysis_method' WHERE $strain_condition AND i.sample_id = s.id AND s.experiment_id = $experiment_id";
 	//		echo $query . "<BR>";
 

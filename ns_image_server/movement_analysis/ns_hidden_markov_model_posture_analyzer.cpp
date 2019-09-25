@@ -1190,7 +1190,7 @@ void ns_emperical_posture_quantification_value_estimator::build_estimator_from_o
 	std::vector<unsigned long > state_counts((int)(ns_hmm_unknown_state), 0);
 	for (auto p = observed_values.begin(); p != observed_values.end(); p++) {
 		if (p->second.size() < 100) {
-			output+= "Very few annotations were made for the state " + ns_hmm_movement_state_to_string(p->first) + ".  It will not be considered in the model.\n";
+			//output+= "Very few annotations were made for the state " + ns_hmm_movement_state_to_string(p->first) + ".  It will not be considered in the model.\n";
 			continue;
 		}
 		auto p2 = emission_probability_models.find(p->first);
@@ -1219,22 +1219,25 @@ void ns_emperical_posture_quantification_value_estimator::build_estimator_from_o
 		contracting_data->second->intensity_4x.flip_model_sign();
 	}*/
 
-	ns_hmm_movement_state required_states[3] = { ns_hmm_missing, ns_hmm_not_moving_dead };
+	ns_hmm_movement_state required_states[2] = { ns_hmm_missing, ns_hmm_not_moving_dead };
 	ns_ex ex;
-	output+= "By hand annotation entries per HMM state:\n";
-	for (unsigned int i = 0; i < state_counts.size(); i++) 
-		output+= ns_to_string(state_counts[i]) + "\t" + ns_hmm_movement_state_to_string((ns_hmm_movement_state)i) +"\n";
+	//output+= "By hand annotation entries per HMM state:\n";
+	//for (unsigned int i = 0; i < state_counts.size(); i++) 
+	//	output+= ns_to_string(state_counts[i]) + "\t" + ns_hmm_movement_state_to_string((ns_hmm_movement_state)i) +"\n";
 	for (unsigned int i = 0; i < state_counts.size(); i++) {
 		if (state_counts[i] < 100) {
 
 			for (unsigned int j = 0; j < 3; j++) {
 				if (required_states[j] == i) {
-					ex << "Too few annotations were provided to build a required classifier for the state " << ns_hmm_movement_state_to_string(required_states[j]) << " (" << state_counts[required_states[j]] << ").\n";
+					if (!ex.text().empty())
+						ex << "\n";
+					else ex << "Too few by-hand annotations were provided to fit an HMM model.\n";
+					ex << "Only  " << state_counts[i] << " annotations were provided for the state " << ns_hmm_movement_state_to_string(required_states[j]) << " (" << state_counts[required_states[j]] << ")).";
 					continue;
 				}
 			}
-			if (state_counts[i] == 0)
-				output += "Warning: No annotations were made for state " + ns_hmm_movement_state_to_string((ns_hmm_movement_state)i) + ".  It will not be considered in the model.\n";
+			//if (state_counts[i] == 0)
+			//	output += "Warning: No annotations were made for state " + ns_hmm_movement_state_to_string((ns_hmm_movement_state)i) + ".  It will not be considered in the model.\n";
 		}
 	}
 

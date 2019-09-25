@@ -188,7 +188,7 @@ unsigned long ns_dir::get_file_timestamp(const std::string & filename) {
 
 	if (!GetFileTime(hFile,&CreationTime,&LastAccessTime,&LastWriteTime)) {
 		CloseHandle(hFile);
-		:q		throw ns_ex("ns_dir::get_file_timestamp()::Could not obtain file timestamp: ") << filename;
+			throw ns_ex("ns_dir::get_file_timestamp()::Could not obtain file timestamp: ") << filename;
 	}
 	CloseHandle(hFile);
 	LONGLONG c(FileTime_to_POSIX(CreationTime)), w(FileTime_to_POSIX(LastWriteTime));

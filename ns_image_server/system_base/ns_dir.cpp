@@ -156,20 +156,67 @@ public:
 		return s;
 	}
 };
-ns_64_bit ns_dir::get_file_size(const std::string filename) {
+LONGLONG FileTime_to_POSIX(FILETIME ft)
+{
+	//from https://www.frenk.com/2009/12/convert-filetime-to-unix-timestamp/
+	// takes the last modified date
+	LARGE_INTEGER date, adjust;
+	date.HighPart = ft.dwHighDateTime;
+	date.LowPart = ft.dwLowDateTime;
+
+	// 100-nanoseconds = milliseconds * 10000
+	adjust.QuadPart = 11644473600000 * 10000;
+
+	// removes the diff between 1970 and 1601
+	date.QuadPart -= adjust.QuadPart;
+
+	// converts back from 100-nanoseconds to seconds
+	return date.QuadPart / 10000000;
+}
+
+unsigned long ns_dir::get_file_timestamp(const std::string & filename) {
+#ifdef _WIN32
+	HANDLE hFile = CreateFile(filename.c_str(), GENERIC_READ,
+		FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING,
+		FILE_ATTRIBUTE_NORMAL, NULL);
+	if (hFile == INVALID_HANDLE_VALUE)
+		throw ns_ex("ns_dir::get_file_timestamp()::File does not exist: ") << filename; 
+	FILETIME CreationTime,
+		LastAccessTime,
+		LastWriteTime;
+
+	if (!GetFileTime(hFile,&CreationTime,&LastAccessTime,&LastWriteTime)) {
+		CloseHandle(hFile);
+		throw ns_ex("ns_dir::get_file_timestamp()::Could not obtain file timestamp: ") << filename;
+	}
+	CloseHandle(hFile);
+	LONGLONG c(FileTime_to_POSIX(CreationTime)), w(FileTime_to_POSIX(LastWriteTime));
+	//return 0;
+	return (unsigned long)(c > w ? c : w);
+
+#else
+	struct stat stat_buf;
+	int rc = stat(filename.c_str(), &stat_buf);
+	if (rc == 0)
+		throw ns_ex("ns_dir::get_file_timestamp()::Could not obtain file size: ") << filename;
+	return buffer.st_mtime > buffer.st_mtimest_ctime ? buffer.st_mtime : buffer.st_mtimest_ctime;
+#endif
+
+}
+ns_64_bit ns_dir::get_file_size(const std::string & filename) {
 #ifdef _WIN32
 	//from https://stackoverflow.com/questions/8991192/check-filesize-without-opening-file-in-c
 	HANDLE hFile = CreateFile(filename.c_str(), GENERIC_READ,
 		FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING,
 		FILE_ATTRIBUTE_NORMAL, NULL);
 	if (hFile == INVALID_HANDLE_VALUE)
-		return -1; // error condition, could call GetLastError to find out more
+		throw ns_ex("ns_dir::get_file_timestamp()::File does not exist: ") << filename;
 
 	LARGE_INTEGER size;
 	if (!GetFileSizeEx(hFile, &size))
 	{
 		CloseHandle(hFile);
-		return -1; // error condition, could call GetLastError to find out more
+		throw ns_ex("ns_dir::get_file_timestamp()::Could not obtain file size: ") << filename;
 	}
 
 	CloseHandle(hFile);
@@ -177,7 +224,9 @@ ns_64_bit ns_dir::get_file_size(const std::string filename) {
 #else
 	struct stat stat_buf;
 	int rc = stat(filename.c_str(), &stat_buf);
-	return rc == 0 ? stat_buf.st_size : -1;
+	if (rc == 0)
+		throw ns_ex("ns_dir::get_file_timestamp()::Could not obtain file size: ") << filename;
+	return stat_buf.st_size;
 #endif
 }
 

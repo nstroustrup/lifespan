@@ -1413,12 +1413,18 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 	static void set_database(const std::string & data){
 		image_server.set_sql_database(data,false,&worm_learner.get_sql_connection());
 		worm_learner.reset_sql_connections();
+
 		worm_learner.data_selector.load_experiment_names(worm_learner.get_sql_connection());
 		worm_learner.statistics_data_selector.load_experiment_names(worm_learner.get_sql_connection());
 		cerr << "Switching to database " << data << "\n";
 		//ns_thread::sleep(15);
 		get_menu_handler()->update_experiment_choice(*get_menu_bar());
-		image_server.update_posture_analysis_model_registry(worm_learner.get_sql_connection(), false);
+		try {
+			image_server.update_posture_analysis_model_registry(worm_learner.get_sql_connection(), false);
+		}
+		catch (ns_ex& ex) {
+			image_server.register_server_event(ex, &worm_learner.get_sql_connection());
+		}
 	}
 	static void file_open(const std::string & data){
 		//cout << ns_get_input_string("TITLE","GOBER");
@@ -3239,6 +3245,8 @@ void ns_update_stats_information_bar(const std::string& status) {
 
 
 void redraw_main_window(){
+	if (main_window == 0)
+		return;
   //cerr << "req" << w << "," << h << "\n";
 	worm_learner.main_window.redraw_requested = false;
 
@@ -3270,7 +3278,7 @@ void redraw_worm_window(){
 	worm_window->get_window_size_needed(window_size.x, window_size.y, d, menu_d);
 	lock.release();
 	ns_fl_lock(__FILE__,__LINE__);
-	if (!worm_window->visible()) {
+	if (worm_window == 0 || !worm_window->visible()) {
 		ns_fl_unlock(__FILE__, __LINE__);
 		return;
 	}
@@ -3527,7 +3535,7 @@ void idle_main_window_update_callback(void * force_redraw) {
 		  {
 			  ns_vector_2i window_size;
 			  float d, menu_d;
-			  if (worm_window->visible() || show_worm_window) {
+			  if (worm_window != 0 && (worm_window->visible() || show_worm_window)) {
 				  //worm_learner.worm_window.display_lock.mute_debug_output = true;
 				  ns_acquire_lock_for_scope lock(worm_learner.worm_window.display_lock, __FILE__, __LINE__);
 				  worm_window->get_window_size_needed(window_size.x, window_size.y, d, menu_d);
@@ -3562,7 +3570,7 @@ void idle_main_window_update_callback(void * force_redraw) {
 		  {
 			  ns_vector_2i window_size;
 			  float d, menu_d;
-			  if (stats_window->visible() || show_stats_window) {
+			  if (stats_window != 0 && (stats_window->visible() || show_stats_window)) {
 				  //worm_learner.stats_window.display_lock.mute_debug_output = true;
 				  ns_acquire_lock_for_scope lock(worm_learner.stats_window.display_lock, __FILE__, __LINE__);
 				  stats_window->get_window_size_needed(window_size.x, window_size.y, d, menu_d);
@@ -3921,6 +3929,12 @@ void ns_run_startup_routines() {
 			survival_curves.output_JMP_file(ns_death_time_annotation::ns_only_machine_annotations, ns_lifespan_experiment_set::ns_output_single_event_times, ns_lifespan_experiment_set::ns_days, tmp, ns_lifespan_experiment_set::ns_simple);
 			tmp.close();
 		}
+		try {
+			image_server.update_posture_analysis_model_registry(sql(), false);
+		}
+		catch (ns_ex& ex) {
+			image_server_const.register_server_event(ex, &sql());
+		}
 		sql.release();
 	}
 
@@ -3953,7 +3967,6 @@ void ns_run_startup_routines() {
 	ns_worm_browser_output_debug(__LINE__, __FILE__, "Updating information bar");
 	main_window->update_information_bar();
 
-	image_server.update_posture_analysis_model_registry(worm_learner.get_sql_connection(),false);
 	
 }
 

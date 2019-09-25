@@ -2805,7 +2805,8 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 							if (a.is_excluded() || 
 								a.is_censored() || 
 								movement_results.samples[i].regions[j]->time_path_image_analyzer->group(g).paths[p].sticky_properties().event_observation_type != ns_death_time_annotation::ns_standard || 
-								movement_results.samples[i].regions[j]->time_path_image_analyzer->group(g).paths[p].by_hand_death_time().fully_unbounded())
+								movement_results.samples[i].regions[j]->time_path_image_analyzer->group(g).paths[p].by_hand_death_time().fully_unbounded() ||
+								movement_results.samples[i].regions[j]->time_path_image_analyzer->group(g).paths[p].sticky_properties().number_of_worms()>1)
 								continue;
 
 							a.stationary_path_id.detection_set_id = movement_results.samples[i].regions[j]->time_path_image_analyzer->db_analysis_id();

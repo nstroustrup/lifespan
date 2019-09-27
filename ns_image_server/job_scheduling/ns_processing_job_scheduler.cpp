@@ -1,9 +1,10 @@
 #include "ns_processing_job_scheduler.h"
 #ifndef NS_ONLY_IMAGE_ACQUISITION
 #include "ns_image_processing_pipeline.h"
+#include "ns_time_path_image_analyzer.h"
+
 #endif
 #include "ns_processing_job_processor.h"
-#include "ns_time_path_image_analyzer.h"
 
 using namespace std;
 

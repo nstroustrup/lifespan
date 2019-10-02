@@ -1502,11 +1502,24 @@ void ns_image_server::create_and_configure_sql_database(bool local, const std::s
 		sql << "DROP SCHEMA " << db;
 		sql.send_query();
 	}
-
-	sql << "CREATE USER IF NOT EXISTS '" << username << "'@'%' identified by '" << password << "'";
+	sql << "SELECT EXISTS(SELECT 1 FROM mysql.user WHERE user = '" << username << "' AND host='%')";
+	ns_sql_result tmp;
+	sql.get_rows(tmp);
+	if (tmp.empty())
+		throw ns_ex("mysql.user table not found!");
+	if (tmp[0][0] == "0"){
+		sql << "CREATE USER '" << username << "'@'%' identified by '" << password << "'";
+		sql.send_query();
+	}
+ 	sql << "SELECT EXISTS(SELECT 1 FROM mysql.user WHERE user = '" << username << "' AND host='localhost')";
+        
+        sql.get_rows(tmp);
+        if (tmp.empty())	
+                throw ns_ex("mysql.user table not found!");
+        if (tmp[0][0] == "0"){	
+	sql << "CREATE USER '" << username << "'@'localhost' identified by '" << password << "'";
 	sql.send_query();
-	sql << "CREATE USER IF NOT EXISTS '" << username << "'@'localhost' identified by '" << password << "'";
-	sql.send_query();
+}
 
 	sql << "CREATE DATABASE " << db;
 	sql.send_query();

@@ -2,6 +2,34 @@
 #include "ns_xml.h"
 using namespace std;
 
+bool ns_worm_training_set_image::get_external_metadata(const std::string& path, const std::string& image_filename, std::string& extra_metadata) {
+	std::string metadata_filename = path + DIR_CHAR_STR + ns_dir::extract_filename_without_extension(image_filename) + ".xml";
+	
+	extra_metadata.reserve(2000);
+	if (ns_dir::file_exists(metadata_filename)) {
+		try {
+			ifstream in(metadata_filename.c_str());
+			std::string tmp;
+			while (true) {
+				tmp.resize(0);
+				getline(in, tmp);
+				if (in.fail()) {
+					if (tmp.size() != 0)
+						extra_metadata += tmp;
+					break;
+				}
+				extra_metadata += tmp;
+				extra_metadata += "\n";
+			}
+		}
+		catch (ns_ex& ex) {
+			cout << "Probling loading metadata: " << ex.text() << "  Metadata will be ignored.\n";
+			return 0;
+		}
+	}
+	return !extra_metadata.empty();
+}
+
 void ns_worm_training_set_image::generate_check_box(const ns_color_8 & check_color, ns_image_standard & out){
 	ns_image_properties prop;
 	prop.height = 50;
@@ -120,7 +148,7 @@ struct ns_result_location_region_info{
 class ns_training_set_visualization_metadata_manager{
 public:
 
-	void from_collage(const ns_image_standard & im, const bool allow_malformed_metadata=false);
+	void from_collage(const ns_image_standard & im, const bool allow_malformed_metadata, const string & extra_metadata);
 
 	std::string metadata_to_string(){
 		ns_xml_simple_writer writer;
@@ -243,12 +271,21 @@ public:
 		for (unsigned int i = 0; i < result.locations.size(); i++){
 			cerr << (int)(100*(float)i/(float)result.locations.size()) << "%";
 			for (unsigned int j = 0; j < result.locations[i].annotations.size(); j++){
-				ns_simple_image_cache::const_handle_t image;
+				ns_simple_image_cache::const_handle_t image;	
+				ns_image_server_image im(training_set_source_images_sorted_by_region_image_id[result_location_region_image_ids[i][j].image_id]);
+				//the metadata is stored in the same filename with .xml and .csv.gz  So we need to strip those and make sure we load the tif.
+				//cout << im.filename << "\n";
+				im.filename = ns_dir::extract_filename_without_extension(im.filename);
+				im.filename += ".tif";
+				//cout << im.filename << "\n";
 				cache.get_for_read(
-					training_set_source_images_sorted_by_region_image_id[result_location_region_image_ids[i][j].image_id],
+					im,
 					image,cache_source);
+				std::string extra_metadata;
+				//ns_worm_training_set_image::get_external_metadata(im.path, im.filename, extra_metadata);
+				ns_worm_training_set_image::get_external_metadata(image().image_record.path, image().image_record.filename, extra_metadata);
 				ns_training_set_visualization_metadata_manager m;
-				m.from_collage(image().image);
+				m.from_collage(image().image,false,extra_metadata);
 				image.release();
 				ns_whole_image_statistic_specification_key key;
 				key.capture_time = result.locations[i].annotations[j].time.period_end;
@@ -622,10 +659,10 @@ void ns_worm_training_set_image::generate(const ns_death_time_annotation_compile
 void ns_transfer_annotations(const ns_image_standard & source_collage, const ns_image_standard & destination_collage, ns_image_standard & output_image){
 
 	ns_annotated_training_set annotation_set;
-	ns_worm_training_set_image::decode(source_collage,annotation_set,true);
+	ns_worm_training_set_image::decode(source_collage,annotation_set,true,"");
 
 	ns_training_set_visualization_metadata_manager images;
-	images.from_collage(destination_collage);
+	images.from_collage(destination_collage,false,"");
 	for (unsigned int i = 0; i < images.image_info.size(); ++i){
 		if (images.image_info[i].original_bitmap_size.x*images.image_info[i].original_bitmap_size.y == 0)
 			continue;
@@ -681,11 +718,11 @@ float ns_calculate_overlap(const ns_image_whole<ns_component> & a, const ns_imag
 
 #include "ns_image_easy_io.h"
 
-void ns_worm_training_set_image::decode(const ns_image_standard & im,ns_annotated_training_set & t, const bool allow_malformed_metadata){
+void ns_worm_training_set_image::decode(const ns_image_standard & im,ns_annotated_training_set & t, const bool allow_malformed_metadata, const string& extra_metadata){
 
 	//extract individual training images from collage
 	ns_training_set_visualization_metadata_manager manager;
-	manager.from_collage(im, allow_malformed_metadata);
+	manager.from_collage(im, allow_malformed_metadata,extra_metadata);
 	unsigned long checked(0);
 	unsigned long unchecked(0);
 	for (unsigned int i = 0; i < manager.image_info.size(); i++){
@@ -933,13 +970,17 @@ void ns_worm_training_set_image::decode(const ns_image_standard & im,ns_annotate
 
 }
 
-void ns_training_set_visualization_metadata_manager::from_collage(const ns_image_standard & in, const bool allow_malformed_metadata){
+void ns_training_set_visualization_metadata_manager::from_collage(const ns_image_standard & in, const bool allow_malformed_metadata, const string & extra_metadata){
 
 	//cerr << "in size: " << in.properties().width << "," << in.properties().height << "," << (int)in.properties().components << "\n";
 	const ns_image_properties prop(in.properties());
 	//get number of objects
-
-	from_string(prop.description,allow_malformed_metadata);
+	if (prop.description.empty() && extra_metadata.empty())
+		throw ns_ex("No collage metadata was found in the image, and no extra metadata was provided");
+	if (!extra_metadata.empty())
+		from_string(extra_metadata, allow_malformed_metadata);
+	else
+		from_string(prop.description,allow_malformed_metadata);
 	if (image_info.size() == 0)
 		throw ns_ex("Could not identify any annotated worms in image");
 	
@@ -966,7 +1007,9 @@ void ns_training_set_visualization_metadata_manager::from_collage(const ns_image
 		for (unsigned int y = 3; y < check_box_properties.height-2; y++)
 			for (unsigned int x = 3; x < check_box_properties.width-2; x++){
 				ns_vector_2i p(image_info[i].position.x + x,image_info[i].position.y + y);  //number_of_info_lines offset because these do not contain image info
-				
+				if (p.y >= in.properties().height ||
+					p.x >= in.properties().width)
+					throw ns_ex("Invalid image location in metadata.");
 				pixels_in_checked_area[0]+=(in[p.y][3*p.x] >= 200)?1:0;
 				pixels_in_checked_area[1]+=(in[p.y][3*p.x+1] >= 200)?1:0;
 				pixels_in_checked_area[2]+=(in[p.y][3*p.x+2] >= 200)?1:0;
@@ -1009,9 +1052,9 @@ void ns_training_set_visualization_metadata_manager::from_collage(const ns_image
 			for (unsigned int x = 0; x < new_prop.components*new_prop.width; x++){
 				ns_vector_2i p(new_prop.components*(check_box_properties.width+image_info[i].position.x) + x,image_info[i].position.y + y);  //number_of_info_lines offset because these do not contain image info
 				if ((unsigned long)p.x >= in.properties().components*in.properties().width)
-					throw ns_ex() << "i" << i << "x:" <<p.x <<">" << in.properties().components*in.properties().width << "\n";
+					throw ns_ex() << "invalid dimensions in metadata: i:" << i << "x:" <<p.x <<">=" << in.properties().components*in.properties().width << "\n";
 				if ((unsigned long)p.y >= in.properties().height)
-					throw ns_ex() << "i" << i << "y:"<< p.y <<">" << in.properties().height << "\n";
+					throw ns_ex() << "invalid dimensions in metadata: i:" << i << "y:"<< p.y <<">=" << in.properties().height << "\n";
 				images[i].combined_image[y][x] = in[p.y][p.x];
 			}
 

@@ -997,9 +997,16 @@ void ns_worm_learner::generate_training_set_from_by_hand_annotation(){
 			results_subject.sample_id =  0;
 			results_subject.region_name = p->second.metadata.region_name;
 			results_subject.region_id =  p->second.metadata.region_id;
-			ns_image_storage_reciever_handle<ns_8_bit> out(image_server.results_storage.machine_learning_training_set_image(results_subject,1024,sql));
 			cerr << "\nWriting " << p->second.metadata.sample_name << "::" << p->second.metadata.region_name << ": (" << i << "/" << death_time_annotation_compiler.regions.size() << ")\n";
+			ns_image_storage_reciever_handle<ns_8_bit> out(image_server.results_storage.machine_learning_training_set_image(results_subject, 1024, sql));
 			im.pump(out.output_stream(),1024);
+			ns_acquire_for_scope<ns_ostream> xmp_out(image_server.results_storage.machine_learning_training_set_metadata(results_subject, 1024, ns_xml, sql));
+			xmp_out()() << im.properties().description;
+			xmp_out.release();
+
+			//ns_acquire_for_scope<ns_ostream> metadata_out(image_server.results_storage.machine_learning_training_set_metadata(results_subject, 1024, ns_csv_gz, sql));
+			//detected_worms().output_feature_statistics(metadata_out());
+			//metadata_out.release();
 		}
 		catch(ns_ex & ex){
 			cerr << "Could not process region " << p->second.metadata.sample_name << "::" << p->second.metadata.region_name << ": " << ex.text() << "\n";
@@ -6559,7 +6566,7 @@ void ns_worm_learner::generate_training_set_image(){
 void ns_worm_learner::process_training_set_image(){
 	
 	ns_annotated_training_set training_set;
-	ns_worm_training_set_image::decode(current_image,training_set);
+	ns_worm_training_set_image::decode(current_image,training_set,false,"");
 	cerr << "Found " << training_set.worms.size() << " worms and " << training_set.non_worms.size() << " non-worms out of " << training_set.objects.size() << " objects.\n";
 	
 	std::vector<ns_image_standard *> worms(training_set.worms.size()),

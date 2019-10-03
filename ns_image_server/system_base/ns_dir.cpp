@@ -606,7 +606,7 @@ string ns_dir::extract_filename_without_extension(const string & filename){
 	if (dot_pos > 1 && ex == "gz") {
 		string::size_type dot_pos2 = filename.find_last_of(".", dot_pos - 1);
 		if (dot_pos2 != filename.npos)
-			return filename.substr(0, dot_pos);
+			return filename.substr(0, dot_pos2);
 	}
 	return filename.substr(0,dot_pos);
 }

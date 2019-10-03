@@ -3775,10 +3775,20 @@ ns_image_storage_reciever_handle<ns_8_bit> ns_image_server_results_storage::move
 ns_image_storage_reciever_handle<ns_8_bit> ns_image_server_results_storage::machine_learning_training_set_image(ns_image_server_results_subject & spec, const unsigned long max_line_length, ns_sql & sql){
 	spec.get_names(sql);
 	string path( machine_learning_training_set_folder());
-	ns_image_server_results_file f(results_directory,path,spec.region_filename() +"=training_set.tif");
-	ns_dir::create_directory_recursive(path);
+	ns_image_server_results_file f(results_directory, spec.experiment_name + DIR_CHAR_STR + path,spec.region_filename() +"=training_set.tif");
+	ns_dir::create_directory_recursive(f.dir());
 	return ns_image_storage_reciever_handle<ns_image_storage_handler::ns_component>(new ns_image_storage_reciever_to_disk<ns_image_storage_handler::ns_component>(max_line_length, f.path(),ns_tiff,false));
-
+}
+ns_ostream * ns_image_server_results_storage::machine_learning_training_set_metadata(ns_image_server_results_subject& spec, const unsigned long max_line_length, const ns_image_type& image_type, ns_sql& sql) {
+	spec.get_names(sql);
+	string path(machine_learning_training_set_folder());
+	std::string fname = spec.region_filename() + "=training_set";
+	ns_add_image_suffix(fname, image_type);
+	ns_image_server_results_file f(results_directory, spec.experiment_name + DIR_CHAR_STR + path, fname);
+	ns_dir::create_directory_recursive(f.dir());
+	if (image_type == ns_csv_gz || image_type == ns_wrm_gz || image_type == ns_xml_gz)
+		return new ns_ostream(new ogzstream(f.path().c_str(),ios_base::binary));
+	return new ns_ostream(new ofstream(f.path().c_str()));
 }
 ns_image_server_results_file ns_image_server_results_storage::optimized_posture_analysis_parameter_set(ns_image_server_results_subject & spec, const std::string & type, ns_sql & sql) const {
 	spec.get_names(sql);

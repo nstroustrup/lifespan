@@ -245,6 +245,7 @@ public:
 	}
 
 	ns_image_storage_reciever_handle<ns_8_bit> machine_learning_training_set_image(ns_image_server_results_subject & spec,const unsigned long max_line_length, ns_sql & sql);
+	ns_ostream * machine_learning_training_set_metadata(ns_image_server_results_subject& spec, const unsigned long max_line_length, const ns_image_type& image_type, ns_sql& sql);
 
 
 	ns_image_storage_reciever_handle<ns_8_bit> movement_timeseries_collage(ns_image_server_results_subject & spec,const std::string & graph_type ,const ns_image_type & image_type, const unsigned long max_line_length, ns_sql & sql);

@@ -314,6 +314,7 @@ class ns_worm_detection_model_training_set_processor_pool_persistant_data {
 public:
 };
 
+
 struct ns_worm_detection_model_training_set_processor_pool_job {
 	ns_worm_detection_model_training_set_processor_pool_job() {}
 	ns_worm_detection_model_training_set_processor_pool_job(const std::string filename_to_process_, ns_worm_detection_model_training_set_processor_pool_shared_data &shared_data_):filename_to_process(filename_to_process_),shared_data(&shared_data_) {}
@@ -323,6 +324,10 @@ struct ns_worm_detection_model_training_set_processor_pool_job {
 
 	void operator()(ns_worm_detection_model_training_set_processor_pool_persistant_data & persistant_data) {
 		std::string collage_fname = shared_data->source_dir + DIR_CHAR_STR + filename_to_process;
+
+		std::string extra_metadata;
+		ns_worm_training_set_image::get_external_metadata(shared_data->source_dir, filename_to_process, extra_metadata);
+
 		ns_acquire_lock_for_scope llock(shared_data->log_lock, __FILE__, __LINE__);
 		*shared_data->log << ns_format_time_string_for_human(ns_current_time()) << "\t" << filename_to_process << ":: ";
 		cerr << ns_format_time_string_for_human(ns_current_time()) << "\t" << filename_to_process << ":: ";
@@ -333,10 +338,16 @@ struct ns_worm_detection_model_training_set_processor_pool_job {
 			ns_annotated_training_set training_set;
 			{
 				ns_image_standard * collage = shared_data->image_pool.get();
-				collage->use_more_memory_to_avoid_reallocations(true);
-				ns_load_image(collage_fname, *collage);
-				ns_worm_training_set_image::decode(*collage, training_set);
-				shared_data->image_pool.release(collage);
+				try {
+					collage->use_more_memory_to_avoid_reallocations(true);
+					ns_load_image(collage_fname, *collage);
+					ns_worm_training_set_image::decode(*collage, training_set, false, extra_metadata);
+					shared_data->image_pool.release(collage);
+				}
+				catch (...) {
+					shared_data->image_pool.release(collage);
+					throw;
+				}
 			}
 
 			std::string metadata_filename = shared_data->feature_dir + DIR_CHAR_STR + ns_dir::extract_filename(ns_dir::extract_filename_without_extension(collage_fname)) + "_tr.txt";
@@ -1166,7 +1177,10 @@ void ns_training_file_generator::mark_duplicates_in_training_set(const std::stri
 		for (unsigned int j = 0; j < non_worms[i].size(); j++)non_worms[i][j] = &training_set.non_worms[j]->object.relative_grayscale();
 		for (unsigned int j = 0; j < source_worm_locations[i].size(); j++)source_worm_locations[i][j] = training_set.objects[j].collage_position;
 
-		ns_worm_training_set_image::decode(collage,training_set);
+		std::string extra_metadata;
+		ns_worm_training_set_image::get_external_metadata(base_dir, dir.files[i], extra_metadata);
+
+		ns_worm_training_set_image::decode(collage,training_set,false,extra_metadata);
 	//	cerr << "Found " << training_set.worms.size() << " worms, " << training_set.non_worms.size() << ", and non-worms out of " << training_set.objects.size() << " objects.\n";
 	
 		bool found_duplicate = false;

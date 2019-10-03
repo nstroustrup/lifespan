@@ -30,13 +30,15 @@ public:
 	static void generate(const ns_image_worm_detection_results & results, ns_image_standard & out);
 	static void generate(const ns_death_time_annotation_compiler_region & result, ns_image_standard & out, ns_sql & sql);
 
-	static void decode(const ns_image_standard & in,ns_annotated_training_set & training_set, const bool allow_malformed_metadata=false);
+	static void decode(const ns_image_standard & in,ns_annotated_training_set & training_set, const bool allow_malformed_metadata, const std::string & extra_metadata);
 
 	static const ns_image_standard & check_box(const ns_object_hand_annotation_data::ns_object_hand_annotation &type){
 		if (check_boxes.size() < (int)ns_object_hand_annotation_data:: ns_number_of_object_hand_annotation_types)
 			generate_check_boxes();
 		return check_boxes[(int)type];
 	}
+
+	static bool get_external_metadata(const std::string& path, const std::string& image_filename, std::string& extra_metadata);
 private:
 	
 	

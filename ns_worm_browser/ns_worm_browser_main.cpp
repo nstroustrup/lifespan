@@ -2759,9 +2759,9 @@ public:
     w = worm_learner.worm_window.gl_image_size.x*d,
       h = worm_learner.worm_window.gl_image_size.y*d+image_window_size_difference(menu_d).y;
 //	cerr << w << "," << h << "\n";
-    if (w == 0)
+    if (w == 0 || d == 0)
       w = 600;
-    if (h == 0)
+    if (h == 0 || d == 0)
       h = 800;
     
   }
@@ -3971,7 +3971,10 @@ void ns_run_startup_routines() {
 }
 
 int main() {
-	
+	main_window = new ns_worm_terminal_main_window(1000, 1000, "Worm Browser");
+	worm_window = new ns_worm_terminal_worm_window(100, 100, "Inspect Worm");
+	stats_window = new ns_worm_terminal_stats_window(100, 100, "Population Statistics");
+
 	ns_worm_browser_output_debug(__LINE__,__FILE__,"Launching worm browser");
 	init_time = GetTime();
 	//initialize locking
@@ -3986,24 +3989,24 @@ int main() {
 	//ns_main_thread_id = GetCurrentThread();
 	try{
 
-		
-		ns_worm_browser_output_debug(__LINE__,__FILE__,"Displaying splash image");
-		ns_image_standard im;
-		worm_learner.display_splash_image();
-		
-		
+	
+
+	
 		ns_worm_browser_output_debug(__LINE__,__FILE__,"Creating new window");
 		worm_learner.main_window.display_lock.mute_debug_output = true;
 		ns_acquire_lock_for_scope dlock(worm_learner.main_window.display_lock,__FILE__,__LINE__);
 		ns_vector_2i main_window_requested_size;
 		float dd,menu_d;
-		
+
+		main_window->get_window_size_needed(main_window_requested_size.x, main_window_requested_size.y, dd, menu_d);
+		main_window->size(main_window_requested_size.x, main_window_requested_size.y);
+
 		dlock.release();
 
-		main_window = new ns_worm_terminal_main_window(1000,1000, "Worm Browser");
-		
-		main_window->get_window_size_needed(main_window_requested_size.x,main_window_requested_size.y,dd,menu_d);
-		main_window->size(main_window_requested_size.x,main_window_requested_size.y);
+		ns_worm_browser_output_debug(__LINE__, __FILE__, "Displaying splash image");
+		ns_image_standard im;
+		worm_learner.display_splash_image();
+
 		
 		ns_worm_browser_output_debug(__LINE__,__FILE__,"Loading occupied animation");
 		#ifdef _WIN32
@@ -4021,10 +4024,8 @@ int main() {
 
 		//main_window->resizable(win);
 		cout << "Compilation date: " << __DATE__ << "\n";
-		ns_worm_browser_output_debug(__LINE__,__FILE__,"Showing window");
+		ns_worm_browser_output_debug(__LINE__, __FILE__, "Showing window");
 		main_window->show();
-		worm_window = new ns_worm_terminal_worm_window(100,100,"Inspect Worm");
-		stats_window = new ns_worm_terminal_stats_window(100, 100, "Population Statistics");
 
 		//worm_window->show();
 		worm_window->hide();

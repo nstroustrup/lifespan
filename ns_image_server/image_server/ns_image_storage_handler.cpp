@@ -1303,6 +1303,7 @@ ns_image_server_image ns_image_storage_handler::get_region_movement_metadata(ns_
 	im.path = spec.relative_directory;
 	return im;
 }
+#ifndef NS_ONLY_IMAGE_ACQUISITION
 ns_time_path_movement_result_files ns_image_storage_handler::get_region_movement_quantification_metadata(ns_64_bit region_info_id,ns_sql & sql) const{
 	ns_time_path_movement_result_files files;
 	ns_image_server_image im(get_region_movement_metadata(region_info_id, files.base_name(), sql));
@@ -1313,7 +1314,7 @@ ns_time_path_movement_result_files ns_image_storage_handler::get_region_movement
 	return files;
 }
 
-
+#endif
 ns_file_location_specification  ns_image_storage_handler::get_file_specification_for_path_data(const ns_file_location_specification & region_spec) const{
 	ns_file_location_specification spec(region_spec);
 	spec.relative_directory += DIR_CHAR_STR;

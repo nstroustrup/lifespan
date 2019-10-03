@@ -40,7 +40,7 @@ storyboard_cache(0),worm_detection_model_cache(0),posture_analysis_model_cache(0
 #endif
 _verbose_debug_output(false), _cache_subdirectory("cache"), sql_database_choice(possible_sql_databases.end()), next_scan_for_problems_time(0),
 _terminal_window_scale_factor(1), _system_parallel_process_id(0), _allow_multiple_processes_per_system(false),sql_table_lock_manager(this),
-alert_handler_lock("ahl"), max_external_thread_id(1),currently_experiencing_a_disk_storage_emergency(false),verbose_disk_storage_reporting(false), last_verbose_disk_storage_reporting_time(0), survival_data_cache(1){
+alert_handler_lock("ahl"), max_external_thread_id(1),currently_experiencing_a_disk_storage_emergency(false),verbose_disk_storage_reporting(false), last_verbose_disk_storage_reporting_time(0){
 
 	ns_socket::global_init();
 	#ifndef NS_ONLY_IMAGE_ACQUISITION
@@ -1502,11 +1502,24 @@ void ns_image_server::create_and_configure_sql_database(bool local, const std::s
 		sql << "DROP SCHEMA " << db;
 		sql.send_query();
 	}
-
-	sql << "CREATE USER IF NOT EXISTS '" << username << "'@'%' identified by '" << password << "'";
+	sql << "SELECT EXISTS(SELECT 1 FROM mysql.user WHERE user = '" << username << "' AND host='%')";
+	ns_sql_result tmp;
+	sql.get_rows(tmp);
+	if (tmp.empty())
+		throw ns_ex("mysql.user table not found!");
+	if (tmp[0][0] == "0"){
+		sql << "CREATE USER '" << username << "'@'%' identified by '" << password << "'";
+		sql.send_query();
+	}
+ 	sql << "SELECT EXISTS(SELECT 1 FROM mysql.user WHERE user = '" << username << "' AND host='localhost')";
+        
+        sql.get_rows(tmp);
+        if (tmp.empty())	
+                throw ns_ex("mysql.user table not found!");
+        if (tmp[0][0] == "0"){	
+	sql << "CREATE USER '" << username << "'@'localhost' identified by '" << password << "'";
 	sql.send_query();
-	sql << "CREATE USER IF NOT EXISTS '" << username << "'@'localhost' identified by '" << password << "'";
-	sql.send_query();
+}
 
 	sql << "CREATE DATABASE " << db;
 	sql.send_query();

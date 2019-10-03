@@ -4,7 +4,7 @@
 #endif
 #include "ns_xml.h"
 using namespace std;
-
+#include <cfloat> 
 
 std::string ns_death_time_annotation_set::annotation_types_to_string(const ns_annotation_type_to_load & t){
 		switch(t){
@@ -2939,11 +2939,11 @@ void ns_crop_time(const ns_time_path_limits & limits, const ns_death_time_annota
 		target.period_end >= last_observation_in_path.period_end)
 		target = last_observation_in_path;
 }
-
+#ifndef NS_ONLY_IMAGE_ACQUISITION
 #include "ns_annotation_handling_for_visualization.h"
-
 void ns_death_timing_data::draw_movement_diagram(const ns_vector_2i & pos, const ns_vector_2i & total_size, const ns_time_path_limits & path_observation_limits, const ns_death_time_annotation_time_interval & current_interval, ns_image_standard & im, const float & scaling, const int current_interval_marker_min_width, const ns_current_position_marker marker_type, const ns_draw_relative_spec draw_spec) {
   //return;
+
 		const unsigned long no_expansion_button_width(total_size.y);
 		const unsigned long no_expansion_button_border(no_expansion_button_border);
 		const unsigned long right_hand_margin(no_expansion_button_width + no_expansion_button_border);
@@ -3228,7 +3228,8 @@ void ns_death_timing_data::draw_movement_diagram(const ns_vector_2i & pos, const
 				}
 			}
 		}
-	}
+}
+#endif
 		
 
 //ns_death_time_annotation_flag::ns_flag_cache cached_flags_by_id;

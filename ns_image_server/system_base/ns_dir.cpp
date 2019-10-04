@@ -7,9 +7,8 @@
 #ifdef _WIN32 
 #include "shellapi.h"
 
-#include <experimental/filesystem>
 #include <filesystem>
-namespace ns_fs = std::experimental::filesystem::v1;
+namespace ns_fs = std::filesystem;
 
 #endif
 using namespace std;

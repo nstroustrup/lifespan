@@ -34,6 +34,12 @@ bool ns_sql_connection::thread_safe(){return ns_mysql_header::mysql_thread_safe(
 
 ns_sql_connection::~ns_sql_connection(){disconnect();}
 
+void ns_sql_connection::load_sql_library() { 
+	cerr << "Initialting SQL library";
+	if (ns_mysql_header::mysql_library_init(0, NULL, NULL)) 
+		throw ns_ex("Could not initiate mysql library");
+}
+
 ns_acquire_lock_for_scope ns_sql_connection::get_lock(const char * file, unsigned long line,bool check_for_allocation) {
 	if (check_for_allocation && !mysql_internal_data_allocated)
 		throw ns_ex("Unallocated SQL data!");

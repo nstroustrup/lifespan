@@ -1,6 +1,7 @@
 #include "ns_image_storage_handler.h"
 #include "ns_image_server.h"
 #include <functional>
+#include <random>
 
 using namespace std;
 
@@ -1644,8 +1645,9 @@ ns_socket_connection ns_image_storage_handler::connect_to_fileserver_node(ns_sql
 	std::vector<unsigned int> order(hosts.size());
 	for (unsigned int i = 0; i < hosts.size(); i++)
 		order[i] = i;
-
-	random_shuffle(order.begin(), order.end());
+	std::random_device rd;
+	std::mt19937 g(rd());
+	std::shuffle(order.begin(), order.end(),g);
 
 
 	for (unsigned int i = 0; i < hosts.size(); i++){

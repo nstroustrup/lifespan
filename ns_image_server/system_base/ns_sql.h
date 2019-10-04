@@ -91,7 +91,7 @@ class ns_sql_connection{
 
   void check_connection();
 
-  static void load_sql_library(){ns_mysql_header::mysql_library_init(0,NULL,NULL);}
+  static void load_sql_library();
   static void unload_sql_library(){ns_mysql_header::mysql_library_end();}
   static bool thread_safe();
 

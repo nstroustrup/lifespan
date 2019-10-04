@@ -146,6 +146,7 @@
       <BufferSecurityCheck>true</BufferSecurityCheck>
       <PreprocessorDefinitions>_CRT_SECURE_NO_DEPRECATE;WIN32;NTDDI_VERSION=NTDDI_WINXPSP2;_WIN32_WINNT=0x501;WINVER=0x0501;TRILIBRARY;CPU86;NO_TIMER;ANSI_DECLARATORS;NS_DEFAULT_FONT="c:/windows/fonts/ARIAL.TTF";NS_INI_PATH="c:\\server\\ns_image_server.ini";ARCH_IS_LITTLE_ENDIAN;INCLUDE_STDAFX;NS_USE_ITK_GPU;NS_USE_INTEL_IPP;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -202,14 +203,14 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <BufferSecurityCheck>true</BufferSecurityCheck>
       <PreprocessorDefinitions>_CRT_SECURE_NO_DEPRECATE;WIN32;NTDDI_VERSION=NTDDI_WINXPSP2;_WIN32_WINNT=0x501;WINVER=0x0501;TRILIBRARY;CPU86;NO_TIMER;ANSI_DECLARATORS;NS_DEFAULT_FONT="c:/windows/fonts/ARIAL.TTF";NS_INI_PATH="c:\\server\\ns_image_server.ini";ARCH_IS_LITTLE_ENDIAN;INCLUDE_STDAFX;NS_USE_ITK_GPU;NS_USE_INTEL_IPP;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
-      <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>

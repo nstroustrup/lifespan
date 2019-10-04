@@ -35,7 +35,6 @@ bool ns_sql_connection::thread_safe(){return ns_mysql_header::mysql_thread_safe(
 ns_sql_connection::~ns_sql_connection(){disconnect();}
 
 void ns_sql_connection::load_sql_library() { 
-	cerr << "Initialting SQL library";
 	if (ns_mysql_header::mysql_library_init(0, NULL, NULL)) 
 		throw ns_ex("Could not initiate mysql library");
 }

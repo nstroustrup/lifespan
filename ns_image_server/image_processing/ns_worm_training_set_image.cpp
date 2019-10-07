@@ -212,7 +212,7 @@ public:
 
 
 	
-	void load_from_death_time_annotation_set(const ns_death_time_annotation_compiler_region & result, ns_sql & sql){
+	void load_from_death_time_annotation_set(const ns_death_time_annotation_compiler_region & result, ns_sql & sql, ns_simple_local_image_cache& image_cache){
 		//get the region_ids for all time points specified in the region
 		sql << "SELECT id,capture_time FROM sample_region_images WHERE region_info_id = " << result.metadata.region_id << " ORDER BY capture_time ASC";
 		ns_sql_result res;
@@ -230,22 +230,22 @@ public:
 		for (unsigned int i = 0; i < result.locations.size(); i++){
 			result_location_region_image_ids[i].resize(result.locations[i].annotations.size());
 			total_worm_count += result.locations[i].annotations.size();
-			for (unsigned int j = 0; j < result.locations[i].annotations.size(); j++){
+			for (unsigned int j = 0; j < result.locations[i].annotations.size(); j++) {
 				if (result.locations[i].annotations[j].region_info_id != result.metadata.region_id)
 					throw ns_ex("Invalid region id found!");
 				result_location_region_image_ids[i][j].capture_time = result.locations[i].annotations[j].time.period_end;
-				map<ns_64_bit,ns_64_bit>::iterator p(region_image_id_sorted_by_time.find(result.locations[i].annotations[j].time.period_end));
-				if (p == region_image_id_sorted_by_time.end()){
-					if (result.locations[i].annotations[j].excluded != ns_death_time_annotation::ns_not_excluded)
-						result_location_region_image_ids[i][j].image_id = 0;
-					else 
-						throw ns_ex("Could not identify time point for annotation in database");
+				map<ns_64_bit, ns_64_bit>::iterator p(region_image_id_sorted_by_time.find(result.locations[i].annotations[j].time.period_end));
+				if (p == region_image_id_sorted_by_time.end()) {
+					result_location_region_image_ids[i][j].image_id = 0;
+					if (result.locations[i].annotations[j].type == ns_movement_cessation || result.locations[i].annotations[j].type == ns_fast_movement_cessation || result.locations[i].annotations[j].type == ns_translation_cessation)
+						cerr << "Could not identify time point for a death or movement cessation event.\n";
+					
 				}
 				else result_location_region_image_ids[i][j].image_id = p->second;
 			}
 		}
 		//for each training set image, identify the training set source image
-
+		
 		map<ns_64_bit, ns_image_server_image> training_set_source_images_sorted_by_region_image_id;
 		for (unsigned int i = 0; i < result_location_region_image_ids.size(); ++i){
 			for (unsigned int j = 0; j < result_location_region_image_ids[i].size(); ++j){
@@ -260,7 +260,7 @@ public:
 		}
 		//store images in a cache to reduce the network load a little.  This might actually make things slower due to disk swapping,
 		//but we can't know without profiling so we take a guess it'll help
-		ns_simple_image_cache cache(2048 * 1024);
+		
 		ns_image_cache_data_source cache_source;
 		cache_source.handler = &image_server.image_storage;
 		cache_source.sql = &sql;
@@ -268,25 +268,44 @@ public:
 		images.reserve(total_worm_count);
 		images_with_boxes.reserve(total_worm_count);
 		image_info.reserve(total_worm_count);
+		int p_complete = -1;
+		ns_image_standard image_temp;
+		image_temp.use_more_memory_to_avoid_reallocations(true);
 		for (unsigned int i = 0; i < result.locations.size(); i++){
-			cerr << (int)(100*(float)i/(float)result.locations.size()) << "%";
+			const  int pp = (100 * (float)i / (float)result.locations.size());
+			if (p_complete != pp) {
+				cerr << pp << "%...";
+				p_complete = pp;
+			}
 			for (unsigned int j = 0; j < result.locations[i].annotations.size(); j++){
-				ns_simple_image_cache::const_handle_t image;	
-				ns_image_server_image im(training_set_source_images_sorted_by_region_image_id[result_location_region_image_ids[i][j].image_id]);
+				if (result.locations[i].annotations[j].type != ns_movement_cessation)
+					continue;
+				if (result_location_region_image_ids[i][j].image_id == 0)
+					continue;
+				ns_simple_local_image_cache::handle_t image_source;	
+				auto p = training_set_source_images_sorted_by_region_image_id.find(result_location_region_image_ids[i][j].image_id);
+				if (p == training_set_source_images_sorted_by_region_image_id.end())
+					continue;
+				ns_image_server_image im(p->second);
 				//the metadata is stored in the same filename with .xml and .csv.gz  So we need to strip those and make sure we load the tif.
 				//cout << im.filename << "\n";
 				im.filename = ns_dir::extract_filename_without_extension(im.filename);
 				im.filename += ".tif";
 				//cout << im.filename << "\n";
-				cache.get_for_read(
+				image_cache.get_for_write(
 					im,
-					image,cache_source);
+					image_source,cache_source);
+				if (image_source().already_read) {
+					image_source().reset_for_reload(cache_source);
+				}
+				image_source().source.input_stream().pump(image_temp, 1024);
+				image_source().already_read = true;
 				std::string extra_metadata;
 				//ns_worm_training_set_image::get_external_metadata(im.path, im.filename, extra_metadata);
-				ns_worm_training_set_image::get_external_metadata(image().image_record.path, image().image_record.filename, extra_metadata);
+				ns_worm_training_set_image::get_external_metadata(image_source().image_record.path, image_source().image_record.filename, extra_metadata);
 				ns_training_set_visualization_metadata_manager m;
-				m.from_collage(image().image,false,extra_metadata);
-				image.release();
+				m.from_collage(image_temp,false,extra_metadata);
+				image_source.release();
 				ns_whole_image_statistic_specification_key key;
 				key.capture_time = result.locations[i].annotations[j].time.period_end;
 				key.region_id = result.locations[i].annotations[j].region_info_id;
@@ -328,9 +347,18 @@ public:
 				image_info[s].multiple_worm_cluster_solution_id = 0;
 				image_info[s].position = ns_vector_2i(0,0);
 				image_info[s].dimensions = ns_vector_2i(0,0);
-				image_info[s].hand_annotation_data.identified_as_a_worm_by_human = (result.locations[i].properties.excluded != ns_death_time_annotation::ns_by_hand_excluded) && 
-					(result.locations[i].annotations[j].excluded != ns_death_time_annotation::ns_by_hand_excluded);
-				image_info[s].hand_annotation_data.identified_as_misdisambiguated_multiple_worms = result.locations[i].properties.disambiguation_type==ns_death_time_annotation::ns_part_of_a_mutliple_worm_disambiguation_cluster;
+				image_info[s].hand_annotation_data.identified_as_a_worm_by_human = !result.locations[i].properties.is_excluded() && !result.locations[i].properties.is_censored() && !result.locations[i].properties.flag.event_should_be_excluded() &&
+					!result.locations[i].annotations[j].is_excluded() && !result.locations[i].annotations[j].is_censored() && !result.locations[i].annotations[j].flag.event_should_be_excluded();
+				cerr << (image_info[s].hand_annotation_data.identified_as_a_worm_by_human ? "Worm" : "Not Worm") << " ";
+				std::string fn("c:\\server\\tmp\\");
+				fn += (image_info[s].hand_annotation_data.identified_as_a_worm_by_human ? "worm" : "nonworm");
+				fn+="_";
+				fn += ns_to_string(s) + ".tif";
+				ns_image_standard a, b;
+				ns_image_bitmap c, d;
+				images[s].split(a, b, c, d);
+				ns_save_image(fn, b);
+				image_info[s].hand_annotation_data.identified_as_misdisambiguated_multiple_worms = result.locations[i].properties.disambiguation_type == ns_death_time_annotation::ns_part_of_a_mutliple_worm_disambiguation_cluster || result.locations[i].properties.number_of_worms() > 0;
 			
 			}
 		}
@@ -649,9 +677,9 @@ void ns_worm_training_set_image::generate(const ns_image_worm_detection_results 
 }
 
 
-void ns_worm_training_set_image::generate(const ns_death_time_annotation_compiler_region & result, ns_image_standard & out,ns_sql & sql){
+void ns_worm_training_set_image::generate(const ns_death_time_annotation_compiler_region & result, ns_image_standard & out,ns_sql & sql, ns_simple_local_image_cache& image_cache){
 	ns_training_set_visualization_metadata_manager manager;
-	manager.load_from_death_time_annotation_set(result,sql);
+	manager.load_from_death_time_annotation_set(result,sql,image_cache);
 	manager.generate_check_box_composits(false);
 	manager.generate_collage(out);
 }

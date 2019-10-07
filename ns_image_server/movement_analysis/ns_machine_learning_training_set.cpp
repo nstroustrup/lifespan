@@ -7,6 +7,7 @@
 #include "ns_difference_thresholder.h"
 #include "ns_worm_training_set_image.h"
 #include "ns_thread_pool.h"
+#include <random>
 
 using namespace std;
 
@@ -541,8 +542,11 @@ void ns_training_file_generator::generate_from_curated_set(const std::string & d
 	non_worm_test_set_start_index = (unsigned int)(non_worm_stats.size()*3)/5;
 
 	//ensure independant segregation of objects into test and training sets.
-	std::random_shuffle(worm_stats.begin(),worm_stats.end());
-	std::random_shuffle(non_worm_stats.begin(),non_worm_stats.end());
+	std::random_device rd2;
+	std::mt19937 g(rd2());
+
+	std::shuffle(worm_stats.begin(),worm_stats.end(),g);
+	std::shuffle(non_worm_stats.begin(),non_worm_stats.end(),g);
 
 	if (sql_for_looking_up_genotypes != 0)
 		lookup_genotypes(*sql_for_looking_up_genotypes);

@@ -47,9 +47,14 @@ template<class ns_component>
 class ns_image_locally_cached_data : public ns_simple_cache_data<ns_image_server_image, ns_image_cache_data_source, ns_64_bit> {
 	std::string local_cache_lookup_id;
 public:
+	ns_image_locally_cached_data() : already_read(false) {}
 	ns_image_storage_source_handle<ns_component> source;
 	ns_image_server_image image_record;
-
+	bool already_read;
+	void reset_for_reload( ns_image_cache_data_source& source_) {
+		already_read = false;
+		load_from_external_source(image_record, source_);
+	}
 	ns_64_bit size_in_memory_in_kbytes() const {
 		return (source.input_stream().properties().width*
 			source.input_stream().properties().height*

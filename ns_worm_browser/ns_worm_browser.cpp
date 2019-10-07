@@ -967,31 +967,32 @@ void ns_worm_learner::generate_training_set_from_by_hand_annotation(){
 		throw ns_ex("No experiment selected.");
 
 	ns_sql& sql(get_sql_connection());
-	ns_hand_annotation_loader loader;
-	loader.load_experiment_annotations(ns_death_time_annotation_set::ns_censoring_and_movement_transitions,data_selector.current_experiment_id(),sql);
+	load_current_experiment_movement_results(ns_death_time_annotation_set::ns_censoring_and_movement_transitions, data_selector.current_experiment_id());
 
-	ns_death_time_annotation_compiler & death_time_annotation_compiler(loader.annotations);
-
-	load_current_experiment_movement_results(ns_death_time_annotation_set::ns_censoring_and_movement_transitions,data_selector.current_experiment_id());
-
-
-	for (unsigned int i = 0; i < movement_results.samples.size(); i++){
-		for (unsigned int j = 0; j < movement_results.samples[i].regions.size(); j++){
-				death_time_annotation_compiler.add(movement_results.samples[i].regions[j]->death_time_annotation_set);
-				death_time_annotation_compiler.specifiy_region_metadata(movement_results.samples[i].regions[j]->metadata.region_id,
-																	 movement_results.samples[i].regions[j]->metadata);
-				break;
+	//move all machine annotations to a single compiler container
+	ns_death_time_annotation_compiler death_time_annotation_compiler;
+	for (unsigned int i = 0; i < movement_results.samples.size(); i++) {
+		for (unsigned int j = 0; j < movement_results.samples[i].regions.size(); j++) {
+			death_time_annotation_compiler.add(movement_results.samples[i].regions[j]->death_time_annotation_set);
+			death_time_annotation_compiler.specifiy_region_metadata(movement_results.samples[i].regions[j]->metadata.region_id,
+				movement_results.samples[i].regions[j]->metadata);
 		}
 	}
+	//add all the by-hand annotations
+	ns_hand_annotation_loader by_hand_annotations;
+	by_hand_annotations.load_experiment_annotations(ns_death_time_annotation_set::ns_censoring_and_movement_transitions, data_selector.current_experiment_id(), sql);
+	death_time_annotation_compiler.add(by_hand_annotations.annotations, ns_death_time_annotation_compiler::ns_do_not_create_regions_or_locations);
 	
 	ns_image_server_results_subject results_subject;
 	results_subject.experiment_id = data_selector.current_experiment_id();
 
 	ns_image_standard im;
 	unsigned long i(1);
+	ns_simple_local_image_cache cache(0);
 	for (ns_death_time_annotation_compiler::ns_region_list::iterator p = death_time_annotation_compiler.regions.begin(); p != death_time_annotation_compiler.regions.end(); ++p){
+		cout << "\nProcessing " << p->second.metadata.sample_name << "::" << p->second.metadata.region_name << ": ";
 		try{
-			ns_worm_training_set_image::generate(p->second,im,sql);
+			ns_worm_training_set_image::generate(p->second,im,sql,cache);
 		
 			results_subject.sample_name = p->second.metadata.sample_name;
 			results_subject.sample_id =  0;
@@ -2414,8 +2415,10 @@ private:
 		std::vector<const T *> shuffled_subjects;
 		shuffled_subjects.reserve(subjects.size());
 		for (typename std::set<T>::const_iterator p = subjects.begin(); p != subjects.end(); ++p)
-			shuffled_subjects.push_back(&(*p));
-		std::random_shuffle(shuffled_subjects.begin(), shuffled_subjects.end());
+			shuffled_subjects.push_back(&(*p)); 
+		std::random_device rd;
+		std::mt19937 g(rd());
+		std::shuffle(shuffled_subjects.begin(), shuffled_subjects.end(),g);
 		for (unsigned long i = 0; i < test_set_N; i++)
 			test_set_.emplace(*shuffled_subjects[i]);
 		for (unsigned long i = test_set_N; i < subjects.size(); i++)

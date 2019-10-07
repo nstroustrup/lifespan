@@ -1290,7 +1290,6 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 	/*****************************
 	Configuration Tasks
 	*****************************/
-	static void show_extra_menus(const std::string & value);
 	
 	static void precache_storyboard_images(const std::string& value) { worm_learner.precache_solo_worm_images = value.find("Pre-Cache") != value.npos; }
 	static void generate_mp4(const std::string & value){worm_learner.generate_mp4(value=="MP4");}
@@ -1503,6 +1502,8 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 	}
 
 public:
+
+	static void show_extra_menus(const std::string& value);
 
 	/*****************************
 	Menu Specification
@@ -3952,7 +3953,8 @@ void ns_run_startup_routines() {
 	ns_worm_browser_output_debug(__LINE__, __FILE__, "Setting current experiment");
 	//image_server.set_sql_database("image_server_archive_2017", false, &worm_learner.get_sql_connection());
 	get_menu_handler()->update_experiment_choice(*get_menu_bar());
-	//worm_learner.data_selector.set_current_experiment(1090, worm_learner.get_sql_connection());
+	//worm_learner.data_selector.set_current_experiment(109, worm_learner.get_sql_connection());
+	//get_menu_handler()->show_extra_menus("");
 	//worm_learner.data_selector.set_current_experiment(77, worm_learner.get_sql_connection());
 	update_region_choice_menu();
 	update_strain_choice_menu();

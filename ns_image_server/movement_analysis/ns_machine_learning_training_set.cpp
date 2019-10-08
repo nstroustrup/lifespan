@@ -316,7 +316,8 @@ public:
 };
 
 
-struct ns_worm_detection_model_training_set_processor_pool_job {
+class ns_worm_detection_model_training_set_processor_pool_job {
+public:
 	ns_worm_detection_model_training_set_processor_pool_job() {}
 	ns_worm_detection_model_training_set_processor_pool_job(const std::string filename_to_process_, ns_worm_detection_model_training_set_processor_pool_shared_data &shared_data_):filename_to_process(filename_to_process_),shared_data(&shared_data_) {}
 
@@ -548,8 +549,14 @@ void ns_training_file_generator::generate_from_curated_set(const std::string & d
 	std::shuffle(worm_stats.begin(),worm_stats.end(),g);
 	std::shuffle(non_worm_stats.begin(),non_worm_stats.end(),g);
 
-	if (sql_for_looking_up_genotypes != 0)
-		lookup_genotypes(*sql_for_looking_up_genotypes);
+	if (sql_for_looking_up_genotypes != 0) {
+		try {
+			lookup_genotypes(*sql_for_looking_up_genotypes);
+		}
+		catch (ns_ex & ex) {
+			//genotypes aren't important enough to output a ton of error messages.
+		}
+	}
 
 	std::vector<ns_detected_worm_classifier> excluded_stats;
 	const std::string strain_specific_directory(training_set_base_dir + DIR_CHAR_STR + "strain_specific");

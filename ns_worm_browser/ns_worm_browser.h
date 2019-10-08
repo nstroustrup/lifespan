@@ -55,6 +55,7 @@ using namespace std;
 #endif
 #include "ns_experiment_storyboard_annotater.h"
 #include "ns_death_time_solo_posture_annotater.h"
+#include "ns_worm_detection_set_annotater.h"
 
 extern bool output_debug_messages;
 extern std::ofstream debug_output;
@@ -555,7 +556,8 @@ public:
 		ns_annotate_death_times_in_region,
 		ns_annotate_storyboard_region,
 		ns_annotate_storyboard_sample,
-		ns_annotate_storyboard_experiment
+		ns_annotate_storyboard_experiment,
+		ns_annoate_worm_detection_set
 	} ns_behavior_mode;
 
 	
@@ -576,7 +578,7 @@ public:
 		movement_data_is_strictly_decreasing_(false),overwrite_existing_mask_when_submitting(false),output_svg_spines(false),static_mask(0),generate_mp4_(false),
 		/*submit_capture_specification_to_db_when_recieved(false),*/overwrite_submitted_capture_specification(false),maximum_window_size(1024,768),
 	  storyboard_annotater(2),main_window("Main Window"), persistant_sql_connection(0), persistant_sql_lock("psl"), show_testing_menus(false),
-				worm_window("Worm Window"), stats_window("Statistics Window"), worm_image_offset_due_to_telemetry_graph_spacing(0, 0), precache_solo_worm_images(false){
+				worm_window("Worm Window"), stats_window("Statistics Window"), worm_image_offset_due_to_telemetry_graph_spacing(0, 0), precache_solo_worm_images(false),worm_detection_set_annotater(2){
 		storyboard_annotater.set_resize_factor(2);
 		last_button_press.click_type = ns_button_press::ns_none;
 		current_annotater = &storyboard_annotater;
@@ -718,6 +720,7 @@ public:
 	//void repair_image_headers(const std::string & filename);
 	void generate_training_set_image();
 	void process_training_set_image();
+	void annotate_worm_detection_training_set(const std::string& filename);
 	void output_learning_set(const std::string & directory, const bool & process = false);
 	ns_training_file_generator training_file_generator;
 	void train_from_data(const std::string & base_dir);
@@ -868,9 +871,10 @@ public:
 	ns_experiment_region_selector statistics_data_selector;
 
 	//ns_death_time_posture_annotater death_time_annotater;
-	ns_experiment_storyboard_annotater storyboard_annotater;
 	ns_image_series_annotater * current_annotater;
 	ns_death_time_solo_posture_annotater death_time_solo_annotater;
+	ns_experiment_storyboard_annotater storyboard_annotater;
+	ns_worm_detection_set_annotater worm_detection_set_annotater;
 	bool worm_launch_finished;
 	void save_current_area_selections();
 

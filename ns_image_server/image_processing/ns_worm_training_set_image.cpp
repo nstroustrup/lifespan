@@ -726,6 +726,13 @@ void ns_transfer_annotations(const ns_image_standard & source_collage, const ns_
 ns_annotated_training_set::~ns_annotated_training_set(){
 	objects.clear();
 }
+void ns_annotated_training_set::clear() {
+	worms.resize(0);
+	non_worms.resize(0);
+	censored_worms.resize(0);
+	objects_grouped_by_multiple_worm_cluster_origin.resize(0);
+	objects.resize(0);
+}
 
 template<class ns_component>
 float ns_calculate_overlap(const ns_image_whole<ns_component> & a, const ns_image_whole<ns_component> & b){
@@ -831,7 +838,7 @@ void ns_worm_training_set_image::decode(const ns_image_standard& im, ns_annotate
 		object_manager.objects[i] = new ns_detected_object();
 		//we use the multiple worm bitmap
 		t.objects[i].object.bitmap_of_worm_cluster().pump(object_manager.objects[i]->bitmap(), 1024);
-		object_manager.objects[i]->offset_in_source_image = t.objects[i].object.region_position_in_source_image;
+		object_manager.objects[i]->offset_in_source_image = ns_vector_2i(0,0);
 		object_manager.objects[i]->size = t.objects[i].object.region_size;
 	}
 	object_manager.convert_bitmaps_into_node_graphs(im.properties().resolution, "");
@@ -956,7 +963,10 @@ void ns_worm_training_set_image::decode(const ns_image_standard& im, ns_annotate
 					t.objects_grouped_by_multiple_worm_cluster_origin[g][s][i]->object.context_image().absolute_grayscale.pump(context_image_temp.absolute_grayscale, 1024);
 					t.objects_grouped_by_multiple_worm_cluster_origin[g][s][i]->object.context_image().relative_grayscale.pump(context_image_temp.relative_grayscale, 1024);
 					t.objects_grouped_by_multiple_worm_cluster_origin[g][s][i]->object.context_image().combined_image.pump(context_image_temp.combined_image, 1024);
-
+					ns_vector_2i cs(t.objects_grouped_by_multiple_worm_cluster_origin[g][s][i]->object.context_image_size),
+						rs(t.objects_grouped_by_multiple_worm_cluster_origin[g][s][i]->object.region_size),
+						cp(t.objects_grouped_by_multiple_worm_cluster_origin[g][s][i]->object.context_position_in_source_image),
+						rp(t.objects_grouped_by_multiple_worm_cluster_origin[g][s][i]->object.region_position_in_source_image);
 					//then use only the correct solution
 					t.objects_grouped_by_multiple_worm_cluster_origin[g][s][i]->object = solutions[chosen_worm];
 
@@ -964,6 +974,13 @@ void ns_worm_training_set_image::decode(const ns_image_standard& im, ns_annotate
 					context_image_temp.absolute_grayscale.pump(t.objects_grouped_by_multiple_worm_cluster_origin[g][s][i]->object.context_image().absolute_grayscale, 1024);
 					context_image_temp.relative_grayscale.pump(t.objects_grouped_by_multiple_worm_cluster_origin[g][s][i]->object.context_image().relative_grayscale, 1024);
 					context_image_temp.combined_image.pump(t.objects_grouped_by_multiple_worm_cluster_origin[g][s][i]->object.context_image().combined_image, 1024);
+					//and copy back the original image metadata
+					if (!(t.objects_grouped_by_multiple_worm_cluster_origin[g][s][i]->object.region_size == rs))
+						cerr << "region changed size!";
+					t.objects_grouped_by_multiple_worm_cluster_origin[g][s][i]->object.context_image_size = cs;
+					t.objects_grouped_by_multiple_worm_cluster_origin[g][s][i]->object.context_position_in_source_image = cp;
+					t.objects_grouped_by_multiple_worm_cluster_origin[g][s][i]->object.region_position_in_source_image = rp;
+
 
 					ns_whole_image_statistic_specification_key key;
 					key.region_id = t.objects_grouped_by_multiple_worm_cluster_origin[g][s][i]->region_info_id;

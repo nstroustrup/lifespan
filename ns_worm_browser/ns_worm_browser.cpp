@@ -6588,8 +6588,8 @@ void ns_worm_learner::process_training_set_image(){
 	cl.push_back(&no);
 	ns_compile_collage(cl,current_image,512,1,0,false,100);
 	draw();
-
 }
+
 void ns_worm_learner::output_learning_set(const std::string & directory, const bool & process){
 		
 	if (process && current_filename != ""){
@@ -6725,6 +6725,7 @@ void ns_worm_learner::draw(){
 				case ns_worm_learner::ns_annotate_storyboard_region:
 				case ns_worm_learner::ns_annotate_storyboard_sample:
 				case ns_worm_learner::ns_annotate_storyboard_experiment:
+				case ns_worm_learner::ns_worm_learner::ns_annoate_worm_detection_set:
 					current_annotater->display_current_frame();
 					break;
 				case ns_worm_learner::ns_annotate_death_times_in_region:
@@ -7002,6 +7003,7 @@ bool ns_worm_learner::register_main_window_key_press(int key, const bool shift_k
 		case ns_worm_learner::ns_annotate_storyboard_region:
 		case ns_worm_learner::ns_annotate_storyboard_sample:
 		case ns_worm_learner::ns_annotate_storyboard_experiment:
+		case ns_worm_learner::ns_annoate_worm_detection_set:
 																				  {
 			if (key == FL_Left || key== 'a'){
 				navigate_death_time_annotation(ns_image_series_annotater::ns_back,true);
@@ -7110,7 +7112,8 @@ void ns_worm_learner::touch_main_window_pixel_internal(const ns_button_press & p
 		}
 		case ns_worm_learner::ns_annotate_storyboard_region:
 		case ns_worm_learner::ns_annotate_storyboard_sample:
-		case ns_worm_learner::ns_annotate_storyboard_experiment:{
+		case ns_worm_learner::ns_annotate_storyboard_experiment:
+		case ns_worm_learner::ns_annoate_worm_detection_set:{
 			if (press.click_type == ns_button_press::ns_up){
 				if (press.shift_key_held)
 					current_annotater->register_click(ns_vector_2i(press.image_position.x,press.image_position.y),ns_image_series_annotater::ns_annotate_extra_worm,main_window.display_rescale_factor);
@@ -7915,16 +7918,17 @@ void ns_experiment_storyboard_annotater::precache_worm_images_asynch() {
 void ns_experiment_storyboard_annotater::load_from_storyboard(const ns_region_metadata & strain_to_display_, const ns_censor_masking censor_masking_, ns_experiment_storyboard_spec & spec, ns_worm_learner * worm_learner_, double external_rescale_factor) {
 	stop_fast_movement();
 	clear();
+	if (sql.is_null())
+		sql.attach(image_server.new_sql_connection(__FILE__, __LINE__));
 	ns_acquire_lock_for_scope lock(image_buffer_access_lock, __FILE__, __LINE__);
 	worm_learner = worm_learner_;
 	strain_to_display = strain_to_display_;
 	censor_masking = censor_masking_;
-	ns_sql &sql(worm_learner_->get_sql_connection());
 	excluded_regions.clear();
 	if (spec.experiment_id != 0) {
-		sql << "SELECT r.id, r.excluded_from_analysis+r.censored+s.censored,r.time_at_which_animals_had_zero_age FROM sample_region_image_info as r, capture_samples as s WHERE r.sample_id = s.id AND s.experiment_id = " << spec.experiment_id;
+		sql() << "SELECT r.id, r.excluded_from_analysis+r.censored+s.censored,r.time_at_which_animals_had_zero_age FROM sample_region_image_info as r, capture_samples as s WHERE r.sample_id = s.id AND s.experiment_id = " << spec.experiment_id;
 		ns_sql_result res;
-		sql.get_rows(res);
+		sql().get_rows(res);
 		for (unsigned long i = 0; i < res.size(); i++) {
 			excluded_regions[atol(res[i][0].c_str())] = res[i][1] != "0";
 			if (res[i][1] == "0" && strain_to_display.time_at_which_animals_had_zero_age == 0)
@@ -7933,9 +7937,9 @@ void ns_experiment_storyboard_annotater::load_from_storyboard(const ns_region_me
 		strain_to_display.experiment_id = spec.experiment_id;
 	}
 	else if (spec.sample_id != 0) {
-		sql << "SELECT r.id,  r.excluded_from_analysis+r.censored+s.censored,r.time_at_which_animals_had_zero_age FROM sample_region_image_info as r, capture_samples as s WHERE r.sample_id = s.id AND s.id = " << spec.sample_id;
+		sql() << "SELECT r.id,  r.excluded_from_analysis+r.censored+s.censored,r.time_at_which_animals_had_zero_age FROM sample_region_image_info as r, capture_samples as s WHERE r.sample_id = s.id AND s.id = " << spec.sample_id;
 		ns_sql_result res;
-		sql.get_rows(res);
+		sql().get_rows(res);
 		for (unsigned long i = 0; i < res.size(); i++) {
 			excluded_regions[atol(res[i][0].c_str())] = res[i][1] != "0";
 			if (res[i][1] == "0" && strain_to_display.time_at_which_animals_had_zero_age == 0)
@@ -7944,9 +7948,9 @@ void ns_experiment_storyboard_annotater::load_from_storyboard(const ns_region_me
 
 	}
 	else if (spec.region_id != 0) {
-		sql << "SELECT r.excluded_from_analysis+r.censored+s.censored, s.experiment_id,r.time_at_which_animals_had_zero_age FROM sample_region_image_info as r, capture_samples as s WHERE r.sample_id = s.id AND r.id = " << spec.region_id;
+		sql() << "SELECT r.excluded_from_analysis+r.censored+s.censored, s.experiment_id,r.time_at_which_animals_had_zero_age FROM sample_region_image_info as r, capture_samples as s WHERE r.sample_id = s.id AND r.id = " << spec.region_id;
 		ns_sql_result res;
-		sql.get_rows(res);
+		sql().get_rows(res);
 		if (res.size() == 0)
 			throw ns_ex("ns_experiment_storyboard_annotater::load_from_storyboard()::Could not find region");
 		
@@ -7957,7 +7961,7 @@ void ns_experiment_storyboard_annotater::load_from_storyboard(const ns_region_me
 		if (res[0][0] == "0" && strain_to_display.time_at_which_animals_had_zero_age == 0)
 			strain_to_display.time_at_which_animals_had_zero_age = atol(res[0][2].c_str());
 	}
-	storyboard_manager.load_metadata_from_db(spec, storyboard, sql);
+	storyboard_manager.load_metadata_from_db(spec, storyboard, sql());
 	unsigned long number_of_nonempty_divisions(0);
 	for (unsigned int i = 0; i < storyboard.divisions.size(); i++) {
 		if (storyboard.divisions[i].events.size() > 0)
@@ -8004,15 +8008,15 @@ void ns_experiment_storyboard_annotater::load_from_storyboard(const ns_region_me
 	if (!strain_to_display.device_regression_match_description().empty())
 		for (ns_event_display_spec_list::iterator p = display_events_from_region.begin(); p != display_events_from_region.end(); p++) {
 			ns_region_metadata m;
-			m.load_from_db(p->first, "", sql);
+			m.load_from_db(p->first, "", sql());
 			p->second = (m.device_regression_match_description() == strain_to_display.device_regression_match_description());
 		}
 
 	//	cerr << divisions.size() << " divisions loaded.\n Loading images...";
-	this->initalize_division_image_population(sql);
+	this->initalize_division_image_population(sql());
 	//cerr << "Done.\n";
 	current_timepoint_id = 0;
-	divisions[current_timepoint_id].load_image(0, current_image, sql, local_image_cache,memory_pool, resize_factor);
+	divisions[current_timepoint_id].load_image(0, current_image, sql(), local_image_cache,memory_pool, resize_factor);
 	ns_image_properties prop(current_image.im->properties());
 	//allocate image buffer
 	if (previous_images.size() != max_buffer_size || next_images.size() != max_buffer_size) {
@@ -8030,6 +8034,21 @@ void ns_experiment_storyboard_annotater::load_from_storyboard(const ns_region_me
 	lock.release();
 }
 
+void ns_worm_learner::annotate_worm_detection_training_set(const std::string& filename) {
+	std::string path, f;
+	path = ns_dir::extract_path(filename);
+	f = ns_dir::extract_filename(filename);
+	worm_detection_set_annotater.load_from_file(path, f, this, main_window.display_rescale_factor);
+	worm_detection_set_annotater.worm_learner = this;
+	if (image_server.verbose_debug_output())
+		image_server_const.register_server_event_no_db(ns_image_server_event("Finished Loading"));
+	worm_detection_set_annotater.display_current_frame();
+
+	current_annotater = &worm_detection_set_annotater;
+	ns_fl_lock(__FILE__, __LINE__);
+	set_behavior_mode(ns_worm_learner::ns_annoate_worm_detection_set);
+	ns_fl_unlock(__FILE__, __LINE__);
+}
 bool ns_worm_learner::start_death_time_annotation(const ns_behavior_mode m, const ns_experiment_storyboard_spec::ns_storyboard_flavor & f) {
 	if (m != ns_annotate_storyboard_experiment && !data_selector.region_selected()) throw ns_ex("No region selected");
 	//if (!current_annotater->data_saved())
@@ -8039,7 +8058,7 @@ bool ns_worm_learner::start_death_time_annotation(const ns_behavior_mode m, cons
 	//	this->behavior_mode == ns_annotate_storyboard_experiment){
 	
 	current_storyboard_flavor = f;
-	
+	current_annotater = &storyboard_annotater;
 	area_handler.clear_boxes();
 	try{
 	  ns_acquire_lock_for_scope lock(storyboard_lock,__FILE__,__LINE__);
@@ -8075,7 +8094,7 @@ bool ns_worm_learner::start_death_time_annotation(const ns_behavior_mode m, cons
 
 				c2 = (ns_experiment_storyboard_annotater::ns_censor_masking)((int)c);
 				
-				storyboard_annotater.load_from_storyboard(metadata,c2,subject,this, worm_window.display_rescale_factor);
+				storyboard_annotater.load_from_storyboard(metadata,c2,subject,this, main_window.display_rescale_factor);
 				if (image_server.verbose_debug_output())
 					image_server_const.register_server_event_no_db(ns_image_server_event("Finished Loading"));
 				storyboard_annotater.display_current_frame();

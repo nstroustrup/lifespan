@@ -25,6 +25,7 @@ public:
 	std::vector <ns_annotated_training_set_object> objects;
 	//std::vector<ns_packed_collage_position> worm_positions;
 	~ns_annotated_training_set();
+	void clear();
 };
 
 class ns_worm_training_set_image{

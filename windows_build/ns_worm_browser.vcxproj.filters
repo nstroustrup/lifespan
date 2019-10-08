@@ -697,6 +697,9 @@
     <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_zip.c">
       <Filter>image_format_lib\tiff</Filter>
     </ClCompile>
+    <ClCompile Include="..\ns_worm_browser\ns_worm_detection_set_annotater.cpp">
+      <Filter>worm_browser</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\ns_image_server\system_base\ns_dir.h">
@@ -1156,6 +1159,9 @@
       <Filter>misc_lib\cmtf</Filter>
     </ClInclude>
     <ClInclude Include="..\ns_worm_browser\ns_population_telemetry.h">
+      <Filter>worm_browser</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_worm_browser\ns_worm_detection_set_annotater.h">
       <Filter>worm_browser</Filter>
     </ClInclude>
   </ItemGroup>

@@ -912,6 +912,13 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 	}
 	static void generate_training_set(const std::string & value){worm_learner.generate_training_set_image();}
 	static void process_training_set(const std::string & value){worm_learner.process_training_set_image();}
+	static void annotate_worm_detection_training_set(const std::string& value) {
+		ns_image_file_chooser im_cc;
+		ns_run_in_main_thread<ns_image_file_chooser> run_mt(&im_cc);
+		if (im_cc.chosen)
+		worm_learner.annotate_worm_detection_training_set(im_cc.result);
+	
+	}
 	static void generate_SVM_training_data(const std::string & value){
 		/*std::vector<dialog_file_type> foo;
 		foo.push_back(dialog_file_type("(*.*)","*"));*/
@@ -1607,11 +1614,19 @@ public:
 		add(ns_menu_item_spec(generate_morphology_stats,"Data Files/Other Statistics/Compile Worm Morphology Statistics for Current Experiment"));
 
 		//add(ns_menu_item_spec(generate_survival_curve_from_hand_annotations,"&Calibration/Generate Survival Curves from by hand annotations"));
-		add(ns_menu_item_spec(compare_machine_and_by_hand_annotations,"&Calibration/_Compare Storyboard annotations to fully-automated results"));
 
-		add(ns_menu_item_spec(generate_worm_markov_posture_model_from_by_hand_annotations, "Calibration/_Build new posture analysis model from storyboard annotations/_HMM Model/From this experiment"));
-		add(ns_menu_item_spec(generate_worm_markov_posture_model_from_by_hand_annotations, "Calibration/_Build new posture analysis model from storyboard annotations/_HMM Model/From Observation Files"));
-		add(ns_menu_item_spec(generate_movement_image_analysis_optimization_data, "Calibration/_Build new posture analysis model from storyboard annotations/Threshold Model/Death Time Posture Changes"));
+		add(ns_menu_item_spec(generate_worm_markov_posture_model_from_by_hand_annotations, "Calibration/Posture Analaysis/_Build new HMM Model from storyboard annnotations/From this experiment"));
+		add(ns_menu_item_spec(generate_worm_markov_posture_model_from_by_hand_annotations, "Calibration/Posture Analaysis/Build new HMM Model from storyboard annnotations/From Observation Files"));
+		add(ns_menu_item_spec(compare_machine_and_by_hand_annotations, "&Calibration/Posture Analaysis/_Compare Storyboard annotations to fully-automated results"));
+		add(ns_menu_item_spec(generate_movement_image_analysis_optimization_data, "Calibration/Posture Analaysis/_Build new threshold model from storyboard annnotations"));
+
+
+		add(ns_menu_item_spec(annotate_worm_detection_training_set, "Calibration/Worm Detection/_Annotate Worm Detection Training Set"));
+		add(ns_menu_item_spec(generate_SVM_training_data, "Calibration/Worm Detection/Process annotated images to produce SVM Training Data"));
+		add(ns_menu_item_spec(analyze_svm_results, "Calibration/Worm Detection/_Analyze SVM Training Results"));
+		add(ns_menu_item_spec(generate_training_set_from_by_hand_annotations, "Calibration/Worm Detection/_Generate Training Set from By Hand Movement Annotations"));
+
+		add(ns_menu_item_spec(generate_movement_image_analysis_optimization_data, "Calibration/Worm Detection/_Build new posture analysis model from storyboard annotations/Threshold Model/Death Time Posture Changes"));
 		add(ns_menu_item_spec(masks_generate_composite, "Calibration/_Define Subregions/Generate Subregion Mask Composite"));
 		add(ns_menu_item_spec(masks_generate_composite, "Calibration/_Define Subregions/(Draw Plate Locations on Subregion Mask using Photoshop)", 0, FL_MENU_INACTIVE));
 		add(ns_menu_item_spec(masks_process_composite, "Calibration/_Define Subregions/Analyze Subregion Labels Drawn on Subregion Mask Composite"));
@@ -1669,10 +1684,6 @@ public:
 			add(ns_menu_item_spec(output_feature_distributions, "Testing/Worm Detection/Output feature distributions"));
 			//add(ns_menu_item_spec(calculate_slow_movement, "Testing/Worm Detection/Calculate Slow Movement"));
 
-		
-			add(ns_menu_item_spec(generate_SVM_training_data, "Testing/_Worm Detection Model Generation/Process annotated images to produce SVM Training Data"));
-			add(ns_menu_item_spec(analyze_svm_results, "Testing/Worm Detection Model Generation/_Analyze SVM Training Results"));
-			add(ns_menu_item_spec(generate_training_set_from_by_hand_annotations, "Testing/Worm Detection Model Generation/_Generate Training Set from By Hand Movement Annotations"));
 
 			add(ns_menu_item_spec(split_results, "Testing/Worm Detection Model Etc/Split results into multiple regions"));
 			add(ns_menu_item_spec(output_learning_set, "Testing/Worm Detection Model Etc/Output Learning Image Set"));

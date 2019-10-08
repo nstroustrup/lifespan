@@ -614,6 +614,7 @@
     <ClCompile Include="..\ns_image_server\system_base\ns_xml.cpp" />
     <ClCompile Include="..\ns_worm_browser\ns_worm_browser.cpp" />
     <ClCompile Include="..\ns_worm_browser\ns_worm_browser_main.cpp" />
+    <ClCompile Include="..\ns_worm_browser\ns_worm_detection_set_annotater.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\external_compile_libraries\jpeg-8d\cderror.h" />
@@ -768,6 +769,7 @@
     <ClInclude Include="..\ns_worm_browser\ns_image_series_annotater.h" />
     <ClInclude Include="..\ns_worm_browser\ns_population_telemetry.h" />
     <ClInclude Include="..\ns_worm_browser\ns_worm_browser.h" />
+    <ClInclude Include="..\ns_worm_browser\ns_worm_detection_set_annotater.h" />
     <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>

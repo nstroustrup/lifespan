@@ -746,44 +746,63 @@ float ns_calculate_overlap(const ns_image_whole<ns_component> & a, const ns_imag
 
 #include "ns_image_easy_io.h"
 
-void ns_worm_training_set_image::decode(const ns_image_standard & im,ns_annotated_training_set & t, const bool allow_malformed_metadata, const string& extra_metadata){
+
+//This function splits apart a by-hand annotated collage of objects
+//The annotated_training_set t object is populated with the contents of the collage.
+//Based on by hand annotations, objects are sorted into, worms, non-worms, and censored objects.
+//Censored objects are those that should not be used to build a classifier, because they are marked as unclear or ambiguous.
+//This decoding is non-trivial because of the existance of "multiple-worm clusters".
+//Worms often touch, and the shape of these multiple worm objects needs to be "solved"
+//by identifying sub-worms within each group.
+//Multiple possible solutions to each cluster exist, and the user needs to choose the correct
+//solutions.
+//When the collage is generated, each possible solution is written to the collage.
+//We need, therefore, to take all the objects in the collage and figure out which ones are
+//solutions to the same cluster, and which ones have been annotated as the "correct" solution.
+//We do this using the multiple_worm_cluster_group_id tag for each object
+//as well as the multiple_worm_cluster_solution_id tag for each object.
+//Objects that share a multiple_worm_cluster_group_id tag come from the same multiple cluster.
+void ns_worm_training_set_image::decode(const ns_image_standard& im, ns_annotated_training_set& t, const bool allow_malformed_metadata, const string& extra_metadata) {
 
 	//extract individual training images from collage
 	ns_training_set_visualization_metadata_manager manager;
-	manager.from_collage(im, allow_malformed_metadata,extra_metadata);
+	manager.from_collage(im, allow_malformed_metadata, extra_metadata);
 	unsigned long checked(0);
 	unsigned long unchecked(0);
-	for (unsigned int i = 0; i < manager.image_info.size(); i++){
+	for (unsigned int i = 0; i < manager.image_info.size(); i++) {
 		if (manager.image_info[i].hand_annotation_data.identified_as_a_worm_by_human)
 			checked++;
 		else unchecked++;
 	}
-//	cerr << "checked: " << checked << ", unchecked: " << unchecked << "\n";
-	t.worms.reserve(manager.images.size()/2);
+	//	cerr << "checked: " << checked << ", unchecked: " << unchecked << "\n";
+	t.worms.reserve(manager.images.size() / 2);
 	t.non_worms.reserve(manager.images.size());
 	t.objects.resize(manager.images.size());
-	
+
 	//extract worm grayscale and bitmap information from the training images
-	for (unsigned int i = 0; i < t.objects.size(); i++){
-		if (allow_malformed_metadata && 
-			(manager.image_info[i].original_bitmap_size.x == 0 || 
-			manager.image_info[i].original_bitmap_size.y == 0)){
+	for (unsigned int i = 0; i < t.objects.size(); i++) {
+		if (allow_malformed_metadata &&
+			(manager.image_info[i].original_bitmap_size.x == 0 ||
+				manager.image_info[i].original_bitmap_size.y == 0)) {
 			cerr << "Problem: Object size: " << manager.image_info[i].original_bitmap_size << "\n";
 			continue;
 		}
-	
-		if (manager.image_info[i].original_bitmap_size.x > manager.images[i].combined_image.properties().width || 
-			manager.image_info[i].original_bitmap_size.y > manager.images[i].combined_image.properties().height){
-			manager.image_info[i].original_bitmap_size =  ns_vector_2i(
-															manager.images[i].combined_image.properties().width-80,
-															manager.images[i].combined_image.properties().height-80);
+		//pass on some useful debug information
+		t.objects[i].debug_unique_id_in_source_collage = manager.images[i].debug_collage_unique_id;
+		t.objects[i].debug_position_in_source_collage = manager.images[i].debug_position_in_collage;
+
+		if (manager.image_info[i].original_bitmap_size.x > manager.images[i].combined_image.properties().width ||
+			manager.image_info[i].original_bitmap_size.y > manager.images[i].combined_image.properties().height) {
+			manager.image_info[i].original_bitmap_size = ns_vector_2i(
+				manager.images[i].combined_image.properties().width - 80,
+				manager.images[i].combined_image.properties().height - 80);
 		}
 		t.objects[i].object.from_training_set_visualization(manager.images[i],
-													manager.image_info[i].original_bitmap_size,
-													manager.image_info[i].bitmap_offset_in_context_image(),manager.image_info[i].original_context_image_size);
+			manager.image_info[i].original_bitmap_size,
+			manager.image_info[i].bitmap_offset_in_context_image(), manager.image_info[i].original_context_image_size);
 		manager.images[i].deallocate_images();
-		
-	
+
+
 		t.objects[i].hand_annotation_data = manager.image_info[i].hand_annotation_data;
 		t.objects[i].region_info_id = manager.image_info[i].region_info_id;
 		t.objects[i].capture_time = manager.image_info[i].time;
@@ -798,204 +817,213 @@ void ns_worm_training_set_image::decode(const ns_image_standard & im,ns_annotate
 		if (p == manager.whole_image_stats.end())
 			throw ns_ex("Could not find whole image stats for region/time") << key.region_id << "/" << key.capture_time;
 		t.objects[i].whole_image_stats = p->second;
-		
+
 	}
+	//
 
 	//build spines from bitmaps;
+	//each image in the collage will now have a spline fit, sored in object_manager.
+	//so, the metadata in t.source_annotation_for_mutually_exclusive_groups[i][j]
+	//corresponds to the spline fit in object_manager[i][j]
 	ns_detected_object_manager object_manager;
-	object_manager.objects.resize(t.objects.size(),0);
-	for (unsigned int i = 0; i < t.objects.size(); i++){
+	object_manager.objects.resize(t.objects.size(), 0);
+	for (unsigned int i = 0; i < t.objects.size(); i++) {
 		object_manager.objects[i] = new ns_detected_object();
 		//we use the multiple worm bitmap
-		t.objects[i].object.bitmap_of_worm_cluster().pump(object_manager.objects[i]->bitmap(),1024);
-		//cerr << "Worm cluster has a size of " << t.objects[i].bitmap_of_worm_cluster().properties().width << "x" << t.objects[i].bitmap_of_worm_cluster().properties().height << "\n";
+		t.objects[i].object.bitmap_of_worm_cluster().pump(object_manager.objects[i]->bitmap(), 1024);
 		object_manager.objects[i]->offset_in_source_image = t.objects[i].object.region_position_in_source_image;
-	//	object_manager.objects[i]->offset_in_bitmap = t.objects[i].object.get_bitmap_offset_in_context_image();
 		object_manager.objects[i]->size = t.objects[i].object.region_size;
-		
 	}
-	object_manager.convert_bitmaps_into_node_graphs(im.properties().resolution,"");
+	object_manager.convert_bitmaps_into_node_graphs(im.properties().resolution, "");
 	object_manager.calculate_segment_topologies_from_node_graphs(true);
-	//unsigned int number_of_worms = ns_count_number_of_worms_in_detected_object_group(object_manager.objects);
 
-	//reconstruct mutually-exclusive solution hierarchy
-//	std::vector<std::vector<std::vector<ns_training_set_visualization_image_info * > > > metadata_mappings;
-	std::vector<std::vector<std::vector<ns_detected_object * > > > mutually_exclusive_objects;
-	t.mutually_exclusive_groups.reserve(manager.image_info.size());
-	for (unsigned int i = 0; i < manager.image_info.size(); i++){
-		if (manager.image_info[i].multiple_worm_cluster_group_id >= mutually_exclusive_objects.size()){
+	//so far, we have ignored the fact that the objects in t.objects actually can come from the same multiple worm clusters.
+	//we need to group all of these together in t.source_annotation_for_mutually_exclusive_group.
+	//So, We need to regroup all the objects in the collage according to their multiple_worm_cluster_group_id and multiple_worm_cluster_solution_id tags  specified in the file.
+	//Mutually_exclusive_objects[i][j] is a vector of objects corresponding to cluster group i and cluster solution j.
+	//The metadata associated with all these objects is stored in t.mutually_exclusive_groups[i][j]
 
-			mutually_exclusive_objects.resize (manager.image_info[i].multiple_worm_cluster_group_id+1);
-			t.mutually_exclusive_groups.resize(manager.image_info[i].multiple_worm_cluster_group_id+1);
-	//		metadata_mappings.resize		  (manager.image_info[i].multiple_worm_cluster_group_id+1);
+	std::vector<std::vector<std::vector<ns_detected_object* > > > solved_objects_sorted_by_multiple_worm_cluster_origin;
+	solved_objects_sorted_by_multiple_worm_cluster_origin.reserve(manager.image_info.size());
+	t.objects_grouped_by_multiple_worm_cluster_origin.reserve(manager.image_info.size());
+
+	for (unsigned int i = 0; i < manager.image_info.size(); i++) {
+
+		if (manager.image_info[i].multiple_worm_cluster_group_id >= solved_objects_sorted_by_multiple_worm_cluster_origin.size()) {
+			solved_objects_sorted_by_multiple_worm_cluster_origin.resize(manager.image_info[i].multiple_worm_cluster_group_id + 1);
+			t.objects_grouped_by_multiple_worm_cluster_origin.resize(manager.image_info[i].multiple_worm_cluster_group_id + 1);
+			solved_objects_sorted_by_multiple_worm_cluster_origin[manager.image_info[i].multiple_worm_cluster_group_id].reserve(4);
+			t.objects_grouped_by_multiple_worm_cluster_origin[manager.image_info[i].multiple_worm_cluster_group_id].reserve(4);
 		}
-		if (manager.image_info[i].multiple_worm_cluster_solution_id >= mutually_exclusive_objects[manager.image_info[i].multiple_worm_cluster_group_id].size()){
-			mutually_exclusive_objects [manager.image_info[i].multiple_worm_cluster_group_id].resize(manager.image_info[i].multiple_worm_cluster_solution_id +1);
-			t.mutually_exclusive_groups[manager.image_info[i].multiple_worm_cluster_group_id].resize(manager.image_info[i].multiple_worm_cluster_solution_id +1);
-//			metadata_mappings		   [manager.image_info[i].multiple_worm_cluster_group_id].resize(manager.image_info[i].multiple_worm_cluster_solution_id +1);
+		if (manager.image_info[i].multiple_worm_cluster_solution_id >= solved_objects_sorted_by_multiple_worm_cluster_origin[manager.image_info[i].multiple_worm_cluster_group_id].size()) {
+			solved_objects_sorted_by_multiple_worm_cluster_origin[manager.image_info[i].multiple_worm_cluster_group_id].resize(manager.image_info[i].multiple_worm_cluster_solution_id + 1);
+			t.objects_grouped_by_multiple_worm_cluster_origin[manager.image_info[i].multiple_worm_cluster_group_id].resize(manager.image_info[i].multiple_worm_cluster_solution_id + 1);
+			solved_objects_sorted_by_multiple_worm_cluster_origin[manager.image_info[i].multiple_worm_cluster_group_id][manager.image_info[i].multiple_worm_cluster_solution_id].reserve(4);
+			t.objects_grouped_by_multiple_worm_cluster_origin[manager.image_info[i].multiple_worm_cluster_group_id][manager.image_info[i].multiple_worm_cluster_solution_id].reserve(4);
 		}
-		mutually_exclusive_objects [manager.image_info[i].multiple_worm_cluster_group_id][manager.image_info[i].multiple_worm_cluster_solution_id].push_back(object_manager.objects[i]);
-		t.mutually_exclusive_groups[manager.image_info[i].multiple_worm_cluster_group_id][manager.image_info[i].multiple_worm_cluster_solution_id].push_back(&t.objects[i]);
-	//	metadata_mappings		   [manager.image_info[i].multiple_worm_cluster_group_id][manager.image_info[i].multiple_worm_cluster_solution_id].push_back(&manager.image_info[i]);
+		//the object manager split each object, i, into a set of sub-objects, which is stored in the /vector/ objects[i].  
+		solved_objects_sorted_by_multiple_worm_cluster_origin[manager.image_info[i].multiple_worm_cluster_group_id][manager.image_info[i].multiple_worm_cluster_solution_id].push_back(object_manager.objects[i]);
+
+		t.objects_grouped_by_multiple_worm_cluster_origin[manager.image_info[i].multiple_worm_cluster_group_id][manager.image_info[i].multiple_worm_cluster_solution_id].push_back(&t.objects[i]);
 	}
-	
-	/*	ns_save_image("c:\\not_found_ag.tif",t.mutually_exclusive_groups[3][0][0]->object.absolute_grayscale());
-		ns_save_image("c:\\not_found_rg.tif",t.mutually_exclusive_groups[3][0][0]->object.relative_grayscale());
-		ns_save_image("c:\\not_found_bmp.tif",t.mutually_exclusive_groups[3][0][0]->object.bitmap());*/
-	t.objects.reserve(manager.image_info.size());
+
+
 	//now we go through each group and recalculate the solutions for each.
-	
-	/*for (unsigned int g = 0; g < mutually_exclusive_objects.size(); g++){
-		if (mutually_exclusive_objects[g].size() == 0)
-			continue;
-		ns_save_image(string("c:\\dbg_") + ns_to_string(g) + ".tif",mutually_exclusive_objects[g][0][0]->bitmap());
-	}*/
-	for (unsigned int g = 0; g < mutually_exclusive_objects.size(); g++){
-		if (mutually_exclusive_objects[g].size() == 0)
+	for (unsigned int g = 0; g < solved_objects_sorted_by_multiple_worm_cluster_origin.size(); g++) {
+		if (solved_objects_sorted_by_multiple_worm_cluster_origin[g].size() == 0)
 			continue;
 
-		ns_vector_2i group_object_size(mutually_exclusive_objects[g][0][0]->size);
-		for (unsigned int j = 0; j < mutually_exclusive_objects[g].size(); j++){
-			for (unsigned int k = 1; k < mutually_exclusive_objects[g][j].size(); k++){
-				if (!(mutually_exclusive_objects[g][j][k]->size == group_object_size))
+		ns_vector_2i group_object_size(solved_objects_sorted_by_multiple_worm_cluster_origin[g][0][0]->size);
+		for (unsigned int j = 0; j < solved_objects_sorted_by_multiple_worm_cluster_origin[g].size(); j++) {
+			for (unsigned int k = 1; k < solved_objects_sorted_by_multiple_worm_cluster_origin[g][j].size(); k++) {
+				if (!(solved_objects_sorted_by_multiple_worm_cluster_origin[g][j][k]->size == group_object_size))
 					throw ns_ex("Group collation error: objects are different sizes. ");
 			}
 		}
-		//each member of the group originate from the same multiple-worm disambiguation.
-		//Thus, we only need to re-solve this once and can use that solution for all group members.
-		std::vector<ns_detected_object *> objs(1,mutually_exclusive_objects[g][0][0]);
-		std::vector<ns_detected_worm_info> solutions(ns_count_number_of_worms_in_detected_object_group(objs));
-		std::vector<std::vector<ns_detected_worm_info *> > tmp;
-		ns_image_bitmap *bmp(new ns_image_bitmap),*ebmp(new ns_image_bitmap);
-		try{
-			mutually_exclusive_objects[g][0][0]->bitmap().pump(*bmp,1024);
-			mutually_exclusive_objects[g][0][0]->edge_bitmap().pump(*ebmp,1024);
-			
-			unsigned int worms_found = ns_detected_worm_info::from_segment_cluster_solution(*mutually_exclusive_objects[g][0][0],
-				solutions, 0, tmp ,t.mutually_exclusive_groups[g][0][0]->object.relative_grayscale(),t.mutually_exclusive_groups[g][0][0]->object.absolute_grayscale(),
-					ns_detected_worm_info::ns_individual_worm_source_grayscale_images_provided,ns_detected_worm_info::ns_vis_none);
-			for (unsigned int i = 0; i < solutions.size(); i++)
-				solutions[i].whole_image_stats = t.mutually_exclusive_groups[g][0][0]->whole_image_stats;
-			
-			
-			mutually_exclusive_objects[g][0][0]->accept_bitmap(bmp);
-			bmp = 0;
-			mutually_exclusive_objects[g][0][0]->accept_edge_bitmap(ebmp);
-			ebmp = 0;
-		}
-		catch(...){
-			ns_safe_delete(bmp);
-			ns_safe_delete(ebmp);
-			throw;
-		}
-		if (solutions.size() == 0){
-		/*	ns_save_image("c:\\not_found_ag.tif",t.mutually_exclusive_groups[g][0][0]->object.absolute_grayscale());
-			ns_save_image("c:\\not_found_rg.tif",t.mutually_exclusive_groups[g][0][0]->object.relative_grayscale());
-			ns_save_image("c:\\not_found_bmp.tif",t.mutually_exclusive_groups[g][0][0]->object.bitmap());*/
-			throw ns_ex("ns_worm_training_set_image::decode()::Could not find worm in imported image.  Position: ") <<  mutually_exclusive_objects[g][0][0]->offset_in_source_image.x << "x" <<  mutually_exclusive_objects[g][0][0]->offset_in_source_image.y;
+		//each of the objects in the vector solved_objects_sorted_by_multiple_worm_cluster_origin[i][j]
+		//and in t.objects_grouped_by_multiple_worm_cluster_origin[i][j] 
+		//are generated from the same multiple-worm disambiguation.
+		//Thus, we only need to re-solve one member of this group to provide a solution that corresponds to all group members.
+		{
+			std::vector<ns_detected_worm_info> solutions;
+			{
+				std::vector<ns_detected_object*> objs(1, solved_objects_sorted_by_multiple_worm_cluster_origin[g][0][0]);
+				solutions.resize(ns_count_number_of_worms_in_detected_object_group(objs));
+			}
+			std::vector<std::vector<ns_detected_worm_info*> > tmp;
+			ns_image_bitmap* bmp(new ns_image_bitmap), * ebmp(new ns_image_bitmap);
+			try {
+				solved_objects_sorted_by_multiple_worm_cluster_origin[g][0][0]->bitmap().pump(*bmp, 1024);
+				solved_objects_sorted_by_multiple_worm_cluster_origin[g][0][0]->edge_bitmap().pump(*ebmp, 1024);
 
-		}
-		//std::vector<char> solution_used(solutions.size(),0);
-		for (unsigned int s = 0; s < t.mutually_exclusive_groups[g].size(); s++){
-			for (unsigned int i = 0; i < t.mutually_exclusive_groups[g][s].size(); i++){
-			
-				unsigned long chosen_worm;
-				if (solutions.size() == 1)
-					chosen_worm = 0;
-				else{
-					chosen_worm = -1;
-					//look for the detected worm with the most overlap with the one found in the training set image
-					float max_overlap(0);
-					unsigned long max_overlap_id(-1);
-					for (unsigned int j = 0; j < solutions.size(); j++){
-					
+				unsigned int worms_found = ns_detected_worm_info::from_segment_cluster_solution(*solved_objects_sorted_by_multiple_worm_cluster_origin[g][0][0],
+					solutions, 0, tmp, t.objects_grouped_by_multiple_worm_cluster_origin[g][0][0]->object.relative_grayscale(), t.objects_grouped_by_multiple_worm_cluster_origin[g][0][0]->object.absolute_grayscale(),
+					ns_detected_worm_info::ns_individual_worm_source_grayscale_images_provided, ns_detected_worm_info::ns_vis_none);
+				for (unsigned int i = 0; i < solutions.size(); i++)
+					solutions[i].whole_image_stats = t.objects_grouped_by_multiple_worm_cluster_origin[g][0][0]->whole_image_stats;
 
-						float overlap = ns_calculate_overlap(mutually_exclusive_objects[g][s][i]->bitmap(),solutions[j].bitmap());
-						if (overlap > max_overlap){
-							max_overlap = overlap;
-							max_overlap_id = j;
+
+				solved_objects_sorted_by_multiple_worm_cluster_origin[g][0][0]->accept_bitmap(bmp);
+				bmp = 0;
+				solved_objects_sorted_by_multiple_worm_cluster_origin[g][0][0]->accept_edge_bitmap(ebmp);
+				ebmp = 0;
+			}
+			catch (...) {
+				ns_safe_delete(bmp);
+				ns_safe_delete(ebmp);
+				throw;
+			}
+			if (solutions.size() == 0)
+				throw ns_ex("ns_worm_training_set_image::decode()::Could not find worm in imported image.  Position: ") << solved_objects_sorted_by_multiple_worm_cluster_origin[g][0][0]->offset_in_source_image.x << "x" << solved_objects_sorted_by_multiple_worm_cluster_origin[g][0][0]->offset_in_source_image.y;
+
+
+			ns_worm_context_image context_image_temp;
+			context_image_temp.absolute_grayscale.use_more_memory_to_avoid_reallocations(true);
+			context_image_temp.relative_grayscale.use_more_memory_to_avoid_reallocations(true);
+			context_image_temp.combined_image.use_more_memory_to_avoid_reallocations(true);
+			//now we can match up each object in the collage with its corresponding "solution" to the multiple-worm disambiguation group made when the collage was generated.
+			for (unsigned int s = 0; s < solved_objects_sorted_by_multiple_worm_cluster_origin[g].size(); s++) {
+				for (unsigned int i = 0; i < solved_objects_sorted_by_multiple_worm_cluster_origin[g][s].size(); i++) {
+
+					unsigned long chosen_worm;
+					if (solutions.size() == 1)
+						chosen_worm = 0;
+					else {
+						chosen_worm = -1;
+						//look for the detected worm with the most overlap with the one found in the training set image
+						float max_overlap(0);
+						unsigned long max_overlap_id(-1);
+						for (unsigned int j = 0; j < solutions.size(); j++) {
+
+
+							float overlap = ns_calculate_overlap(solved_objects_sorted_by_multiple_worm_cluster_origin[g][s][i]->bitmap(), solutions[j].bitmap());
+							if (overlap > max_overlap) {
+								max_overlap = overlap;
+								max_overlap_id = j;
+							}
+						}
+						if (max_overlap_id != -1) {
+							chosen_worm = max_overlap_id;
+						}
+						else {
+							std::cerr << "ns_worm_training_set_image::decode()::No detected worms had any overlap w. bitmap!";
+							chosen_worm = 0;
+							throw ns_ex("ns_worm_training_set_image::decode()::No detected worms had any overlap w.bitmap!");
 						}
 					}
-					if (max_overlap_id != -1){
-					//	cerr << "Max Overlap = " << max_overlap << "\n";
-						chosen_worm = max_overlap_id;
-				//		solution_used[max_overlap_id] = 1;
-					}
-					else std::cerr << "ns_worm_training_set_image::decode()::No detected worms had any overlap w. bitmap!";
-				}
-				//we now have the correct multiple worm disambiguation solution.  We copy it over, being careful
-				//to replace the original context image that we had to remove earlier.
-			//	ns_vector_2i pos_in_ctx = t.mutually_exclusive_groups[g][s][i]->object.get_region_offset_in_context_image();
-			//	ns_vector_2i size_in_ctx = t.mutually_exclusive_groups[g][s][i]->object.get_region_offset_in_context_image();
-				ns_worm_context_image ctx;
-				
-				t.mutually_exclusive_groups[g][s][i]->object.context_image().absolute_grayscale.pump(ctx.absolute_grayscale,1024);
-				t.mutually_exclusive_groups[g][s][i]->object.context_image().relative_grayscale.pump(ctx.relative_grayscale,1024);
-				t.mutually_exclusive_groups[g][s][i]->object.context_image().combined_image.pump(ctx.combined_image,1024);
-				
-				t.mutually_exclusive_groups[g][s][i]->object = solutions[chosen_worm];
+					//we now want to use only the correct multiple worm disambiguation solution.  First, a copy of all the images
 
-				t.mutually_exclusive_groups[g][s][i]->object.region_position_in_source_image =  t.mutually_exclusive_groups[g][s][i]->object.region_position_in_source_image;
-				t.mutually_exclusive_groups[g][s][i]->object.context_position_in_source_image =  t.mutually_exclusive_groups[g][s][i]->object.context_position_in_source_image;
-				
-				t.mutually_exclusive_groups[g][s][i]->object.region_size =  t.mutually_exclusive_groups[g][s][i]->object.region_size;
-				t.mutually_exclusive_groups[g][s][i]->object.context_image_size =  t.mutually_exclusive_groups[g][s][i]->object.context_image_size;
-				
+					t.objects_grouped_by_multiple_worm_cluster_origin[g][s][i]->object.context_image().absolute_grayscale.pump(context_image_temp.absolute_grayscale, 1024);
+					t.objects_grouped_by_multiple_worm_cluster_origin[g][s][i]->object.context_image().relative_grayscale.pump(context_image_temp.relative_grayscale, 1024);
+					t.objects_grouped_by_multiple_worm_cluster_origin[g][s][i]->object.context_image().combined_image.pump(context_image_temp.combined_image, 1024);
 
-				ctx.absolute_grayscale.pump(t.mutually_exclusive_groups[g][s][i]->object.context_image().absolute_grayscale,1024);
-				ctx.relative_grayscale.pump(t.mutually_exclusive_groups[g][s][i]->object.context_image().relative_grayscale,1024);
-				ctx.combined_image.pump(t.mutually_exclusive_groups[g][s][i]->object.context_image().combined_image,1024);
-	
-				ns_whole_image_statistic_specification_key key;	
-				key.region_id = t.mutually_exclusive_groups[g][s][i]->region_info_id;
-				key.capture_time = t.mutually_exclusive_groups[g][s][i]->capture_time;
-				ns_training_set_visualization_metadata_manager::ns_whole_image_statistics_list::iterator p = manager.whole_image_stats.find(key);
-				if (p == manager.whole_image_stats.end())
-					throw ns_ex("Could not find whole image stats for region/time") << key.region_id << "/" << key.capture_time;
+					//then use only the correct solution
+					t.objects_grouped_by_multiple_worm_cluster_origin[g][s][i]->object = solutions[chosen_worm];
 
-				t.mutually_exclusive_groups[g][s][i]->whole_image_stats = p->second;
-			}
-		}
-	}
-	
-	//spread sticky group properties
-	for (unsigned int g = 0; g < t.mutually_exclusive_groups.size(); g++){
-		ns_object_hand_annotation_data data;
-		data.identified_as_misdisambiguated_multiple_worms = false;
-		for (unsigned int s = 0; s < t.mutually_exclusive_groups[g].size(); s++){
-			for (unsigned int i = 0; i < t.mutually_exclusive_groups[g][s].size(); i++){
-				if (t.mutually_exclusive_groups[g][s][i]->object.hand_annotations.identified_as_misdisambiguated_multiple_worms)
-					data.identified_as_misdisambiguated_multiple_worms = true;
-			}
-		}
-		if (data.identified_as_misdisambiguated_multiple_worms){
-			for (unsigned int s = 0; s < t.mutually_exclusive_groups[g].size(); s++){
-				for (unsigned int i = 0; i < t.mutually_exclusive_groups[g][s].size(); i++){
-					t.mutually_exclusive_groups[g][s][i]->object.hand_annotations.identified_as_misdisambiguated_multiple_worms = true;
+					//now copy back all the images.
+					context_image_temp.absolute_grayscale.pump(t.objects_grouped_by_multiple_worm_cluster_origin[g][s][i]->object.context_image().absolute_grayscale, 1024);
+					context_image_temp.relative_grayscale.pump(t.objects_grouped_by_multiple_worm_cluster_origin[g][s][i]->object.context_image().relative_grayscale, 1024);
+					context_image_temp.combined_image.pump(t.objects_grouped_by_multiple_worm_cluster_origin[g][s][i]->object.context_image().combined_image, 1024);
+
+					ns_whole_image_statistic_specification_key key;
+					key.region_id = t.objects_grouped_by_multiple_worm_cluster_origin[g][s][i]->region_info_id;
+					key.capture_time = t.objects_grouped_by_multiple_worm_cluster_origin[g][s][i]->capture_time;
+					ns_training_set_visualization_metadata_manager::ns_whole_image_statistics_list::iterator p = manager.whole_image_stats.find(key);
+					if (p == manager.whole_image_stats.end())
+						throw ns_ex("Could not find whole image stats for region/time") << key.region_id << "/" << key.capture_time;
+
+					t.objects_grouped_by_multiple_worm_cluster_origin[g][s][i]->whole_image_stats = p->second;
 				}
 			}
 		}
 	}
 
-	//set up propper  bindings
-	for (unsigned int g = 0; g < t.mutually_exclusive_groups.size(); g++){
-		for (unsigned int s = 0; s < t.mutually_exclusive_groups[g].size(); s++){
-			for (unsigned int i = 0; i < t.mutually_exclusive_groups[g][s].size(); i++){
-				//censor discarded solutions to multiple worm groups
-				if ((t.mutually_exclusive_groups[g].size() > 1 || t.mutually_exclusive_groups[g][s].size() > 1)
-						&& !t.mutually_exclusive_groups[g][s][i]->hand_annotation_data.identified_as_a_worm_by_human)
-					 t.censored_worms.push_back(t.mutually_exclusive_groups[g][s][i]);
-				else if (t.mutually_exclusive_groups[g][s][i]->hand_annotation_data.identified_as_a_mangled_worm
-						||t.mutually_exclusive_groups[g][s][i]->hand_annotation_data.identified_as_misdisambiguated_multiple_worms
-						|| t.mutually_exclusive_groups[g][s][i]->hand_annotation_data.identified_as_small_larvae)
-					t.censored_worms.push_back(t.mutually_exclusive_groups[g][s][i]);
-				else if (t.mutually_exclusive_groups[g][s][i]->hand_annotation_data.identified_as_a_worm_by_human)
-					 t.worms.push_back(t.mutually_exclusive_groups[g][s][i]);
-				else t.non_worms.push_back(t.mutually_exclusive_groups[g][s][i]);
+	//if any worms in the mutiple worm group were by-hand annotated as being poorly solved, all worms in the group should be marked that way
+	for (unsigned int g = 0; g < t.objects_grouped_by_multiple_worm_cluster_origin[g].size(); g++) {
+		bool identified_as_misdisambiguated_multiple_worms = false;
+		for (unsigned int s = 0; s < t.objects_grouped_by_multiple_worm_cluster_origin[g].size(); s++) {
+			for (unsigned int i = 0; i < t.objects_grouped_by_multiple_worm_cluster_origin[g][s].size(); i++) {
+				if (t.objects_grouped_by_multiple_worm_cluster_origin[g][s][i]->object.hand_annotations.identified_as_misdisambiguated_multiple_worms)
+					identified_as_misdisambiguated_multiple_worms = true;
+			}
+		}
+		if (identified_as_misdisambiguated_multiple_worms) {
+			for (unsigned int s = 0; s < t.objects_grouped_by_multiple_worm_cluster_origin[g].size(); s++) {
+				for (unsigned int i = 0; i < t.objects_grouped_by_multiple_worm_cluster_origin[g][s].size(); i++) {
+					t.objects_grouped_by_multiple_worm_cluster_origin[g][s][i]->object.hand_annotations.identified_as_misdisambiguated_multiple_worms = true;
+				}
 			}
 		}
 	}
 
+	//Now we can sort each multiple-worm cluster into "annotated as worms", "annotated as not a worm", and "should be censored and ignored during training".
+	for (unsigned int g = 0; g < t.objects_grouped_by_multiple_worm_cluster_origin.size(); g++) {
+		for (unsigned int s = 0; s < t.objects_grouped_by_multiple_worm_cluster_origin[g].size(); s++) {
+			//if an object is in a multiple worm cluster
+			if (t.objects_grouped_by_multiple_worm_cluster_origin[g].size() > 1 || t.objects_grouped_by_multiple_worm_cluster_origin[g][s].size() > 1) {
+				//either mark it as a worm or censor it.  We don't want to include partial worms (eg. incorrect solutions to the multi-worm cluster) as "non-worms"
+				for (unsigned int i = 0; i < t.objects_grouped_by_multiple_worm_cluster_origin[g][s].size(); i++) {
+					if (t.objects_grouped_by_multiple_worm_cluster_origin[g][s][i]->hand_annotation_data.identified_as_a_worm_by_human)
+						t.worms.push_back(t.objects_grouped_by_multiple_worm_cluster_origin[g][s][i]);
+					else t.censored_worms.push_back(t.objects_grouped_by_multiple_worm_cluster_origin[g][s][i]);
+				}
+				continue;
+			}
+			//we have a single worm cluster!  
+			if (t.objects_grouped_by_multiple_worm_cluster_origin[g][s].size() == 0)
+				throw ns_ex("Empty clustser encountered!");
+			//if the object was identified mangled, or annotated as problematic, censor it.
+			if (t.objects_grouped_by_multiple_worm_cluster_origin[g][s][0]->hand_annotation_data.identified_as_a_mangled_worm
+				|| t.objects_grouped_by_multiple_worm_cluster_origin[g][s][0]->hand_annotation_data.identified_as_misdisambiguated_multiple_worms
+				|| t.objects_grouped_by_multiple_worm_cluster_origin[g][s][0]->hand_annotation_data.identified_as_small_larvae) {
+				t.censored_worms.push_back(t.objects_grouped_by_multiple_worm_cluster_origin[g][s][0]);
+				continue;
+			}
+			if (t.objects_grouped_by_multiple_worm_cluster_origin[g][s][0]->hand_annotation_data.identified_as_a_worm_by_human)
+				t.worms.push_back(t.objects_grouped_by_multiple_worm_cluster_origin[g][s][0]);
+			else t.non_worms.push_back(t.objects_grouped_by_multiple_worm_cluster_origin[g][s][0]);
+		}
+	}
 }
 
 void ns_training_set_visualization_metadata_manager::from_collage(const ns_image_standard & in, const bool allow_malformed_metadata, const string & extra_metadata){
@@ -1023,6 +1051,8 @@ void ns_training_set_visualization_metadata_manager::from_collage(const ns_image
 
 	ns_image_properties check_box_properties(ns_worm_training_set_image::check_box(ns_object_hand_annotation_data::ns_non_worm).properties());
 	for (unsigned int i = 0; i < image_info.size(); i++){
+		images[i].debug_collage_unique_id = i;
+		images[i].debug_position_in_collage = image_info[i].position;
 		ns_image_properties new_prop(prop);
 		new_prop.height = image_info[i].dimensions.y;
 		if (image_info[i].dimensions.x <= (long)check_box_properties.width)

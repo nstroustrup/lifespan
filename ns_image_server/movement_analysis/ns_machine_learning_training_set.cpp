@@ -370,7 +370,7 @@ struct ns_worm_detection_model_training_set_processor_pool_job {
 
 			//for each tye of object, add its statistics and info to a big list
 			for (unsigned int j = 0; j < training_set.worms.size(); j++) {
-				std::string jpg_filename = ns_dir::extract_filename_without_extension(filename_to_process) + "_" + ns_to_string(j);
+				std::string jpg_filename = ns_dir::extract_filename_without_extension(filename_to_process) + "_" + ns_to_string(training_set.worms[j]->debug_unique_id_in_source_collage) + "_" + ns_to_string(j);
 				std::string rel_fname = std::string("vis") + DIR_CHAR_STR + "worms" + DIR_CHAR_STR + jpg_filename;
 				std::string abs_fname = shared_data->vis_path + DIR_CHAR_STR + "worms" + DIR_CHAR_STR + jpg_filename;
 				ns_acquire_lock_for_scope plock(shared_data->training_generator_lock, __FILE__, __LINE__);
@@ -380,7 +380,7 @@ struct ns_worm_detection_model_training_set_processor_pool_job {
 				ns_save_image(abs_fname + "_rel.jpg", training_set.worms[j]->object.context_image().relative_grayscale);
 			}
 			for (unsigned int j = 0; j < training_set.non_worms.size(); j++) {
-				std::string jpg_filename = ns_dir::extract_filename_without_extension(filename_to_process) + "_" + ns_to_string(j);
+				std::string jpg_filename = ns_dir::extract_filename_without_extension(filename_to_process) + "_" + ns_to_string(training_set.non_worms[j]->debug_unique_id_in_source_collage) + "_" + ns_to_string(j);
 				std::string rel_fname = std::string("vis") + DIR_CHAR_STR + "non_worms" + DIR_CHAR_STR + jpg_filename;
 				std::string abs_fname = shared_data->vis_path + DIR_CHAR_STR + "non_worms" + DIR_CHAR_STR + jpg_filename;
 				ns_acquire_lock_for_scope plock(shared_data->training_generator_lock, __FILE__, __LINE__);
@@ -390,7 +390,7 @@ struct ns_worm_detection_model_training_set_processor_pool_job {
 				ns_save_image(abs_fname + "_rel.jpg", training_set.non_worms[j]->object.context_image().relative_grayscale);
 			}
 			for (unsigned int j = 0; j < training_set.censored_worms.size(); j++) {
-				std::string jpg_filename = ns_dir::extract_filename_without_extension(filename_to_process) + "_" + ns_to_string(j);
+				std::string jpg_filename = ns_dir::extract_filename_without_extension(filename_to_process) + "_" + ns_to_string(training_set.censored_worms[j]->debug_unique_id_in_source_collage) + "_" + ns_to_string(j);
 				std::string rel_fname = std::string("vis") + DIR_CHAR_STR + "censored" + DIR_CHAR_STR + jpg_filename;
 				std::string abs_fname = shared_data->vis_path + DIR_CHAR_STR + "censored" + DIR_CHAR_STR + jpg_filename;
 				ns_acquire_lock_for_scope plock(shared_data->training_generator_lock, __FILE__, __LINE__);

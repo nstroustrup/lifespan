@@ -105,6 +105,7 @@ std::string ns_death_time_annotation::description() const{
 	}
 	tmp +=  " [Machine : " + ns_to_string(number_of_worms_at_location_marked_by_machine ) + " / Hand : " + ns_to_string(number_of_worms_at_location_marked_by_hand) + " extra worms at location ] Flag: " + flag.label() +
 				+ " source(" + source_type_to_string(annotation_source) + ")";
+	return tmp;
 }
 void ns_death_time_annotation_set::add(const ns_death_time_annotation& a) { 
 	//if (a.type == ns_no_movement_event && !(a.is_excluded())) {

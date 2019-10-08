@@ -129,6 +129,8 @@ void ns_check_for_file_errors(ns_processing_job & job, ns_sql & sql){
 				//check for missing or compressed images
 				ns_image_stream_static_offset_buffer<ns_8_bit> buf(ns_image_stream_buffer_properties(10000, 1));
 				for (unsigned long j = 0; j < reg.op_images_.size(); j++) {
+					if (i == (int)ns_process_add_to_training_set)
+						continue;
 					bool changed = false;
 					if (reg.op_images_[j] != 0) {
 						ns_image_server_image im_base;

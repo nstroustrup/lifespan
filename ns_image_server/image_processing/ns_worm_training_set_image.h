@@ -13,13 +13,15 @@ struct ns_annotated_training_set_object{
 	ns_whole_image_statistic_specification whole_image_stats;
 	ns_packed_collage_position collage_position;
 	ns_object_hand_annotation_data hand_annotation_data;
+	long debug_unique_id_in_source_collage;
+	ns_vector_2i debug_position_in_source_collage;
 };
 class ns_annotated_training_set{
 public:
 	std::vector<ns_annotated_training_set_object *> worms;
 	std::vector<ns_annotated_training_set_object *> non_worms;
 	std::vector<ns_annotated_training_set_object *> censored_worms;
-	std::vector<std::vector<std::vector<ns_annotated_training_set_object *> > > mutually_exclusive_groups;
+	std::vector<std::vector<std::vector<ns_annotated_training_set_object *> > > objects_grouped_by_multiple_worm_cluster_origin;
 	std::vector <ns_annotated_training_set_object> objects;
 	//std::vector<ns_packed_collage_position> worm_positions;
 	~ns_annotated_training_set();

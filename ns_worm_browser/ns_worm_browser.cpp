@@ -7006,11 +7006,11 @@ bool ns_worm_learner::register_main_window_key_press(int key, const bool shift_k
 		case ns_worm_learner::ns_annoate_worm_detection_set:
 																				  {
 			if (key == FL_Left || key== 'a'){
-				navigate_death_time_annotation(ns_image_series_annotater::ns_back,true);
+				navigate_death_time_annotation(ns_image_series_annotater::ns_back,false);
 				return true;
 			}
 			else if (key == FL_Right || key == 'd'){
-				navigate_death_time_annotation(ns_image_series_annotater::ns_forward,true);
+				navigate_death_time_annotation(ns_image_series_annotater::ns_forward,false);
 				return true;
 			}
 			else if (key == 'S' || key == '.'){
@@ -7865,11 +7865,12 @@ void ns_gl_window_data::update_display() {
 
 	//	cerr << "update display needs to resize the worm image to " << image_size << "\n";
 		//xxxx
+	glClear(GL_COLOR_BUFFER_BIT);
 	glPixelZoom(image_zoom * display_rescale_factor, image_zoom * display_rescale_factor);
 	glRasterPos2i((GLint)-1, (GLint)-1);
-	glPixelStorei(GL_PACK_ALIGNMENT, 1);
-	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+	//glPixelStorei(GL_PACK_ALIGNMENT, 1);
 	glDrawPixels(gl_buffer_properties.width, gl_buffer_properties.height, GL_RGB, GL_UNSIGNED_BYTE, gl_buffer);
+	glFlush();
 	lock.release();
 }
 
@@ -8323,12 +8324,12 @@ void ns_worm_learner::navigate_death_time_annotation(ns_image_series_annotater::
 		case ns_image_series_annotater::ns_none: break;
 		case ns_image_series_annotater::ns_forward: 
 			if (current_annotater->step_forward(ns_throw_error, worm_window.display_rescale_factor, asynch)) {
-				current_annotater->request_refresh(); report_changes_made_to_screen();
+				current_annotater->request_refresh(); //report_changes_made_to_screen();
 			}
 			break;
 		case ns_image_series_annotater::ns_back:	
 			if (current_annotater->step_back(ns_throw_error, worm_window.display_rescale_factor, asynch)) {
-				current_annotater->request_refresh(); report_changes_made_to_screen();
+				current_annotater->request_refresh(); //report_changes_made_to_screen();
 			}
 			break;
 		case ns_image_series_annotater::ns_fast_forward: current_annotater->fast_forward(); report_changes_made_to_screen(); break;

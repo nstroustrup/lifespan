@@ -15,19 +15,43 @@ void ns_worm_detection_set_annotater::draw_metadata(ns_annotater_timepoint* tp_a
 	font.set_height(bottom_text_size());
 	unsigned long bottom_border_pos = im.properties().height - bottom_border_height()+ bottom_text_size();
 	for (unsigned int i = 0; i < all_objects[current_timepoint_id].objects.size(); i++) {
-		const unsigned long x(all_objects[current_timepoint_id].object_positions[i].x);
-		if (all_objects[current_timepoint_id].objects[i]->hand_annotation_data.identified_as_a_worm_by_human)
-			font.draw_color(x+1, bottom_border_pos, ns_color_8(255, 255, 255), "Worm", im);
-		else if (all_objects[current_timepoint_id].objects[i]->hand_annotation_data.identified_as_misdisambiguated_multiple_worms)
-			font.draw_color(x + 1, bottom_border_pos, ns_color_8(255, 255, 255), "Censored", im);
-		else
-			font.draw_color(x + 1, bottom_border_pos, ns_color_8(255, 255, 255), "Not a worm.", im);
+		const  long x(all_objects[current_timepoint_id].object_positions[i].x);
+		const ns_annotated_training_set_object& object = *all_objects[current_timepoint_id].objects[i];
+		const unsigned long thickness(3);
+		const unsigned long thickness_2(1);
+		const unsigned long thickness_offset(1);
+
+		ns_color_8 color;
+		std::string text;
+		if (object.hand_annotation_data.identified_as_a_worm_by_human) {
+			color = ns_color_8(0, 0, 0);
+			text = "worm";
+		}
+		else if (object.hand_annotation_data.identified_as_misdisambiguated_multiple_worms) {
+			color = ns_color_8(0, 0, 255);
+			text = "censored";
+		}
+		else {
+			color = ns_color_8(255, 255, 255);
+			text = "non-worm";
+		}
+
+		draw_box(ns_vector_2i(x,0), object.object.context_image_size, color, im, thickness);
+		draw_box(ns_vector_2i(x, 0), object.object.context_image_size, ns_color_8(0, 0, 0), im, thickness_2);
+
+	
+	//	ns_font_output_dimension dim = font.draw_color(1, bottom_border_pos, ns_color_8(255, 255, 255), text, im,false);
+	//	long centered_x = x - (long)dim.w / 2;
+	//	if (centered_x < 0)
+	//		centered_x = 0;
+	//	font.draw_color(centered_x, bottom_border_pos, ns_color_8(255, 255, 255), text, im, false);
+
 	}
 
 
 	std::string pos;
-	pos += "Object " + ns_to_string(current_timepoint_id + 1) + " of " + ns_to_string(all_objects.size());
-	font.draw_color(im.properties().width - ns_worm_detection_set_annotater::side_border_width(), bottom_border_pos, ns_color_8(255, 255, 255), pos, im);
+	pos += ns_to_string(current_timepoint_id + 1) + " of " + ns_to_string(all_objects.size());
+	font.draw_color(1, im.properties().height- bottom_text_size(), ns_color_8(255, 255, 255), pos, im);
 		
 }
 
@@ -35,8 +59,8 @@ void ns_worm_detection_set_annotater_object::load_image(const unsigned long bott
 
 	im.loaded = false;
 	ns_image_properties image_prop(300, 800, 3);
-	object_positions.resize(objects.size(), ns_vector_2i(0, 0));
-
+	const unsigned long spacing(4);
+	object_positions.resize(objects.size(), ns_vector_2i(0, spacing));
 	for (unsigned int i = 0; i < objects.size(); i++) {
 		ns_image_properties p(objects[i]->object.context_image().absolute_grayscale.properties());
 		if (p.height + ns_worm_detection_set_annotater::bottom_border_height() > image_prop.height)
@@ -44,7 +68,7 @@ void ns_worm_detection_set_annotater_object::load_image(const unsigned long bott
 		if (object_positions[i].x+p.width + ns_worm_detection_set_annotater::side_border_width() > image_prop.width)
 			image_prop.width = object_positions[i].x + p.width + ns_worm_detection_set_annotater::side_border_width();
 		if (i + 1 < objects.size())
-			object_positions[i + 1] = object_positions[i] + ns_vector_2i(p.width, 0);
+			object_positions[i + 1] = object_positions[i] + ns_vector_2i(p.width+spacing, 0);
 	}
 	im.im->resize(image_prop);
 
@@ -68,7 +92,7 @@ void ns_worm_detection_set_annotater_object::load_image(const unsigned long bott
 					r = m * (1 - f) + 255 * f;  //goes up to 255 the more movement there is
 					bg =m * (1 - f);		   //goes down to zero the more movement there is.
 				}
-											 break;
+				break;
 				case ns_show_absolute_grayscale: r = bg = objects[i]->object.context_image().absolute_grayscale[y][x];
 					break;
 				case ns_show_relative_grayscale: r = bg = objects[i]->object.context_image().relative_grayscale[y][x];
@@ -79,10 +103,12 @@ void ns_worm_detection_set_annotater_object::load_image(const unsigned long bott
 				(*im.im)[y][3 * (object_positions[i].x + x) + 2] = bg;
 			}
 
+			for (unsigned int x = 0; x < 3*spacing; x++) 
+				(*im.im)[y][3 * (object_positions[i].x + p.width) + x] = 0;
 		}
 	
 		for (unsigned int y = p.height; y < image_prop.height; y++) {
-			for (unsigned int x = 0; x < p.width; x++) {
+			for (unsigned int x = 0; x < p.width+spacing; x++) {
 				(*im.im)[y][3 * (object_positions[i].x + x)] = 0;
 				(*im.im)[y][3 * (object_positions[i].x + x) + 1] = 0;
 				(*im.im)[y][3 * (object_positions[i].x + x) + 2] = 0;
@@ -103,7 +129,7 @@ void ns_worm_detection_set_annotater::register_click(const ns_vector_2i& image_p
 	if (all_objects.size() == 0)
 		return;
 	ns_acquire_lock_for_scope lock(image_buffer_access_lock, __FILE__, __LINE__);
-	bool found_object;
+	bool found_object(false);
 	unsigned long selected_object(0);
 	std::vector<ns_annotated_training_set_object*>& current_objects(all_objects[current_timepoint_id].objects);
 	std::vector<ns_vector_2i>& object_positions(all_objects[current_timepoint_id].object_positions);
@@ -130,20 +156,35 @@ void ns_worm_detection_set_annotater::register_click(const ns_vector_2i& image_p
 	case ns_censor_all:
 	case ns_cycle_state:
 	case ns_censor:
-		if (!found_object) break;
-		current_objects[selected_object]->hand_annotation_data.identified_as_a_worm_by_human = !all_objects[current_timepoint_id].objects[selected_object]->hand_annotation_data.identified_as_a_worm_by_human;
+		if (!found_object) {
+			switch (current_display_method) {
+			case ns_worm_detection_set_annotater_object::ns_show_highlighted_worm:
+				current_display_method = ns_worm_detection_set_annotater_object::ns_show_absolute_grayscale;
+			case ns_worm_detection_set_annotater_object::ns_show_absolute_grayscale:
+				current_display_method = ns_worm_detection_set_annotater_object::ns_show_relative_grayscale;
+			case ns_worm_detection_set_annotater_object::ns_show_relative_grayscale:
+				current_display_method = ns_worm_detection_set_annotater_object::ns_show_highlighted_worm;
+			default:
+				current_display_method = ns_worm_detection_set_annotater_object::ns_show_absolute_grayscale;
+			}
+			break;
+		}
+		current_objects[selected_object]->hand_annotation_data.identified_as_a_worm_by_human = !current_objects[selected_object]->hand_annotation_data.identified_as_a_worm_by_human;
+		saved_ = false;
 		break;
 	case ns_annotate_extra_worm:
+	case ns_cycle_flags:
 		if (!found_object) break;
-		current_objects[selected_object]->hand_annotation_data.identified_as_a_mangled_worm = !all_objects[current_timepoint_id].objects[selected_object]->hand_annotation_data.identified_as_a_worm_by_human;
+		current_objects[selected_object]->hand_annotation_data.identified_as_a_mangled_worm = !current_objects[selected_object]->hand_annotation_data.identified_as_a_worm_by_human;
 		if (current_objects[selected_object]->hand_annotation_data.identified_as_a_mangled_worm)
 			current_objects[selected_object]->hand_annotation_data.identified_as_a_worm_by_human = false;
+		saved_ = false;
 		break;
 
 	default: throw ns_ex("ns_death_time_posture_annotater::Unknown click type");
 	}
 	
-	saved_ = false; 
+	saved_ = false;
 
 	draw_metadata(&all_objects[current_timepoint_id], *current_image.im, external_rescale_factor);
 	request_refresh();
@@ -159,7 +200,9 @@ void ns_worm_detection_set_annotater::display_current_frame() {
 		lock.release();
 }
 
-void ns_worm_detection_set_annotater::load_from_file(const std::string& path, const std::string& filename, ns_worm_learner* worm_learner_, double external_rescale_factor) {
+void ns_worm_detection_set_annotater::load_from_file(const std::string& path_, const std::string& filename_, ns_worm_learner* worm_learner_, double external_rescale_factor) {
+	filename = filename_;
+	path = path_;
 	stop_fast_movement();
 	clear();	
 	if (sql.is_null())
@@ -170,7 +213,7 @@ void ns_worm_detection_set_annotater::load_from_file(const std::string& path, co
 	ns_worm_training_set_image::get_external_metadata(path, filename, extra_metadata);
 	ns_worm_training_set_image::decode(loading_temp, objects, false, extra_metadata);
 
-	const int number_of_objects_per_frame = 5;
+	const int number_of_objects_per_frame = 7;
 	int n(objects.worms.size() + objects.non_worms.size() + objects.censored_worms.size());
 	
 	all_objects.resize((n% number_of_objects_per_frame == 0) ? n/number_of_objects_per_frame : (n/number_of_objects_per_frame+1));
@@ -182,6 +225,14 @@ void ns_worm_detection_set_annotater::load_from_file(const std::string& path, co
 		all_objects[(objects.worms.size() + objects.non_worms.size() + i) / number_of_objects_per_frame].objects.push_back(objects.censored_worms[i]);
 	for (unsigned int i = 0; i < all_objects.size(); i++)
 		all_objects[i].worm_detection_annotater = this;
+
+	for (unsigned long i = 0; i < all_objects.size(); i++) {
+		for (unsigned long j = 0; j < all_objects[i].objects.size(); j++) {
+			if (all_objects[i].objects[j]->hand_annotation_data.identified_as_a_worm_by_machine)
+				all_objects[i].objects[j]->hand_annotation_data.identified_as_a_worm_by_human = true;
+			all_objects[i].objects[j]->hand_annotation_data.identified_as_a_worm_by_machine = false;
+		}
+	}
 
 	if (current_image.im == 0)
 		current_image.im = new ns_image_standard();
@@ -203,3 +254,22 @@ void ns_worm_detection_set_annotater::load_from_file(const std::string& path, co
 	}
 
 }
+
+void ns_worm_detection_set_annotater::save_annotations(const ns_death_time_annotation_set& extra_annotations) const {
+
+	ns_load_image(path + DIR_CHAR_STR + filename, loading_temp);
+	for (unsigned int i = 0; i < all_objects.size(); i++) {
+		for (unsigned int j = 0; j < all_objects[i].objects.size(); j++) {
+			ns_vector_2i p(all_objects[i].objects[j]->collage_position.pos);
+			const ns_image_standard& box = ns_worm_training_set_image::check_box(all_objects[i].objects[j]->hand_annotation_data.dominant_label());
+			for (unsigned int y = 0; y < box.properties().height; y++)
+				for (unsigned int x = 0; x < 3 * box.properties().width; x++)
+					loading_temp[p.y+y][3*p.x+x] = box[y][x];
+		}
+	}
+	std::string fname_mod = ns_dir::extract_filename_without_extension(filename);
+	fname_mod += "_mod.tif";
+	ns_save_image(path + DIR_CHAR_STR + fname_mod, loading_temp);
+	ns_update_worm_information_bar("Annotations saved at " + ns_format_time_string_for_human(ns_current_time()));
+	saved_ = true;
+};

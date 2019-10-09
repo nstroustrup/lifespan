@@ -146,17 +146,11 @@ class ns_worm_terminal_gl_window : public Fl_Gl_Window {
     }
     // DRAW METHOD
     void draw() {
-        if (!valid()) { 
-			valid(1); 
-			//fix_viewport(x(),y(),w(), h()); 
-			//glClearColor(1, 1, 1, 1); 
-			// glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear buffer
-			 //glLoadIdentity ();             /* clear the matrix */
-			// glTranslatef (0.0, 0.0, -5); /* viewing transformation */
-			 //glScalef (1.0, 1.0, 1.0);      /* modeling transformation */
-			 //glColor3f(0,0,0);
-		}      
-
+		if (!valid()) {
+			glShadeModel(GL_FLAT);
+			glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+			glClearColor(0.0, 0.0, 0.0, 0.0);
+		}
 		  try{
 				worm_learner.main_window.update_display();	 
 		  }
@@ -167,22 +161,16 @@ class ns_worm_terminal_gl_window : public Fl_Gl_Window {
 			}
     }   
 	int handle(int state){
-		if (Fl_Gl_Window::handle(state) != 0)
-			return 1;
+		//Fl_Gl_Window::handle(state);
 		if (debug_handlers) cout << "g\n";
 		switch(state){
 			case FL_FOCUS: {
 				have_focus = true;
-				int a = Fl_Gl_Window::handle(state); 
-				//schedule_repeating_callback(0);
-				report_changes_made_to_screen();
-				return a; 
+				return 1;
 			}
 			case FL_UNFOCUS: {
 				have_focus = false;
-				int a = Fl_Gl_Window::handle(state);
-			//	report_changes_made_to_screen();
-				return a;
+				return 1;
 			}
 			//case FL_PUSH:
 			//case FL_DRAG:
@@ -2631,8 +2619,8 @@ public:
 								 ns_death_event_annotation_group::window_height*menu_d);
 		
 		//ns_fl_unlock(__FILE__,__LINE__);
-		if (w() != w_ || h() != h_)
-		  request_rate_limited_window_redraw_from_main_thread();
+		//if (w() != w_ || h() != h_)
+		//  request_rate_limited_window_redraw_from_main_thread();
 
 	}
 	void update_region_choice_menu(){
@@ -2662,6 +2650,8 @@ public:
 		switch(state){ 
 			case FL_FOCUS:
 				have_focus = true;
+				report_changes_made_to_screen();
+				
 				break;
 			case FL_UNFOCUS:
 				have_focus = false;
@@ -2677,8 +2667,8 @@ public:
 							Fl::event_key(FL_Alt_L) || Fl::event_key(FL_Alt_R)
 						)) {
 							ns_fl_unlock(__FILE__,__LINE__);
-							demand_window_redraw_from_main_thread();
-							return 1;
+							report_changes_made_to_screen();
+
 
 						}
 					}
@@ -2825,7 +2815,7 @@ public:
 						)) {
 							//cerr << '~';
 							worm_learner.death_time_solo_annotater.request_refresh();
-							demand_window_redraw_from_main_thread();
+							report_changes_made_to_screen();
 							//report_changes_made_to_screen();
 							//cerr << '.';
 							return 1;
@@ -3272,7 +3262,7 @@ void redraw_main_window(){
 	if (abs(window_size.x-main_window->w())>=2 || abs(window_size.y - main_window->h()) >= 2){
 	  main_window->resize(main_window->x(),main_window->y(),window_size.x,window_size.y);	
 	}
-	main_window->gl_window->damage(1);
+	//main_window->gl_window->damage(1);
 	main_window->gl_window->redraw();
 
 	//Fl::check();
@@ -3298,7 +3288,7 @@ void redraw_worm_window(){
 	//	cerr << "rww(" << h << ")\n";
 		worm_window->resize(worm_window->x(),worm_window->y(), window_size.x, window_size.y);
 	}
-	worm_window->gl_window->damage(1);
+	//worm_window->gl_window->damage(1);
 	worm_window->gl_window->redraw();
 	//Fl::check();
 	ns_fl_unlock(__FILE__,__LINE__);
@@ -3321,7 +3311,7 @@ void redraw_stats_window() {
 		//	cerr << "rww(" << h << ")\n";
 		stats_window->resize(stats_window->x(), stats_window->y(), window_size.x, window_size.y);
 	}
-	stats_window->gl_window->damage(1);
+	//stats_window->gl_window->damage(1);
 	stats_window->gl_window->redraw();
 	//Fl::check();
 	ns_fl_unlock(__FILE__, __LINE__);
@@ -3540,8 +3530,8 @@ void idle_main_window_update_callback(void * force_redraw) {
 		  //clear animation when finished
 		  if (!main_window->draw_animation && main_window->last_draw_animation) {
 			  main_window->last_draw_animation = false;
-			  worm_learner.main_window.redraw_requested = true;
 			  worm_learner.draw();
+			  worm_learner.main_window.redraw_requested = true;
 		  }
 
 		  {

@@ -817,6 +817,7 @@ void ns_worm_training_set_image::decode(const ns_image_standard& im, ns_annotate
 		t.objects[i].object.context_position_in_source_image = manager.image_info[i].original_context_position_in_source_image;
 		t.objects[i].object.region_size = manager.image_info[i].original_bitmap_size;
 		t.objects[i].object.context_image_size = manager.image_info[i].original_context_image_size;
+		t.objects[i].collage_position.pos = manager.images[i].debug_position_in_collage;
 		ns_whole_image_statistic_specification_key key;
 		key.region_id = manager.image_info[i].region_info_id;
 		key.capture_time = manager.image_info[i].time;
@@ -1095,6 +1096,10 @@ void ns_training_set_visualization_metadata_manager::from_collage(const ns_image
 							(pixels_in_checked_area[0] > 75 && 
 							pixels_in_checked_area[1] > 75 && 
 							pixels_in_checked_area[2] > 75);
+		image_info[i].hand_annotation_data.identified_as_a_worm_by_machine =	//white
+			(pixels_in_checked_area[0] > 75 &&
+				pixels_in_checked_area[1] > 75 &&
+				pixels_in_checked_area[2] > 75);
 		image_info[i].hand_annotation_data.identified_as_a_mangled_worm =	//red
 							(pixels_in_checked_area[1] > 75 && 
 							pixels_in_checked_area[0] < pixels_in_checked_area[1]/2 &&

@@ -31,6 +31,7 @@ public:
 class ns_worm_training_set_image{
 public:
 	static void generate(const ns_image_worm_detection_results & results, ns_image_standard & out);
+
 	static void generate(const ns_death_time_annotation_compiler_region & result, ns_image_standard & out, ns_sql & sql, ns_simple_local_image_cache& image_cache);
 
 	static void decode(const ns_image_standard & in,ns_annotated_training_set & training_set, const bool allow_malformed_metadata, const std::string & extra_metadata);

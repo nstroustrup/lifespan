@@ -27,7 +27,7 @@ public:
 	ns_worm_detection_set_annotater_object::ns_display_method current_display_method;
 
 private:
-
+	std::string filename, path;
 	ns_annotated_training_set objects;
 	std::vector<ns_worm_detection_set_annotater_object> all_objects;
 	
@@ -39,12 +39,12 @@ private:
 
 	mutable bool saved_;
 
-	ns_image_standard loading_temp;
+	mutable ns_image_standard loading_temp;
 public:
 	static long side_border_width() { return 25; }
-	static long bottom_border_height() { return 25; }
+	static long bottom_border_height() { return 50; }
 	static long bottom_text_offset_from_bottom() { return 6; }
-	static long bottom_text_size() { return (2 * bottom_border_height()) / 3; }
+	static long bottom_text_size() { return 16; }
 
 	ns_worm_learner* worm_learner;
 	inline ns_annotater_timepoint* timepoint(const unsigned long i) {
@@ -70,16 +70,17 @@ public:
 		//annotations are loaded automatically when storyboard is loaded.
 		return true;
 	}
-	void save_annotations(const ns_death_time_annotation_set & extra_annotations) const{
-
-		ns_update_worm_information_bar("Annotations saved at " + ns_format_time_string_for_human(ns_current_time()));
-		saved_=true;
-	};
+	void save_annotations(const ns_death_time_annotation_set& extra_annotations) const;
 	void redraw_current_metadata(double external_resize_factor){
 		draw_metadata(&all_objects[current_timepoint_id],*current_image.im, external_resize_factor);
 	}
 
-
+	static void draw_box(const ns_vector_2i& p, const ns_vector_2i& s, const ns_color_8& c, ns_image_standard& im, const unsigned long thickness) {
+		im.draw_line_color_thick(p, p + ns_vector_2i(s.x, 0), c, thickness);
+		im.draw_line_color_thick(p, p + ns_vector_2i(0, s.y), c, thickness);
+		im.draw_line_color_thick(p + s, p + ns_vector_2i(s.x, 0), c, thickness);
+		im.draw_line_color_thick(p + s, p + ns_vector_2i(0, s.y), c, thickness);
+	}
 	void load_from_file(const std::string& path, const std::string& filename, ns_worm_learner* worm_learner_, double external_rescale_factor);
 
 	void register_click(const ns_vector_2i& image_position, const ns_click_request& action, double external_rescale_factor);

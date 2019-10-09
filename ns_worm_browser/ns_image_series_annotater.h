@@ -288,12 +288,16 @@ public:
 			draw_metadata(timepoint(current_timepoint_id),*previous_images[0].im,external_rescale_factor);
 			ns_swap<ns_annotater_image_buffer_entry> s;
 			s(previous_images[0],current_image);
+			image_buffer_access_lock.release();
+			return true;
 		}
 		else{
 	//		cerr << "Loading " << current_timepoint_id << "\n";
 			if (asynch) {
 				if (debug_handlers) std::cerr << "A";
 				load_image_asynch(timepoint(current_timepoint_id), previous_images[0], error_handler,external_rescale_factor, &current_image, &previous_images[0]);
+				image_buffer_access_lock.release();
+				return false;
 			}
 			else{
 				if (debug_handlers) std::cerr << "Q";
@@ -301,12 +305,10 @@ public:
 				draw_metadata(timepoint(current_timepoint_id),*previous_images[0].im,external_rescale_factor);
 				ns_swap<ns_annotater_image_buffer_entry> s;
 				s(previous_images[0],current_image);
+				image_buffer_access_lock.release();
+				return true;
 			}
 		}
-//		output_buffer_state();
-//		cerr << "---\n";
-		image_buffer_access_lock.release();
-		return true;
 	}
 	bool step_back(ns_handle_error_handler error_handler, double external_rescale_factor, bool asynch=false){
 		ns_acquire_lock_for_scope lock(image_buffer_access_lock, __FILE__, __LINE__);

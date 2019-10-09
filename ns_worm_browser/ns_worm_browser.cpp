@@ -6836,11 +6836,11 @@ bool ns_worm_learner::register_worm_window_key_press(int key, const bool shift_k
 		return true;
 	}
 	else if (key == FL_Left || key== 'a'){
-		ns_worm_learner::navigate_solo_worm_annotation(ns_death_time_solo_posture_annotater::ns_back,true);
+		ns_worm_learner::navigate_solo_worm_annotation(ns_death_time_solo_posture_annotater::ns_back,false);
 		return true;
 	}
 	else if (key == FL_Right || key == 'd'){
-		ns_worm_learner::navigate_solo_worm_annotation(ns_death_time_solo_posture_annotater::ns_forward,true);
+		ns_worm_learner::navigate_solo_worm_annotation(ns_death_time_solo_posture_annotater::ns_forward,false);
 		return true;
 	}
 	else if (key == 's' && control_key_held){

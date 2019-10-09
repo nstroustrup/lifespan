@@ -2671,6 +2671,8 @@ public:
 
 
 						}
+						else
+							ns_fl_unlock(__FILE__, __LINE__);
 					}
 					else ns_fl_unlock(__FILE__,__LINE__);
 				//}
@@ -2806,7 +2808,6 @@ public:
 				//if (have_focus){
 					ns_fl_lock(__FILE__,__LINE__);
 					int c(Fl::event_key());
-					ns_fl_unlock(__FILE__,__LINE__);
 					if (c!=0){
 						if (worm_learner.register_worm_window_key_press(c,
 							Fl::event_key(FL_Shift_L) || Fl::event_key(FL_Shift_R),
@@ -2816,11 +2817,16 @@ public:
 							//cerr << '~';
 							worm_learner.death_time_solo_annotater.request_refresh();
 							report_changes_made_to_screen();
+							ns_fl_unlock(__FILE__, __LINE__);
 							//report_changes_made_to_screen();
 							//cerr << '.';
 							return 1;
 						}
+						else
+							ns_fl_unlock(__FILE__, __LINE__);
 					}
+					else
+						ns_fl_unlock(__FILE__, __LINE__);
 				//}
 				break;
 			}
@@ -3164,6 +3170,7 @@ void ns_handle_death_time_annotation_button(Fl_Widget * w, void * data){
 		return;
 	}
 	worm_learner.navigate_death_time_annotation(action);
+	report_changes_made_to_screen();
 }
 void ns_handle_death_time_solo_annotation_button(Fl_Widget * w, void * data){
 	

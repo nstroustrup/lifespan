@@ -1284,7 +1284,7 @@ bool ns_detected_worm_info::is_a_worm(const ns_svm_model_specification & model){
 		return true;
 		#endif
 		ns_detected_worm_stats stats(generate_stats());
-		stats.specifiy_model(model);
+		stats.specifiy_model(&model);
 
 		if (stats.not_a_worm){
 			is_a_worm_ = false;
@@ -1311,9 +1311,9 @@ bool ns_detected_worm_info::is_a_worm(const ns_svm_model_specification & model){
 		#else
 			svm_node * node = stats.produce_vector();
 
-			double val = svm_predict(model.model,node);
+			double val = svm_predict(&(*model.model),node);
 			double probs[2];
-			svm_predict_probability(model.model, node, probs);
+			svm_predict_probability(&(*model.model), node, probs);
 			//std::cout << val << "," << probs[1] << "," << probs[2] << "\n";
 			stats.delete_vector(node);
 			//cerr << val << "\n";
@@ -2392,6 +2392,9 @@ double ns_detected_worm_stats::transformed_statistic(const ns_detected_worm_clas
 double ns_detected_worm_stats::scaled_statistic(const ns_detected_worm_classifier & val) const{
 	if (_model == 0)
 		throw ns_ex("ns_detected_worm_stats::No model file specified when requesting scaled statistic");
+
+	if (val >= _model->statistics_ranges.size()) 
+		throw ns_ex("Yikes");
 	if (!_model->statistics_ranges[val].specified)
 		throw ns_ex("ns_detected_worm_stats::Using unspecified range:") << val;
 	if (_model->pca_spec.pc_vectors.size() != 0)

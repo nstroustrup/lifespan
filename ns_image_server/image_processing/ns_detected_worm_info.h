@@ -94,7 +94,7 @@ public:
 	std::vector<double> statistics;
 
 	///specifies thens_svm_model_specification model to be used during feature value scaling
-	void specifiy_model(const ns_svm_model_specification & model){_model = &model;}
+	void specifiy_model(const ns_svm_model_specification * model){_model = model;}
 
 	///Flagged if the detected worm stats contain invalid information as a way to inform
 	///any worm detection performed later on that the region shouldn't be considered a worm

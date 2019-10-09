@@ -43,19 +43,21 @@ struct ns_principal_component_transformation_specification{
 struct ns_svm_model_specification{
 	typedef enum {ns_none,ns_accept_all_objects} ns_special_flag;
 	ns_special_flag flag;
-	ns_svm_model_specification():statistics_ranges(ns_stat_number_of_stats),included_statistics(ns_stat_number_of_stats,0), flag(ns_svm_model_specification::ns_none){
+	ns_svm_model_specification():statistics_ranges(ns_stat_number_of_stats),included_statistics(ns_stat_number_of_stats,0), flag(ns_svm_model_specification::ns_none)
 	#ifdef NS_USE_MACHINE_LEARNING
 		#ifndef NS_USE_TINYSVM
-			model = 0;
+		,model(nullptr,ns_svm_deleter)
 		#endif
 		#endif
-	}
+	{}
 	std::string model_name;
 	#ifdef NS_USE_MACHINE_LEARNING
 		#ifdef NS_USE_TINYSVM
 			mutable TinySVM::Model model;
 		#else
-			mutable struct svm_model * model;
+			mutable std::shared_ptr<svm_model> model;
+
+			static void ns_svm_deleter(svm_model* m);
 		#endif
 	#endif
 
@@ -65,10 +67,7 @@ struct ns_svm_model_specification{
 	#ifdef NS_USE_MACHINE_LEARNING
 		#ifndef NS_USE_TINYSVM
 	~ns_svm_model_specification(){
-		if (model != 0){
-			svm_free_and_destroy_model(&model);
-			model = 0;
-		}
+		
 		statistics_ranges.clear();
 	}
 	#endif

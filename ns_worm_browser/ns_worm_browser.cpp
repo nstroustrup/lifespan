@@ -8404,7 +8404,7 @@ void ns_worm_learner::train_from_data(const std::string & base_dir){
 		return;
 	}
 	ns_sql& sql(get_sql_connection());
-	training_file_generator.generate_from_curated_set(base_dir,(*model_specification)().model_specification,true,&sql);
+	training_file_generator.generate_from_curated_set(base_dir,true,&sql);
 	
 }
 const ns_svm_model_specification & ns_worm_learner::get_svm_model_specification(){

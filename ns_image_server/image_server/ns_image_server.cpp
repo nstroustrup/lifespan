@@ -3649,7 +3649,7 @@ void ns_svm_model_specification_entry::load_from_external_source(const std::stri
 			if (!spec.model.read(fn.c_str()))
 				throw ns_ex("ns_image_server::Could not load SVM model file: ") << fn;
 	#else
-			model_specification.model = svm_load_model(fn.c_str());
+			model_specification.model = std::shared_ptr<svm_model>(svm_load_model(fn.c_str()),ns_svm_model_specification::ns_svm_deleter);
 			if (model_specification.model == NULL)
 				throw ns_ex("ns_image_server::Could not load SVM model file:") << fn;
 	#endif

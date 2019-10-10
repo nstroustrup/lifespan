@@ -6986,10 +6986,12 @@ bool ns_worm_learner::register_main_window_key_press(int key, const bool shift_k
 		return true;
 	}
 	else if (key == 'i') {
-		storyboard_annotater.overlay_worm_ids();
-		storyboard_annotater.redraw_current_metadata(main_window.display_rescale_factor);
-		current_annotater->request_refresh(); 
-		report_changes_made_to_screen();
+		if (current_behavior_mode() == ns_annotate_storyboard_experiment || current_behavior_mode() == ns_annotate_storyboard_sample || current_behavior_mode() == ns_annotate_storyboard_region) {
+			storyboard_annotater.overlay_worm_ids();
+			storyboard_annotater.redraw_current_metadata(main_window.display_rescale_factor);
+			current_annotater->request_refresh();
+			report_changes_made_to_screen();
+		}
 		return true;
 	}
 

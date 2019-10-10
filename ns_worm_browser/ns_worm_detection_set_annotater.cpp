@@ -124,6 +124,18 @@ void ns_worm_detection_set_annotater_object::load_image(const unsigned long bott
 	}
 	im.loaded = true;
 }
+void ns_cycle_detected_flag(ns_object_hand_annotation_data& o) {
+	if (o.identified_as_a_worm_by_human)
+		o.identified_as_a_worm_by_human = false;
+	else {
+		if (!o.identified_as_misdisambiguated_multiple_worms)
+			o.identified_as_misdisambiguated_multiple_worms = true;
+		else {
+			o.identified_as_a_worm_by_human = true;
+			o.identified_as_misdisambiguated_multiple_worms = false;
+		}
+	}
+}
 void ns_worm_detection_set_annotater::register_click(const ns_vector_2i& image_position, const ns_click_request& action, double external_rescale_factor) {
 	if (all_objects.size() == 0)
 		return;
@@ -174,16 +186,14 @@ void ns_worm_detection_set_annotater::register_click(const ns_vector_2i& image_p
 			redraw_all(external_rescale_factor);
 		}
 		else {
-			current_objects[selected_object]->hand_annotation_data.identified_as_a_worm_by_human = !current_objects[selected_object]->hand_annotation_data.identified_as_a_worm_by_human;
+			ns_cycle_detected_flag(current_objects[selected_object]->hand_annotation_data);
 			saved_ = false;
 		}
 		break;
 	case ns_annotate_extra_worm:
 	case ns_cycle_flags:
 		if (!found_object) break;
-		current_objects[selected_object]->hand_annotation_data.identified_as_a_mangled_worm = !current_objects[selected_object]->hand_annotation_data.identified_as_a_worm_by_human;
-		if (current_objects[selected_object]->hand_annotation_data.identified_as_a_mangled_worm)
-			current_objects[selected_object]->hand_annotation_data.identified_as_a_worm_by_human = false;
+		ns_cycle_detected_flag(current_objects[selected_object]->hand_annotation_data);
 		saved_ = false;
 		break;
 

@@ -82,7 +82,7 @@ public:
 		im.draw_line_color_thick(p + s, p + ns_vector_2i(0, s.y), c, thickness);
 	}
 	void load_from_file(const std::string& path, const std::string& filename, ns_worm_learner* worm_learner_, double external_rescale_factor);
-
+	void redraw_all(const double& external_rescale_factor);
 	void register_click(const ns_vector_2i& image_position, const ns_click_request& action, double external_rescale_factor);
 
 	void display_current_frame();

@@ -124,7 +124,6 @@ void ns_worm_detection_set_annotater_object::load_image(const unsigned long bott
 	}
 	im.loaded = true;
 }
-
 void ns_worm_detection_set_annotater::register_click(const ns_vector_2i& image_position, const ns_click_request& action, double external_rescale_factor) {
 	if (all_objects.size() == 0)
 		return;
@@ -145,11 +144,13 @@ void ns_worm_detection_set_annotater::register_click(const ns_vector_2i& image_p
 	switch (action) {
 	case ns_increase_contrast:
 		worm_learner->main_window.dynamic_range_rescale_factor += .1;
+		redraw_all(external_rescale_factor);
 		break;
 	case ns_decrease_contrast:
 		worm_learner->main_window.dynamic_range_rescale_factor -= .1;
 		if (worm_learner->main_window.dynamic_range_rescale_factor < .1)
 			worm_learner->main_window.dynamic_range_rescale_factor = .1;
+		redraw_all(external_rescale_factor);
 		break;
 	case ns_load_worm_details:
 		break;
@@ -160,17 +161,22 @@ void ns_worm_detection_set_annotater::register_click(const ns_vector_2i& image_p
 			switch (current_display_method) {
 			case ns_worm_detection_set_annotater_object::ns_show_highlighted_worm:
 				current_display_method = ns_worm_detection_set_annotater_object::ns_show_absolute_grayscale;
+				break;
 			case ns_worm_detection_set_annotater_object::ns_show_absolute_grayscale:
 				current_display_method = ns_worm_detection_set_annotater_object::ns_show_relative_grayscale;
+				break;
 			case ns_worm_detection_set_annotater_object::ns_show_relative_grayscale:
 				current_display_method = ns_worm_detection_set_annotater_object::ns_show_highlighted_worm;
+				break;
 			default:
 				current_display_method = ns_worm_detection_set_annotater_object::ns_show_absolute_grayscale;
 			}
-			break;
+			redraw_all(external_rescale_factor);
 		}
-		current_objects[selected_object]->hand_annotation_data.identified_as_a_worm_by_human = !current_objects[selected_object]->hand_annotation_data.identified_as_a_worm_by_human;
-		saved_ = false;
+		else {
+			current_objects[selected_object]->hand_annotation_data.identified_as_a_worm_by_human = !current_objects[selected_object]->hand_annotation_data.identified_as_a_worm_by_human;
+			saved_ = false;
+		}
 		break;
 	case ns_annotate_extra_worm:
 	case ns_cycle_flags:
@@ -255,6 +261,19 @@ void ns_worm_detection_set_annotater::load_from_file(const std::string& path_, c
 
 }
 
+
+void ns_worm_detection_set_annotater::redraw_all(const double&  external_rescale_factor) {
+
+	for (unsigned int i = 0; i < previous_images.size(); i++) {
+		previous_images[i].loaded = false;
+		next_images[i].loaded = false;
+	}
+	all_objects[current_timepoint_id].load_image(current_timepoint_id, current_image, sql(), local_image_cache, memory_pool, resize_factor);
+	draw_metadata(&all_objects[current_timepoint_id], *current_image.im, external_rescale_factor);
+
+}
+
+
 void ns_worm_detection_set_annotater::save_annotations(const ns_death_time_annotation_set& extra_annotations) const {
 
 	ns_load_image(path + DIR_CHAR_STR + filename, loading_temp);
@@ -267,9 +286,9 @@ void ns_worm_detection_set_annotater::save_annotations(const ns_death_time_annot
 					loading_temp[p.y+y][3*p.x+x] = box[y][x];
 		}
 	}
-	std::string fname_mod = ns_dir::extract_filename_without_extension(filename);
-	fname_mod += "_mod.tif";
-	ns_save_image(path + DIR_CHAR_STR + fname_mod, loading_temp);
+	//std::string fname_mod = ns_dir::extract_filename_without_extension(filename);
+	//fname_mod += ".tif";
+	ns_save_image(path + DIR_CHAR_STR + filename, loading_temp);
 	ns_update_worm_information_bar("Annotations saved at " + ns_format_time_string_for_human(ns_current_time()));
 	saved_ = true;
 };

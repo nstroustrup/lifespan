@@ -5235,9 +5235,12 @@ void ns_worm_learner::handle_file_request(const string & fname) {
 		cerr << " Done.\n";
 	}
 	else if (ext == "jpg" || ext == "tif" || ext == "jp2") {
-	  
-                load_file(filename,current_image);
-		draw();
+		if (current_behavior_mode() == ns_worm_learner::ns_annoate_worm_detection_set)
+			annotate_worm_detection_training_set(filename);
+		else {
+			load_file(filename, current_image);
+			draw();
+		}
 		//cout << "Loaded and drawn\n";
 	}
 	else if (ext == "xml") {

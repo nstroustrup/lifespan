@@ -6,6 +6,7 @@
 #include "ns_death_time_annotation.h"
 #include "ns_experiment_storyboard.h"
 #include "ns_time_path_image_analyzer.h"
+#include "ns_population_telemetry.h"
 
 
 //triangle drawing from http://www.sunshine2k.de/coding/java/TriangleRasterization/TriangleRasterization.html
@@ -66,7 +67,7 @@ public:
 		return 0;
 	}
 
-	void load_image(const unsigned long bottom_height,ns_annotater_image_buffer_entry & im,ns_sql & sql,ns_image_standard & temp_buffer,const unsigned long resize_factor_);
+	void load_image(const unsigned long bottom_height,ns_annotater_image_buffer_entry & im,ns_sql & sql, ns_simple_local_image_cache & image_cache, ns_annotater_memory_pool & memory_pool, const unsigned long resize_factor_);
 	std::vector<char> has_had_extra_worms_annotated;
 };
 
@@ -77,6 +78,23 @@ public:
 	typedef enum {ns_show_all,ns_hide_censored,ns_hide_uncensored} ns_censor_masking;
 	const ns_experiment_storyboard & get_storyboard(){return storyboard;}
 	bool draw_group_ids;
+
+	bool find_worm_by_id(const ns_64_bit region_id, const unsigned long group_id, ns_stationary_path_id & path_id, unsigned long & division_id, unsigned long & time) {
+		for (unsigned int i = 0; i < divisions.size(); i++) {
+			for (unsigned int j = 0; j < divisions[i].division->events.size(); j++) {
+				//cout << i << " " << j << ": " << divisions[i].division->events[j].event_annotation.stationary_path_id.group_id << "\n";
+				if ((region_id == 0 || divisions[i].division->events[j].event_annotation.region_info_id == region_id) &&
+					divisions[i].division->events[j].event_annotation.stationary_path_id.group_id == group_id) {
+					path_id = divisions[i].division->events[j].event_annotation.stationary_path_id;
+					division_id = i;
+					time = divisions[i].division->events[j].storyboard_absolute_time;
+					return true;
+				}
+			}
+		}
+		//cout << "Could not find " << region_id << " " << group_id << "\n";
+		return false;
+	}
 
 
 private:
@@ -447,12 +465,52 @@ private:
 	typedef std::map<ns_64_bit,bool> ns_event_display_spec_list;
 	ns_event_display_spec_list display_events_from_region;
 	std::map<ns_64_bit,bool> excluded_regions;
+
+	static ns_thread_return_type precache_worm_images_asynch_internal(void *);
+	ns_sql * precache_sql_connection;
+	bool run_precaching;
+	ns_lock precaching_lock;
+	ns_death_time_annotation_compiler machine_events_for_telemetry;
 public:
+
+	ns_population_telemetry population_telemetry;
+	void add_machine_events_for_telemetry(const ns_death_time_annotation_set& set,const ns_region_metadata & metadata) {
+		machine_events_for_telemetry.add(set, metadata);
+	}
+	void clear_machine_events_for_telemetry() {
+		machine_events_for_telemetry.clear();
+	}
+	void recalculate_telemetry() {
+		std::map<ns_64_bit, ns_death_time_annotation_set> annotations;
+		get_storyboard().collect_current_annotations(annotations);
+		ns_death_time_annotation_compiler compiler = machine_events_for_telemetry;
+		for (std::map<ns_64_bit, ns_death_time_annotation_set>::const_iterator p = annotations.begin(); p != annotations.end(); p++)
+			compiler.add(p->second,ns_death_time_annotation_compiler::ns_do_not_create_regions_or_locations);
+		population_telemetry.update_annotations_and_build_survival(compiler, strain_to_display);
+		draw_telemetry();
+	}
+	ns_vector_2i telemetry_size(const ns_population_telemetry::ns_graph_contents& contents) {
+		if (contents == ns_population_telemetry::ns_survival)
+			return ns_vector_2i(600, 400);
+		else if (contents == ns_population_telemetry::ns_movement_vs_posture)
+			return ns_vector_2i(600 + 400, 400);
+		else throw ns_ex("Unknown population telemetry contents");
+	}
+	void draw_telemetry();
 	void set_resize_factor(const unsigned long resize_factor_){
 		resize_factor = resize_factor_;
 	}
 	bool data_saved()const{return saved_;}
-	ns_experiment_storyboard_annotater(const unsigned long res):ns_image_series_annotater(res,0), draw_group_ids(0),saved_(true){}
+	ns_experiment_storyboard_annotater(const unsigned long res):ns_image_series_annotater(res,0), draw_group_ids(0),saved_(true),precache_sql_connection(0),run_precaching(false), precaching_lock("pcl"){}
+	~ns_experiment_storyboard_annotater() {
+		run_precaching = false;
+		precaching_lock.wait_to_acquire(__FILE__, __LINE__);
+		precaching_lock.release();
+		clear_precache_sql();
+	}
+	void clear_precache_sql() {
+		ns_safe_delete(precache_sql_connection);
+	}
 
 	std::string image_label(const unsigned long frame_id){
 		return ns_to_string(frame_id) + "/" + ns_to_string(divisions.size());	
@@ -475,6 +533,7 @@ public:
 	}
 	void overlay_worm_ids() { draw_group_ids = true; }
 
+	void precache_worm_images_asynch();
 	void specifiy_worm_details(const ns_64_bit region_id,const ns_stationary_path_id & worm, const ns_death_time_annotation & sticky_properties, std::vector<ns_death_time_annotation> & movement_event_times){
 		if (!worm.specified())
 			throw ns_ex("ns_experiment_storyboard_annotater::specifiy_worm_details()::Requesting specification with unspecified path id");
@@ -498,10 +557,16 @@ public:
 	void load_from_storyboard(const ns_region_metadata & strain_to_display_, const ns_censor_masking censor_masking_, ns_experiment_storyboard_spec & spec, ns_worm_learner * worm_learner_, double external_rescale_factor);
 
 	void register_click(const ns_vector_2i & image_position, const ns_click_request & action, double external_rescale_factor);
+
+	void register_statistics_click(const ns_vector_2i& image_position, const ns_click_request& action, double external_rescale_factor);
 	void load_random_worm();
 
 	void display_current_frame();
-
+	void stop_precaching() {
+		run_precaching = false;
+		precaching_lock.wait_to_acquire(__FILE__, __LINE__);
+		precaching_lock.release();
+	}
 	void clear() {
 		clear_base();
 		saved_ = false;
@@ -509,7 +574,9 @@ public:
 		storyboard.clear();
 		strain_to_display.clear();
 		display_events_from_region.clear();
+		clear_machine_events_for_telemetry();
 		excluded_regions.clear();
 	}
+
 };
 #endif

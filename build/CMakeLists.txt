@@ -50,8 +50,8 @@ file(GLOB_RECURSE system_base_HEADERS "${PROJECT_SOURCE_DIR}/../ns_image_server/
 
 set(ns_external_HEADER_DIRS "")
 list (APPEND ns_external_HEADER_DIRS "${PROJECT_SOURCE_DIR}/../external_compile_libraries/wcon_cpp"
-"${PROJECT_SOURCE_DIR}/../external_compile_libraries/json/single_include")
- 
+"${PROJECT_SOURCE_DIR}/../external_compile_libraries/json/single_include"
+"${PROJECT_SOURCE_DIR}/../external_compile_libraries/gzstream")
 
 set (ns_image_server_base_HEADERS "")
 list(APPEND ns_image_server_base_HEADERS ${image_server_HEADERS} ${image_acquisition_HEADERS} ${image_base_HEADERS} ${image_processing_HEADERS} ${job_scheduling_HEADERS} ${movement_analysis_HEADERS} ${statistics_HEADERS}  ${system_base_HEADERS} ${data_annotation_HEADERS})
@@ -69,8 +69,11 @@ list(APPEND ns_image_server_base_INCLUDE_DIRS ${ns_external_HEADER_DIRS})
 set (ns_external_SOURCES  "")
 if (NOT ONLY_IMAGE_ACQUISITION)
 list (APPEND ns_external_SOURCES "${PROJECT_SOURCE_DIR}/../external_libraries/libsvm/svm.cpp" 
+"${PROJECT_SOURCE_DIR}/../external_compile_libraries/gzstream/gzstream.C"
 "${PROJECT_SOURCE_DIR}/../external_libraries/ctmf/ctmf.c" 
-"${PROJECT_SOURCE_DIR}/../external_libraries/triangle/triangle.cpp" 
+"${PROJECT_SOURCE_DIR}/../external_libraries/triangle/triangle.cpp"
+"${PROJECT_SOURCE_DIR}/../external_libraries/gmm/gmm.cpp"
+"${PROJECT_SOURCE_DIR}/../external_libraries/gmm/KMeans.cpp" 
 "${PROJECT_SOURCE_DIR}/../external_libraries/libhungarian/hungarian.c" 
 "${PROJECT_SOURCE_DIR}/../external_libraries/wm4_bspline/Wm4Vector2.cpp" 
 "${PROJECT_SOURCE_DIR}/../external_libraries/wm4_bspline/Wm4IntpBSplineUniform.cpp" 
@@ -98,6 +101,8 @@ set(NS_LN "")
 list(APPEND NS_INC ${ns_image_server_base_INCLUDE_DIRS})
 
 if (NOT ONLY_IMAGE_ACQUISITION)
+
+
 SET(IPP_STATIC 0)
 find_package(IPP REQUIRED)
 LIST(APPEND NS_INC ${IPP_INCLUDE_DIRS})
@@ -143,6 +148,7 @@ LIST(APPEND NS_LN ${LIBUSB_1_LIBRARIES})
 LIST(APPEND NS_INC "${PROJECT_SOURCE_DIR}/../external_libraries/libsvm"
 	       "${PROJECT_SOURCE_DIR}/../external_libraries/ctmf"
 	       "${PROJECT_SOURCE_DIR}/../external_libraries/triangle"
+	       "${PROJECT_SOURCE_DIR}/../external_libraries/gmm"
 	       "${PROJECT_SOURCE_DIR}/../external_libraries/libhungarian"
 	       "${PROJECT_SOURCE_DIR}/../external_libraries/wm4_bspline"
 	       "${PROJECT_SOURCE_DIR}/../external_libraries/tinyxml")
@@ -159,7 +165,7 @@ else ()
     set (CMAKE_CXX_STANDARD 11)
 endif ()
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-psabi")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-psabi ")
 
 add_definitions(-DTRILIBRARY -DNO_TIMER -DANSI_DECLARATORS -DNS_DEFAULT_FONT="${FONT_FILE}" -DNS_INI_PATH="${INI_FILE}" -DUSE_NEW_USB=1 -DNS_DATA_PATH="${CMAKE_INSTALL_FULL_DATADIR}/")
 

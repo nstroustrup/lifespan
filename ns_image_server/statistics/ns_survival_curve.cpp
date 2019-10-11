@@ -491,20 +491,24 @@ void ns_lifespan_experiment_set::output_JMP_summary_file(std::ostream & o) const
 	}
 }
 */
-const ns_survival_timepoint_event & ns_get_correct_event(const unsigned long i, const ns_survival_timepoint & e){
-	switch(i){
-		case 0: return e.deaths;
-		case 1: return e.local_movement_cessations;
-		case 2: return e.long_distance_movement_cessations;
+const ns_survival_timepoint_event& ns_get_correct_event(const ns_metadata_worm_properties::ns_survival_event_type & type, const ns_survival_timepoint& e) {
+	switch(type){
+		case ns_metadata_worm_properties::ns_death: return e.deaths;
+		case ns_metadata_worm_properties::ns_local_movement_cessation: return e.local_movement_cessations;
+		case ns_metadata_worm_properties::ns_long_distance_movement_cessation: return e.long_distance_movement_cessations;
+		case ns_metadata_worm_properties::ns_death_associated_expansion: return e.death_associated_expansions;
+		case ns_metadata_worm_properties::ns_typeless_censoring_events: return e.typeless_censoring_events;
 		default: throw ns_ex("ns_get_correct_event()::Unknown event spec");
 	}
 }
 
-ns_survival_timepoint_event & ns_get_correct_event(const unsigned long i, ns_survival_timepoint & e){
-	switch(i){
-		case 0: return e.deaths;
-		case 1: return e.local_movement_cessations;
-		case 2: return e.long_distance_movement_cessations;
+ns_survival_timepoint_event & ns_get_correct_event(const ns_metadata_worm_properties::ns_survival_event_type & type, ns_survival_timepoint & e){
+	switch(type){
+			case ns_metadata_worm_properties::ns_death: return e.deaths;
+			case ns_metadata_worm_properties::ns_local_movement_cessation: return e.local_movement_cessations;
+			case ns_metadata_worm_properties::ns_long_distance_movement_cessation: return e.long_distance_movement_cessations;
+			case ns_metadata_worm_properties::ns_death_associated_expansion: return e.death_associated_expansions;
+			case ns_metadata_worm_properties::ns_typeless_censoring_events: return e.typeless_censoring_events;
 		default: throw ns_ex("ns_get_correct_event()::Unknown event spec");
 	}
 }
@@ -512,8 +516,7 @@ ns_survival_timepoint_event & ns_get_correct_event(const unsigned long i, ns_sur
 double ns_lifespan_device_normalization_statistics::calculate_additive_device_regression_residual(const double measurement) const{
 	//if (this->external_fix_point_specified())
 	//	return measurement - additive_device_regression_coefficient - grand_strain_mean + control_mean_external_fix_point;
-	//if (measurement < additive_device_regression_coefficient)
-	//	cerr << "WHA";
+
 	return measurement - (double)additive_device_regression_coefficient;
 }
 double ns_lifespan_device_normalization_statistics::calculate_multiplicative_device_regression_residual(const double measurement) const{
@@ -689,8 +692,7 @@ void ns_lifespan_experiment_set::out_detailed_JMP_event_data(const ns_time_handi
 		
 		const ns_death_time_annotation & properties (prop.properties_override_set?prop.properties_override:prop.events->properties);
 		ns_death_time_annotation a(prop.events->events[i]);
-	//	if (a.position.x == 1983 && a.position.y == 4332)	
-	//		cerr << "WHA";
+
 		if (time_handling_behavior == ns_output_single_event_times){
 			if (a.time.period_start_was_not_observed && time_handling_behavior == ns_lifespan_experiment_set::ns_output_single_event_times){
 				a.time.period_start = a.time.period_end;
@@ -806,27 +808,25 @@ void ns_lifespan_experiment_set::out_simple_JMP_header(const ns_time_handing_beh
 	ns_region_metadata::out_JMP_plate_identity_header(o);	
 	if (control_group_behavior == ns_include_control_groups)
 		o << ",Control Group";
-	o << ",Event Frequency,";
+	o << ",Event Frequency,"
+		"Animal ID,";
 	if (time_handling_behavior == ns_output_single_event_times){
-		o << 
-		 "Age at Death (" << time_units << "),"
-		 "Duration Not Fast Moving (" << time_units << "),"
-		 "Longest Gap in Measurement (" << time_units << "),"
-		 "Age at Death-Associated Posture Relaxation Start (" << time_units << "),"
-		 "Age at Death-Associated Posture Relaxation End (" << time_units << "),";
-	//	 "Age at Death (" << time_units << ") Additive Regression Model Residuals,"
-	//	 "Age at Death (" << time_units << ") Multiplicative Regression Model Residuals,";
+		o <<
+			"Age at Death [Movement] (" << time_units << "),"
+			"Age at Death [Size Change] (" << time_units << "),"
+			"Difference between Size Change and Movement death times (" << time_units << "),"
+			"Duration Not Fast Moving (" << time_units << "),"
+			"Longest Gap in Measurement (" << time_units << "),";
 	}
 	else{
 		o <<
-		 "Age at Death (" << time_units << ") Start,"
-		 "Age at Death (" << time_units << ") End,"
-		 "Duration Not Fast Moving (" << time_units << "),"
-		 "Longest Gap in Measurement (" << time_units << "),"
-		 "Age at Death-Associated Posture Relaxation Start Start(" << time_units << "),"
-			"Age at Death-Associated Posture Relaxation Start End(" << time_units << "),"
-		 "Age at Death-Associated Posture Relaxation End Start(" << time_units << "),"
-		"Age at Death-Associated Posture Relaxation End End(" << time_units << "),";
+			"Age at Death [Movement] (" << time_units << ") Start,"
+			"Age at Death [Movement] (" << time_units << ") End,"
+			"Age at Death [Size Change] (" << time_units << ") Start,"
+			"Age at Death [Size Change] (" << time_units << ") End,"
+			"Difference between Size Change and Movement death times (" << time_units << ")"
+			"Duration Not Fast Moving (" << time_units << "),"
+			"Longest Gap in Measurement (" << time_units << "),";
 	}
 		// "Age at Death (" << time_units << ") Multiplicative + Additive offset Regression Model Residuals,"
 	o << "Censored,Censored Reason,Event Observation Type,Annotation Source,Technique,Analysis Type";
@@ -843,6 +843,11 @@ void ns_lifespan_experiment_set::out_simple_JMP_event_data(const ns_time_handing
 		return;
 	for (unsigned int i = 0; i < prop.events->events.size(); i++){
 		ns_death_time_annotation  a(prop.events->events[i]);
+
+		std::string relaxation_vs_movement_death_times = "";
+		if (!a.volatile_time_at_death_associated_expansion_start.fully_unbounded())
+			relaxation_vs_movement_death_times = ns_to_string((a.volatile_time_at_death_associated_expansion_start.best_estimate_event_time_for_possible_partially_unbounded_interval() - a.time.best_estimate_event_time_for_possible_partially_unbounded_interval())/time_scaling_factor);
+
 		//we indicate right censoring via outputting a blank value for the end time
 		//of the interval during which the animal dies
 		if (properties.is_censored() && time_handling_behavior == ns_output_event_intervals)
@@ -880,7 +885,7 @@ void ns_lifespan_experiment_set::out_simple_JMP_event_data(const ns_time_handing
 			continue;
 
 		//don't include censoring events for fast moving worms that go missing.
-		if (a.type != ns_movement_cessation && a.excluded == ns_death_time_annotation::ns_censored_at_end_of_experiment)
+		if (a.type != ns_movement_cessation && a.type != ns_death_associated_expansion_start && a.excluded == ns_death_time_annotation::ns_censored_at_end_of_experiment)
 			continue;
 		if (time_handling_behavior == ns_output_single_event_times){
 			if (a.time.period_start_was_not_observed){	
@@ -903,25 +908,27 @@ void ns_lifespan_experiment_set::out_simple_JMP_event_data(const ns_time_handing
 		}
 		else o << ",";
 		o << prop.events->number_of_worms_in_annotation(i) << ",";
+		o << a.stationary_path_id.group_id << ",";
 		
 		ns_output_JMP_time_interval(time_handling_behavior,a.time - metadata.time_at_which_animals_had_zero_age,
 							time_scaling_factor,o);
 		o << ",";
+		//output inferred censoring events to both movement and expansion  based death times
+		if (a.disambiguation_type == ns_death_time_annotation::ns_inferred_censoring_event) {
+			ns_output_JMP_time_interval(time_handling_behavior, a.time - metadata.time_at_which_animals_had_zero_age,
+				time_scaling_factor, o);
+		}else{
+			if (a.volatile_time_at_death_associated_expansion_start.fully_unbounded())
+				o << (time_handling_behavior == ns_output_single_event_times ? "" : ",");
+			else
+				ns_output_JMP_time_interval(time_handling_behavior, a.volatile_time_at_death_associated_expansion_start - metadata.time_at_which_animals_had_zero_age,
+					time_scaling_factor, o);
+		}
+		o << ",";
+		o << relaxation_vs_movement_death_times << ",";
 		o << a.volatile_duration_of_time_not_fast_moving/time_scaling_factor << ",";
 		o << a.longest_gap_without_observation/time_scaling_factor << ",";	
-		if (a.volatile_time_at_death_contraction_start.fully_unbounded())
-			o << (time_handling_behavior == ns_output_single_event_times ? "" : ",");
-		else
-		ns_output_JMP_time_interval(time_handling_behavior, a.volatile_time_at_death_contraction_start - metadata.time_at_which_animals_had_zero_age,
-			time_scaling_factor, o);
-		o << ","; 
-		
-		if (a.volatile_time_at_death_contraction_end.fully_unbounded())
-			o << (time_handling_behavior == ns_output_single_event_times ? "" : ",");
-		else
-		ns_output_JMP_time_interval(time_handling_behavior, a.volatile_time_at_death_contraction_end - metadata.time_at_which_animals_had_zero_age,
-			time_scaling_factor, o);
-		o << ",";
+			
 			
 		o << (properties.is_censored()?"1":"0") << ",";
 		if (properties.is_censored())
@@ -962,6 +969,9 @@ void ns_genotype_fetcher::add_information_to_database(const std::vector<ns_genot
 
 
 void ns_lifespan_experiment_set::output_JMP_file(const ns_death_time_annotation::ns_by_hand_annotation_integration_strategy & by_hand_strategy,const ns_lifespan_experiment_set::ns_time_handing_behavior & time_handling_behavior,const ns_time_units & time_units,std::ostream & o,const ns_output_file_type& detail, const bool output_header) const{
+	
+	if (detail == ns_detailed_with_censoring_repeats)
+		throw ns_ex("Depreciated output file");
 	std::string time_unit_string;
 	double time_scaling_factor;
 	switch(time_units){
@@ -1000,23 +1010,27 @@ void ns_lifespan_experiment_set::output_JMP_file(const ns_death_time_annotation:
 		}
 	}
 
-	ns_metadata_worm_properties::ns_survival_event_type event_type[3] = {ns_metadata_worm_properties::ns_death, 
+	ns_metadata_worm_properties::ns_survival_event_type event_type[(int)ns_metadata_worm_properties::ns_number_of_event_types] = {
+																ns_metadata_worm_properties::ns_death,
 																ns_metadata_worm_properties::ns_local_movement_cessation, 
-																ns_metadata_worm_properties::ns_long_distance_movement_cessation
+																ns_metadata_worm_properties::ns_long_distance_movement_cessation,
+																ns_metadata_worm_properties::ns_death_associated_expansion,
+																ns_metadata_worm_properties::ns_typeless_censoring_events
 																};
-	for (unsigned int event_t = 0; event_t < 3; event_t++){
+
+	for (unsigned int event_t = 0; event_t < (int)ns_metadata_worm_properties::ns_number_of_event_types; event_t++){
 		
-		if ((detail != ns_multiple_events) &&  event_type[event_t] != ns_metadata_worm_properties::ns_death)
+		if ((detail != ns_multiple_events) &&  event_type[event_t] != ns_metadata_worm_properties::ns_death&& event_type[event_t] != ns_metadata_worm_properties::ns_typeless_censoring_events)
 			continue;
 
-		//we make a list of all censoring strategies included in the data set.
+		/*//we make a list of all censoring strategies included in the data set.
 		std::map<ns_death_time_annotation::ns_multiworm_censoring_strategy,
 			std::set<ns_death_time_annotation::ns_missing_worm_return_strategy> > censoring_strategies;
 
 		if (detail == ns_detailed_with_censoring_repeats){
 			for (unsigned int i = 0; i < curves.size(); i++){
 				for (unsigned int j = 0; j < curves[i].timepoints.size();j++){
-					const ns_survival_timepoint_event & te(ns_get_correct_event(event_t,curves[i].timepoints[j]));
+					const ns_survival_timepoint_event & te(ns_get_correct_event(event_type[event_t],curves[i].timepoints[j]));
 					for (unsigned int k = 0; k < te.events.size(); k++){
 						//ignore boring standard events
 						if (!te.events[k].properties.is_censored() && !te.events[k].properties.is_excluded() &&
@@ -1027,7 +1041,7 @@ void ns_lifespan_experiment_set::output_JMP_file(const ns_death_time_annotation:
 					}
 				}
 			}
-		}
+		}*/
 		
 		const ns_lifespan_device_normalization_statistics_set & normalization_stats((
 			(event_type[event_t] == ns_metadata_worm_properties::ns_death)? normalization_stats_for_death:
@@ -1057,26 +1071,30 @@ void ns_lifespan_experiment_set::output_JMP_file(const ns_death_time_annotation:
 			for (unsigned int j = 0; j < curves[i].timepoints.size(); ++j){
 				
 				if (detail == ns_detailed_compact){
-					//Note that the machine will output one copy of single worm events
-					//and then all possible interpretations of multi-worm clumps.
-					//This is a bit of a tangle, but can be sorted out by grouping events by the appropriatecensoring_strategy column value
-					const ns_survival_timepoint_event & te(ns_get_correct_event(event_t,curves[i].timepoints[j]));
+					
+					//the old behavior here was to output all possibble interpretations of multi-worm clumps.
+					//This is no longer done by default, as it was confusing to everyone and rarely if ever used correctly.
+					const ns_survival_timepoint_event & te(ns_get_correct_event(event_type[event_t],curves[i].timepoints[j]));
 					for (unsigned int k = 0; k < te.events.size(); k++){
-							ns_metadata_worm_properties p;
-							p.events = &te.events[k];
-							p.event_period_end_time =  curves[i].timepoints[j].absolute_time-curves[i].metadata.time_at_which_animals_had_zero_age;
-							p.event_type = event_type[event_t];
-							p.flag = ns_death_time_annotation_flag::none();
-							if (!p.events->empty()){
-									out_detailed_JMP_event_data(time_handling_behavior,o,regression_stats,curves[i].metadata,p,time_scaling_factor,"\n",output_raw_data_as_normalization_data);
-							}
+						//if you want to output all possible strategies, remove this "continue"
+						if (te.events[k].properties.multiworm_censoring_strategy != ns_death_time_annotation::default_censoring_strategy() ||
+							te.events[k].properties.missing_worm_return_strategy != ns_death_time_annotation::default_missing_return_strategy())
+							continue;
+						ns_metadata_worm_properties p;
+						p.events = &te.events[k];
+						p.event_period_end_time =  curves[i].timepoints[j].absolute_time-curves[i].metadata.time_at_which_animals_had_zero_age;
+						p.event_type = event_type[event_t];
+						p.flag = ns_death_time_annotation_flag::none();
+						if (!p.events->empty()){
+								out_detailed_JMP_event_data(time_handling_behavior,o,regression_stats,curves[i].metadata,p,time_scaling_factor,"\n",output_raw_data_as_normalization_data);
 						}
-				}
+					}
+				}/*
 				if (detail == ns_detailed_with_censoring_repeats){
 					//Note that the machine will output both censoring events 
 					//and death events for multi-worm clusters.
 					//the user should figure out which one is best and only use that.
-					const ns_survival_timepoint_event & te(ns_get_correct_event(event_t,curves[i].timepoints[j]));
+					const ns_survival_timepoint_event & te(ns_get_correct_event(event_type[event_t],curves[i].timepoints[j]));
 					for (unsigned int k = 0; k < te.events.size(); k++){
 						//don't output excluded events (for brevity's sake)
 						if (te.events[k].properties.is_excluded())
@@ -1111,10 +1129,12 @@ void ns_lifespan_experiment_set::output_JMP_file(const ns_death_time_annotation:
 						out_detailed_JMP_event_data(time_handling_behavior,o,regression_stats,curves[i].metadata,p,time_scaling_factor,"\n",output_raw_data_as_normalization_data,true);
 
 					}
-				}
+				}*/
 				else if (detail == ns_simple || detail == ns_multiple_events || detail == ns_simple_with_control_groups && regression_stats == 0){
 					//simple
-					const ns_survival_timepoint_event & te(ns_get_correct_event(event_t,curves[i].timepoints[j]));
+					//first we get all the events of the required type that occured at this time point
+					const ns_survival_timepoint_event & te(ns_get_correct_event(event_type[event_t],curves[i].timepoints[j]));
+					//now we output each event one at a time
 					for (unsigned int k = 0; k < te.events.size(); k++){
 							ns_metadata_worm_properties p;
 							p.events = &te.events[k];
@@ -1145,7 +1165,7 @@ void ns_lifespan_experiment_set::output_JMP_file(const ns_death_time_annotation:
 					//output the controls multiple times, one for each mutant on the same scanner
 					for (ns_control_group_plate_assignment::ns_control_group_membership_list::const_iterator g = control_group_info->second.control_group_memberships.begin(); g != control_group_info->second.control_group_memberships.end(); g++){
 
-						const ns_survival_timepoint_event & te(ns_get_correct_event(event_t,curves[i].timepoints[j]));
+						const ns_survival_timepoint_event & te(ns_get_correct_event(event_type[event_t],curves[i].timepoints[j]));
 						for (unsigned int k = 0; k < te.events.size(); k++){
 							ns_metadata_worm_properties p;
 							p.events = &te.events[k];
@@ -1393,6 +1413,7 @@ void ns_lifespan_experiment_set::include_only_events_detected_by_machine(){
 			curves[i].timepoints[j].deaths.remove_purely_non_machine_events();
 			curves[i].timepoints[j].local_movement_cessations.remove_purely_non_machine_events();
 			curves[i].timepoints[j].long_distance_movement_cessations.remove_purely_non_machine_events();
+			curves[i].timepoints[j].death_associated_expansions.remove_purely_non_machine_events();
 		}
 	}
 }
@@ -1406,53 +1427,77 @@ struct ns_event_count{
 		number_of_events,
 		number_of_censoring_events;
 };
-void ns_lifespan_experiment_set::generage_aggregate_risk_timeseries(const ns_region_metadata & m,ns_survival_data_with_censoring & risk_timeseries, std::vector<unsigned long> & t) const{
-	std::map<unsigned long,std::vector<ns_survival_timepoint_event> > events; 
+void ns_lifespan_experiment_set::generate_aggregate_risk_timeseries(const ns_region_metadata & m, bool filter_by_strain, const std::string & specific_device, const ns_64_bit & specific_region_id, ns_survival_data_with_censoring & movement_based_survival, ns_survival_data_with_censoring& death_associated_expansion_survival, std::vector<unsigned long> & timepoints,bool use_external_time) const{
+	std::map<unsigned long, std::vector<ns_survival_timepoint_event> > movement_events, death_associated_expansion_events;
 	ns_region_metadata mm(m);
 	mm.genotype.clear();
 	
 	ns_survival_data aggregate_set;
 	for (unsigned int i = 0; i <this->curves.size(); i++){
-		if (mm.device_regression_match_description() != curves[i].metadata.device_regression_match_description() || mm.device != curves[i].metadata.device) {
-		//	cout << mm.device_regression_match_description() << "\n";
-		//	cout << curves[i].metadata.device_regression_match_description() << "\n";
-		//	cout << mm.device << "\n";
-		//	cout << curves[i].metadata.device << "\n";
+		if (filter_by_strain && (mm.device_regression_match_description() != curves[i].metadata.device_regression_match_description())
+			|| specific_region_id != 0 && curves[i].metadata.region_id != specific_region_id ||
+			!specific_device.empty() && specific_device != curves[i].metadata.device)
 			continue;
 
-		}
 		//add all events except for excluded objects
 		for (unsigned long j = 0; j < curves[i].timepoints.size(); j++){
-		//	for (unsigned int k = 0; k < curves[i].timepoints[j].deaths.events.size(); k++)
-				events[curves[i].timepoints[j].absolute_time].push_back(curves[i].timepoints[j].deaths);
-			//const unsigned long s(events[curves[i].timepoints[j].absolute_time].size());
-			//events[curves[i].timepoints[j].absolute_time].resize(s+1);
-			//for (unsigned int k = 0; k < curves[i].timepoints[j].deaths.events.size(); k++){
-				//if (!curves[i].timepoints[j].deaths.events[k].properties.is_excluded())
-			//	events[curves[i].timepoints[j].absolute_time][s].events.push_back(curves[i].timepoints[j].deaths.events[k]);
-			//}
-			//if (events[curves[i].timepoints[j].absolute_time][s].events.empty())
-			//	events[curves[i].timepoints[j].absolute_time].resize(s);
+			movement_events[curves[i].timepoints[j].absolute_time].push_back(curves[i].timepoints[j].deaths);
+			death_associated_expansion_events[curves[i].timepoints[j].absolute_time].push_back(curves[i].timepoints[j].death_associated_expansions);
 		}
 	}
-	aggregate_set.timepoints.resize(events.size());
-	t.resize(events.size());
-	unsigned int i = 0;
-	for (std::map<unsigned long,std::vector<ns_survival_timepoint_event> >::iterator p = events.begin(); p != events.end(); p++){
-		aggregate_set.timepoints[i].absolute_time = p->first;
-		t[i] = p->first;
-
-		for (unsigned int j = 0; j < p->second.size(); j++)
-			aggregate_set.timepoints[i].deaths.add(p->second[j]);
-		p->second.clear();
-	//	risk_timeseries.data.number_of_events[i] = p->second.number_of_events;
-		//risk_timeseries.data.number_of_censoring_events[i] = p->second.number_of_censoring_events;
-		i++;
-		//i++;
+	//we need to put both the deaths and the death associated expansion events on the same time steps.
+	//so we find the union of all event times
+	std::set<unsigned long> unique_timepoints;
+	for (std::map<unsigned long, std::vector<ns_survival_timepoint_event> >::iterator p = movement_events.begin(); p != movement_events.end(); p++) 
+		unique_timepoints.insert(p->first);
+	for (std::map<unsigned long, std::vector<ns_survival_timepoint_event> >::iterator p = death_associated_expansion_events.begin(); p != death_associated_expansion_events.end(); p++)
+		unique_timepoints.insert(p->first);
+	if (!use_external_time) {
+		aggregate_set.timepoints.resize(unique_timepoints.size());
+		timepoints.resize(unique_timepoints.size());
 	}
-	events.clear();
+	else {
+		aggregate_set.timepoints.resize(timepoints.size());
+		for (unsigned int i = 0; i < aggregate_set.timepoints.size(); i++)
+			aggregate_set.timepoints[i].absolute_time = timepoints[i];
+	}
+
+
+	std::map<unsigned long, unsigned long> time_lookup;
+	unsigned int i = 0;
+	for (std::set<unsigned long >::iterator p = unique_timepoints.begin(); p != unique_timepoints.end(); p++) {
+		if (!use_external_time) {
+			timepoints[i] = *p;
+			time_lookup[*p] = i;
+			i++;
+		}
+		else {
+			for (i; i < timepoints.size(); i++)
+				if (timepoints[i] == *p) {
+					time_lookup[*p] = i;
+					break;
+				}
+			if (i == timepoints.size())
+				throw ns_ex("ns_lifespan_experiment_set::generate_aggregate_risk_timeseries()::Could not find a timepoint in externally specified timepoint list");
+		}
+	}
+
+	for (std::map<unsigned long,std::vector<ns_survival_timepoint_event> >::iterator p = movement_events.begin(); p != movement_events.end(); p++){
+		const unsigned int pos = time_lookup[p->first];
+		aggregate_set.timepoints[pos].absolute_time = p->first;
+		for (unsigned int j = 0; j < p->second.size(); j++)
+			aggregate_set.timepoints[pos].deaths.add(p->second[j]);
+	}
+	movement_events.clear();
+	for (std::map<unsigned long, std::vector<ns_survival_timepoint_event> >::iterator p = death_associated_expansion_events.begin(); p != death_associated_expansion_events.end(); p++) {
+		const unsigned int pos = time_lookup[p->first];
+		aggregate_set.timepoints[pos].absolute_time = p->first;
+		for (unsigned int j = 0; j < p->second.size(); j++)
+			aggregate_set.timepoints[pos].death_associated_expansions.add(p->second[j]);
+	}
 	aggregate_set.genenerate_survival_statistics();
-	risk_timeseries = aggregate_set.risk_timeseries.death;	
+	movement_based_survival = aggregate_set.risk_timeseries.death;
+	death_associated_expansion_survival = aggregate_set.risk_timeseries.death_associated_expansion_start;
 }
 void ns_lifespan_experiment_set::generate_common_time_set(ns_lifespan_experiment_set & new_set) const{
 
@@ -1508,22 +1553,6 @@ void ns_lifespan_experiment_set::generate_common_time_set(ns_lifespan_experiment
 	}
 }
 
-/*
-ns_survival_timepoint_event operator+(const ns_survival_timepoint_event & a, const ns_survival_timepoint_event & b){
-	ns_survival_timepoint_event e(a);
-	e.events.insert(e.events.begin(),b.events.begin(),b.events.end());
-	//e.survival_count += b.survival_count;
-	return e;
-}
-ns_survival_timepoint operator+(const ns_survival_timepoint & a, const ns_survival_timepoint & b){
-	ns_survival_timepoint ret;
-	ret.absolute_time = (a.absolute_time>b.absolute_time)?a.absolute_time:b.absolute_time;
-	ret.deaths = a.deaths + b.deaths;
-	ret.local_movement_cessations = a.local_movement_cessations + b.local_movement_cessations;
-	ret.long_distance_movement_cessations = a.long_distance_movement_cessations + b.long_distance_movement_cessations;
-	return ret;
-}*/
-
 //events that occured at a position detected by the machine have 
 //a special annotation added during survival curve assembly.
 //we check for that annotation
@@ -1550,8 +1579,8 @@ void ns_survival_timepoint::add(const ns_survival_timepoint & t){
 	deaths.add(t.deaths);
 	local_movement_cessations.add(t.local_movement_cessations);
 	long_distance_movement_cessations.add(t.long_distance_movement_cessations);
-
-
+	death_associated_expansions.add(t.death_associated_expansions);
+	typeless_censoring_events.add(t.typeless_censoring_events);
 }
 
 void ns_lifespan_experiment_set::force_common_time_set_to_constant_time_interval(const unsigned long interval_time_in_seconds,ns_lifespan_experiment_set & new_set) const{
@@ -1737,6 +1766,7 @@ void ns_survival_data::genenerate_survival_statistics(){
 	generate_survival_statistics(risk_timeseries.death,survival_statistics.death);
 	generate_survival_statistics(risk_timeseries.local_movement_cessations,survival_statistics.local_movement_cessations);
 	generate_survival_statistics(risk_timeseries.long_distance_movement_cessation,survival_statistics.long_distance_movement_cessation);
+	generate_survival_statistics(risk_timeseries.death_associated_expansion_start, survival_statistics.death_associated_expansion_start);
 }
 void ns_survival_data::generate_survival_statistics(const ns_survival_data_with_censoring & survival_data,ns_survival_statistics & stats) const{
 	if (timepoints.size() == 0)
@@ -1872,6 +1902,8 @@ const ns_survival_timepoint_event * ns_correct_event(const ns_movement_event & e
 				return &s.local_movement_cessations;
 			case ns_fast_movement_cessation:
 				return &s.long_distance_movement_cessations;
+			case ns_death_associated_expansion_start:
+				return &s.death_associated_expansions;
 			default:
 				throw ns_ex("Unknown normalization event specification: ") << (int)e;
 		}

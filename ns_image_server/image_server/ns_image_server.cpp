@@ -30,24 +30,22 @@ using namespace std;
 
 void ns_image_server_global_debug_handler(const ns_text_stream_t & t);
 
-ns_image_server::ns_image_server() : exit_has_been_requested(false),exit_happening_now(false), handling_exit_request(false), ready_to_exit(true), update_software(false),
+ns_image_server::ns_image_server() : exit_has_been_requested(false), exit_happening_now(false), handling_exit_request(false), ready_to_exit(true), update_software(false),
 sql_lock("ns_is::sql"), server_event_lock("ns_is::server_event"), performance_stats_lock("ns_pfl"), simulator_scan_lock("ns_is::sim_scan"), local_buffer_sql_lock("ns_is::lb"), processing_run_counter_lock("ns_pcl"),
-_act_as_processing_node(true), exit_lock("ns_is::el"),cleared(false), do_not_run_multithreaded_jobs(false),
+_act_as_processing_node(true), exit_lock("ns_is::el"), cleared(false), do_not_run_multithreaded_jobs(false),
 #ifndef NS_ONLY_IMAGE_ACQUISITION
 image_registration_profile_cache(1024 * 4), //allocate 4 gigabytes of disk space in which to store reference images for capture sample registration
-storyboard_cache(0),worm_detection_model_cache(0),posture_analysis_model_cache(0),
-  survival_data_cache(1),
+storyboard_cache(0), worm_detection_model_cache(0), posture_analysis_model_cache(0), survival_data_cache(0),
 #endif
 _verbose_debug_output(false), _cache_subdirectory("cache"), sql_database_choice(possible_sql_databases.end()), next_scan_for_problems_time(0),
-_terminal_window_scale_factor(1), _system_parallel_process_id(0), _allow_multiple_processes_per_system(false),sql_table_lock_manager(this),
-alert_handler_lock("ahl"), max_external_thread_id(1),currently_experiencing_a_disk_storage_emergency(false),verbose_disk_storage_reporting(false), last_verbose_disk_storage_reporting_time(0){
-
+_terminal_window_scale_factor(1), _system_parallel_process_id(0), _allow_multiple_processes_per_system(false), sql_table_lock_manager(this),
+alert_handler_lock("ahl"), max_external_thread_id(1), currently_experiencing_a_disk_storage_emergency(false), verbose_disk_storage_reporting(false), last_verbose_disk_storage_reporting_time(0) { 
 	ns_socket::global_init();
 	#ifndef NS_ONLY_IMAGE_ACQUISITION
 	ns_worm_detection_constants::init();
 	#endif
 	ns_set_global_debug_output_handler(ns_image_server_global_debug_handler);
-	_software_version_compile = 3;
+	_software_version_compile = 0;
 	image_storage.cache.set_memory_allocation_limit_in_kb(maximum_image_cache_memory_size());
 	system_host_name = ns_get_system_hostname();
 	//by default, run indefinately
@@ -257,129 +255,119 @@ void ns_image_server::calculate_experiment_disk_usage(const ns_64_bit experiment
 
 
 #ifndef NS_MINIMAL_SERVER_BUILD
-
 #ifndef NS_ONLY_IMAGE_ACQUISITION
-class ns_get_automated_job_scheduler_lock_for_scope{
-public:
-	ns_get_automated_job_scheduler_lock_for_scope(const unsigned long second_delay_until_next_run , ns_sql & sql):current_time(0),next_run_time(0),lock_held(false){
-		wait_for_lock(second_delay_until_next_run,sql);
-	};
-	void release(ns_sql & sql){release_lock(sql);}
-	bool run_requested(){return lock_held;}
-	~ns_get_automated_job_scheduler_lock_for_scope(){if (lock_held)release();}
-private:
-	unsigned long next_run_time,current_time;
+void ns_get_automated_job_scheduler_lock_for_scope::release() {
+	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__, __LINE__));
+	release_lock(sql());
+	sql.release();
+}
 
-	void release(){
-		ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
-		release_lock(sql());
-		sql.release();
-	}
-	bool lock_held;
+void ns_get_automated_job_scheduler_lock_for_scope::release_lock(ns_sql& sql) {
+	if (!lock_held) return;
+	//ns_sql_full_table_lock lock(sql,"automated_job_scheduling_data");
+	ns_sql_table_lock lock(image_server.sql_table_lock_manager.obtain_table_lock("automated_job_scheduling_data", &sql, true, __FILE__, __LINE__));
 
-	void release_lock(ns_sql & sql){
-		if (!lock_held) return;
-		//ns_sql_full_table_lock lock(sql,"automated_job_scheduling_data");
-		ns_sql_table_lock lock (image_server.sql_table_lock_manager.obtain_table_lock("automated_job_scheduling_data", &sql, true,__FILE__,__LINE__));
+	sql << "SELECT currently_running_host_id FROM automated_job_scheduling_data";
+	ns_sql_result res;
+	sql.get_rows(res);
 
-		sql << "SELECT currently_running_host_id FROM automated_job_scheduling_data";
-		ns_sql_result res;
-		sql.get_rows(res);
-
-		if (res.size() == 0){
-			lock.release(__FILE__,__LINE__);
-			image_server.register_server_event(ns_image_server_event("This client's lock on the automation process was deleted!"),&sql);
-			return;
-		}
-
-		if (ns_atoi64(res[0][0].c_str()) != image_server.host_id()){
-			lock.release(__FILE__, __LINE__);
-			image_server.register_server_event(ns_image_server_event("This client's lock on the automation process was usurped!"),&sql);
-			return;
-		}
-
-		sql << "UPDATE automated_job_scheduling_data SET currently_running_host_id = 0";
-		sql.send_query();
+	if (res.size() == 0) {
 		lock.release(__FILE__, __LINE__);
-		lock_held = false;
+		image_server.register_server_event(ns_image_server_event("This client's lock on the automation process was deleted!"), &sql);
+		return;
 	}
-	void wait_for_lock(const unsigned long second_delay_until_next_run, ns_sql & sql){
-		if (lock_held)
-			throw ns_ex("Attempting to take a automation lock that is already held!");
-		//unsigned long counter(0);
-		//while (true){
-		ns_sql_table_lock lock(image_server.sql_table_lock_manager.obtain_table_lock("automated_job_scheduling_data", &sql, true, __FILE__, __LINE__));
 
-		sql << "SELECT currently_running_host_id, acquisition_time, next_run_time,UNIX_TIMESTAMP() FROM automated_job_scheduling_data";
-			ns_sql_result res;
-			sql.get_rows(res);
-
-			if(res.size() == 0){
-				sql << "INSERT INTO automated_job_scheduling_data SET currently_running_host_id = 0";
-				sql.send_query();
-				get_ownership(second_delay_until_next_run,sql);
-				lock.release(__FILE__, __LINE__);
-				return;
-			}
-			if (res.size() > 1)
-				throw ns_ex("ns_get_automated_job_scheduler_lock_for_scope::wait_for_lock()::Multiple entries for lock : ") << res.size();
-			const ns_64_bit current_running_id(ns_atoi64(res[0][0].c_str())),
-								acquisition_time(atol(res[0][1].c_str())),
-								next_run_time(atol(res[0][2].c_str())),
-								cur_time(atol(res[0][3].c_str()));
-
-			//if no event has been registered as having been run, prepare to run it immediately
-			if (next_run_time == 0){
-				get_ownership(second_delay_until_next_run,sql);
-				lock.release(__FILE__, __LINE__);
-				return;
-			}
-			if (current_running_id != 0 && cur_time - acquisition_time >= image_server.automated_job_timeout_in_seconds()){
-				get_ownership(second_delay_until_next_run,sql);
-				lock.release(__FILE__, __LINE__);
-				image_server.register_server_event(ns_image_server_event("ns_get_automated_job_scheduler_lock_for_scope()::Claiming abandoned lock."),&sql);
-				return;
-			}
-			if (cur_time > next_run_time){
-				get_ownership(second_delay_until_next_run,sql);
-				lock.release(__FILE__, __LINE__);
-				return;
-			}
-			lock.release(__FILE__, __LINE__);
-
-		//	ns_thread::sleep(2);
-		//	counter++;
-		//	if (counter == 30)
-		//		throw ns_ex("Giving up waiting for automation lock!");
-		//}
+	if (ns_atoi64(res[0][0].c_str()) != image_server.host_id()) {
+		lock.release(__FILE__, __LINE__);
+		image_server.register_server_event(ns_image_server_event("This client's lock on the automation process was usurped!"), &sql);
+		return;
 	}
-	inline ns_64_bit id(){
-		ns_64_bit id = image_server.host_id();
-		if (id == 0) id = 666;
-		return id;
-	}
-	inline void get_ownership(const unsigned long second_delay_until_next_run, ns_sql & sql){
-		sql << "SELECT UNIX_TIMESTAMP()";
-		current_time = sql.get_integer_value();
-		next_run_time = current_time + second_delay_until_next_run;
 
-		sql << "UPDATE automated_job_scheduling_data SET currently_running_host_id = " << id()
-			<< ", acquisition_time = " << current_time
-			<< ", next_run_time = " << next_run_time;
+	sql << "UPDATE automated_job_scheduling_data SET currently_running_host_id = 0";
+	sql.send_query();
+	lock.release(__FILE__, __LINE__);
+	lock_held = false;
+}
+void ns_get_automated_job_scheduler_lock_for_scope::wait_for_lock(const unsigned long second_delay_until_next_run, ns_sql& sql, bool ignore_time_limits) {
+	if (lock_held)
+		throw ns_ex("Attempting to take a automation lock that is already held!");
+	//unsigned long counter(0);
+	//while (true){
+	ns_sql_table_lock lock(image_server.sql_table_lock_manager.obtain_table_lock("automated_job_scheduling_data", &sql, true, __FILE__, __LINE__));
 
+	sql << "SELECT currently_running_host_id, acquisition_time, next_run_time,UNIX_TIMESTAMP() FROM automated_job_scheduling_data";
+	ns_sql_result res;
+	sql.get_rows(res);
+
+	if (res.size() == 0) {
+		sql << "INSERT INTO automated_job_scheduling_data SET currently_running_host_id = 0";
 		sql.send_query();
-		lock_held = true;
+		get_ownership(second_delay_until_next_run, sql);
+		lock.release(__FILE__, __LINE__);
+		return;
 	}
-};
-void ns_image_server_automated_job_scheduler::scan_for_tasks(ns_sql & sql) {
+	if (res.size() > 1)
+		throw ns_ex("ns_get_automated_job_scheduler_lock_for_scope::wait_for_lock()::Multiple entries for lock : ") << res.size();
+	const ns_64_bit current_running_id(ns_atoi64(res[0][0].c_str())),
+		acquisition_time(atol(res[0][1].c_str())),
+		next_run_time(atol(res[0][2].c_str())),
+		cur_time(atol(res[0][3].c_str()));
+	//if no event has been registered as having been run, prepare to run it immediately
+	if (next_run_time == 0) {
+		get_ownership(second_delay_until_next_run, sql);
+		lock.release(__FILE__, __LINE__);
+		return;
+	}
+	if (current_running_id != 0 && cur_time - acquisition_time >= image_server.automated_job_timeout_in_seconds()) {
+		get_ownership(second_delay_until_next_run, sql);
+		lock.release(__FILE__, __LINE__);
+		image_server.register_server_event(ns_image_server_event("ns_get_automated_job_scheduler_lock_for_scope()::Claiming abandoned lock."), &sql);
+		return;
+	}
+	if (ignore_time_limits || cur_time > next_run_time) {
+		get_ownership(second_delay_until_next_run, sql);
+		lock.release(__FILE__, __LINE__);
+		return;
+	}
+	lock.release(__FILE__, __LINE__);
 
-	ns_get_automated_job_scheduler_lock_for_scope lock(image_server.automated_job_interval(),sql);
+	//	ns_thread::sleep(2);
+	//	counter++;
+	//	if (counter == 30)
+	//		throw ns_ex("Giving up waiting for automation lock!");
+	//}
+}
+ns_64_bit ns_get_automated_job_scheduler_lock_for_scope::id() {
+	ns_64_bit id = image_server.host_id();
+	if (id == 0) id = 666;
+	return id;
+}
+void ns_get_automated_job_scheduler_lock_for_scope::get_ownership(const unsigned long second_delay_until_next_run, ns_sql& sql) {
+	sql << "SELECT UNIX_TIMESTAMP()";
+	current_time = sql.get_integer_value();
+	next_run_time = current_time + second_delay_until_next_run;
+
+	sql << "UPDATE automated_job_scheduling_data SET currently_running_host_id = " << id()
+		<< ", acquisition_time = " << current_time
+		<< ", next_run_time = " << next_run_time;
+
+	sql.send_query();
+	lock_held = true;
+}
+
+void ns_image_server_automated_job_scheduler::scan_for_tasks(ns_sql & sql, bool ignore_timers_and_run_now) {
+	unsigned long timer_interval = image_server.automated_job_interval();
+	if (ignore_timers_and_run_now)
+		timer_interval = 0;
+	ns_get_automated_job_scheduler_lock_for_scope lock(timer_interval,sql);
 	if (!lock.run_requested()){
 		lock.release(sql);
 		return;
 	}
 	image_server.register_server_event(ns_image_server_event("Running automated job scheduler"),&sql);
+
 	unsigned long start_time(ns_current_time());
+	image_server.update_posture_analysis_model_registry(sql,false);
 	calculate_capture_schedule_boundaries(sql);
 	identify_experiments_needing_captured_image_protection(sql);
 	handle_when_completed_priority_jobs(sql);
@@ -519,7 +507,7 @@ void ns_image_server_automated_job_scheduler::schedule_detection_jobs_for_region
 
 
 void ns_image_server::perform_experiment_maintenance(ns_sql & sql) const{
-	automated_job_scheduler.scan_for_tasks(sql);
+	automated_job_scheduler.scan_for_tasks(sql,false);
 }
 #endif
 #endif
@@ -897,7 +885,9 @@ bool ns_image_server::upgrade_tables(ns_sql_connection * sql, const bool just_te
 		sql->send_query();
 		changes_made = true;
 	}
+
 	if (!updating_local_buffer) {
+
 		if (!ns_sql_column_exists("sample_region_image_info", "position_analysis_model", sql)) {
 			if (just_test_if_needed)
 				return true;
@@ -1122,13 +1112,34 @@ bool ns_image_server::upgrade_tables(ns_sql_connection * sql, const bool just_te
 
 		*sql << "SHOW TABLES IN " << schema_name;
 		sql->get_rows(res);
+		bool found_model_registry_table = false;
+		for (unsigned int i = 0; i < res.size(); i++) {
+			if (res[i][0] == "analysis_model_registry") {
+				found_model_registry_table = true;
+				break;
+			}
+		}
+		if (!found_model_registry_table) {
+			if (just_test_if_needed)
+				return true;
+			cout << "Creating analysis model registry table\n";
+			*sql << "CREATE TABLE `analysis_model_registry` ("
+				"`name` TEXT NOT NULL,"
+				"`version` TEXT NOT NULL,"
+				"`analysis_method` VARCHAR(10) NOT NULL DEFAULT '',"
+				"`analysis_step` VARCHAR(10) NOT NULL DEFAULT '',"
+				"`file_time` BIGINT NULL DEFAULT '0'"
+				") ENGINE = InnoDB";
+			sql->send_query();
+			changes_made = true;
+		}
 		if (res.size() > 0) {
 			bool found(false);
 			for (unsigned int i = 0; i < res.size(); i++) {
 				if (res[i][0] == "sample_time_relationships") {
 					if (just_test_if_needed)
 						return true;
-					if (!found) cout << "Dropping Unused tables...";
+					if (!found) cout << "Dropping unused tables...\n";
 					*sql << "DROP TABLE `sample_time_relationships`";
 					sql->send_query();
 					changes_made = true;
@@ -1137,7 +1148,7 @@ bool ns_image_server::upgrade_tables(ns_sql_connection * sql, const bool just_te
 				else if (res[i][0] == "worm_movement") {
 					if (just_test_if_needed)
 						return true;
-					if (!found) cout << "Dropping Unused tables....";
+					if (!found) cout << "Dropping unused tables....\n";
 					*sql << "DROP TABLE `worm_movement`";
 					sql->send_query();
 					changes_made = true;
@@ -1147,7 +1158,7 @@ bool ns_image_server::upgrade_tables(ns_sql_connection * sql, const bool just_te
 				else if (res[i][0] == "processing_job_log") {
 					if (just_test_if_needed)
 						return true;
-					if (!found) cout << "Dropping Unused tables.....";
+					if (!found) cout << "Dropping unused tables.....\n";
 					*sql << "DROP TABLE `processing_job_log`";
 					sql->send_query();
 					changes_made = true;
@@ -1489,11 +1500,24 @@ void ns_image_server::create_and_configure_sql_database(bool local, const std::s
 		sql << "DROP SCHEMA " << db;
 		sql.send_query();
 	}
-
-	sql << "CREATE USER IF NOT EXISTS '" << username << "'@'%' identified by '" << password << "'";
+	sql << "SELECT EXISTS(SELECT 1 FROM mysql.user WHERE user = '" << username << "' AND host='%')";
+	ns_sql_result tmp;
+	sql.get_rows(tmp);
+	if (tmp.empty())
+		throw ns_ex("mysql.user table not found!");
+	if (tmp[0][0] == "0"){
+		sql << "CREATE USER '" << username << "'@'%' identified by '" << password << "'";
+		sql.send_query();
+	}
+ 	sql << "SELECT EXISTS(SELECT 1 FROM mysql.user WHERE user = '" << username << "' AND host='localhost')";
+        
+        sql.get_rows(tmp);
+        if (tmp.empty())	
+                throw ns_ex("mysql.user table not found!");
+        if (tmp[0][0] == "0"){	
+	sql << "CREATE USER '" << username << "'@'localhost' identified by '" << password << "'";
 	sql.send_query();
-	sql << "CREATE USER IF NOT EXISTS '" << username << "'@'localhost' identified by '" << password << "'";
-	sql.send_query();
+}
 
 	sql << "CREATE DATABASE " << db;
 	sql.send_query();
@@ -2499,7 +2523,7 @@ void ns_image_server::open_log_file(const ns_image_server::ns_image_server_exec_
 		log_suffix = "_server";
 		break;
 	case ns_worm_terminal_type:
-		log_suffix = "_terminal";
+		log_suffix = "_worm_browser";
 		break;
 	case ns_sever_updater_type:
 		log_suffix = "_updater";
@@ -3351,7 +3375,7 @@ void ns_image_server::get_posture_analysis_model_for_region(const ns_64_bit regi
 		throw ns_ex("ns_image_server::get_posture_analysis_model_for_region()::Could not find region ") << region_info_id << " in db";
 	if (res[0][0].size() == 0)
 		throw ns_ex("ns_image_server::get_posture_analysis_model_for_region()::No posture analysis model was specified for region ")<< region_info_id;
-
+	//cout << "Loading region " << res[0][0] << "\n";
 	if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("get_posture_analysis_model_for_region::sql result checked"));
 	ns_posture_analysis_model_entry_source source;
 	source.analysis_method = (ns_posture_analysis_model::method_from_string(res[0][1]));
@@ -3377,28 +3401,25 @@ void ns_posture_analysis_model_entry::load_from_external_source(const std::strin
 
 	if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("ns_posture_analysis_model_entry::opening"));
 	name = name_;
+	model_specification.name = name_;
 	model_specification.posture_analysis_method = external_source.analysis_method;
-	if (model_specification.posture_analysis_method == ns_posture_analysis_model::ns_hidden_markov) {
-		ifstream moving((external_source.model_directory + name + "_moving.csv").c_str());
+	if (model_specification.posture_analysis_method == ns_posture_analysis_model::ns_hidden_markov || model_specification.posture_analysis_method == ns_posture_analysis_model::ns_threshold_and_hmm) {
+		ifstream moving((external_source.model_directory + name + ".csv").c_str());
 		if (moving.fail())
-			throw ns_ex("Could not load ") << external_source.model_directory + name + "_moving.csv";
+			throw ns_ex("Could not load ") << external_source.model_directory + name + ".csv";
 
-		ifstream dead((external_source.model_directory + name + "_dead.csv").c_str());
-		if (dead.fail())
-			throw ns_ex("Could not load ") << external_source.model_directory + name + "_dead.csv";
-		model_specification.hmm_posture_estimator.read(moving, dead);
-		model_specification.name = name_;
-		dead.close();
+		model_specification.hmm_posture_estimator.read(moving);
 		moving.close();
+		if (model_specification.posture_analysis_method == ns_posture_analysis_model::ns_hidden_markov)
 		return;
 	}
-	if (model_specification.posture_analysis_method == ns_posture_analysis_model::ns_threshold) {
+	if (model_specification.posture_analysis_method == ns_posture_analysis_model::ns_threshold || model_specification.posture_analysis_method == ns_posture_analysis_model::ns_threshold_and_hmm) {
 		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("ns_posture_analysis_model_entry::threshold"));
 		ifstream thresh((external_source.model_directory + name + "_threshold.csv").c_str());
 		if (thresh.fail()) {
 
 			if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("ns_posture_analysis_model_entry::error!"));
-			throw ns_ex("Could not load ") << external_source.model_directory + name + "_thresh.csv";
+			throw ns_ex("Could not load ") << external_source.model_directory + name + "_threshold.csv";
 		}
 
 		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("ns_posture_analysis_model_entry::reading"));
@@ -3410,11 +3431,138 @@ void ns_posture_analysis_model_entry::load_from_external_source(const std::strin
 		return;
 	}
 	if (model_specification.posture_analysis_method == ns_posture_analysis_model::ns_not_specified)
-		throw ns_ex("The plate does not have a posture analysis method specified.");
-	throw ns_ex("The plate has an unrecognized posture analysis method specified.");
+		throw ns_ex("The posture analysis model specificied, ") << model_specification.name << ", does not have a method specification.";
+	if (model_specification.posture_analysis_method == ns_posture_analysis_model::ns_unknown)
+		throw ns_ex("The posture analysis model specificied, ") << model_specification.name << ", has an unknown method specification.";
+	throw ns_ex("The posture analysis model specificied, ") << model_specification.name << ", has an invalid method specification: " << (int)model_specification.posture_analysis_method;
+
 }
 
+struct ns_posture_analysis_model_registry_entry {
+	ns_posture_analysis_model_registry_entry(){}
+	ns_posture_analysis_model_registry_entry(const std::string& n, const ns_posture_analysis_model::ns_posture_analysis_method& m, const std::string& v, const unsigned long f) :
+		name(n), method(m), version(v),file_time(f){}
+	std::string name;
+	ns_posture_analysis_model::ns_posture_analysis_method method;
+	std::string version;
+	unsigned long file_time;
+};
+void ns_image_server::update_posture_analysis_model_registry(ns_sql& sql, bool force) {
 
+	ns_posture_analysis_model_entry_source source;
+	source.model_directory = image_server.long_term_storage_directory + DIR_CHAR_STR + image_server.posture_analysis_model_directory() + DIR_CHAR_STR;
+
+
+	ns_dir dir;
+	std::vector<std::string> files;
+	dir.load_masked(source.model_directory, ".csv", files);
+
+	sql << "SELECT name, analysis_method, file_time FROM analysis_model_registry WHERE analysis_step='posture'";
+	ns_sql_result models_in_registry;
+	sql.get_rows(models_in_registry);
+
+	std::vector<std::string> names(files.size());
+	std::vector<char>is_threshold(files.size());
+	std::vector< ns_posture_analysis_model::ns_posture_analysis_method> models_to_try;
+	std::vector<unsigned long>file_modified_times(files.size());
+	for (unsigned int i = 0; i < files.size(); i++) {
+		models_to_try.resize(0);
+		std::string::size_type threshold_pos = files[i].find("_threshold.csv");
+		std::string name;
+		if (threshold_pos != files[i].npos) {
+			names[i] = files[i].substr(0, threshold_pos);
+			is_threshold[i] = 1;
+		}
+		else {
+			names[i] = files[i].substr(0, files[i].size() - 4); //remove .csv
+			is_threshold[i] = 0;
+		}
+	}
+	bool need_to_reset_registry = force;
+	std::vector<ns_posture_analysis_model_registry_entry> models;
+	models.reserve(names.size());
+	for (unsigned int i = 0; i < names.size(); i++) 
+	  file_modified_times[i] = ns_dir::get_file_timestamp(source.model_directory + files[i]);
+	
+	if (!force)
+	for (unsigned int i = 0; i < names.size(); i++) {
+		bool found_in_registry = false;
+		for (unsigned int j = 0; j < models_in_registry.size(); j++) {
+			if (names[i] == models_in_registry[j][0]) {
+				const unsigned long last_modified_time = atol(models_in_registry[i][2].c_str());
+				if (last_modified_time >= file_modified_times[i])
+					found_in_registry = true;
+				break;
+			}
+		}
+		if (!found_in_registry)
+			need_to_reset_registry = true;
+	}
+	if (!force && !need_to_reset_registry) {
+		for (unsigned int j = 0; j < models_in_registry.size(); j++) {
+			bool found_on_disk = false;
+			for (unsigned int i = 0; i < names.size(); i++) {
+				if (names[i] == models_in_registry[j][0]) {
+					const unsigned long last_modified_time = atol(models_in_registry[i][2].c_str());
+					if (last_modified_time >= file_modified_times[i])
+						found_on_disk = true;
+					break;
+				}
+			}
+			if (!found_on_disk)
+				need_to_reset_registry = true;
+		}
+	}
+	if (!need_to_reset_registry)
+		return;
+	cout << "Updating Analysis Model Registry\n";
+	for (unsigned int i = 0; i < names.size(); i++){
+		models_to_try.resize(0);
+		const std::string& name = names[i];
+
+		if (is_threshold[i])
+			models_to_try.push_back(ns_posture_analysis_model::ns_threshold);
+		else{
+			models_to_try.push_back(ns_posture_analysis_model::ns_threshold_and_hmm);
+			models_to_try.push_back(ns_posture_analysis_model::ns_hidden_markov);
+		}
+
+		bool found = false;
+		for (int j = 0; j < models_to_try.size(); j++){
+			try {
+				source.analysis_method = models_to_try[j];
+				ns_posture_analysis_model_cache::const_handle_t handle;
+				posture_analysis_model_cache.get_for_read(name, handle, source);
+
+				models.push_back(ns_posture_analysis_model_registry_entry(name, source.analysis_method,handle().model_specification.threshold_parameters.version_flag, file_modified_times[i]));
+				handle.release();
+				found = true;
+				break;
+			}
+			catch (ns_ex & ex) {
+				cout << ".";
+				//not a valid model of this type.
+			}
+		}
+		if (!found) {
+			cout << "Encountered an file with an unrecognizable format in the model directory:" << name << "\n";
+			models.push_back(ns_posture_analysis_model_registry_entry(name, ns_posture_analysis_model::ns_unknown, "?", file_modified_times[i]));
+		}
+	}
+	if (models.size() > 0) {
+		sql.set_autocommit(false);
+		sql.send_query("START TRANSACTION");
+		sql.send_query("LOCK TABLES analysis_model_registry WRITE");
+		sql.send_query("DELETE FROM analysis_model_registry");
+		for (unsigned int i = 0; i < models.size(); i++) {
+			sql << "INSERT INTO analysis_model_registry SET name='" << models[i].name << "', analysis_method='" << ns_posture_analysis_model::method_to_string(models[i].method) << "', version='" << models[i].version << "', analysis_step='posture', file_time = " << models[i].file_time;
+			//cout << sql.query() << "\n";
+			sql.send_query();
+		}
+		sql.send_query("COMMIT");
+		sql.send_query("UNLOCK TABLES");
+	}
+}
 
 ns_time_path_solver_parameters ns_image_server::get_position_analysis_model(const std::string & model_name,bool create_default_if_does_not_exist,const ns_64_bit region_info_id_for_default, ns_sql * sql_for_default) const{
 
@@ -3499,7 +3647,7 @@ void ns_svm_model_specification_entry::load_from_external_source(const std::stri
 			if (!spec.model.read(fn.c_str()))
 				throw ns_ex("ns_image_server::Could not load SVM model file: ") << fn;
 	#else
-			model_specification.model = svm_load_model(fn.c_str());
+			model_specification.model = std::shared_ptr<svm_model>(svm_load_model(fn.c_str()),ns_svm_model_specification::ns_svm_deleter);
 			if (model_specification.model == NULL)
 				throw ns_ex("ns_image_server::Could not load SVM model file:") << fn;
 	#endif
@@ -3638,10 +3786,20 @@ ns_image_storage_reciever_handle<ns_8_bit> ns_image_server_results_storage::move
 ns_image_storage_reciever_handle<ns_8_bit> ns_image_server_results_storage::machine_learning_training_set_image(ns_image_server_results_subject & spec, const unsigned long max_line_length, ns_sql & sql){
 	spec.get_names(sql);
 	string path( machine_learning_training_set_folder());
-	ns_image_server_results_file f(results_directory,path,spec.region_filename() +"=training_set.tif");
-	ns_dir::create_directory_recursive(path);
+	ns_image_server_results_file f(results_directory, spec.experiment_name + DIR_CHAR_STR + path,spec.region_filename() +"=training_set.tif");
+	ns_dir::create_directory_recursive(f.dir());
 	return ns_image_storage_reciever_handle<ns_image_storage_handler::ns_component>(new ns_image_storage_reciever_to_disk<ns_image_storage_handler::ns_component>(max_line_length, f.path(),ns_tiff,false));
-
+}
+ns_ostream * ns_image_server_results_storage::machine_learning_training_set_metadata(ns_image_server_results_subject& spec, const unsigned long max_line_length, const ns_image_type& image_type, ns_sql& sql) {
+	spec.get_names(sql);
+	string path(machine_learning_training_set_folder());
+	std::string fname = spec.region_filename() + "=training_set";
+	ns_add_image_suffix(fname, image_type);
+	ns_image_server_results_file f(results_directory, spec.experiment_name + DIR_CHAR_STR + path, fname);
+	ns_dir::create_directory_recursive(f.dir());
+	if (image_type == ns_csv_gz || image_type == ns_wrm_gz || image_type == ns_xml_gz)
+		return new ns_ostream(new ogzstream(f.path().c_str(),ios_base::binary));
+	return new ns_ostream(new ofstream(f.path().c_str()));
 }
 ns_image_server_results_file ns_image_server_results_storage::optimized_posture_analysis_parameter_set(ns_image_server_results_subject & spec, const std::string & type, ns_sql & sql) const {
 	spec.get_names(sql);
@@ -3672,7 +3830,7 @@ ns_image_server_results_file ns_image_server_results_storage::time_path_image_an
 			else fname = spec.experiment_filename();
 		}
 		fname += type + abbreviated;
-		ns_add_image_suffix(fname,ns_csv);
+		ns_add_image_suffix(fname,ns_csv_gz);
 
 		if (store_in_results_directory)
  			return ns_image_server_results_file(results_directory,spec.experiment_name + DIR_CHAR_STR + dir, fname);

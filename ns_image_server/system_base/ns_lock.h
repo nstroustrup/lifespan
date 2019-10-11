@@ -18,16 +18,19 @@
 
 class ns_lock{
 public:
-	ns_lock(){}
-	ns_lock(const std::string & lock_name_){init(lock_name_);}
+ ns_lock():mute_debug_output(false),currently_holding(false){}
+ ns_lock(const std::string & lock_name_):mute_debug_output(false), currently_holding(false){init(lock_name_);}
 	void init(const std::string & lock_name);
 	~ns_lock();
 
 	void wait_to_acquire(const char * source_file, const unsigned int source_line);
 	bool try_to_acquire(const char * source_file, const unsigned int source_line);
-
+	ns_lock(const ns_lock & lock) {
+	  //std::cerr << "Copying lock!\n";
+		init(lock.name + "(1)");
+	}
 	void release();
-
+	bool mute_debug_output;
 private:
 
 	bool currently_holding;

@@ -5,7 +5,8 @@
 #include <iostream>
 #include "ns_hand_annotation_loader.h"
 #include "ns_hidden_markov_model_posture_analyzer.h"
-bool ns_machine_analysis_region_data::load_from_db(const ns_death_time_annotation_set::ns_annotation_type_to_load & annotation_type_to_load,const ns_loading_details & details,const ns_64_bit region_id,ns_sql & sql){
+bool ns_machine_analysis_region_data::load_from_db(const ns_death_time_annotation_set::ns_annotation_type_to_load & annotation_type_to_load,
+												   const ns_loading_details & details,const ns_64_bit region_id,ns_sql & sql){
 	death_time_annotation_set.clear();
 	metadata.region_id = region_id;
 	if (annotation_type_to_load == ns_death_time_annotation_set::ns_recalculate_from_movement_quantification_data)
@@ -33,13 +34,21 @@ bool ns_machine_analysis_region_data::load_from_db(const ns_death_time_annotatio
 	}
 	bool could_load_all_files(true);
 	for (unsigned int i = 0; i < files_to_open.size(); i++){
-		ns_image_server_results_file results(image_server.results_storage.machine_death_times(results_subject,files_to_open[i],"time_path_image_analysis",sql));
-		ns_acquire_for_scope<std::istream> tp_i(results.input());
+		ns_acquire_for_scope<ns_istream> tp_i(0);
+
+		ns_image_server_results_file results(image_server.results_storage.machine_death_times(results_subject, files_to_open[i], "time_path_image_analysis", sql,true));
+		tp_i.attach(results.input());
+
 		if (tp_i.is_null()){
-			could_load_all_files = false;
-			continue;
+			//try to load old-style uncompressed if compressed is not found
+			ns_image_server_results_file results(image_server.results_storage.machine_death_times(results_subject, files_to_open[i], "time_path_image_analysis", sql, false));
+			tp_i.attach(results.input());
+			if (tp_i.is_null()) {
+				could_load_all_files = false;
+					continue;
+			}
 		}
-		death_time_annotation_set.read(annotation_type_to_load,tp_i(),details==ns_machine_analysis_region_data::ns_exclude_fast_moving_animals);
+		death_time_annotation_set.read(annotation_type_to_load,tp_i()(),details==ns_machine_analysis_region_data::ns_exclude_fast_moving_animals);
 		tp_i.release();
 	}
 	if (!could_load_all_files)
@@ -96,7 +105,7 @@ bool ns_machine_analysis_region_data::recalculate_from_saved_movement_quantifica
 		ns_acquire_for_scope<ns_analyzed_image_time_path_death_time_estimator> death_time_estimator(
 				ns_get_death_time_estimator_from_posture_analysis_model(posture_analysis_model_handle().model_specification));
 
-	time_path_image_analyzer->load_completed_analysis(region_id,time_path_solution,time_series_denoising_parameters, &death_time_estimator(),sql);
+	time_path_image_analyzer->load_completed_analysis_(region_id,time_path_solution,time_series_denoising_parameters, &death_time_estimator(),sql,false);
 	death_time_estimator.release();
 	//generate annotations from quantification
 	
@@ -107,23 +116,24 @@ bool ns_machine_analysis_region_data::recalculate_from_saved_movement_quantifica
 	ns_image_server_results_subject results_subject;
 	results_subject.region_id = region_id;
 	ns_image_server_results_file censoring_results(image_server.results_storage.machine_death_times(results_subject,ns_image_server_results_storage::ns_censoring_and_movement_transitions,
-				"time_path_image_analysis",sql));
+				"time_path_image_analysis",sql,true));
 	ns_image_server_results_file state_results(image_server.results_storage.machine_death_times(results_subject,ns_image_server_results_storage::ns_worm_position_annotations,
-				"time_path_image_analysis",sql));
-	ns_acquire_for_scope<std::ostream> censoring_out(censoring_results.output());
-	ns_acquire_for_scope<std::ostream> state_out(state_results.output());
-	death_time_annotation_set.write_split_file_column_format(censoring_out(),state_out());
+				"time_path_image_analysis",sql,true));
+	ns_acquire_for_scope<ns_ostream> censoring_out(censoring_results.output());
+	ns_acquire_for_scope<ns_ostream> state_out(state_results.output());
+	death_time_annotation_set.write_split_file_column_format(censoring_out()(),state_out()());
 	censoring_out.release();
 	state_out.release();
 	return true;
 }
 
-void ns_machine_analysis_sample_data::load(const ns_death_time_annotation_set::ns_annotation_type_to_load & annotation_type_to_load,const ns_64_bit sample_id, const ns_region_metadata & sample_metadata,ns_sql & sql, 
-	const ns_64_bit specific_region_id, const bool include_excluded_regions, const  ns_machine_analysis_region_data::ns_loading_details & loading_details){
+void ns_machine_analysis_sample_data::load(const ns_death_time_annotation_set::ns_annotation_type_to_load & annotation_type_to_load,const ns_64_bit sample_id, const ns_region_metadata & sample_metadata,
+		ns_time_path_image_movement_analysis_memory_pool<ns_wasteful_overallocation_resizer> & memory_pool, ns_sql & sql,
+		const ns_64_bit specific_region_id, const bool include_excluded_regions, const  ns_machine_analysis_region_data::ns_loading_details & loading_details){
 	bool calculate_missing_data = false;
 	device_name_ = sample_metadata.device;
 	ns_sql_result reg;
-	sql << "SELECT r.id FROM sample_region_image_info as r WHERE r.sample_id = " << sample_id << " AND r.censored=0 ";
+	sql << "SELECT r.id, r.excluded_from_analysis, r.censored FROM sample_region_image_info as r WHERE r.sample_id = " << sample_id << " AND r.censored=0 ";
 	if (!include_excluded_regions)
 			sql << " AND r.excluded_from_analysis=0";
 	if (specific_region_id!=0)
@@ -138,16 +148,19 @@ void ns_machine_analysis_sample_data::load(const ns_death_time_annotation_set::n
 		try{
 			const unsigned int s = regions.size();
 			regions.resize(s+1);
-			regions[s] = new ns_machine_analysis_region_data;
+			regions[s] = new ns_machine_analysis_region_data(memory_pool);
 			ns_64_bit region_id = ns_atoi64(reg[i][0].c_str());
 			regions[s]->metadata = sample_metadata;
 			regions[s]->metadata.load_only_region_info_from_db(region_id,"",sql);
 			regions[s]->metadata.technique = "Lifespan Machine";
 			regions[s]->load_from_db(annotation_type_to_load,loading_details,region_id,sql);
+			regions[s]->excluded = reg[i][1] != "0";
+			regions[s]->censored = reg[i][2] != "0";
+			//std::cout << region_id << " " <<	regions[s]->metadata.plate_name() << " " << reg[i][2] << "\n";
 			//break;
 		}
 		catch(ns_ex & ex){
-			std::cerr << (*regions.rbegin())->metadata.sample_name << "::" << (*regions.rbegin())->metadata.region_name << ": " << ex.text() << "\n";
+			image_server.add_subtext_to_current_event("The following error prevented plate data from being produced for " + (*regions.rbegin())->metadata.sample_name + "::" + (*regions.rbegin())->metadata.region_name + ": " + ex.text() + "\n" , &sql);
 			regions.pop_back();
 		}
 	}
@@ -176,7 +189,7 @@ void ns_machine_analysis_data_loader::load_just_survival(ns_lifespan_experiment_
 			last_r = r;
 		}
 		metadata.load_only_sample_info_from_db(samples[i].id(),sql);
-		samples[i].load(ns_death_time_annotation_set::ns_censoring_and_movement_transitions,metadata.sample_id,metadata,sql,region_id,load_excluded_regions);
+		samples[i].load(ns_death_time_annotation_set::ns_censoring_and_movement_transitions,metadata.sample_id,metadata,memory_pool,sql,region_id,load_excluded_regions);
 		ns_death_time_annotation_compiler compiler;
 		for (unsigned int j = 0 ; j < samples[i].regions.size(); j++){
 			samples[i].regions[j]->metadata.genotype = genotypes.genotype_from_strain(samples[i].regions[j]->metadata.strain,&sql);
@@ -224,7 +237,7 @@ void ns_machine_analysis_data_loader::load(const ns_death_time_annotation_set::n
 		metadata.load_only_sample_info_from_db(samples[i].id(),sql);
 	//	if (metadata.sample_name != "frog_c")
 	//		continue;
-		samples[i].load(annotation_types_to_load,metadata.sample_id,metadata,sql,region_id,load_excluded_regions,details);
+		samples[i].load(annotation_types_to_load,metadata.sample_id,metadata,memory_pool,sql,region_id,load_excluded_regions,details);
 		for (unsigned int j = 0 ; j < samples[i].regions.size(); j++)	
 			samples[i].regions[j]->metadata.genotype = genotypes.genotype_from_strain(samples[i].regions[j]->metadata.strain,&sql);
 		total_number_of_regions_+=samples[i].regions.size();
@@ -279,6 +292,7 @@ void ns_machine_analysis_data_loader::set_up_spec_to_load(const ns_64_bit & regi
 	}
 	else{
 		//add just the sample
+		samples.resize(0);
 		samples.resize(1,sample_id);
 	}
 	

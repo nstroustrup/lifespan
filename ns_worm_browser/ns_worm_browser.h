@@ -55,13 +55,12 @@ using namespace std;
 #endif
 #include "ns_experiment_storyboard_annotater.h"
 #include "ns_death_time_solo_posture_annotater.h"
+#include "ns_worm_detection_set_annotater.h"
 
 extern bool output_debug_messages;
 extern std::ofstream debug_output;
 
 #include "ns_process_16_bit_images.h"
-void ns_run_first_thermometer_experiment();
-
 void ns_to_lower(std::string & s);
 
 void ns_update_main_information_bar(const std::string & status);
@@ -74,9 +73,11 @@ ns_vector_2i worm_image_window_size_difference();
 
 void ns_worm_browser_output_debug(const unsigned long line_number,const std::string & source, const std::string & message);
 
-
+void ns_fl_lock(const char * file,unsigned long line);
+void ns_fl_unlock(const char * file, unsigned long line);
 void report_changes_made_to_screen();
 
+void ns_output_error();
 void ns_set_main_window_annotation_controls_activity(const bool active);
 
 std::string ns_extract_scanner_name_from_filename(const std::string & filename);
@@ -331,8 +332,10 @@ public:
 			string experiment_name;
 			if (!get_experiment_name(experiment_id_,experiment_name))
 				throw ns_ex("Could not find experiment in cached experiment information.");
+			cerr << "Selecting experiment " << experiment_name << "\n";
 		}
 		if (experiment_id_ != 0){
+
 			load(experiment_id_,sql);
 			experiment_id = experiment_id_;
 		}
@@ -340,7 +343,7 @@ public:
 
 	bool select_default_sample_and_region(){
 		
-		ns_worm_browser_output_debug(__LINE__,__FILE__,"Slecting default sample and region");
+		ns_worm_browser_output_debug(__LINE__,__FILE__,"Selecting default sample and region");
 		cur_strain = 0;
 		//if (!experiment_strains.empty())
 		//	cur_strain = &experiment_strains.begin()->second;
@@ -360,6 +363,11 @@ public:
 	void select_region(const string & sample_region_name){
 		if (experiment_id == 0)
 			return;
+		if (sample_region_name == "All Regions") {
+			cur_sample = 0;
+			cur_region = 0;
+			return;
+		}
 		string sample_name,region_name;
 		std::string::size_type p(sample_region_name.find("::"));
 		if (p == std::string::npos)
@@ -408,7 +416,11 @@ public:
 	bool sample_selected() const{return cur_sample!=0;}
 	bool experiment_selected() const{return experiment_id!=0;}
 	const ns_experiment_region_chooser_sample & current_sample(){if (cur_sample==0)throw ns_ex("No sample selected!"); else return *cur_sample;}
-	const ns_experiment_region_chooser_region & current_region(){if (cur_region==0)throw ns_ex("No region selected!"); else return *cur_region;}
+	const ns_experiment_region_chooser_region & current_region(){
+		if (cur_region==0)
+			throw ns_ex("No region selected!"); 
+		else return *cur_region;
+	}
 
 	void load(const unsigned long experiment_id,ns_sql & sql){
 		if (experiment_id == 0)
@@ -507,7 +519,7 @@ public:
 
 class ns_gl_window_data{
 public:
-	ns_gl_window_data(const string & window_name):gl_buffer(0),display_lock(string("ns_lock::display_") + window_name),redraw_requested(false),display_rescale_factor(1 / ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor),
+	ns_gl_window_data(const string & window_name):gl_buffer(0),display_lock(string("ns_lock::display_") + window_name),redraw_requested(false),display_rescale_factor(1.0 / ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor),
 		dynamic_range_rescale_factor(1),worm_image_size(10,10),telemetry_size(10,10), gl_image_size(10,10),image_zoom(1), pre_gl_downsample(1){}
 	ns_vector_2i worm_image_size,
 		telemetry_size,
@@ -524,7 +536,7 @@ public:
 	void redraw_screen(){
 		redraw_requested = true;
 	}
-
+	void update_display();
 	//void redraw_screen(const unsigned long w, const unsigned long h,const bool resize=true){
 	//	redraw_requested=true;
 	//}	
@@ -544,7 +556,8 @@ public:
 		ns_annotate_death_times_in_region,
 		ns_annotate_storyboard_region,
 		ns_annotate_storyboard_sample,
-		ns_annotate_storyboard_experiment
+		ns_annotate_storyboard_experiment,
+		ns_annoate_worm_detection_set
 	} ns_behavior_mode;
 
 	
@@ -561,13 +574,14 @@ public:
 	}
 	ns_worm_learner():behavior_mode(ns_draw_boxes),mask_analyzer(4096), process_mask_menu_displayed(false),
 		worm_detection_results(0),model_specification(&default_model),last_annotation_type_loaded(ns_death_time_annotation_set::ns_no_annotations),
-		current_image_lock("ns_worm_learner::current_image"),
+	  current_image_lock("ns_worm_learner::current_image"),storyboard_lock("sbl"),
 		movement_data_is_strictly_decreasing_(false),overwrite_existing_mask_when_submitting(false),output_svg_spines(false),static_mask(0),generate_mp4_(false),
 		/*submit_capture_specification_to_db_when_recieved(false),*/overwrite_submitted_capture_specification(false),maximum_window_size(1024,768),
-		current_annotater(&death_time_annotater),storyboard_annotater(2),main_window("Main Window"), persistant_sql_connection(0), persistant_sql_lock("psl"), show_testing_menus(true),
-				worm_window("Worm Window"), worm_image_offset_due_to_telemetry_graph_spacing(0, 0) {
+	  storyboard_annotater(2),main_window("Main Window"), persistant_sql_connection(0), persistant_sql_lock("psl"), show_testing_menus(false),
+				worm_window("Worm Window"), stats_window("Statistics Window"), worm_image_offset_due_to_telemetry_graph_spacing(0, 0), precache_solo_worm_images(false),worm_detection_set_annotater(2){
 		storyboard_annotater.set_resize_factor(2);
 		last_button_press.click_type = ns_button_press::ns_none;
+		current_annotater = &storyboard_annotater;
 	}
 
 	~ns_worm_learner();
@@ -648,6 +662,7 @@ public:
 	bool movement_data_is_strictly_decreasing(){return movement_data_is_strictly_decreasing_;}
 	void output_device_timing_data(const unsigned long experiment_id,const unsigned long experiment_group_id);
 	void output_region_statistics(const unsigned long experiment_id,const unsigned long experiment_group_id);
+	void calculate_hmm_from_files(const std::string & path);
 
 	void generate_morphology_statistics(const ns_64_bit & experiment_id);
 
@@ -665,7 +680,7 @@ public:
 	void output_movement_analysis_optimization_data(const ns_optimization_subject & subject, const ns_parameter_set_range & range, bool run_posture, bool run_expansion);
 
 	typedef enum{ns_quantification_summary,ns_quantification_detailed,ns_quantification_detailed_with_by_hand, ns_build_worm_markov_posture_model_from_by_hand_annotations,ns_quantification_abbreviated_detailed} ns_movement_quantification_type;
-	void generate_experiment_movement_image_quantification_analysis_data(ns_movement_quantification_type  detail_level);
+	void generate_experiment_movement_image_quantification_analysis_data(ns_movement_quantification_type  detail_level, const ns_optimization_subject & subject);
 
 	void generate_training_set_from_by_hand_annotation();
 	void generate_detailed_animal_data_file();
@@ -694,6 +709,7 @@ public:
 	ns_64_bit create_experiment_from_directory_structure(const std::string & directory_name,const bool process_masks_locally);
 	void rebuild_experiment_samples_from_disk(const ns_64_bit experiment_id);
 	void rebuild_experiment_regions_from_disk(const ns_64_bit experiment_id);
+	void repair_missing_captured_images(const ns_64_bit experiment_id);
 
 	bool show_testing_menus;
 	//machine learning
@@ -704,6 +720,7 @@ public:
 	//void repair_image_headers(const std::string & filename);
 	void generate_training_set_image();
 	void process_training_set_image();
+	void annotate_worm_detection_training_set(const std::string& filename);
 	void output_learning_set(const std::string & directory, const bool & process = false);
 	ns_training_file_generator training_file_generator;
 	void train_from_data(const std::string & base_dir);
@@ -739,15 +756,17 @@ public:
 
 	void draw_image(const double x, const double y, ns_image_standard & image);
 	void draw_line_on_overlay(const ns_vector_2i & a, const ns_vector_2i & b);
-	void update_main_window_display();
 	void draw();
 	void touch_main_window_pixel(const ns_button_press & press);
 	bool register_main_window_key_press(int key, const bool shift_key_held,const bool control_key_held,const bool alt_key_held);
 	
 	void draw_worm_window_image(ns_image_standard & image);
-	void update_worm_window_display();
 	void touch_worm_window_pixel(const ns_button_press & press);
 	bool register_worm_window_key_press(int key, const bool shift_key_held,const bool control_key_held,const bool alt_key_held);
+
+	void draw_stats_window_image();
+	void touch_stats_window_pixel(const ns_button_press& press);
+	bool register_stats_window_key_press(int key, const bool shift_key_held, const bool control_key_held, const bool alt_key_held);
 
 	//file i/o
 	void load_file(const std::string & filename);
@@ -849,11 +868,13 @@ public:
 	const std::string & get_current_clipboard_filename() const {return current_clipboard_filename;}
 	
 	ns_experiment_region_selector data_selector;
+	ns_experiment_region_selector statistics_data_selector;
 
-	ns_death_time_posture_annotater death_time_annotater;
-	ns_experiment_storyboard_annotater storyboard_annotater;
+	//ns_death_time_posture_annotater death_time_annotater;
 	ns_image_series_annotater * current_annotater;
 	ns_death_time_solo_posture_annotater death_time_solo_annotater;
+	ns_experiment_storyboard_annotater storyboard_annotater;
+	ns_worm_detection_set_annotater worm_detection_set_annotater;
 	bool worm_launch_finished;
 	void save_current_area_selections();
 
@@ -864,7 +885,8 @@ public:
 	ns_vector_2i maximum_window_size;
 
 	ns_gl_window_data main_window,
-				worm_window;
+		worm_window,
+		stats_window;
 	ns_vector_2i worm_image_offset_due_to_telemetry_graph_spacing;
 
 	ns_experiment_storyboard_spec::ns_storyboard_flavor current_storyboard_flavor;
@@ -872,17 +894,25 @@ public:
 	std::string current_mask_filename;
 	float dynamic_range_rescale;
 	ns_sql & get_sql_connection();
+	void reset_sql_connections();
 	ns_lock persistant_sql_lock;
 
 	ns_death_time_solo_posture_annotater_timepoint::ns_visualization_type solo_annotation_visualization_type;
 
 	string current_clipboard_filename;
+
+	ns_lock storyboard_lock;
+
+	bool precache_solo_worm_images;
+
+	void load_specific_worm(const ns_64_bit & region_id, const unsigned long& group_id, double external_rescale_factor);
 private:
 	ns_image_standard animation_temp;
 	ns_death_time_annotation_set::ns_annotation_type_to_load last_annotation_type_loaded;
 	ns_button_press last_button_press;
 	void touch_main_window_pixel_internal(const ns_button_press & p);
 	void touch_worm_window_pixel_internal(const ns_button_press & p);
+	void touch_stats_window_pixel_internal(const ns_button_press& p);
 
 	ns_behavior_mode behavior_mode;
 	bool generate_mp4_;

@@ -94,7 +94,7 @@ public:
 	std::vector<double> statistics;
 
 	///specifies thens_svm_model_specification model to be used during feature value scaling
-	void specifiy_model(const ns_svm_model_specification & model){_model = &model;}
+	void specifiy_model(const ns_svm_model_specification * model){_model = model;}
 
 	///Flagged if the detected worm stats contain invalid information as a way to inform
 	///any worm detection performed later on that the region shouldn't be considered a worm
@@ -166,6 +166,7 @@ class ns_image_worm_detection_results;
 //gold standard sets etc.
 
 struct ns_worm_context_image{
+	ns_worm_context_image() :debug_position_in_collage(-1, -1), debug_collage_unique_id(-1) {}
 	enum {ns_pixel_is_in_worm_cluster_bitmap=128,ns_pixel_is_in_worm_bitmap=255};
 	ns_image_standard combined_image;
 	static void generate(const bool part_of_a_worm_cluster, const ns_vector_2i & worm_cluster_bitmap_offset_in_context_image,
@@ -177,6 +178,8 @@ struct ns_worm_context_image{
 	ns_image_standard absolute_grayscale,
 					  relative_grayscale;
 	void deallocate_images(){combined_image.clear();absolute_grayscale.clear();relative_grayscale.clear();}
+	ns_vector_2i debug_position_in_collage;
+	long debug_collage_unique_id;
 };
 
 
@@ -644,7 +647,7 @@ private:
 	
     ns_image_server_image data_storage_on_disk;
 
-	void save_data_to_disk(std::ofstream & out,const bool interpolated);
+	void save_data_to_disk(std::ostream & out,const bool interpolated);
 
 	void load_data_from_db(ns_sql & sql);
 	void load_data_from_disk(ns_sql & sql);

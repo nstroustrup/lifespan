@@ -93,7 +93,7 @@ if ($limits[1] - $limits[0] < $N)
 }
 
 function display_events(&$events,&$name_hash,&$sample_hash,&$limits){
-	global $scan_url, $table_colors, $table_header_color;
+	global $scan_url, $table_colors, $table_header_color,$captured_image_transfer_status;
 	if (sizeof($events) == 0){
 		echo '(No Events in this Category)';
 		return;
@@ -118,11 +118,15 @@ function display_events(&$events,&$name_hash,&$sample_hash,&$limits){
 		
                 if ($events[$i][9] != 0)
                 echo "<i>(Cancelled by user)</i>";
+		if ($events[$i][11] != 0)
+		   echo "<b>Missed</b>";
 		if ($events[$i][7] != 0)
 		echo "<center> <a href=\"view_hosts_log.php?event_id=".$events[$i][7]."\">(Problem)</a></center>";
 		echo "</td>".
 			"<td bgcolor=\"$clrs[0]\">";
 			if ($events[$i][8] != 0){
+			       if ($events[$i][10] != $captured_image_transfer_status["ns_transfer_complete"]) echo "(cached)";
+else
 				echo ns_view_captured_image_link( $events[$i][8], "[Image]");
 				//if ($events[$i][9] == '1')
 				//	echo "[reg]";
@@ -163,7 +167,7 @@ for ($i = 0; $i < sizeof($res); $i++)
 ns_generate_sample_hash($experiment_id,$sample_names, $sql);
 
 $info = "SELECT capture_schedule.id, capture_schedule.experiment_id, capture_schedule.sample_id, capture_samples.device_name, capture_schedule.scheduled_time, "
-      . "capture_schedule.time_at_start, capture_schedule.time_at_finish, capture_schedule.problem, capture_schedule.captured_image_id, capture_schedule.censored FROM capture_schedule, capture_samples " ;
+      . "capture_schedule.time_at_start, capture_schedule.time_at_finish, capture_schedule.problem, capture_schedule.captured_image_id, capture_schedule.censored, capture_schedule.transferred_to_long_term_storage, capture_schedule.missed FROM capture_schedule, capture_samples " ;
 $postfix_ASC = "";
 for ($i = 0; $i < sizeof($sql_clauses); $i++){
 	$postfix_ASC .= " AND " . $sql_clauses[$i];
@@ -209,8 +213,9 @@ $sql->get_value($query,$delayed_events_count);
 if ($show_past[1] - $show_past[0] > 0){
 	$suffix = " WHERE ";
 	if (!$show_cancelled)
- 	   $suffix .="capture_schedule.censored=0 AND ";
-	$suffix .= "$experiment_mysql capture_schedule.time_at_finish != 0 $postfix_DESC ";
+ 	   $suffix .="capture_schedule.censored=0 ";
+	$suffix .= "AND $experiment_mysql (capture_schedule.time_at_finish != 0 OR capture_schedule.missed=1)";
+	$suffix .= " $postfix_DESC ";
 	$query = $info . $suffix ."LIMIT " .$show_past[0] . "," . $show_past[1];
        
 	$sql->get_row($query,$completed_events);

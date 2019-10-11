@@ -18,9 +18,10 @@ library("e1071");
 library(rgl)
 library("ranger")
 
-base_analysis_directory = "C:\\data\\mixed_genotype_training_set\\analysis\\"
+base_analysis_directory = "C:\\server\\new_training\\analysis"
 model_file_to_analyze = "training_sets\\high_24_plus_fscore_features_without_reg_i"
-
+#.5 means equal weighting.  deviations towards 1 reduces false-negative and increases false positives
+prefer_false_positives = .75;
 
 setwd(base_analysis_directory);
 
@@ -47,7 +48,7 @@ ns_read_svm_format = function (filename,features_filename=""){
 #The package "e1071" disregards feature and label numbers, so we need to reload and correct output files
 ns_write_compatible_svm_model = function(model_base_filename,svm.model,feature_names){
 	fname = paste0(model_base_filename,"_model_temp.txt");
-	fname2 = paste0(model_base_filename,"_model2.txt");
+	fname2 = paste0(model_base_filename,"_model.txt");
 	write.svm(svm.model,svm.file=fname);
 
 	fo = unique(feature_names$V1[order(feature_names$V1)])
@@ -81,28 +82,36 @@ ns_write_compatible_svm_model = function(model_base_filename,svm.model,feature_n
 	  file.remove(fname);
 }
 
-#if (!exists(test_set)){
+if (!exists("training_set")){
 
 #load training and test data from disk
 ts = ns_read_svm_format(paste0(model_file_to_analyze,"_test.txt"),paste0(model_file_to_analyze,"_included_stats.txt"));
 test_set = ts[["features"]];
 feature_names = ts[["feature_names"]];
 training_set = ns_read_svm_format(paste0(model_file_to_analyze,"_train.txt"),paste0(model_file_to_analyze,"_included_stats.txt"))[["features"]];
-
+}
 
 #use libSVM to build the model
 svm.model = svm(is_a_worm ~. , data = training_set,
 		kernel="radial", type="C-classification",
-		gamma=.7,cost = 1,scale=FALSE,probability=F)
+		gamma=.7,cost = 20,scale=F,probability=F,class.weights=c("1"=prefer_false_positives,"-1"=1-prefer_false_positives))
 svm.pred = predict(svm.model,test_set)
 svm.results = table(pred = as.numeric(as.character(svm.pred))>0, true = test_set[,1])
 svm.fp = which(as.numeric(as.character(svm.pred))>0 & as.numeric(as.character(test_set$is_a_worm))<0)
 svm.fn = which(as.numeric(as.character(svm.pred))<0 & as.numeric(as.character(test_set$is_a_worm))>0)
 svm.accuracy = (svm.results [1,1]+svm.results [2,2])/sum(svm.results )
+svm.confusion = svm.results/sum(svm.results);
+rownames(svm.confusion) = c("Not Worm","Worm");
+colnames(svm.confusion) = c("Not Worm","Worm");
 print(paste("SVM accuracy:",svm.accuracy))
+print("SVM Confusion Matrix:");
+print(svm.confusion);
 
 #write the model to disk
 ns_write_compatible_svm_model(model_file_to_analyze,svm.model,feature_names);
+#write the prediction results file to disk (for additional diagnostics)
+write.table(svm.pred,file=paste0(model_file_to_analyze,"_results.txt"),sep=" ",row.names=F,col.names=F,quote=F);
+
   
 #build a random forrest model to identify most useful features
 set.seed(71)
@@ -111,7 +120,12 @@ rf.model <- ranger(is_a_worm ~ ., data=training_set, importance="impurity",num.t
 rf.pred = predict(rf.model, data=test_set)
 rf.results =  table(pred = rf.pred$predictions, true = test_set[,1])
 rf.accuracy = (rf.results [1,1]+rf.results [2,2])/sum(rf.results )
+rf.confusion = rf.results/sum(rf.results);
+rownames(rf.confusion) = c("Not Worm","Worm");
+colnames(rf.confusion) = c("Not Worm","Worm");
 print(paste("Random Forrest Accuracy:",rf.accuracy))
+print("Random Forrest Confusion Matrix:");
+print(rf.confusion);
 #}
 
 #plot most useful features

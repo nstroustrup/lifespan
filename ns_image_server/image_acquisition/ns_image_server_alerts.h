@@ -57,8 +57,8 @@ struct ns_alert_recipient{
 	std::string email;
 	bool matches(const ns_alert::ns_notification_type & t){
 		return (t==ns_alert::ns_high_urgency || 
-			   (t==ns_alert::ns_medium_urgency && t!=ns_alert::ns_high_urgency) || 
-				(t==ns_alert::ns_low_urgency && t==ns_alert::ns_low_urgency));
+			   (t==ns_alert::ns_medium_urgency && type !=ns_alert::ns_high_urgency) ||
+				(t==ns_alert::ns_low_urgency && type ==ns_alert::ns_low_urgency));
 	}
 };
 

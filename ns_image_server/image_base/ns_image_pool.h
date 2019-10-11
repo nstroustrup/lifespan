@@ -1,6 +1,7 @@
 #ifndef NS_IMAGE_POOL
 #define NS_IMAGE_POOL
 #include "ns_image.h"
+#include <stack>
 
 class ns_default_resizer{
 public:

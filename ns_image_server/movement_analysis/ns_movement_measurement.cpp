@@ -6,6 +6,24 @@
 #include <algorithm>
 
 using namespace std;
+
+ns_color_8 ns_movement_colors::color(const ns_movement_state & m) {
+	switch (m) {
+	case ns_movement_death_associated_expansion: return ns_color_8(0, 200, 20);
+	case ns_movement_death_associated_post_expansion_contraction: return ns_color_8(200, 0, 20);
+	case ns_movement_stationary: return ns_color_8(255, 0, 0);
+	case ns_movement_posture: return ns_color_8(255, 255, 0);
+	case ns_movement_slow: return ns_color_8(0, 255, 0);
+	case ns_movement_fast:return  ns_color_8(255, 0, 255);
+	case ns_movement_machine_excluded: return ns_color_8(175, 175, 175);
+	case ns_movement_by_hand_excluded: return ns_color_8(225, 225, 225);
+
+	case ns_movement_not_calculated: return ns_color_8(0, 0, 0);
+	default: throw ns_ex("Uknown movement color request:") << (unsigned long)m;
+	}
+}
+
+
 template<class T>
 class ns_measurement_stationary_processed_accessor{
 public:
@@ -81,8 +99,9 @@ void ns_worm_movement_summary_series::generate_censoring_annotations(const ns_re
 			ns_death_time_annotation::ns_censored_at_end_of_experiment,
 			ns_death_time_annotation_event_count(estimated_number_of_worms_alive_at_measurement_end,0),ns_current_time(),
 			ns_death_time_annotation::ns_lifespan_machine,
-			ns_death_time_annotation::ns_single_worm,
+			ns_death_time_annotation::ns_inferred_censoring_event,
 			ns_stationary_path_id(0,0, analysis_id),false,false,ns_plate_subregion_info(),
+			ns_death_time_annotation::ns_explicitly_observed,
 			"Apparently Moving at end of experiment",
 			1,0,
 			this->multiworm_cluster_censoring_strategy,
@@ -91,21 +110,21 @@ void ns_worm_movement_summary_series::generate_censoring_annotations(const ns_re
 		);
 	}
 
-	for (unsigned int i = 1; i < measurements.size(); i++){
+	for (unsigned int i = 1; i < measurements.size(); i++) {
 		//const int multiworm_censoring(measurements[i].censoring_data.cumulative_number_censored_from_multiworm_clusters
 		//							  - measurements[i-1].censoring_data.cumulative_number_censored_from_multiworm_clusters);
-		
-		const int missing_censored (measurements[i].all_measurement_types_total.number_permanantly_lost - 
-			(long)measurements[i-1].all_measurement_types_total.number_permanantly_lost);
+
+		const long missing_censored(measurements[i].all_measurement_types_total.number_permanantly_lost -
+			(long)measurements[i - 1].all_measurement_types_total.number_permanantly_lost);
 
 		//const int estimated_multiworm_deaths(measurements[i].all_measurement_types_total.estimated_multiple_deaths.cumulative - 
 		//									 measurements[i-1].all_measurement_types_total.estimated_multiple_deaths.cumulative);
 
 		/*
 		//These censoring events are added by direct interpretation of multi-worm deaths by ns_multiple_worm_cluster_death_annotation_handler()
-		if (multiworm_cluster_censoring_strategy != ns_death_time_annotation::ns_merge_multiple_worm_clusters_and_missing_and_censor && 
+		if (multiworm_cluster_censoring_strategy != ns_death_time_annotation::ns_merge_multiple_worm_clusters_and_missing_and_censor &&
 			multiworm_censoring > 0){
-			ns_death_time_annotation::ns_exclusion_type censoring_type 
+			ns_death_time_annotation::ns_exclusion_type censoring_type
 									= ns_death_time_annotation::ns_multiworm_censored;
 			set.add(
 					 ns_death_time_annotation(ns_moving_worm_disappearance,
@@ -124,26 +143,32 @@ void ns_worm_movement_summary_series::generate_censoring_annotations(const ns_re
 					 missing_worm_return_strategy)
 				);
 		}*/
-	
-		if (missing_censored  > 0)
+
+		if (missing_censored > 0) {
+			if (missing_censored > 25)
+				image_server.register_server_event(ns_image_server::ns_register_in_central_db, ns_ex("In region ") << m.sample_name << "::" << m.region_name << "(" << m.region_id << "): A large number, " << ns_to_string(missing_censored) << ", animals went missing in a single timepoint.  Consider inspecting at the movement timeseries file for this region for unusual population dynamics.");
+			//if (missing_censored == 35)
+			//	cout << "WHA";
 			set.add(
-					 ns_death_time_annotation(ns_moving_worm_disappearance,
-					 0,m.region_id,
-					 ns_death_time_annotation_time_interval(measurements[i-1].time,measurements[i].time),
-					 ns_vector_2i(0,0),
-					 ns_vector_2i(0,0),
-					 ns_death_time_annotation::ns_missing_censored,
-					 ns_death_time_annotation_event_count(missing_censored,0),ns_current_time(),
-					 ns_death_time_annotation::ns_lifespan_machine,
-					 ns_death_time_annotation::ns_single_worm,
-					 ns_stationary_path_id(0,0,analysis_id),false,false, ns_plate_subregion_info(),
-					 "Worm Went Missing",
-					 1,0,
-					 this->multiworm_cluster_censoring_strategy,
-					 missing_worm_return_strategy,
-					 ns_death_time_annotation::ns_standard,
-					 this->by_hand_strategy)
-				);
+				ns_death_time_annotation(ns_moving_worm_disappearance,
+					0, m.region_id,
+					ns_death_time_annotation_time_interval(measurements[i - 1].time, measurements[i].time),
+					ns_vector_2i(0, 0),
+					ns_vector_2i(0, 0),
+					ns_death_time_annotation::ns_missing_censored,
+					ns_death_time_annotation_event_count(missing_censored, 0), ns_current_time(),
+					ns_death_time_annotation::ns_lifespan_machine,
+					ns_death_time_annotation::ns_inferred_censoring_event,
+					ns_stationary_path_id(0, 0, analysis_id), false, false, ns_plate_subregion_info(),
+					ns_death_time_annotation::ns_explicitly_observed,
+					"An individual went missing from the region and never returned",
+					1, 0,
+					this->multiworm_cluster_censoring_strategy,
+					missing_worm_return_strategy,
+					ns_death_time_annotation::ns_standard,
+					this->by_hand_strategy)
+			);
+		}
 	}
 }
 
@@ -744,7 +769,8 @@ void ns_worm_movement_measurement_summary_timepoint_data::out_header(const std::
 			<< name << " Moving Slow," 
 			<< name << " Changing Posture,"
 			<< name << " Stationary," 
-			<< name << " Death Posture Relaxing, " 
+			<< name << " Death-Associated Expansion, " 
+			<< name << " Death-Associated post-expansion Contraction, "
 			<< name << " Cumulative Deaths,"
 			<< name << " Cumulative Observed Singletons Dead, "
 			<< name << " Cumulative Observed Multiples Dead, "
@@ -769,7 +795,8 @@ void ns_worm_movement_measurement_summary_timepoint_data::out_data(const unsigne
 		<< number_moving_slow << ","
 		<< number_changing_posture << ","
 		<< number_stationary << ","	
-		<< number_death_posture_relaxing << ","	
+		<< number_death_associated_expanding << ","	
+		<< number_death_associated_post_expansion_contracting << ","
 		<< number_cumulative_deaths() << ","
 		<< singleton_deaths.cumulative << ","
 		<< observed_multiple_deaths.cumulative << ","
@@ -798,13 +825,13 @@ void ns_worm_movement_measurement_summary_timepoint_data::add(const ns_worm_move
 	number_changing_posture				+=	s.number_changing_posture;				
 	number_stationary					+=	s.number_stationary;		
 	number_of_stationary_worm_dissapearances += s.number_of_stationary_worm_dissapearances;
-	number_death_posture_relaxing		+=	s.number_death_posture_relaxing;			
+	number_death_associated_expanding		+=	s.number_death_associated_expanding;
+	number_death_associated_post_expansion_contracting += s.number_death_associated_post_expansion_contracting;
 	number_of_missing_animals			+=	s.number_of_missing_animals;		
 	number_permanantly_lost	+=	s.number_permanantly_lost;	
 	number_permanantly_lost_before_end_of_experiment += s.number_permanantly_lost_before_end_of_experiment;
 	number_of_missing_animals_smoothed += s.number_of_missing_animals_smoothed;
-//	if (observed_multiple_deaths.observed != 0 || observed_multiple_deaths.cumulative !=0)
-//		cerr << "WHA";
+
 	singleton_deaths.add(s.singleton_deaths);
 	observed_multiple_deaths.add(s.observed_multiple_deaths);
 	estimated_multiple_deaths.add(s.estimated_multiple_deaths);
@@ -896,6 +923,25 @@ ns_worm_movement_measurement_summary_timepoint_type::ns_worm_movement_measuremen
 	exclusion_type = a.excluded;
 }
 
+struct ns_labeled_data {
+	ns_stationary_path_id id;
+	double data;
+};
+bool operator<(const ns_labeled_data& a, const ns_labeled_data& b) {
+	return a.data < b.data;
+}
+class ns_problem_object_flagger {
+
+	void identify_movement_expansion_outliers(const ns_death_time_annotation_compiler_region& region) {
+		std::vector<ns_labeled_data> movement_cessation_times, expansion_times, movement_expansion_diff_times;
+		for (ns_death_time_annotation_compiler_region::ns_location_list::const_iterator q(region.locations.begin()); q != region.locations.end(); q++) {
+
+			ns_dying_animal_description_set_const description_set;
+			q->generate_dying_animal_description_const(true, description_set);
+	
+		}
+	}
+};
 void ns_worm_movement_summary_series::from_death_time_annotations(
 	const ns_death_time_annotation::ns_by_hand_annotation_integration_strategy & by_hand_strategy,
 	const ns_death_time_annotation::ns_multiworm_censoring_strategy & censoring_strategy, 
@@ -1179,6 +1225,8 @@ void ns_worm_movement_summary_series::from_death_time_annotations(const ns_death
 	}
 	
 }
+
+
 
 void ns_worm_movement_description_series::calculate_visualization_grid(const ns_vector_2i & extra_space_for_metadata) {
 	

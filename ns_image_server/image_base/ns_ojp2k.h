@@ -28,7 +28,7 @@ void ns_jp2k_info_callback(const char *msg, void *client_data);
 //can be kept in a separate .cpp file.  The JASPER header contains a bunch of
 //of #define statments that conflict with other libraries inlcuding mysql
 struct ns_jp2k_data {
-	ns_jp2k_data() :codec(0), image(0), ex(0), cstr_index(0) {}
+	ns_jp2k_data() :codec(0), image(0), ex(0), cstr_index(0),stream(0) {}
 
 	opj_stream_t * stream;
 	opj_codec_t* codec;
@@ -216,7 +216,7 @@ public:
 
 
 struct ns_jp2k_output_data {
-	ns_jp2k_output_data() :image(0), stream(0), codec(0), ex(0), using_tiles(false) {}
+	ns_jp2k_output_data() :image(0), stream(0), codec(0), ex(0), using_tiles(false){}
 	opj_image_t *image;
 	opj_stream_t * stream;
 	opj_codec_t * codec;

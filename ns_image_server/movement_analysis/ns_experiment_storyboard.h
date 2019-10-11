@@ -17,7 +17,7 @@ struct ns_by_hand_movement_annotation{
 		 matched;
 };
 struct ns_experiment_storyboard_timepoint_element{
-	ns_experiment_storyboard_timepoint_element():storyboard_time(0),storyboard_absolute_time(0),neighbor_group_id(0),neighbor_group_size(0),neighbor_group_id_of_which_this_element_is_an_in_situ_duplicate(0),drawn_worm_bottom_right_overlay(false),drawn_worm_top_right_overlay(false){}
+	ns_experiment_storyboard_timepoint_element():annotation_was_censored_on_loading(false),storyboard_time(0),storyboard_absolute_time(0),neighbor_group_id(0),neighbor_group_size(0),neighbor_group_id_of_which_this_element_is_an_in_situ_duplicate(0),drawn_worm_bottom_right_overlay(false),drawn_worm_top_right_overlay(false){}
 
 	ns_death_time_annotation event_annotation;
 
@@ -55,6 +55,7 @@ struct ns_experiment_storyboard_timepoint_element{
 };
 
 struct ns_experiment_storyboard_timepoint{
+	ns_experiment_storyboard_timepoint() :time(0),sub_image_id(0),position_on_storyboard(0,0),size(0,0) {}
 	unsigned long time;
 	std::vector<ns_experiment_storyboard_timepoint_element> events;
 	unsigned long sub_image_id;
@@ -77,11 +78,11 @@ struct ns_division_count{
 };
 
 struct ns_experiment_storyboard_spec{
-	ns_experiment_storyboard_spec():region_id(0),sample_id(0),experiment_id(0),use_by_hand_annotations(false),use_absolute_time(false),delay_time_after_event(0),minimum_distance_to_juxtipose_neighbors(50){}
+	ns_experiment_storyboard_spec():region_id(0),sample_id(0),experiment_id(0),use_by_hand_annotations(false),use_absolute_time(false),delay_time_after_event(0),minimum_distance_to_juxtipose_neighbors(50), choose_images_from_time_of_last_death(false),event_to_mark(ns_movement_cessation){}
 	ns_experiment_storyboard_spec(const unsigned long & r,const unsigned long & s, const unsigned long & e, 
 								  const bool & use_by_hand,const ns_movement_event & etype,const ns_region_metadata &strain, const bool & use_abs, const bool & delay_time_after_ev,const unsigned long minimum_distance_to_juxtipose_neighbors_):
 	region_id(r),sample_id(s),experiment_id(e),strain_to_use(strain),delay_time_after_event(delay_time_after_ev),
-	use_absolute_time(use_abs),event_to_mark(etype),use_by_hand_annotations(use_by_hand),minimum_distance_to_juxtipose_neighbors(minimum_distance_to_juxtipose_neighbors_){}
+	use_absolute_time(use_abs),event_to_mark(etype),use_by_hand_annotations(use_by_hand),minimum_distance_to_juxtipose_neighbors(minimum_distance_to_juxtipose_neighbors_), choose_images_from_time_of_last_death(false){}
 	
 	std::string to_string() const;
 	
@@ -145,6 +146,8 @@ public:
 	bool create_storyboard_metadata_from_machine_annotations(ns_experiment_storyboard_spec spec, const ns_experiment_storyboard_compiled_event_set & compiled_event_set, ns_sql & sql);
 	void check_that_all_time_path_information_is_valid(ns_sql & sql);
 	void save_by_hand_annotations(ns_sql & sql,const ns_death_time_annotation_set & extra_annotations) const;
+
+	void collect_current_annotations(std::map<ns_64_bit, ns_death_time_annotation_set>& annotations) const;
 
 	static std::string image_suffix(const ns_experiment_storyboard_spec & spec);
 

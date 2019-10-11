@@ -175,8 +175,7 @@ ns_vector_2d ns_time_path_solver::estimate(const ns_time_path_solution_stationar
 	//and generate a new estimator from the merged.
 	//we then use that to calculate the estimate.
 	ns_time_path_solver_path path(g.generate_path(paths));
-	//if ( (ns_vector_2i(2054,4692) - g.estimators.rbegin()->early_parameters.estimation_position).squared() < 50)
-	//	cerr << "WHA";
+
 	g.specify_group_estimator(get_drift_estimator(path));
 	return g.group_estimator().estimate(time);
 }
@@ -227,9 +226,6 @@ void ns_splinter_path_fragment(const ns_time_path_solver_path & source, const un
 	destination.is_not_stationary = source.is_not_stationary;
 	destination.elements.reserve(end_i - begin_i);
 	for (unsigned int j = begin_i; j < end_i; j++){
-//			if (source.elements[j].index == 113 &&
-//					source.elements[j].t_id == 22)
-//					cerr << "WHA";
 		destination.elements.push_back(source.elements[j]);
 	}
 }
@@ -274,13 +270,6 @@ void ns_time_path_solver::break_paths_at_large_gaps(double max_gap_factor){
 				unsigned long s(paths.size());
 				paths.resize(s+1);
 				paths[s].path_id = s;
-//				if (paths[i].elements[fragment_start].t_id == 113 &&
-//					paths[i].elements[fragment_start].index == 22)
-//					cerr << "WHA";
-					
-//				if (paths[i].elements[t].t_id == 113 &&
-//					paths[i].elements[t].index == 22)
-//					cerr << "WHA";
 				ns_splinter_path_fragment(paths[i],fragment_start,t,paths[s]);
 				paths[s].max_time = time(*paths[s].elements.begin());
 				paths[s].min_time = time(*paths[s].elements.rbegin());
@@ -300,9 +289,6 @@ void ns_time_path_solver::break_paths_at_large_gaps(double max_gap_factor){
 				unsigned long s(paths.size());
 				paths.resize(s+1);
 				paths[s].path_id = s;
-//				if (paths[i].elements[fragment_start].t_id == 113 &&
-//					paths[i].elements[fragment_start].t_id == 22)
-//					cerr << "WHA";
 				ns_splinter_path_fragment(paths[i],fragment_start,paths[i].elements.size(),paths[s]);
 				paths[s].max_time = time(*paths[s].elements.begin());
 				paths[s].min_time = time(*paths[s].elements.rbegin());
@@ -582,17 +568,17 @@ void ns_time_path_solution::save_to_db(const ns_64_bit region_id, ns_sql & sql) 
 	im.id = ns_atoi64(res[0][0].c_str());
 	bool update_db(false);
 	if (im.id == 0){
-		im = image_server_const.image_storage.get_region_movement_metadata_info(region_id,"time_path_solution_data",sql);
+		im = image_server_const.image_storage.get_region_movement_metadata(region_id,"time_path_solution_data",sql);
 		update_db = true;
 	}
-	ofstream * o(0);
+	ns_ostream * o(0);
 	try {
 		o = image_server_const.image_storage.request_metadata_output(im, ns_csv, false, &sql);
 	}
 	catch (ns_ex & ex) {
 		ns_64_bit old_im_id(im.id);
 			//if there's some problem with the existing filename, create a new one.
-			im = image_server_const.image_storage.get_region_movement_metadata_info(region_id, "time_path_solution_data", sql);
+			im = image_server_const.image_storage.get_region_movement_metadata(region_id, "time_path_solution_data", sql);
 			o = image_server_const.image_storage.request_metadata_output(im, ns_csv, false, &sql);
 
 			sql << "DELETE from images WHERE id = " << old_im_id;
@@ -603,7 +589,7 @@ void ns_time_path_solution::save_to_db(const ns_64_bit region_id, ns_sql & sql) 
 	im.save_to_db(im.id,&sql);
 
 	try{
-		save_to_disk(*o);
+		save_to_disk((*o)());
 		delete o;
 	}
 	catch(...){
@@ -623,21 +609,21 @@ void ns_time_path_solution::load_from_db(const ns_64_bit region_id, ns_sql & sql
 	if (res.size() == 0)
 		throw ns_ex("ns_time_path_solution::load_from_db():Could not load info from db");
 
-	ns_acquire_for_scope<ifstream> input_file(0);
+	ns_acquire_for_scope<ns_istream> input_file(0);
 
 	if (load_directly_from_disk_without_db){
 		
 		ns_image_server_image im;
-		im = image_server_const.image_storage.get_region_movement_metadata_info(region_id,"time_path_solution_data",sql);
+		im = image_server_const.image_storage.get_region_movement_metadata(region_id,"time_path_solution_data",sql);
 		try{
-			input_file.attach(image_server_const.image_storage.request_metadata_from_disk(im,false,&sql));
+			input_file.attach(image_server_const.image_storage.request_metadata_from_disk(im,false,&sql,true));
 		}catch(ns_ex & ex){
 			cerr << ex.text() << "\n";
 			ns_image_server_image im;
 			im.id = ns_atoi64(res[0][0].c_str());
 			if (im.id == 0)
 				throw ns_ex("Solution data has not been stored in db");
-			input_file.attach(image_server_const.image_storage.request_metadata_from_disk(im, false, &sql));
+			input_file.attach(image_server_const.image_storage.request_metadata_from_disk(im, false, &sql,true));
 
 		}
 	}else{
@@ -645,14 +631,14 @@ void ns_time_path_solution::load_from_db(const ns_64_bit region_id, ns_sql & sql
 		im.id = ns_atoi64(res[0][0].c_str());
 		if (im.id == 0)
 			throw ns_ex("Solution data has not been stored in db");
-		input_file.attach(image_server_const.image_storage.request_metadata_from_disk(im,false,&sql));
+		input_file.attach(image_server_const.image_storage.request_metadata_from_disk(im,false,&sql,true));
 	}
 
 
 	
 
 	try{
-		load_from_disk(input_file());
+		load_from_disk(input_file()());
 		input_file.release();
 	}
 	catch(...){
@@ -950,8 +936,7 @@ void ns_time_path_solution::fill_gaps_and_add_path_prefixes(const unsigned long 
 	for (unsigned int g = 0; g < this->path_groups.size(); g++){
 		for (unsigned int p = 0; p < path_groups[g].path_ids.size(); p++){
 			//std::sort(paths[path_id].stationary_elements.begin(),paths[path_id].stationary_elements.end(),ns_link_time_sorter());
-			//if (g==32)
-			//		cerr << "WHA";
+
 			//find gaps in path
 			skipped_time_indices.resize(0);
 			skipped_elements.resize(0);
@@ -1043,7 +1028,7 @@ void ns_time_path_solution::load_from_disk(istream & in){
 				get_int(in,timepoints[s].time);
 				get_int(in,timepoints[s].sample_region_image_id);
 				for (unsigned int i = 0; i < 4; i++) get_int(in,tmp); //room for expansion
-				timepoints[s].elements.reserve(10);
+				timepoints[s].elements.reserve(400);
 				break;
 			}
 			case 'e':{
@@ -1984,8 +1969,6 @@ void ns_time_path_solver::find_stationary_path_fragments(const double fraction_o
 		//attempt to assign an element to an existing path
 
 		//xxx
-		//if (timepoints[i].time > 1359806811 && timepoints[i].time < 1361495211)
-	//		cerr << "WHA";
 		assign_timepoint_elements_to_paths(timepoints[i].elements,mdsq,open_paths);
 		if (open_paths.size() > debug_max_paths)
 			debug_max_paths = open_paths.size();
@@ -2145,9 +2128,7 @@ void ns_time_path_solver_timepoint::load(const ns_64_bit worm_detection_results_
 	results.detection_results_id = worm_detection_results_id;
 	results.load_from_db(false,false,sql);
 	const std::vector<const ns_detected_worm_info *> & worms(results.actual_worm_list());
-//	if (results.capture_time == 1321821542)		
 
-//		cerr << "WHA";
 	elements.resize(worms.size());
 	for(unsigned int i = 0; i < worms.size(); i++){
 		elements[i].load(worms[i]);
@@ -2297,8 +2278,7 @@ void ns_time_path_solver::load(ns_64_bit region_id, ns_sql & sql){
 			image_server_const.add_subtext_to_current_event(ns_to_string(c)+"%...",&sql);
 			last_c = c;
 		}
-	//	if (timepoints[i].time == 1321821542)
-	//		cerr << "WHA";
+
 		try{
 			timepoints[i].load(timepoints[i].worm_results_id,detection_results->results[i],sql);
 		}
@@ -2734,33 +2714,20 @@ void ns_time_path_solver::merge_overlapping_path_fragments(const unsigned long m
 		for (ns_time_path_solver_path_orderer::iterator q =paths_ordered_by_min_time.begin();	
 				q != paths_ordered_by_min_time.end() && !merge_performed; q++){
 			for (ns_time_path_solver_path_orderer_list::iterator earlier = q->second.begin(); earlier != q->second.end();earlier++){
-			//	if ((later->path_id == 24 || later->path_id == 2 ) &&
-				//	((*earlier)->path_id == 24 || (*earlier)->path_id == 2))
-					//cerr << "WHA";
+
 				if (later == *earlier)
 					continue;
 				if (later->max_time <= (*earlier)->max_time)
 					continue;
 				if ((*earlier)->group_id == erase_constant)
 					continue;
-	//ns_is_close((*r)->min_time_position);
-	//				ns_is_close(p->max_time_position);
-			//	if (ns_is_close(later->max_time_position) && ns_is_close((*earlier)->min_time_position))
-			//		cerr << "WHA";
+
 				if (is_ok_to_merge_overlap(*later,*(*earlier),max_time_gap,max_time_overlap, max_fraction_points_overlap)){
-				//if (p->max_time < (*r)->min_time &&
-				//	p->max_time + max_time_gap >= (*r)->min_time){
-					//the two paths overlap spacially
-					//if (element(p->elements[0]).x
+
 					if (((*earlier)->min_time_position - later->max_time_position).squared() > max_dist_sq){
-				//		if (ns_is_close(later->max_time_position) && ns_is_close((*earlier)->min_time_position))
-				//			cerr << "WHA";
-						//not close enough
 						continue;
 					}
-			//		if (((*earlier)->path_id == 24 || (*earlier)->path_id == 32 || (*earlier)->path_id ==  74) ||
-				//		(later->path_id == 24 || later->path_id == 32 || later->path_id ==  74))
-					//	cerr << "Merging " << (*earlier)->path_id << " with " << later->path_id << "\n";
+
 					bool overlap(false);
 					if (later->elements.rbegin()->t_id < (*earlier)->elements.begin()->t_id)
 						overlap = true;

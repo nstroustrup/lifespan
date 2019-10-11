@@ -9,7 +9,8 @@ typedef enum{
 			ns_movement_fast, 
 			ns_movement_by_hand_excluded,
 			ns_movement_machine_excluded,
-			ns_movement_death_posture_relaxation,
+			ns_movement_death_associated_expansion,
+			ns_movement_death_associated_post_expansion_contraction,
 			ns_movement_total,
 			ns_movement_not_calculated,
 			ns_movement_number_of_states
@@ -37,11 +38,14 @@ typedef enum{ns_no_movement_event,				//nothing happens at the specified time
 			ns_posture_changing_worm_observed,
 			ns_stationary_worm_observed,
 			ns_stationary_worm_disappearance,
-			ns_death_posture_relaxation_termination,
+			ns_death_associated_expansion_stop,
 			ns_moving_worm_disappearance,
 			ns_additional_worm_entry,
-			ns_death_posture_relaxation_start,
-			ns_death_posture_relaxing_observed,
+			ns_death_associated_expansion_start,
+			ns_death_associated_expansion_observed,
+			ns_death_associated_post_expansion_contraction_start,
+			ns_death_associated_post_expansion_contraction_stop,
+			ns_death_associated_post_expansion_contraction_observed,
 			ns_number_of_movement_event_types
 } ns_movement_event;
 
@@ -50,4 +54,19 @@ std::string ns_movement_event_to_label(const ns_movement_event & t);
 bool ns_movement_event_is_a_state_transition_event(const ns_movement_event & t);	
 bool ns_movement_event_is_a_state_observation(const ns_movement_event & t);	
 ns_movement_state ns_movement_event_state(const ns_movement_event & e);
+
+typedef enum {
+	ns_hmm_missing,
+	ns_hmm_moving_vigorously,
+	ns_hmm_moving_weakly,
+	ns_hmm_moving_weakly_expanding,
+	ns_hmm_moving_weakly_post_expansion,
+	ns_hmm_not_moving_alive,
+	ns_hmm_not_moving_expanding,
+	ns_hmm_not_moving_dead,
+	ns_hmm_contracting_post_expansion,
+	ns_hmm_unknown_state
+} ns_hmm_movement_state;
+std::string ns_hmm_movement_state_to_string(const ns_hmm_movement_state & t);
+ns_hmm_movement_state ns_hmm_movement_state_from_string(const std::string & s);
 #endif

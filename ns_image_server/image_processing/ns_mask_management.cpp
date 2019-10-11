@@ -2,6 +2,7 @@
 #include "ns_sql.h"
 #include "ns_processing_job_push_scheduler.h"
 #include "ns_progress_reporter.h"
+#include "ns_image_server_automated_job_scheduler.h"
 
 
 #include <iostream>
@@ -127,6 +128,8 @@ void ns_bulk_experiment_mask_manager::produce_mask_file(const ns_mask_type & mas
 		 sql << "SELECT r.name,r.id,s.id,s.name FROM sample_region_image_info as r, capture_samples as s WHERE r.sample_id = s.id AND s.experiment_id=" << experiment_id << " AND r.censored = 0 AND s.censored=0 ORDER BY s.name ASC, r.name ASC";
 	else sql << "SELECT name,id FROM capture_samples WHERE experiment_id=" << experiment_id << " AND censored = 0 ORDER BY name ASC";
 
+	bool tried_to_protect_jobs = false;
+
 	ns_sql_result subjects;
 	sql.get_rows(subjects);
 	if (subjects.size() == 0)
@@ -151,16 +154,27 @@ void ns_bulk_experiment_mask_manager::produce_mask_file(const ns_mask_type & mas
 				sql << "SELECT image_id FROM sample_region_images WHERE region_info_id = " << (*p)[1] << " and problem=0 AND censored=0 AND image_id != 0";
 			else 
 				sql << "SELECT image_id FROM captured_images WHERE sample_id = " << (*p)[1] << " and currently_being_processed=0 AND problem=0 AND censored=0 AND image_id != 0";
-
+			if (!output_region_label_mask && mask_time == 0)
+				sql << " AND never_delete_image = 1";
 			if (mask_time != 0)
 				sql << " AND capture_time < " << mask_time;
 			sql << " ORDER BY capture_time DESC";
+			//NOTE! The mask should be created using the images that are used as the alignment reference
+			//if the user uses a mask from un-aligned samples, we are in trouble.
+			//TODO: this could be solved by explicitly aligning images before generating the mask composit XXX
 			ns_sql_result im_id;
 			sql.get_rows(im_id);
 			if (im_id.size() < 2) {
+				if (!tried_to_protect_jobs) {
+					ns_get_automated_job_scheduler_lock_for_scope lock(0, sql,true);
+					ns_image_server_automated_job_scheduler::identify_experiments_needing_captured_image_protection(sql, 0);
+					lock.release(sql);
+					tried_to_protect_jobs = true;
+					continue;
+				}
 				ns_ex ex("Could not find a sufficient number of captured images for ");
 				ex << subject_type << " ";
-				ex << (*p)[0] << "(" << (*p)[1] << ").";
+				ex << (*p)[0] << "(" << (*p)[1] << "). This could be because no images have been acquired, or because no image analysis server has run recently, or because the images have been marked as \"problem\" or as \"Currently under processing\"";
 				if (mask_time != 0)
 					ex << "Note that the experiment has a mask time specified: " << ns_format_time_string_for_human(mask_time);
 				cerr << " Miss! ";
@@ -410,8 +424,7 @@ void ns_bulk_experiment_mask_manager::render_mask_file(const ns_image_properties
 }
 
 
-void ns_bulk_experiment_mask_manager::submit_subregion_label_masks_to_cluster(bool balk_on_overwrite) {
-	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__, __LINE__));
+bool ns_bulk_experiment_mask_manager::submit_subregion_label_masks_to_cluster(bool balk_on_overwrite, ns_sql & sql) {
 	for (unsigned int i = 0; i < collage_info_manager.collage_info.size(); i++) {
 		if (collage_info_manager.collage_info[i].region_id == 0)
 			throw ns_ex() << "Region id 0 found.\n";
@@ -419,14 +432,16 @@ void ns_bulk_experiment_mask_manager::submit_subregion_label_masks_to_cluster(bo
 		if (collage_info_manager.collage_info[i].region_id == 0)
 			throw ns_ex("Attempting to submit an experiment plate reigon mask as a subregion label mask!");
 
-		sql() << "SELECT " << ns_processing_step_db_column_name(ns_process_subregion_label_mask) << " FROM sample_region_image_info WHERE id = " << collage_info_manager.collage_info[i].region_id;
+		sql << "SELECT " << ns_processing_step_db_column_name(ns_process_subregion_label_mask) << " FROM sample_region_image_info WHERE id = " << collage_info_manager.collage_info[i].region_id;
 		ns_sql_result res;
-		sql().get_rows(res);
+		sql.get_rows(res);
 		if (res.size() == 0)
 			throw ns_ex("Could not find region in db") << collage_info_manager.collage_info[i].region_id;
 		if (ns_atoi64(res[0][0].c_str()) != 0) {
-			if (balk_on_overwrite)
-				throw ns_ex("ns_bulk_experiment_mask_manager::submit_masks_to_cluster::A label mask already exists for specified sample: ") << collage_info_manager.collage_info[i].sample_id << ". To continue anyway, select the menu item Config/Set Behavior/Overwrite existing sample masks";
+			if (balk_on_overwrite) {
+				cout << "A subregion mask already has been submitted for sample: " << res[0][1] << "(" << collage_info_manager.collage_info[i].sample_id << ").\n";
+				return false;
+			}
 		}
 	}
 
@@ -435,10 +450,10 @@ void ns_bulk_experiment_mask_manager::submit_subregion_label_masks_to_cluster(bo
 		region_image.region_info_id = collage_info_manager.collage_info[i].region_id;
 		region_image.sample_id = collage_info_manager.collage_info[i].sample_id;
 		region_image.experiment_id = collage_info_manager.collage_info[i].experiment_id;
-		sql() << "SELECT r.name,s.name,e.name FROM sample_region_image_info as r, capture_samples as s, experiments as e WHERE r.id = " << collage_info_manager.collage_info[i].region_id 
+		sql << "SELECT r.name,s.name,e.name FROM sample_region_image_info as r, capture_samples as s, experiments as e WHERE r.id = " << collage_info_manager.collage_info[i].region_id 
 			<< " AND s.id = " << collage_info_manager.collage_info[i].sample_id << " AND e.id = " << collage_info_manager.collage_info[i].experiment_id;
 		ns_sql_result info;
-		sql().get_rows(info);
+		sql.get_rows(info);
 		if (info.size() == 0)
 			throw ns_ex("No info available for db");
 		region_image.region_name = info[0][0];
@@ -449,13 +464,13 @@ void ns_bulk_experiment_mask_manager::submit_subregion_label_masks_to_cluster(bo
 		region_image.captured_images_id = 1;
 		region_image.capture_time = 1;
 		region_image.capture_images_image_id = 1;
-		ns_image_server_image mask_image = region_image.create_storage_for_processed_image(ns_process_subregion_label_mask, ns_tiff, &sql()); 
+		ns_image_server_image mask_image = region_image.create_storage_for_processed_image(ns_process_subregion_label_mask, ns_tiff, &sql); 
 	
-		sql() << "INSERT INTO image_masks SET image_id = " << mask_image.id << ", processed='0',resize_factor=" << resize_factor;
-		ns_64_bit mask_id = sql().send_query_get_id();
+		sql << "INSERT INTO image_masks SET image_id = " << mask_image.id << ", processed='0',resize_factor=" << resize_factor;
+		ns_64_bit mask_id = sql.send_query_get_id();
 
 		bool had_to_use_local_storage;
-		ns_image_storage_reciever_handle<ns_8_bit> image_storage = image_server.image_storage.request_storage(mask_image, ns_tiff, 1.0, 512, &sql(), had_to_use_local_storage, false, ns_image_storage_handler::ns_forbid_volatile);
+		ns_image_storage_reciever_handle<ns_8_bit> image_storage = image_server.image_storage.request_storage(mask_image, ns_tiff, 1.0, 512, &sql, had_to_use_local_storage, false, ns_image_storage_handler::ns_forbid_volatile);
 
 		//ns_image_standard decoded_image;
 		ns_image_storage_source_handle<ns_8_bit> in(image_server.image_storage.request_from_local_cache(scratch_filenames[i]));
@@ -463,22 +478,21 @@ void ns_bulk_experiment_mask_manager::submit_subregion_label_masks_to_cluster(bo
 		//decoded_image.pump(sender,512);
 		//c.close();
 
-		sql() << "UPDATE sample_region_image_info SET subregion_mask_id = " << mask_id << " WHERE id = " << region_image.region_info_id;
-		sql().send_query();
-		sql() << "INSERT INTO processing_jobs SET image_id=" << mask_image.id << ", mask_id=" << mask_id << ", "
+		sql << "UPDATE sample_region_image_info SET subregion_mask_id = " << mask_id << " WHERE id = " << region_image.region_info_id;
+		sql.send_query();
+		sql << "INSERT INTO processing_jobs SET image_id=" << mask_image.id << ", mask_id=" << mask_id << ", "
 			<< "op" << (unsigned int)ns_process_analyze_mask << " = 1, time_submitted=" << ns_current_time() << ", urgent=1";
-		sql().send_query();
-		sql().send_query("COMMIT");
+		sql.send_query();
+		sql.send_query("COMMIT");
 
 		//		cerr << "\nDone.\n";
 	}
-	ns_image_server_push_job_scheduler::request_job_queue_discovery(sql());
-	sql.release();
+	ns_image_server_push_job_scheduler::request_job_queue_discovery(sql);
+	return true;
 }
 
-void ns_bulk_experiment_mask_manager::submit_plate_region_masks_to_cluster(bool balk_on_overwrite) {
+bool ns_bulk_experiment_mask_manager::submit_plate_region_masks_to_cluster(bool balk_on_overwrite, ns_sql & sql) {
 	bool ex_not_ok = false;
-	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__, __LINE__));
 	for (unsigned int i = 0; i < collage_info_manager.collage_info.size(); i++) {
 		try {
 			if (collage_info_manager.collage_info[i].sample_id == 0) {
@@ -488,25 +502,25 @@ void ns_bulk_experiment_mask_manager::submit_plate_region_masks_to_cluster(bool 
 			if (collage_info_manager.collage_info[i].region_id != 0)
 				throw ns_ex("Attempting to submit a subregion label mask as an experiment plate reigon mask!");
 
-			sql() << "SELECT mask_id FROM capture_samples WHERE id = " << collage_info_manager.collage_info[i].sample_id;
+			sql << "SELECT mask_id, name FROM capture_samples WHERE id = " << collage_info_manager.collage_info[i].sample_id;
 			ns_sql_result res;
-			sql().get_rows(res);
+			sql.get_rows(res);
 			if (res.size() == 0)
 				throw ns_ex("Could not find sample in db");
 
 			if (ns_atoi64(res[0][0].c_str()) != 0) {
 				if (balk_on_overwrite) {
 					ex_not_ok = true;
-					throw ns_ex("ns_bulk_experiment_mask_manager::submit_masks_to_cluster::A mask already exists for specified sample: ") << collage_info_manager.collage_info[i].sample_id << ". To continue anyway, select the menu item Config/Set Behavior/Overwrite existing sample masks";
-
+					cout << "A mask already has been submitted for sample: " << res[0][1] << "(" << collage_info_manager.collage_info[i].sample_id << ").\n";
+					continue;
 				}
 				else {
 					//	sql() << "DELETE FROM image_masks WHERE id = " << res[0][0];
 					//	sql().send_query();
-					sql() << "UPDATE sample_region_image_info SET name = CONCAT(name,'_old'),censored=1 WHERE sample_id = " << collage_info_manager.collage_info[i].sample_id;
-					sql().send_query();
-					sql() << "UPDATE captured_images SET mask_applied=0 WHERE sample_id = " << collage_info_manager.collage_info[i].sample_id << " AND image_id != 0 AND mask_applied=0";
-					sql().send_query();
+					sql << "UPDATE sample_region_image_info SET name = CONCAT(name,'_old'),censored=1 WHERE sample_id = " << collage_info_manager.collage_info[i].sample_id;
+					sql.send_query();
+					sql << "UPDATE captured_images SET mask_applied=0 WHERE sample_id = " << collage_info_manager.collage_info[i].sample_id << " AND image_id != 0 AND mask_applied=0";
+					sql.send_query();
 				}
 			}
 			//Connecting to image server
@@ -522,13 +536,13 @@ void ns_bulk_experiment_mask_manager::submit_plate_region_masks_to_cluster(bool 
 			}*/
 			//Updating database
 			//cerr << "\nUpdating database....";
-			ns_64_bit image_id = image_server.make_record_for_new_sample_mask(collage_info_manager.collage_info[i].sample_id, sql());
-			sql() << "INSERT INTO image_masks SET image_id = " << image_id << ", processed='0',resize_factor=" << resize_factor;
-			ns_64_bit mask_id = sql().send_query_get_id();
+			ns_64_bit image_id = image_server.make_record_for_new_sample_mask(collage_info_manager.collage_info[i].sample_id, sql);
+			sql << "INSERT INTO image_masks SET image_id = " << image_id << ", processed='0',resize_factor=" << resize_factor;
+			ns_64_bit mask_id = sql.send_query_get_id();
 			ns_image_server_image image;
-			image.load_from_db(image_id, &sql());
+			image.load_from_db(image_id, &sql);
 			bool had_to_use_local_storage;
-			ns_image_storage_reciever_handle<ns_8_bit> image_storage = image_server.image_storage.request_storage(image, ns_tiff, 1.0,512, &sql(), had_to_use_local_storage, false, ns_image_storage_handler::ns_forbid_volatile);
+			ns_image_storage_reciever_handle<ns_8_bit> image_storage = image_server.image_storage.request_storage(image, ns_tiff, 1.0,512, &sql, had_to_use_local_storage, false, ns_image_storage_handler::ns_forbid_volatile);
 			
 			//ns_image_standard decoded_image;
 			ns_image_storage_source_handle<ns_8_bit> in(image_server.image_storage.request_from_local_cache(scratch_filenames[i]));
@@ -537,22 +551,24 @@ void ns_bulk_experiment_mask_manager::submit_plate_region_masks_to_cluster(bool 
 			//c.close();
 
 
-			sql() << "UPDATE capture_samples SET mask_id=" << mask_id << " WHERE id=" << collage_info_manager.collage_info[i].sample_id;
-			sql().send_query();
-			sql() << "INSERT INTO processing_jobs SET image_id=" << image_id << ", mask_id=" << mask_id << ", "
+			sql << "UPDATE capture_samples SET mask_id=" << mask_id << " WHERE id=" << collage_info_manager.collage_info[i].sample_id;
+			sql.send_query();
+			sql << "INSERT INTO processing_jobs SET image_id=" << image_id << ", mask_id=" << mask_id << ", "
 				<< "op" << (unsigned int)ns_process_analyze_mask << " = 1, time_submitted=" << ns_current_time() << ", urgent=1";
-			sql().send_query();
-			sql().send_query("COMMIT");
+			sql.send_query();
+			sql.send_query("COMMIT");
 
 			//		cerr << "\nDone.\n";
 		}
 		catch (ns_ex & ex) {
 			if (ex_not_ok)
-				throw ex;
+				return false;
 			else cerr << ex.text() << "\n";
 		}
 	}
-	ns_image_server_push_job_scheduler::request_job_queue_discovery(sql());
-	sql.release();
+	ns_image_server_push_job_scheduler::request_job_queue_discovery(sql);
+	if (ex_not_ok)
+		return false;
+	return true;
 
 }

@@ -62,14 +62,17 @@
     <Filter Include="misc_lib\hungarian">
       <UniqueIdentifier>{ba220325-281f-4249-9ede-e40b2a99ac70}</UniqueIdentifier>
     </Filter>
-    <Filter Include="image_format_lib\tiff">
-      <UniqueIdentifier>{c78137a5-da69-4ef0-b898-402b6105faa9}</UniqueIdentifier>
-    </Filter>
     <Filter Include="image_format_lib\jpeg">
       <UniqueIdentifier>{659fd130-fe41-4642-8f64-df93deee5287}</UniqueIdentifier>
     </Filter>
     <Filter Include="image_format_lib\jpeg\h">
       <UniqueIdentifier>{5c5ae8dc-bdb7-447b-ae18-3aab0ba7148e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="misc_lib\gmm">
+      <UniqueIdentifier>{42d6dbb3-30d3-4698-b2de-b38c6e671681}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="image_format_lib\tiff">
+      <UniqueIdentifier>{30dad93e-2278-4295-b1f0-96592adfe1ce}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -565,35 +568,17 @@
     <ClCompile Include="..\ns_image_server\movement_analysis\ns_machine_analysis_data_loader.cpp">
       <Filter>movement_analysis</Filter>
     </ClCompile>
-    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_read.c">
-      <Filter>image_format_lib\tiff</Filter>
+    <ClCompile Include="..\ns_image_server\image_base\ns_image_tools.cpp">
+      <Filter>image_base</Filter>
     </ClCompile>
-    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_strip.c">
-      <Filter>image_format_lib\tiff</Filter>
+    <ClCompile Include="..\external_libraries\gmm\gmm.cpp">
+      <Filter>misc_lib\gmm</Filter>
     </ClCompile>
-    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_swab.c">
-      <Filter>image_format_lib\tiff</Filter>
+    <ClCompile Include="..\external_libraries\gmm\KMeans.cpp">
+      <Filter>misc_lib\gmm</Filter>
     </ClCompile>
-    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_thunder.c">
-      <Filter>image_format_lib\tiff</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_tile.c">
-      <Filter>image_format_lib\tiff</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_version.c">
-      <Filter>image_format_lib\tiff</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_warning.c">
-      <Filter>image_format_lib\tiff</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_win32.c">
-      <Filter>image_format_lib\tiff</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_write.c">
-      <Filter>image_format_lib\tiff</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_zip.c">
-      <Filter>image_format_lib\tiff</Filter>
+    <ClCompile Include="..\external_compile_libraries\gzstream\gzstream.C">
+      <Filter>misc_lib</Filter>
     </ClCompile>
     <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_aux.c">
       <Filter>image_format_lib\tiff</Filter>
@@ -682,8 +667,38 @@
     <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_print.c">
       <Filter>image_format_lib\tiff</Filter>
     </ClCompile>
-    <ClCompile Include="..\ns_image_server\image_base\ns_image_tools.cpp">
-      <Filter>image_base</Filter>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_read.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_strip.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_swab.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_thunder.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_tile.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_version.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_warning.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_win32.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_write.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external_compile_libraries\libtiff-4.0.9\libtiff\tif_zip.c">
+      <Filter>image_format_lib\tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_worm_browser\ns_worm_detection_set_annotater.cpp">
+      <Filter>worm_browser</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -734,9 +749,6 @@
     </ClInclude>
     <ClInclude Include="..\ns_image_server\statistics\ns_survival_curve.h">
       <Filter>statistics</Filter>
-    </ClInclude>
-    <ClInclude Include="..\ns_image_server\movement_analysis\ns_hidden_markov_model.h">
-      <Filter>movement_analysis</Filter>
     </ClInclude>
     <ClInclude Include="..\ns_image_server\movement_analysis\ns_hidden_markov_model_posture_analyzer.h">
       <Filter>movement_analysis</Filter>
@@ -1139,6 +1151,18 @@
     </ClInclude>
     <ClInclude Include="..\ns_image_server\data_annotation\ns_annotation_handling_for_visualization.h">
       <Filter>data_annotation</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_libraries\gmm\gmm.h">
+      <Filter>misc_lib\gmm</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external_libraries\ctmf\ctmf.h">
+      <Filter>misc_lib\cmtf</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_worm_browser\ns_population_telemetry.h">
+      <Filter>worm_browser</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_worm_browser\ns_worm_detection_set_annotater.h">
+      <Filter>worm_browser</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

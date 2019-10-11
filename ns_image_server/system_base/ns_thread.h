@@ -37,7 +37,7 @@ functionality on Windows, Linux, and OSX machines.
 
 		HANDLE handle(){return handle_->handle;}
 
-	ns_thread_handle():handle_(0){};
+	ns_thread_handle():handle_(0),id(0){};
 	  void set_handle(const HANDLE & h){
 		  handle_ = std::shared_ptr<ns_thread_handle_handle>(new ns_thread_handle_handle(h));
 	  }
@@ -99,8 +99,8 @@ private:
 
 struct ns_process_termination_daemon_ptr{
 	ns_process_termination_daemon_ptr():daemon(0){}
-	ns_process_termination_daemon_ptr(ns_process_termination_daemon * d){acquire(d);}
-	ns_process_termination_daemon_ptr(const ns_process_termination_daemon_ptr & d){acquire(d.daemon);}
+	ns_process_termination_daemon_ptr(ns_process_termination_daemon * d):daemon(0){acquire(d);}
+	ns_process_termination_daemon_ptr(const ns_process_termination_daemon_ptr & d) :daemon(0){acquire(d.daemon);}
 	ns_process_termination_daemon & operator()();
 	void acquire(ns_process_termination_daemon * d);
 	void release();
@@ -167,7 +167,10 @@ public:
 	#ifndef _WIN32
 	ns_external_execute():child_pid(-1){c_stdout[0] = c_stdout[1] = c_stderr[0] = c_stderr[1] = c_stdin[0] = c_stdin[1] =  -1;}
 	#else
-		ns_external_execute():closed(true){}
+	ns_external_execute() : closed(true),
+		hChildStdinRd(0), hChildStdinWr(0),
+		hChildStdoutRd(0), hChildStdoutWr(0),
+		hChildStderrRd(0), hChildStderrWr(0) {}
 	#endif
 	void wait_for_termination();
 	bool run(const std::string & command, const std::string & parameters, const ns_external_execute_options & opt);

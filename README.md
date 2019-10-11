@@ -12,7 +12,7 @@ This repository contains v2 of the lifespan machine software, comprised of
 
 
 
-Copyright 2018
+Copyright 2019
 Reservation of Rights
 All Rights Reserved
 

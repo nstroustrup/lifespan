@@ -1,6 +1,8 @@
 #include "ns_processing_job_scheduler.h"
 #ifndef NS_ONLY_IMAGE_ACQUISITION
 #include "ns_image_processing_pipeline.h"
+#include "ns_time_path_image_analyzer.h"
+
 #endif
 #include "ns_processing_job_processor.h"
 
@@ -25,15 +27,15 @@ std::string ns_maintenance_task_to_string(const ns_maintenance_task & task){
 		case ns_maintenance_update_processing_job_queue:
 			return "Add new jobs to queue";
 		case ns_maintenance_rebuild_movement_data:
-			return "Build Movement Data";
+			return "Analyze Worm Movement";
 		case ns_maintenance_rebuild_movement_from_stored_image_quantification:
-			return "Rebuild Movement Data From Stored Image Quantification";
+			return "Re-calculate Death Times from Movement Analysis";
 		case ns_maintenance_rebuild_movement_from_stored_images:
-			return "Rebuild Movement Data From Stored Images";
+			return "Re-run Movement Analysis From Cached Images";
 		case ns_maintenance_generate_movement_posture_visualization:
 			return "Generate Movement Posture Visualization";
 		case ns_maintenance_recalculate_censoring:
-			return "Recalculate Censoring";
+			return "Re-calculate Censoring";
 		case ns_maintenance_plate_and_individual_visualization:
 			return "Generate Plate and individual visualization";
 		case ns_maintenance_generate_sample_regions_from_mask:
@@ -64,6 +66,8 @@ std::string ns_maintenance_task_to_string(const ns_maintenance_task & task){
 			return "Compile worm morphology statistics";
 		case ns_maintenance_delete_movement_data:
 			return "Delete movement analysis";
+		case ns_maintenance_rebuild_movement_data_from_stored_solution:
+			return "Rebuild Movement Analysis from Stored Solution";
 		case ns_maintenance_last_task: throw ns_ex("ns_maintenance_task_to_string::last_task does not have a std::string representation");
 		default:
 			throw ns_ex("ns_maintenance_task_to_string::Unknown Maintenance task");
@@ -87,6 +91,7 @@ bool ns_processing_job_scheduler::run_a_job(ns_processing_job & job,ns_sql & sql
 		sql.send_query();
 		sql << "DELETE from processing_job_queue WHERE id = " << job.queue_entry_id;
 		sql.send_query();
+		sql.send_query("COMMIT");
 		return true;
 	}
 
@@ -293,9 +298,12 @@ void ns_identify_region_files_to_delete(const ns_64_bit & region_id,const bool e
 		if (!operations[(int)ns_process_region_interpolation_vis])
 			files.push_back(image_server_const.image_storage.get_path_for_region(region_id, &sql, ns_process_region_interpolation_vis));
 		files.push_back(image_server_const.image_storage.get_file_specification_for_path_data(image_server_const.image_storage.get_base_path_for_region(region_id, &sql)));
+		//old-style movement analysis data
 		files.push_back(image_server_const.image_storage.get_file_specification_for_movement_data(region_id, "time_path_movement_image_analysis_quantification.csv", &sql));
-		files.push_back(image_server_const.image_storage.get_file_specification_for_movement_data(region_id, "time_path_solution_data.csv", &sql));
-		files.push_back(image_server_const.image_storage.get_detection_data_path_for_region(region_id, &sql));
+		//new style record
+		files.push_back(image_server_const.image_storage.get_file_specification_for_movement_data(region_id, "time_path_image_analysis_quantification.csv.gz", &sql));
+		files.push_back(image_server_const.image_storage.get_file_specification_for_movement_data(region_id, "time_path_image_analysis_events.csv.gz", &sql));
+		files.push_back(image_server_const.image_storage.get_file_specification_for_movement_data(region_id, "time_path_image_analysis_intervals.csv.gz", &sql));
 
 		ns_image_server_results_subject spec;
 		spec.region_id = region_id;
@@ -337,9 +345,14 @@ void ns_delete_movement_analysis(const ns_64_bit region_id, bool delete_files,ns
 	ns_64_bit time_path_solution_id = ns_atoi64(ids[0][0].c_str()),
 		movement_image_analysis_quantification_id = ns_atoi64(ids[0][0].c_str());
 	if (time_path_solution_id != 0 && delete_files) {
-		ns_image_server_image im;
-		im.id = time_path_solution_id;
-		image_server.image_storage.delete_from_storage(im, ns_delete_both_volatile_and_long_term, &sql);
+		try {
+			ns_image_server_image im;
+			im.id = time_path_solution_id;
+			image_server.image_storage.delete_from_storage(im, ns_delete_both_volatile_and_long_term, &sql);
+		}
+		catch (ns_ex & ex) {
+			image_server.register_server_event(ex, &sql);
+		}
 	}
 	if (movement_image_analysis_quantification_id != 0) {
 		//delete all the path images
@@ -349,32 +362,56 @@ void ns_delete_movement_analysis(const ns_64_bit region_id, bool delete_files,ns
 			sql.get_rows(paths);
 			for (unsigned int i = 0; i < paths.size(); i++) {
 				for (unsigned int j = 1; j <= 2; j++) {
-					ns_image_server_image im;
-					im.id = ns_atoi64(paths[i][j].c_str());
-					if (im.id != 0)
-						image_server.image_storage.delete_from_storage(im, ns_delete_both_volatile_and_long_term, &sql);
+					try {
+						ns_image_server_image im;
+						im.id = ns_atoi64(paths[i][j].c_str());
+						if (im.id != 0)
+							image_server.image_storage.delete_from_storage(im, ns_delete_both_volatile_and_long_term, &sql);
+					}
+					catch (ns_ex & ex) {
+						image_server.register_server_event(ex, &sql);
+					}
 				}
 			}
 		}
+		
 		sql << "DELETE FROM path_data WHERE region_id = " << region_id;
 		sql.send_query();
 		//delete the record for all the movement analysis
 		if (delete_files) {
-			ns_image_server_image im;
-			im.id = movement_image_analysis_quantification_id;
-			image_server.image_storage.delete_from_storage(im, ns_delete_both_volatile_and_long_term, &sql);
+			try {
+				ns_image_server_image im;
+				im.id = movement_image_analysis_quantification_id;
+				image_server.image_storage.delete_from_storage(im, ns_delete_both_volatile_and_long_term, &sql);
+			}
+			catch (ns_ex & ex) {
+				image_server.register_server_event(ex, &sql);
+			}
 		}
 	}
 	ns_image_server_results_subject sub;
 	sub.region_id = region_id;
-	//ns_image_server_results_file results(image_server.results_storage.hand_curated_death_times(sub, sql));
-	//results.erase();
-	ns_image_server_results_file censoring_results(image_server.results_storage.machine_death_times(sub, ns_image_server_results_storage::ns_censoring_and_movement_transitions,
-		"time_path_image_analysis", sql));
-	ns_image_server_results_file state_results(image_server.results_storage.machine_death_times(sub, ns_image_server_results_storage::ns_worm_position_annotations,
-		"time_path_image_analysis", sql));
-	censoring_results.erase();
-	state_results.erase();
+	try {
+		{
+			ns_image_server_results_file censoring_results(image_server.results_storage.machine_death_times(sub, ns_image_server_results_storage::ns_censoring_and_movement_transitions,
+				"time_path_image_analysis", sql, true));
+			ns_image_server_results_file state_results(image_server.results_storage.machine_death_times(sub, ns_image_server_results_storage::ns_worm_position_annotations,
+				"time_path_image_analysis", sql, true));
+			censoring_results.erase();
+			state_results.erase();
+		} 
+		{
+			ns_image_server_results_file censoring_results(image_server.results_storage.machine_death_times(sub, ns_image_server_results_storage::ns_censoring_and_movement_transitions,
+				"time_path_image_analysis", sql, false));
+			ns_image_server_results_file state_results(image_server.results_storage.machine_death_times(sub, ns_image_server_results_storage::ns_worm_position_annotations,
+				"time_path_image_analysis", sql, false));
+			censoring_results.erase();
+			state_results.erase();
+		}
+	}
+	catch (ns_ex & ex) {
+		image_server.register_server_event(ex, &sql);
+	}
 
 	sql << "UPDATE sample_region_image_info SET latest_movement_rebuild_timestamp =0, "
 		"last_timepoint_in_latest_movement_rebuild=0, "
@@ -569,17 +606,17 @@ void ns_handle_image_metadata_delete_action(ns_processing_job & job,ns_sql & sql
 						<< "sample_region_images.region_info_id = " << regions_to_delete[i]
 						<< " AND worm_interpolation_results_id = worm_detection_results.id";
 					sql.send_query();
-					sql << "DELETE worm_movement FROM worm_movement,sample_region_images WHERE "
+					/*sql << "DELETE worm_movement FROM worm_movement,sample_region_images WHERE "
 						<< "sample_region_images.region_info_id = " << regions_to_delete[i]
 						<< " AND worm_movement.id = sample_region_images.worm_movement_id";
-					sql.send_query();
+					sql.send_query();*/
 
 					sql << "DELETE i FROM image_statistics as i,sample_region_images as r "
 						<< "WHERE r.region_info_id = " << regions_to_delete[i] << " AND r.image_statistics_id = i.id";
 					sql.send_query();
 					//delete movement info
-					sql << "DELETE FROM worm_movement WHERE region_info_id = " << regions_to_delete[i];
-					sql.send_query();
+					//sql << "DELETE FROM worm_movement WHERE region_info_id = " << regions_to_delete[i];
+					//sql.send_query();
 					//delete time points
 					sql << "DELETE from sample_region_images WHERE region_info_id = " << regions_to_delete[i];
 					sql.send_query();

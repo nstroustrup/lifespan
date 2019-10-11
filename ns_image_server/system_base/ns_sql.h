@@ -28,7 +28,9 @@ namespace ns_mysql_header{
 #endif
 }
 
-#define NS_INCLUDE_ERROR_SIMULATION 1
+//this is useful for debugging
+//but adds a lot of extra locking to sql commands
+#define NS_INCLUDE_ERROR_SIMULATION 0
 
 #undef bool
 #undef sleep
@@ -89,7 +91,7 @@ class ns_sql_connection{
 
   void check_connection();
 
-  static void load_sql_library(){ns_mysql_header::mysql_library_init(0,NULL,NULL);}
+  static void load_sql_library();
   static void unload_sql_library(){ns_mysql_header::mysql_library_end();}
   static bool thread_safe();
 
@@ -164,7 +166,7 @@ class ns_sql_connection{
 };
 
 struct ns_table_to_lock{
-	ns_table_to_lock(){}
+	ns_table_to_lock():write(false){}
 	ns_table_to_lock(const std::string & n,const bool w):table_name(n),write(w){}
 	std::string table_name;
 	bool write;

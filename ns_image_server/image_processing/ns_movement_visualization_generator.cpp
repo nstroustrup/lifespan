@@ -332,7 +332,8 @@ void ns_movement_visualization_generator::create_area_graph_for_capture_time(con
 		worm_states_flat[(int)ns_movement_fast].y[i]		= data.measurements[i].all_measurement_types_total.number_moving_fast;
 		worm_states_flat[(int)ns_movement_machine_excluded].y[i]	= data.measurements[i].all_measurement_types_excluded_total.total_animals_inferred();
 		worm_states_flat[(int)ns_movement_by_hand_excluded].y[i]		= 0;//data.measurements[i].all_measurement_types_total.number_by_hand_excluded;
-		worm_states_flat[(int)ns_movement_death_posture_relaxation].y[i]  = 0;//data.measurements[i].all_measurement_types_total.number_death_posture_relaxing;
+		worm_states_flat[(int)ns_movement_death_associated_expansion].y[i]  = 0;//data.measurements[i].all_measurement_types_total.number_death_posture_relaxing
+		worm_states_flat[(int)ns_movement_death_associated_post_expansion_contraction].y[i] = 0;//data.measurements[i].all_measurement_types_total.number_death_posture_relaxing;;
 	}
 
 	for (unsigned int i = 0; i < number_of_measurements; i++){
@@ -345,7 +346,8 @@ void ns_movement_visualization_generator::create_area_graph_for_capture_time(con
 	area_order[1]=ns_movement_posture;
 	area_order[2]=ns_movement_slow;
 	area_order[3]=ns_movement_fast;
-	area_order[4]=ns_movement_death_posture_relaxation;
+	area_order[4]=ns_movement_death_associated_expansion;
+	area_order[4] = ns_movement_death_associated_post_expansion_contraction;
 	area_order[5]=ns_movement_machine_excluded;
 	area_order[6]=ns_movement_by_hand_excluded;
 

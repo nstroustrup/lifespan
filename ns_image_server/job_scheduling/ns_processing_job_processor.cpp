@@ -83,7 +83,6 @@ ns_image_server_captured_image_region ns_get_region_image(const ns_processing_jo
 	region_image.region_name				= job.region_name;
 	return region_image;
 }
-
 #ifndef NS_ONLY_IMAGE_ACQUISITION
 bool ns_processing_job_sample_processor::job_is_still_relevant(ns_sql & sql, std::string & reason_not_relevant){
 	sql << "SELECT image_id,small_image_id,mask_applied,currently_being_processed, problem FROM captured_images WHERE id=" << job.captured_image_id;
@@ -177,6 +176,7 @@ void ns_processing_job_region_processor::mark_subject_as_busy(const bool busy,ns
 		reg.mark_as_under_processing(image_server->host_id(),&sql);
 	else reg.mark_as_finished_processing(&sql);
 }
+
 bool ns_processing_job_whole_region_processor::job_is_still_relevant(ns_sql & sql, std::string & reason_not_relevant){
 	return true;
 }
@@ -633,6 +633,7 @@ ns_64_bit ns_processing_job_maintenance_processor::run_job(ns_sql & sql) {
 				throw ns_ex("No sample specified for region generation from mask");
 			sql << "SELECT image_resolution_dpi FROM capture_samples WHERE id = " << job.sample_id;
 			ns_sql_result res;
+			sql.get_rows(res);
 			if (res.size() == 0)
 				throw ns_ex("Could not find sample ") << job.sample_id << " in db.";
 
@@ -646,10 +647,10 @@ ns_64_bit ns_processing_job_maintenance_processor::run_job(ns_sql & sql) {
 			ns_image_server_results_subject sub;
 			sub.region_id = job.region_id;
 			ns_image_server_results_file f(image_server->results_storage.worm_morphology_timeseries(sub, sql, false));
-			ns_acquire_for_scope<ostream> o(f.output());
+			ns_acquire_for_scope<ns_ostream> o(f.output());
 			const std::string skip_recalc_string = image_server->get_cluster_constant_value("skip_image_loading_during_morphology_stat_recalc", "false", &sql);
 			const bool recalc = skip_recalc_string != "true" &&  skip_recalc_string != "yes"  &&  skip_recalc_string != "1";
-			ns_refine_image_statistics(job.region_id, recalc,o(), sql);
+			ns_refine_image_statistics(job.region_id, recalc,o()(), sql);
 			o.release();
 		}
 		case ns_maintenance_delete_movement_data:{
@@ -716,11 +717,11 @@ ns_64_bit ns_processing_job_maintenance_processor::run_job(ns_sql & sql) {
 				ns_capture_sample_region_statistics_set set;
 				set.load_whole_experiment(job.experiment_id, sql, true);
 
-				ns_acquire_for_scope<ostream> o(f.output());
-				ns_capture_sample_region_data::output_region_data_in_jmp_format_header("", o());
+				ns_acquire_for_scope<ns_ostream> o(f.output());
+				ns_capture_sample_region_data::output_region_data_in_jmp_format_header("", o()());
 
 				for (unsigned int j = 0; j < set.regions.size(); j++)
-					set.regions[j].output_region_data_in_jmp_format(o());
+					set.regions[j].output_region_data_in_jmp_format(o()());
 
 				o.release();
 
@@ -738,6 +739,8 @@ ns_64_bit ns_processing_job_maintenance_processor::run_job(ns_sql & sql) {
 		case ns_maintenance_rebuild_movement_data:
 		case ns_maintenance_rebuild_movement_from_stored_images:
 		case ns_maintenance_rebuild_movement_from_stored_image_quantification:
+		case ns_maintenance_rebuild_movement_data_from_stored_solution:
+		case ns_maintenance_recalculate_censoring:
 			analyze_worm_movement_across_frames(job, image_server, sql, true);
 			break;
 		case ns_maintenance_generate_movement_posture_visualization: {
@@ -759,7 +762,9 @@ ns_64_bit ns_processing_job_maintenance_processor::run_job(ns_sql & sql) {
 			//
 			image_server_const.add_subtext_to_current_event("Loading data from disk...", &sql);
 			solution.load_from_db(job.region_id, sql, true);
-			ns_time_path_image_movement_analyzer analyzer;
+
+			ns_time_path_image_movement_analysis_memory_pool<ns_overallocation_resizer> memory_pool;
+			ns_time_path_image_movement_analyzer<ns_overallocation_resizer> analyzer(memory_pool);
 			const ns_time_series_denoising_parameters time_series_denoising_parameters(ns_time_series_denoising_parameters::load_from_db(job.region_id,sql));
 
 			ns_image_server::ns_posture_analysis_model_cache::const_handle_t posture_analysis_model_handle;
@@ -767,7 +772,7 @@ ns_64_bit ns_processing_job_maintenance_processor::run_job(ns_sql & sql) {
 
 			ns_acquire_for_scope<ns_analyzed_image_time_path_death_time_estimator> death_time_estimator(
 				ns_get_death_time_estimator_from_posture_analysis_model(posture_analysis_model_handle().model_specification));
-			analyzer.load_completed_analysis(job.region_id, solution, time_series_denoising_parameters, &death_time_estimator(), sql);
+			analyzer.load_completed_analysis_(job.region_id, solution, time_series_denoising_parameters, &death_time_estimator(), sql);
 			death_time_estimator.release();
 			ns_region_metadata metadata;
 			ns_hand_annotation_loader by_hand_region_annotations;

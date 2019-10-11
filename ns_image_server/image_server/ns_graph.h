@@ -16,7 +16,7 @@ struct ns_graph_color_set{
 	ns_graph_color_set():width(1),opacity(1.0){}
 	ns_graph_color_set(const bool _draw, const ns_color_8 & _color, const unsigned char _width, const unsigned char _edge_width, const float _opacity):
 							draw(_draw),color(_color),width(_width),edge_width(_edge_width),opacity(_opacity),point_shape(ns_square){}
-	typedef enum {ns_square,ns_vertical_line} ns_point_shape;
+	typedef enum {ns_square,ns_vertical_line,ns_circle} ns_point_shape;
 	bool draw;
 	ns_color_8 color;
 	ns_color_8 edge_color;
@@ -113,6 +113,7 @@ struct ns_graph_axes{
 	}
 	ns_axes_position axis_position[2];
 	inline double & operator[] (const unsigned int & i){return boundary(i);}
+	inline const double& operator[] (const unsigned int& i) const { return boundary(i); }
 
 	inline double & boundary(const unsigned int & i){
 		_boundary_specified[i] = true;
@@ -153,11 +154,11 @@ struct ns_graph_specifics{
 						 number_of_y_minor_ticks(40),
 						 boundary(20,40),
 						 aspect_ratio(1.0){};
-	double dx,dy;
+	double dx,dy;	//reltationship between data scale and screen pixels
 	ns_graph_axes axes;
 
 	ns_vector_2i boundary;
-	unsigned int x_axis_pos;
+	unsigned long x_axis_pos;  //position of the x axis in screen pixels
 	int global_independant_variable_id;
 
 	unsigned int number_of_x_major_ticks,
@@ -180,12 +181,13 @@ struct ns_graph_specifics{
 ///suppling the data series to add_fequency_distribution()
 class ns_graph{
 public:
-	ns_graph(){
+	ns_graph():aspect_ratio(1){
 		ns_graph_properties defaults;
 		title_properties.text_size = defaults.text_size*2;
 		set_graph_display_options();
 		stored_contents.reserve(10);
 	}
+	static const bool debug_range_checking;
 	//returns the index of the global independant variable, if found.
 	int  check_input_data();
 

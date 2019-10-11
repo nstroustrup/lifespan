@@ -14,6 +14,7 @@
 #include "ns_annotation_handling_for_visualization.h"
 void ns_hide_worm_window();
 
+//must have worm browser storyboard lock before calling!
 void ns_specify_worm_details(const ns_64_bit region_info_id,const ns_stationary_path_id & worm, const ns_death_time_annotation & sticky_properties, std::vector<ns_death_time_annotation> & event_times,double external_rescale_factor);
 
 class ns_death_time_solo_posture_annotater_timepoint : public ns_annotater_timepoint{
@@ -31,7 +32,7 @@ public:
 		}
 	}
 	const ns_analyzed_image_time_path_element * path_timepoint_element;
-	ns_time_path_image_movement_analyzer * movement_analyzer;
+	ns_time_path_image_movement_analyzer<ns_wasteful_overallocation_resizer> * movement_analyzer;
 	unsigned long element_id;
 	unsigned long group_id;
 	ns_vector_2i image_pane_area;
@@ -103,7 +104,7 @@ public:
 					if (registered_images.get_stabilized_worm_neighborhood_threshold(y / ns_resolution_increase_factor, x)) {
 						long sum, count;
 
-						ns_analyzed_image_time_path::spatially_average_movement(y / ns_resolution_increase_factor, x, ns_time_path_image_movement_analyzer::ns_spatially_averaged_movement_kernal_half_size, movement_image, sum, count);
+						ns_analyzed_image_time_path::spatially_average_movement(y / ns_resolution_increase_factor, x, ns_time_path_image_movement_analyzer<ns_wasteful_overallocation_resizer>::ns_spatially_averaged_movement_kernal_half_size, movement_image, sum, count);
 
 						if (count == 0) t = 0;
 						else {
@@ -130,9 +131,9 @@ public:
 					ns_8_bit t;
 					if (registered_images.get_stabilized_worm_neighborhood_threshold(y / ns_resolution_increase_factor, x)) {
 						long sum, count;
-						ns_analyzed_image_time_path::spatially_average_movement(y / ns_resolution_increase_factor, x, ns_time_path_image_movement_analyzer::ns_spatially_averaged_movement_kernal_half_size, movement_image, sum, count);
+						ns_analyzed_image_time_path::spatially_average_movement(y / ns_resolution_increase_factor, x, ns_time_path_image_movement_analyzer<ns_wasteful_overallocation_resizer>::ns_spatially_averaged_movement_kernal_half_size, movement_image, sum, count);
 
-						if (abs(sum) < count*ns_time_path_image_movement_analyzer::ns_spatially_averaged_movement_threshold)
+						if (abs(sum) < count*ns_time_path_image_movement_analyzer<ns_wasteful_overallocation_resizer>::ns_spatially_averaged_movement_threshold)
 							t = 0;
 						else {
 							t = 255 * ((abs(sum / count) - min_mov) / mov_r);
@@ -158,7 +159,7 @@ public:
 					float f;
 					if (registered_images.get_stabilized_worm_neighborhood_threshold(y/ ns_resolution_increase_factor, x)) {
 						long sum, count;
-						ns_analyzed_image_time_path::spatially_average_movement(y/ ns_resolution_increase_factor, x, ns_time_path_image_movement_analyzer::ns_spatially_averaged_movement_kernal_half_size, movement_image, sum, count);
+						ns_analyzed_image_time_path::spatially_average_movement(y/ ns_resolution_increase_factor, x, ns_time_path_image_movement_analyzer<ns_wasteful_overallocation_resizer>::ns_spatially_averaged_movement_kernal_half_size, movement_image, sum, count);
 
 						if (count == 0)
 							f = 0;
@@ -188,8 +189,8 @@ public:
 					float f;
 					if (registered_images.get_stabilized_worm_neighborhood_threshold(y/ ns_resolution_increase_factor, x)) {
 						long sum, count;
-						ns_analyzed_image_time_path::spatially_average_movement(y/ ns_resolution_increase_factor, x, ns_time_path_image_movement_analyzer::ns_spatially_averaged_movement_kernal_half_size, movement_image, sum, count);
-						if (count == 0 || abs(sum) < count* ns_time_path_image_movement_analyzer::ns_spatially_averaged_movement_threshold)
+						ns_analyzed_image_time_path::spatially_average_movement(y/ ns_resolution_increase_factor, x, ns_time_path_image_movement_analyzer<ns_wasteful_overallocation_resizer>::ns_spatially_averaged_movement_kernal_half_size, movement_image, sum, count);
+						if (count == 0 || abs(sum) < count* ns_time_path_image_movement_analyzer<ns_wasteful_overallocation_resizer>::ns_spatially_averaged_movement_threshold)
 							f = 0;
 						else {
 							f = ((abs(sum / count) - min_mov) / mov_r);
@@ -239,9 +240,15 @@ public:
 
 	}
 	
-	void load_image(const unsigned long buffer_height,ns_annotater_image_buffer_entry & im,ns_sql & sql,ns_image_standard & temp_buffer, const unsigned long resize_factor_=1){
-		movement_analyzer->load_images_for_group(group_id,element_id+10,sql,false,false);
-	//	ns_annotater_timepoint::load_image(buffer_height,im,sql,temp_buffer,resize_factor_);
+	void load_image(const unsigned long buffer_height,ns_annotater_image_buffer_entry & im,
+		ns_sql & sql,
+		ns_simple_local_image_cache & image_cache,
+		ns_annotater_memory_pool & memory_pool, const unsigned long resize_factor_=1){
+		//all images are being loaded asynchronosuly.  Wait until the requested element is loaded
+		im.loaded = false;
+		if (!movement_analyzer->wait_until_element_is_loaded(group_id, element_id)) {
+			return;
+		}
 		if (path_timepoint_element == 0){
 		  cerr << "Path timepoint element not specified";
 		  return;
@@ -259,6 +266,10 @@ public:
 		prop.width *= ns_resolution_increase_factor;
 		prop.height *= ns_resolution_increase_factor;
 		prop.components = 3;
+		if (im.im == 0) {
+			im.im = memory_pool.get(prop);
+			im.im->use_more_memory_to_avoid_reallocations(true);
+		}
 		im.loaded = true;
 		im.im->init(prop);
 
@@ -272,95 +283,123 @@ public:
 	private:
 		 ns_visualization_type vis_type;
 };
+struct ns_death_time_posture_solo_annotater_data_cache_data_source {
+	ns_death_time_posture_solo_annotater_data_cache_data_source() :sql(0), memory_pool(0){}
+	ns_death_time_posture_solo_annotater_data_cache_data_source(ns_sql * s, ns_time_path_image_movement_analysis_memory_pool<ns_wasteful_overallocation_resizer> * pool) :sql(s), memory_pool(pool) {}
+	ns_sql * sql;
+	ns_time_path_image_movement_analysis_memory_pool<ns_wasteful_overallocation_resizer> * memory_pool;
+};
+
+struct ns_death_time_posture_solo_annotater_data_cache_data_spec {
+	ns_death_time_posture_solo_annotater_data_cache_data_spec() :region_id(0), load_movement_quantification_data(false) {}
+	ns_death_time_posture_solo_annotater_data_cache_data_spec(ns_64_bit id, bool r) :region_id(id), load_movement_quantification_data(r) {}
+	ns_64_bit region_id;
+	bool load_movement_quantification_data;
+};
+
+template<class ns_component>
+class ns_death_time_posture_solo_annotater_data_cache_data : public ns_simple_cache_data<ns_death_time_posture_solo_annotater_data_cache_data_spec, ns_death_time_posture_solo_annotater_data_cache_data_source, ns_64_bit> {
+	ns_death_time_posture_solo_annotater_data_cache_data_spec region_info_int;
+public:
+	ns_death_time_posture_solo_annotater_data_cache_data() :data(0) {}
+	ns_image_storage_source_handle<ns_component> source;
+	ns_image_server_image image_record;
+	ns_death_time_posture_solo_annotater_region_data *data;
+	ns_64_bit size_in_memory_in_kbytes() const {
+		return 1;
+	}
+	void load_from_external_source(const ns_death_time_posture_solo_annotater_data_cache_data_spec & region_info, ns_death_time_posture_solo_annotater_data_cache_data_source & source_) {
+		region_info_int = region_info;
+		data = new ns_death_time_posture_solo_annotater_region_data(*source_.memory_pool);
+		data->metadata.load_from_db(region_info.region_id, "", *source_.sql);
+		ns_image_server_results_subject sub;
+		sub.region_id = region_info.region_id;
+		data->loading_time = ns_current_time();
+		data->annotation_file = image_server.results_storage.hand_curated_death_times(sub, *source_.sql);
+		//this will work even if no path data can be loaded, but 
+		//p->loaded_path_data_successfully will be set to false
+
+		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Loading movement quantification data"));
+		data->load_movement_analysis(region_info.region_id, *source_.sql, region_info.load_movement_quantification_data);
+
+		ns_timing_data_configurator configurator;
+		configurator(region_info.region_id, data->movement_analyzer, data->machine_timing_data, data->by_hand_timing_data);
+
+		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Loading annotations 2"));
+		data->load_annotations(*source_.sql, false);
+	}
+	void clean_up(ns_death_time_posture_solo_annotater_data_cache_data_source & source) { 
+		ns_safe_delete(data); 
+	}
+
+	const ns_64_bit & id() const { return region_info_int.region_id; }
+	static ns_64_bit to_id(const ns_death_time_posture_solo_annotater_data_cache_data_spec & region_info) { return region_info.region_id; }
+};
+
+typedef ns_simple_cache< ns_death_time_posture_solo_annotater_data_cache_data<ns_8_bit>, ns_64_bit,true> ns_death_time_posture_solo_annotater_data_cache_storage;
 
 
 class ns_death_time_posture_solo_annotater_data_cache{
-	
-	//region_info_id , data
-	typedef std::map<unsigned long,ns_death_time_posture_solo_annotater_region_data *> ns_movement_data_list;
-	ns_movement_data_list region_movement_data;
+	ns_death_time_posture_solo_annotater_data_cache_storage cache;
 	//ns_death_time_posture_solo_annotater_region_data data;
 
 public:
+	ns_death_time_posture_solo_annotater_data_cache():cache(2)	//allow two regions to be loaded simultaneously.
+	{}
 	void clear(){
-		region_movement_data.clear();
-	}
-	ns_death_time_posture_solo_annotater_region_data * get_region_movement_data(const unsigned int region_id, ns_sql & sql, bool load_movement_quantification_data) {
-
-		unsigned long current_time(ns_current_time());
-		ns_movement_data_list::iterator p = region_movement_data.find(region_id);
-		if (p == region_movement_data.end()) {
-			//clear out old cache entries to prevent large cumulative memory allocation
-			unsigned long cleared(0);
-			unsigned long count(region_movement_data.size());
-			unsigned long cutoff_time;
-			unsigned long max_buffer_size(6);
-			if (region_movement_data.size() < max_buffer_size) {
-				//delete all cached data older than 3 minutes
-				cutoff_time = current_time - 60 * 60 * 3;
-			}
-			else {
-				std::vector<unsigned long> times(region_movement_data.size());
-				unsigned long i(0);
-				for (ns_movement_data_list::iterator q = region_movement_data.begin(); q != region_movement_data.end(); q++) {
-					times[i] = q->second->loading_time;
-					i++;
-				}
-				std::sort(times.begin(), times.end(), std::greater<unsigned long>());
-				cutoff_time = times[max_buffer_size - 1];
-			}
-			for (ns_movement_data_list::iterator q = region_movement_data.begin(); q != region_movement_data.end();) {
-				if (q->second->loading_time <= cutoff_time) {
-					delete q->second;
-					region_movement_data.erase(q++);
-					cleared++;
-				}
-				else q++;
-			}
-			if (cleared > 0)
-				cout << "Cleared " << cleared << " out of " << count << " entries in path cache.\n";
-			p = region_movement_data.insert(ns_movement_data_list::value_type(region_id, new ns_death_time_posture_solo_annotater_region_data())).first;
-		}
-		ns_death_time_posture_solo_annotater_region_data & data = *(p->second);
-		try {
-			data.metadata.load_from_db(region_id, "", sql);
-			ns_image_server_results_subject sub;
-			sub.region_id = region_id;
-			data.loading_time = current_time;
-			data.annotation_file = image_server.results_storage.hand_curated_death_times(sub, sql);
-			//this will work even if no path data can be loaded, but 
-			//p->loaded_path_data_successfully will be set to false
-
-			if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Loading movement quantification data"));
-			data.load_movement_analysis(region_id, sql, load_movement_quantification_data);
-			
-			ns_timing_data_configurator configurator;
-			configurator(region_id,data.movement_analyzer, data.machine_timing_data, data.by_hand_timing_data);
-
-			if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Loading annotations 2"));
-			data.load_annotations(sql,false);
-		
-		}
-		catch (...) {
-			delete p->second;
-			region_movement_data.erase(p);
-			throw;
-		}
-
-		return p->second;
+		ns_death_time_posture_solo_annotater_data_cache_data_source source(0, &memory_pool);
+		cache.clear_cache(source);
 	}
 
+	bool is_loaded(const ns_64_bit region_id) {
+		ns_death_time_posture_solo_annotater_data_cache_data_spec spec(region_id, false);
+		return cache.is_cached(spec);
+	}
+	void get_region_movement_data(const ns_64_bit region_id, ns_sql & sql, const bool load_movement_quantification_data, ns_death_time_posture_solo_annotater_data_cache_storage::handle_t & handle) {
 
-	void add_annotations_to_set(ns_death_time_annotation_set & set, std::vector<ns_death_time_annotation> & orphaned_events){
-		for (ns_death_time_posture_solo_annotater_data_cache::ns_movement_data_list::iterator p = region_movement_data.begin(); p != region_movement_data.end(); p++)
-			p->second->add_annotations_to_set(set,orphaned_events);
+		ns_death_time_posture_solo_annotater_data_cache_data_source source(&sql, &memory_pool);
+		ns_death_time_posture_solo_annotater_data_cache_data_spec spec(region_id, load_movement_quantification_data);
+		//cerr << "Loading get\n";
+		cache.get_for_write(spec, handle, source);
+	}
+	void get_region_movement_data_no_create(const ns_64_bit region_id,  ns_death_time_posture_solo_annotater_data_cache_storage::handle_t & handle){
+		ns_death_time_posture_solo_annotater_data_cache_data_spec spec(region_id, false);
+		//cerr << "no create get\n";
+		cache.get_for_write_no_create(spec, handle);
+	}
+	void get_region_movement_data_no_create(const ns_64_bit region_id, ns_death_time_posture_solo_annotater_data_cache_storage::const_handle_t & handle) {
+		ns_death_time_posture_solo_annotater_data_cache_data_spec spec(region_id, false);
+		//cerr << "no create const get\n";
+		cache.get_for_read_no_create(spec, handle);
+	}
+
+	
+	void add_annotations_to_set(ns_death_time_annotation_set & set, ns_sql & sql,std::vector<ns_death_time_annotation> & orphaned_events){
+
+		ns_death_time_posture_solo_annotater_data_cache_data_source source(&sql, &memory_pool);
+
+		ns_64_bit cur_region_id = 0;
+		bool first = true;
+		//go through region by region adding everything in.
+		ns_death_time_posture_solo_annotater_data_cache_storage::handle_t handle;
+		for (auto p = set.begin(); p != set.end(); p++) {
+			if (first || p->region_info_id != cur_region_id) {
+				if (!first)
+					handle.release();
+				first = false;
+				cur_region_id = p->region_info_id;
+				ns_death_time_posture_solo_annotater_data_cache_data_spec spec(cur_region_id, false);
+				cache.get_for_write(spec, handle, source);
+			}
+			handle().data->add_annotations_to_set(set, orphaned_events);
+		}
+		if (!first)
+			handle.release();
 	}
 	bool save_annotations(const ns_death_time_annotation_set & a){
 		throw ns_ex("Solo posture annotater annotations should be mixed in with storyboard");
-		for (ns_death_time_posture_solo_annotater_data_cache::ns_movement_data_list::iterator p = region_movement_data.begin(); p != region_movement_data.end(); p++)
-			p->second->save_annotations(a);
-		return true;
 	}
+	ns_time_path_image_movement_analysis_memory_pool<ns_wasteful_overallocation_resizer> memory_pool;
 };
 
 class ns_worm_learner;
@@ -370,20 +409,41 @@ private:
 	ns_death_time_solo_posture_annotater_timepoint::ns_visualization_type current_visualization_type;
 	std::vector<ns_death_time_solo_posture_annotater_timepoint> timepoints;
 	static ns_death_time_posture_solo_annotater_data_cache data_cache;
-	ns_death_time_posture_solo_annotater_region_data * current_region_data;
-	ns_analyzed_image_time_path * current_worm;
+
+	ns_analyzed_image_time_path * current_worm(ns_death_time_posture_solo_annotater_data_cache_storage::handle_t & handle) {
+		if (current_region_id == 0)
+			return 0;
+		return &handle().data->movement_analyzer[current_worm_id.group_id].paths[current_worm_id.path_id];
+	}
+	const ns_analyzed_image_time_path * current_worm(ns_death_time_posture_solo_annotater_data_cache_storage::const_handle_t & handle) const {
+		if (current_region_id == 0)
+			return 0;
+		return &handle().data->movement_analyzer[current_worm_id.group_id].paths[current_worm_id.path_id];
+	}
+
+	const ns_analyzed_image_time_path * current_worm(ns_death_time_posture_solo_annotater_data_cache_storage::handle_t & handle) const {
+		if (current_region_id == 0)
+			return 0;
+		return &handle().data->movement_analyzer[current_worm_id.group_id].paths[current_worm_id.path_id];
+	}
 	ns_death_time_annotation properties_for_all_animals;
 
 	unsigned long current_element_id()const { return current_timepoint_id; }
-	ns_death_time_annotation_time_interval current_time_interval() {
+	ns_death_time_annotation_time_interval current_time_interval(ns_death_time_posture_solo_annotater_data_cache_storage::handle_t & handle) {
+		ns_analyzed_image_time_path * cur_worm = current_worm(handle);
+
 		if (current_timepoint_id == 0)
-			return current_worm->observation_limits().interval_before_first_observation;
-		return ns_death_time_annotation_time_interval(current_worm->element(current_timepoint_id - 1).absolute_time,
-			current_worm->element(current_timepoint_id).absolute_time);
+			return cur_worm->observation_limits().interval_before_first_observation;
+		return ns_death_time_annotation_time_interval(cur_worm->element(current_timepoint_id - 1).absolute_time,
+			cur_worm->element(current_timepoint_id).absolute_time);
 
 	}
-	ns_animal_list_at_position & current_by_hand_timing_data() { return current_region_data->by_hand_timing_data[properties_for_all_animals.stationary_path_id.group_id]; }
-	ns_animal_list_at_position * current_machine_timing_data;
+	ns_animal_list_at_position * current_by_hand_timing_data(ns_death_time_posture_solo_annotater_data_cache_storage::handle_t & handle) {
+		return & handle().data->by_hand_timing_data[properties_for_all_animals.stationary_path_id.group_id]; 
+	}
+	ns_animal_list_at_position * current_machine_timing_data(ns_death_time_posture_solo_annotater_data_cache_storage::handle_t & handle) {
+		return & handle().data->machine_timing_data[current_worm_id.group_id];
+	}
 	unsigned long current_animal_id;
 
 	static void draw_box(const ns_vector_2i & p, const ns_vector_2i & s, const ns_color_8 & c, ns_image_standard & im, const unsigned long thickness) {
@@ -398,18 +458,29 @@ private:
 		case ns_movement_posture: return "Changing Posture";
 		case ns_movement_slow: return "Slow Moving";
 		case ns_movement_fast: return "Fast Moving";
-		case ns_movement_death_posture_relaxation: return "Death Posture Relaxation";
+		case ns_movement_death_associated_expansion: return "Death-Associated Expansion";
+		case ns_movement_death_associated_post_expansion_contraction: return "Death-Associated post-expansion Contraction";
 		default: return std::string("Unknown:") + ns_to_string((int)cur_state);
 		}
 	}
 	enum { bottom_offset = 5, movement_vis_bar_height = 10 * ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor};
-
 	void draw_metadata(ns_annotater_timepoint * tp_a, ns_image_standard & im, double external_window_rescale_factor) {
-		if (current_worm == 0) {
+
+		ns_death_time_posture_solo_annotater_data_cache_storage::handle_t local_handle;
+		data_cache.get_region_movement_data_no_create(current_region_id, local_handle);
+		draw_metadata(tp_a, im, local_handle, external_window_rescale_factor);
+		local_handle.release();
+		
+	}
+	void draw_metadata(ns_annotater_timepoint * tp_a, ns_image_standard & im, ns_death_time_posture_solo_annotater_data_cache_storage::handle_t & handle,double external_window_rescale_factor) {
+		
+		ns_analyzed_image_time_path * cur_worm = current_worm(handle);
+
+		if (cur_worm == 0) {
 			cerr << "worm not loaded/n";
 			return;
 		}
-		if (current_element_id() >= current_worm->element_count()) {
+		if (current_element_id() >= cur_worm->element_count()) {
 			cerr << "Element " << current_element_id() << " does not exist/n";
 			return;
 		}
@@ -423,8 +494,8 @@ private:
 		ns_font & font(font_server.get_default_font());
 		const unsigned long text_height(14);
 		font.set_height(text_height*ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor);
-		ns_vector_2i bottom_margin_bottom(bottom_margin_position());
-		ns_vector_2i bottom_margin_top(bottom_margin_bottom.x + current_worm->element(current_element_id()).image().properties().width + ns_death_time_solo_posture_annotater_timepoint::ns_side_border_width,
+		ns_vector_2i bottom_margin_bottom(bottom_margin_position(&handle));
+		ns_vector_2i bottom_margin_top(bottom_margin_bottom.x + cur_worm->element(current_element_id()).image().properties().width + ns_death_time_solo_posture_annotater_timepoint::ns_side_border_width,
 			bottom_margin_bottom.y + ns_death_time_solo_posture_annotater_timepoint::bottom_border_height() - bottom_offset);
 
 
@@ -441,76 +512,103 @@ private:
 
 
 		
-		const ns_time_path_limits observation_limit(current_worm->observation_limits());
+		const ns_time_path_limits observation_limit(cur_worm->observation_limits());
 		ns_death_time_annotation_time_interval first_path_obs, last_path_obs;
-		last_path_obs.period_end = current_worm->element(current_worm->element_count() - 1).absolute_time;
-		last_path_obs.period_start = current_worm->element(current_worm->element_count() - 2).absolute_time;
-		first_path_obs.period_start = current_worm->element(0).absolute_time;
-		first_path_obs.period_end = current_worm->element(1).absolute_time;
+		last_path_obs.period_end = cur_worm->element(cur_worm->element_count() - 1).absolute_time;
+		last_path_obs.period_start = cur_worm->element(cur_worm->element_count() - 2).absolute_time;
+		first_path_obs.period_start = cur_worm->element(0).absolute_time;
+		first_path_obs.period_end = cur_worm->element(1).absolute_time;
 
+		ns_animal_list_at_position * cur_hand_timing(current_by_hand_timing_data(handle));
+		ns_animal_list_at_position * cur_machine_timing(current_machine_timing_data(handle));
 		//handle out of bound values
-		for (ns_animal_list_at_position::ns_animal_list::iterator p = current_by_hand_timing_data().animals.begin(); p != current_by_hand_timing_data().animals.end(); p++) {
+		for (ns_animal_list_at_position::ns_animal_list::iterator p = cur_hand_timing->animals.begin(); p != cur_hand_timing->animals.end(); p++) {
 			ns_crop_time(observation_limit, first_path_obs, last_path_obs, p->fast_movement_cessation.time);
-			ns_crop_time(observation_limit, first_path_obs, last_path_obs, p->death_posture_relaxation_termination_.time);
-			ns_crop_time(observation_limit, first_path_obs, last_path_obs, p->death_posture_relaxation_start.time);
+			ns_crop_time(observation_limit, first_path_obs, last_path_obs, p->death_associated_expansion_stop.time);
+			ns_crop_time(observation_limit, first_path_obs, last_path_obs, p->death_associated_expansion_start.time);
+			ns_crop_time(observation_limit, first_path_obs, last_path_obs, p->death_associated_post_expansion_contraction_stop.time);
+			ns_crop_time(observation_limit, first_path_obs, last_path_obs, p->death_associated_post_expansion_contraction_start.time);
 			ns_crop_time(observation_limit, first_path_obs, last_path_obs, p->movement_cessation.time);
 			ns_crop_time(observation_limit, first_path_obs, last_path_obs, p->translation_cessation.time);
 		}
 
-		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Drawing timing."));
-		//if (!current_machine_timing_data->animals[0].death_posture_relaxation_start.time.period_start_was_not_observed)
-		//	cerr << "s:" << (current_machine_timing_data->animals[0].death_posture_relaxation_start.time.period_start - observation_limit.first_obsevation_of_plate.period_end) / 60.0 / 60.0 / 24.0 << "\n";
-		//if (!current_machine_timing_data->animals[0].death_posture_relaxation_termination_.time.period_start_was_not_observed)
-		//	cerr << "e:" << (current_machine_timing_data->animals[0].death_posture_relaxation_termination_.time.period_start - observation_limit.first_obsevation_of_plate.period_end) / 60.0 / 60.0 / 24.0 << "\n";
-
-		current_machine_timing_data->animals[0].draw_movement_diagram(bottom_margin_bottom,
-			ns_vector_2i(current_worm->element(current_element_id()).image().properties().width*ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor, movement_vis_bar_height),
-			observation_limit,
-			current_time_interval(),
-			im, 0.8, ceil(1/external_window_rescale_factor));
-		const unsigned long hand_bar_height(current_by_hand_timing_data().animals.size()*
+		const unsigned long hand_bar_height(cur_hand_timing->animals.size() *
 			ns_death_time_solo_posture_annotater_timepoint::ns_movement_bar_height);
 
-		for (unsigned int i = 0; i < current_by_hand_timing_data().animals.size(); i++) {
-			current_by_hand_timing_data().animals[i].draw_movement_diagram(bottom_margin_bottom + (
-				ns_vector_2i(0, (i + 1)*ns_death_time_solo_posture_annotater_timepoint::ns_movement_bar_height))*ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor,
-				ns_vector_2i(current_worm->element(current_element_id()).image().properties().width*ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor, movement_vis_bar_height),
+		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Drawing timing."));
+		try {
+			cur_machine_timing->animals[0].draw_movement_diagram(bottom_margin_bottom,
+				ns_vector_2i(cur_worm->element(current_element_id()).image().properties().width * ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor, movement_vis_bar_height),
 				observation_limit,
-				current_time_interval(),
-				im, (i == current_animal_id) ? 1.0 : 0.8, ceil(1/external_window_rescale_factor));
+				current_time_interval(handle),
+				im, 0.8, ceil(1 / external_window_rescale_factor));
+			for (unsigned int i = 0; i < cur_hand_timing->animals.size(); i++) {
+				cur_hand_timing->animals[i].draw_movement_diagram(bottom_margin_bottom + (
+					ns_vector_2i(0, (i + 1) * ns_death_time_solo_posture_annotater_timepoint::ns_movement_bar_height)) * ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor,
+					ns_vector_2i(cur_worm->element(current_element_id()).image().properties().width * ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor, movement_vis_bar_height),
+					observation_limit,
+					current_time_interval(handle),
+					im, (i == current_animal_id) ? 1.0 : 0.8, ceil(1 / external_window_rescale_factor));
+			}
+			//throw ns_ex("TEST");
+		}
+		catch (ns_ex & ex) {
+
+			cout << ex.text() << "\n";
+			/*class ns_choice_dialog dialog;
+			dialog.title = "An error is present in this animal's data:";
+			dialog.option_1 = "Ignore";
+			dialog.option_2 = "Clear all annotations";
+			ns_run_in_main_thread<ns_choice_dialog> b(&dialog);
+			switch (dialog.result) {
+			case 1:
+				break;
+			case 2:*/
+			cur_hand_timing->animals.resize(1);
+			current_animal_id = 0;
+			cur_hand_timing->animals[0].clear_annotations();
+
+			cur_hand_timing->animals[0].set_fast_movement_cessation_time(
+				ns_death_timing_data_step_event_specification(cur_worm->cessation_of_fast_movement_interval(),
+					cur_worm->element(cur_worm->first_stationary_timepoint()),
+					properties_for_all_animals.region_info_id, properties_for_all_animals.stationary_path_id, 0));
+				//	}
+
 		}
 
 		const int num_lines(6);
 		std::string lines[num_lines];
 		ns_color_8 line_color[num_lines];
-		const ns_movement_state cur_by_hand_state(current_by_hand_timing_data().animals[current_animal_id].movement_state(current_worm->element(current_element_id()).absolute_time));
-		const ns_movement_state cur_machine_state(current_machine_timing_data->animals[0].movement_state(current_worm->element(current_element_id()).absolute_time));
-		const bool by_hand_death_contracting(current_by_hand_timing_data().animals[current_animal_id].is_death_time_contracting(current_worm->element(current_element_id()).absolute_time));
-		const bool machine_death_contracting(current_machine_timing_data->animals[0].is_death_time_contracting(current_worm->element(current_element_id()).absolute_time));
+		const ns_movement_state cur_by_hand_state(cur_hand_timing->animals[current_animal_id].movement_state(cur_worm->element(current_element_id()).absolute_time));
+		const ns_movement_state cur_machine_state(cur_machine_timing->animals[0].movement_state(cur_worm->element(current_element_id()).absolute_time));
+		const bool by_hand_death_expanding(cur_hand_timing->animals[current_animal_id].is_death_time_expanding(cur_worm->element(current_element_id()).absolute_time));
+		const bool machine_death_expanding(cur_machine_timing->animals[0].is_death_time_expanding(cur_worm->element(current_element_id()).absolute_time));
+		const bool by_hand_death_post_expansion_contracting(cur_hand_timing->animals[current_animal_id].is_death_time_post_expansion_contracting(cur_worm->element(current_element_id()).absolute_time));
+		const bool machine_death_post_expansion_contracting(cur_machine_timing->animals[0].is_death_time_post_expansion_contracting(cur_worm->element(current_element_id()).absolute_time));
 		lines[0] = "Frame " + ns_to_string(current_element_id() + 1) + " of " + ns_to_string(timepoints.size()) + " ";
-		lines[0] += current_worm->element(current_element_id()).element_before_fast_movement_cessation ? "(B)" : "(A)";
-		lines[0] += current_worm->element(current_element_id()).inferred_animal_location ? "(I)" : "";
-		if (current_region_data->metadata.time_at_which_animals_had_zero_age != 0) {
+		lines[0] += cur_worm->element(current_element_id()).element_before_fast_movement_cessation ? "(B)" : "(A)";
+		lines[0] += cur_worm->element(current_element_id()).inferred_animal_location ? "(I)" : "";
+		if (handle().data->metadata.time_at_which_animals_had_zero_age != 0) {
 			lines[0] += "Day ";
 			lines[0] += ns_to_string_short((float)
-				(current_worm->element(current_element_id()).absolute_time -
-					current_region_data->metadata.time_at_which_animals_had_zero_age) / 24.0 / 60 / 60, 2);
+				(cur_worm->element(current_element_id()).absolute_time -
+					handle().data->metadata.time_at_which_animals_had_zero_age) / 24.0 / 60 / 60, 2);
 			lines[0] += " ";
 		}
 		lines[0] += "Date: ";
-		lines[0] += ns_format_time_string_for_human(current_worm->element(current_element_id()).absolute_time);
+		lines[0] += ns_format_time_string_for_human(cur_worm->element(current_element_id()).absolute_time);
 
-		lines[1] = (current_region_data->metadata.plate_type_summary());
+		lines[1] = (handle().data->metadata.plate_type_summary());
 
 
-		lines[2] = current_region_data->metadata.sample_name + "::" + current_region_data->metadata.region_name + "::worm #" + ns_to_string(properties_for_all_animals.stationary_path_id.group_id);
+		lines[2] = handle().data->metadata.sample_name + "::" + handle().data->metadata.region_name + "::worm #" + ns_to_string(properties_for_all_animals.stationary_path_id.group_id);
 
-		ns_vector_2i p(current_worm->path_region_position + current_worm->path_region_size / 2);
+		ns_vector_2i p(cur_worm->path_region_position + cur_worm->path_region_size / 2);
 		lines[2] += " (" + ns_to_string(p.x) + "," + ns_to_string(p.y) + ")";
 
-		lines[3] = "Machine:" + state_label(cur_machine_state) + (machine_death_contracting ? "(Contr/Expr)" : "");
-		if (current_by_hand_timing_data().animals[current_animal_id].specified)
-			lines[4] += "Human: " + state_label(cur_by_hand_state) + (by_hand_death_contracting ? "(Contr/Expr)" : "");
+		lines[3] = "Machine:" + state_label(cur_machine_state) + (machine_death_expanding ? "(Expanding)" : "") + (machine_death_post_expansion_contracting ? "(Contracting)" : "");
+		if (cur_hand_timing->animals[current_animal_id].specified)
+			lines[4] += "Human: " + state_label(cur_by_hand_state) + (by_hand_death_expanding ? "(Expanding)" : "") + (by_hand_death_post_expansion_contracting ? "(Contracting)" : "");
 		else lines[4] += "Human: Not Specified";
 		if (properties_for_all_animals.number_of_worms_at_location_marked_by_hand > 1) {
 			lines[4] += " +";
@@ -534,16 +632,13 @@ private:
 		lock.release();
 	}
 
-
-
 	ns_worm_learner * worm_learner;
 
-
-
 	mutable bool saved_;
+
 public:
 
-	enum { default_resize_factor = 1, max_buffer_size = 15, max_zoom_factor = 40 };
+	enum { default_resize_factor = 1, max_buffer_size = 1, max_zoom_factor = 40 };
 	float telemetry_zoom_factor;
 	ns_vector_2i telemetry_size() { return ns_vector_2i(500, 500)*ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor; }
 
@@ -561,7 +656,14 @@ public:
 		request_refresh();
 		return graph_contents;
 	}
-	ns_death_time_solo_posture_annotater_timepoint::ns_visualization_type step_visualization_type(double external_rescale_factor) {
+
+	ns_death_time_solo_posture_annotater_timepoint::ns_visualization_type step_visualization_type(ns_death_time_posture_solo_annotater_data_cache_storage::handle_t * handle,double external_rescale_factor) {
+
+		ns_death_time_posture_solo_annotater_data_cache_storage::handle_t local_handle;
+		if (handle == 0){
+			data_cache.get_region_movement_data_no_create(current_region_id, local_handle);
+			handle = &local_handle;
+		}
 
 		if (current_visualization_type == ns_death_time_solo_posture_annotater_timepoint::ns_movement_threshold_and_image)
 			current_visualization_type = ns_death_time_solo_posture_annotater_timepoint::ns_image;
@@ -576,10 +678,9 @@ public:
 			next_images[i].loaded = false;
 		}
 
-		ns_image_standard temp_buffer;
-		timepoints[current_timepoint_id].load_image(1024, current_image, sql(), temp_buffer, 1);
+		timepoints[current_timepoint_id].load_image(1024, current_image, sql(),local_image_cache, memory_pool, 1);
 
-		draw_metadata(&timepoints[current_timepoint_id], *current_image.im, external_rescale_factor);
+		draw_metadata(&timepoints[current_timepoint_id], *current_image.im, *handle, external_rescale_factor);
 		lock.release();
 		return current_visualization_type;
 	}
@@ -595,8 +696,9 @@ public:
 	void set_resize_factor(const unsigned long resize_factor_) { resize_factor = resize_factor_; }
 	bool data_saved()const { return saved_; }
 	ns_death_time_solo_posture_annotater() :ns_image_series_annotater(default_resize_factor, ns_death_time_posture_annotater_timepoint::ns_bottom_border_height),
-		saved_(true), graph_contents(ns_animal_telemetry::ns_movement_intensity), worm_image_offset_due_to_telemetry_graph_spacing(0,0),current_visualization_type(ns_death_time_solo_posture_annotater_timepoint::ns_image), current_region_data(0), telemetry_zoom_factor(1), current_worm(0), current_machine_timing_data(0) {}
-
+		saved_(true), graph_contents(ns_animal_telemetry::ns_movement_intensity), worm_image_offset_due_to_telemetry_graph_spacing(0,0),current_visualization_type(ns_death_time_solo_posture_annotater_timepoint::ns_image),
+		region_loaded(false), telemetry_zoom_factor(1), current_region_id(0){	}
+	bool region_loaded;
 	typedef enum { ns_time_aligned_images, ns_death_aligned_images } ns_alignment_type;
 
 	bool load_annotations() {
@@ -607,26 +709,48 @@ public:
 	}
 
 	void add_annotations_to_set(ns_death_time_annotation_set & set, std::vector<ns_death_time_annotation> & orphaned_events) {
-		data_cache.add_annotations_to_set(set, orphaned_events);
+		data_cache.add_annotations_to_set(set, sql(),orphaned_events);
 	}
 
 	void save_annotations(const ns_death_time_annotation_set & set) const {
+		throw ns_ex("This shouldn't run");
 		data_cache.save_annotations(set);
 
 		ns_update_worm_information_bar(string("Annotations saved at ") + ns_format_time_string_for_human(ns_current_time()));
 		ns_update_main_information_bar(string("Annotations saved at ") + ns_format_time_string_for_human(ns_current_time()));
 		saved_ = true;
 	};
-	bool current_region_path_data_loaded() {
-		return current_region_data->loaded_path_data_successfully;
+	bool current_region_path_data_loaded(ns_death_time_posture_solo_annotater_data_cache_storage::handle_t & handle) {
+		if (current_region_id == 0)
+			return 0;
+		return handle().data->loaded_path_data_successfully;
 	}
 	void close_worm() {
-		if (current_region_data != 0)
-			current_region_data->clear_images_for_worm(properties_for_all_animals.stationary_path_id);
+		if (current_region_id == 0 || !data_cache.is_loaded(current_region_id)) {
+			current_region_id = 0;
+			return;
+		}
+		ns_death_time_posture_solo_annotater_data_cache_storage::handle_t handle;
+		try{
+			data_cache.get_region_movement_data_no_create(current_region_id, handle);
+				}
+		catch(ns_ex & ex){
+		  //cerr << ex.text() << "\n";
+		}
+		try {
+			if (handle.is_valid()) {
+				handle().data->movement_analyzer.stop_asynch_group_load();
+				handle().data->clear_images_for_worm(properties_for_all_animals.stationary_path_id, local_image_cache);
+			}
+
+		}
+		catch (ns_ex & ex) {
+			cerr << ex.text() << "\n";
+		}
 		properties_for_all_animals = ns_death_time_annotation();
 		properties_for_all_animals.region_info_id = 0;
-		current_worm = 0;
-		current_machine_timing_data = 0;
+		current_worm_id.group_id = 0;
+		current_worm_id.path_id = 0;
 		current_timepoint_id = 0;
 		current_animal_id = 0;
 	}
@@ -635,19 +759,20 @@ public:
 	}
 
 	static bool ns_fix_annotation(ns_death_time_annotation & a,ns_analyzed_image_time_path & p);
-	void set_current_timepoint(const unsigned long current_time,const bool require_exact=true,const bool give_up_if_too_long=false){
-		for (current_timepoint_id = 0; current_timepoint_id < current_worm->element_count(); current_timepoint_id++){
-				if (current_worm->element(current_timepoint_id).absolute_time >= current_time)
+	void set_current_timepoint(const unsigned long current_time, ns_death_time_posture_solo_annotater_data_cache_storage::handle_t & handle, const bool require_exact=true,const bool give_up_if_too_long=false){
+		auto cur_worm = current_worm(handle);
+		for (current_timepoint_id = 0; current_timepoint_id < cur_worm->element_count(); current_timepoint_id++){
+				if (cur_worm->element(current_timepoint_id).absolute_time >= current_time)
 					break;
 			}	
-		if (current_timepoint_id >= current_worm->element_count())
-			current_timepoint_id = current_worm->element_count() - 1;
+		if (current_timepoint_id >= cur_worm->element_count())
+			current_timepoint_id = cur_worm->element_count() - 1;
 		bool give_up_on_preload(false);
 		if (current_timepoint_id > 50 && give_up_if_too_long){
 			give_up_on_preload = true;
 			current_timepoint_id = 0;
-			for (unsigned int k = 0; k < current_worm->element_count(); k++)
-				if (!current_worm->element(k).element_before_fast_movement_cessation){
+			for (unsigned int k = 0; k < cur_worm->element_count(); k++)
+				if (!cur_worm->element(k).element_before_fast_movement_cessation){
 					current_timepoint_id = k;
 					break;
 				}
@@ -656,17 +781,19 @@ public:
 		//load images for the worm.
 
 		//data_cache.load_images_for_worm(properties_for_all_animals.stationary_path_id,current_timepoint_id+10,sql);
-		current_region_data->clear_images_for_worm(properties_for_all_animals.stationary_path_id);
+		//current_region_data->clear_images_for_worm(properties_for_all_animals.stationary_path_id,local_image_cache);
 
-		current_region_data->load_images_for_worm(properties_for_all_animals.stationary_path_id,current_timepoint_id+10,sql());
+		handle().data->load_images_for_worm(properties_for_all_animals.stationary_path_id,current_timepoint_id+10,sql(),local_image_cache);
 
 
-		if (require_exact && current_worm->element(current_timepoint_id).absolute_time != current_time && !give_up_on_preload)
-			throw ns_ex("Could not find requested element time:") << current_time;
-		if (current_timepoint_id+1 < current_worm->element_count())
+		if (require_exact && cur_worm->element(current_timepoint_id).absolute_time != current_time && !give_up_on_preload)
+			throw ns_ex("ns_death_time_solo_posture_annotater::set_current_timepoint()::Could not find requested element time:") << current_time;
+		if (current_timepoint_id+1 < cur_worm->element_count())
 			current_timepoint_id++;
 
 	}
+
+	unsigned long last_time_at_current_telementry_zoom(ns_death_time_posture_solo_annotater_data_cache_storage::handle_t & handle) const;
 	void draw_telemetry(const ns_vector_2i & position, const ns_vector_2i & graph_size, const ns_vector_2i & buffer_size, const float rescale_factor,ns_8_bit * buffer);
 	void draw_registration_debug(const ns_vector_2i & position, const ns_vector_2i & buffer_size, ns_8_bit * buffer) {
 		if (current_timepoint_id == 0)
@@ -741,26 +868,52 @@ public:
 
 	}
 
-	ns_vector_2i bottom_margin_position() {
-	  if (current_worm == 0 || current_worm->element_count() <= current_element_id()){
+	ns_vector_2i bottom_margin_position(ns_death_time_posture_solo_annotater_data_cache_storage::handle_t * handle) {
+
+		ns_death_time_posture_solo_annotater_data_cache_storage::const_handle_t local_handle;
+		const ns_analyzed_image_time_path * cur_worm(0);
+		if (handle != 0)
+			cur_worm = current_worm(*handle);
+		else {
+			data_cache.get_region_movement_data_no_create(current_region_id, local_handle);
+			cur_worm = current_worm(local_handle);
+		}
+	
+
+	  if (cur_worm->element_count() <= current_element_id()){
 	    cerr << "Worm/element not loaded";
 	    return ns_vector_2d(0,0);
 	    }
-	if (!current_worm->element(current_element_id()).registered_image_is_loaded()) {
+	if (!cur_worm->element(current_element_id()).registered_image_is_loaded()) {
 			cerr << "No image is loaded for current element;";
 			return ns_vector_2i(0, 0);
 		}
 		return ns_vector_2i(ns_death_time_solo_posture_annotater_timepoint::ns_side_border_width,
-			current_worm->element(current_element_id()).image().properties().height + bottom_offset);
+			cur_worm->element(current_element_id()).image().properties().height + bottom_offset);
 	}
 
+	void precache_images(const ns_64_bit region_info_id, const ns_stationary_path_id & worm,ns_sql & sql) {
+		ns_death_time_posture_solo_annotater_data_cache_storage::handle_t handle;
+		data_cache.get_region_movement_data(region_info_id, sql, true, handle);
+		handle().data->movement_analyzer.precache_group_images_locally(worm.group_id, worm.path_id, &handle,sql,false);
 
-	void load_worm(const ns_64_bit region_info_id_, const ns_stationary_path_id & worm, const unsigned long current_time, const ns_death_time_solo_posture_annotater_timepoint::ns_visualization_type visualization_type, const ns_experiment_storyboard  * storyboard,ns_worm_learner * worm_learner_, const double external_rescale_factor){
-		
-		
+	}
+	ns_64_bit current_region_id;
+	ns_stationary_path_id current_worm_id;
+	
+	void load_worm(const ns_64_bit region_info_id_, const ns_stationary_path_id& worm, const unsigned long current_time, const ns_death_time_solo_posture_annotater_timepoint::ns_visualization_type visualization_type, const ns_experiment_storyboard* storyboard, ns_worm_learner* worm_learner_, const double external_rescale_factor) {
 
-		if (sql.is_null())
+		if (sql.is_null()) {
+
+			if (image_server.verbose_debug_output())
+				image_server_const.register_server_event_no_db(ns_image_server_event("Connecting to sql db"));
 			sql.attach(image_server.new_sql_connection(__FILE__, __LINE__));
+		}
+		if (asynch_loading_sql.is_null()) {
+			if (image_server.verbose_debug_output())
+				image_server_const.register_server_event_no_db(ns_image_server_event("Connecting to sql db 2"));
+			asynch_loading_sql.attach(image_server.new_sql_connection(__FILE__, __LINE__));
+		}
 		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Clearing self."));
 		clear();
 		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Clearing annotator."));
@@ -771,84 +924,91 @@ public:
 		stop_fast_movement();
 		current_visualization_type = visualization_type;
 		
-
-		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Showing telemetry"));
 	
 		telemetry.show(graph_contents != ns_animal_telemetry::ns_none);
 	
 		ns_region_metadata metadata;
 		metadata.region_id = region_info_id_;
+		current_region_id = region_info_id_; 
+		current_worm_id = worm;
 		try{
 
 			if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Finding Animal"));
 			const ns_experiment_storyboard_timepoint_element & e(storyboard->find_animal(region_info_id_,worm));
 			ns_acquire_lock_for_scope lock(image_buffer_access_lock,__FILE__,__LINE__);
 			worm_learner = worm_learner_;
-		
-			timepoints.resize(0);
-			if (current_region_data != 0) {
 
-				if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Clearing images"));
-				current_region_data->clear_images_for_worm(properties_for_all_animals.stationary_path_id);
-			}
-	
-			properties_for_all_animals.region_info_id = region_info_id_;
-			//get movement information for current worm
-		try{
-				current_region_data = 0;
+			
+			ns_death_time_posture_solo_annotater_data_cache_storage::handle_t handle;
+			try {
+
 				if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Loading movement data"));
-				current_region_data = data_cache.get_region_movement_data(region_info_id_,sql(),telemetry.show());
-				
+				data_cache.get_region_movement_data(region_info_id_, sql(),telemetry.show(),handle);
+
+				//stop any previously started image loading
+				handle().data->movement_analyzer.stop_asynch_group_load();
+
+				if (!handle().data->loaded_path_data_successfully)
+					throw ns_ex("The movement anaylsis data required to inspect this worm is no longer in the database.  You might need to re-analyze movement for this region.");
+
 			}
-			catch(...){
-				metadata.load_from_db(region_info_id_,"",sql()); 
-				current_region_data = 0;
+			catch (...) {
+				metadata.load_from_db(region_info_id_, "", sql());
+				region_loaded = false;
 
 				throw;
 			}
-			if (!current_region_data->loaded_path_data_successfully) 
-				throw ns_ex("The movement anaylsis data required to inspect this worm is no longer in the database.  You might need to re-analyze movement for this region.");
+			timepoints.resize(0);
+			if (region_loaded) {
+				if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Clearing images"));
+				handle().data->clear_images_for_worm(properties_for_all_animals.stationary_path_id,local_image_cache);
+			}
+			region_loaded = true;
+	
+			properties_for_all_animals.region_info_id = region_info_id_;
+			//get movement information for current worm
+		
 			
-			metadata = current_region_data->metadata;
-			if (worm.detection_set_id != 0 && current_region_data->movement_analyzer.db_analysis_id() != worm.detection_set_id)
+			metadata = handle().data->metadata;
+			if (worm.detection_set_id != 0 && handle().data->movement_analyzer.db_analysis_id() != worm.detection_set_id)
 				throw ns_ex("This storyboard was built using an out-of-date movement analysis result.  Please rebuild the storyboard, so that it will reflect the most recent analysis.");
-			if (current_region_data->movement_analyzer.size() <= worm.group_id)
+			if (handle().data->movement_analyzer.size() <= worm.group_id)
 				throw ns_ex("Looking at the movement analysis result for this region, this worm's ID appears to be invalid.");
 			if (worm.path_id != 0)
 				throw ns_ex("The specified group has multiple paths! This should be impossible");
 			
-			current_worm = &current_region_data->movement_analyzer[worm.group_id].paths[worm.path_id]; 
+			ns_analyzed_image_time_path * current_worm = &handle().data->movement_analyzer[worm.group_id].paths[worm.path_id];
 		       
 			current_animal_id = 0;
 			
 
 			if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Loading posture analysis model"));
-			ns_image_server::ns_posture_analysis_model_cache::const_handle_t handle;
-			image_server.get_posture_analysis_model_for_region(region_info_id_, handle, sql());
-			ns_posture_analysis_model mod(handle().model_specification);
+			ns_image_server::ns_posture_analysis_model_cache::const_handle_t model_handle;
+			image_server.get_posture_analysis_model_for_region(region_info_id_, model_handle, sql());
+			ns_posture_analysis_model mod(model_handle().model_specification);
 			mod.threshold_parameters.use_v1_movement_score = false;
-			handle.release();
+			model_handle.release();
 			
 			if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Setting animal for telemetry"));
-			telemetry.set_current_animal(worm.group_id,mod, current_region_data);
+			telemetry.set_current_animal(worm.group_id,mod, handle().data);
 
 
 
 			if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Setting fast movement cessation times and adding annotations"));
 			for (unsigned int i = 0; i < e.by_hand_movement_annotations_for_element.size(); i++){
 				unsigned long animal_id = e.by_hand_movement_annotations_for_element[i].annotation.animal_id_at_position;
-				const unsigned long current_number_of_animals(current_region_data->by_hand_timing_data[worm.group_id].animals.size());
+				const unsigned long current_number_of_animals(handle().data->by_hand_timing_data[worm.group_id].animals.size());
 				if (animal_id >= current_number_of_animals){
-					current_region_data->by_hand_timing_data[worm.group_id].animals.resize(animal_id+1);
+					handle().data->by_hand_timing_data[worm.group_id].animals.resize(animal_id+1);
 					for (unsigned int i = current_number_of_animals; i < animal_id; i++){
-						current_region_data->by_hand_timing_data[worm.group_id].animals[i].set_fast_movement_cessation_time(
+						handle().data->by_hand_timing_data[worm.group_id].animals[i].set_fast_movement_cessation_time(
 							ns_death_timing_data_step_event_specification(current_worm->cessation_of_fast_movement_interval(),
 							current_worm->element(current_worm->first_stationary_timepoint()),
 							properties_for_all_animals.region_info_id,properties_for_all_animals.stationary_path_id,i));
 					}
 					
 				}
-				current_region_data->by_hand_timing_data[worm.group_id].animals[animal_id].add_annotation(e.by_hand_movement_annotations_for_element[i].annotation,true); 
+				handle().data->by_hand_timing_data[worm.group_id].animals[animal_id].add_annotation(e.by_hand_movement_annotations_for_element[i].annotation,true);
 				//if (animal_id == 0)
 				//if (e.by_hand_movement_annotations_for_element[i].type == ns_additional_worm_entry)
 				//	curre nt_region_data->by_hand_timing_data[worm.group_id].animals[animal_id].first_frame_time = e.by_hand_movement_annotations_for_element[i].time.end_time;
@@ -858,9 +1018,8 @@ public:
 			//current_region_data->metadata
 			//current_by_hand_timing_data = &current_region_data->by_hand_timing_data[worm.group_id];
 			//xxxx
-			if (worm.group_id >= current_region_data->machine_timing_data.size())
-			throw ns_ex("Group ID ") << worm.group_id << " is not present in machine timing data (" << current_region_data->machine_timing_data.size() << ") for region " << region_info_id_;
-			current_machine_timing_data = &current_region_data->machine_timing_data[worm.group_id];
+			if (worm.group_id >= handle().data->machine_timing_data.size())
+			throw ns_ex("Group ID ") << worm.group_id << " is not present in machine timing data (" << handle().data->machine_timing_data.size() << ") for region " << region_info_id_;
 			current_animal_id = 0;
 
 			if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Transferring sticky properties"));
@@ -869,16 +1028,20 @@ public:
 			//current_by_hand_timing_data->animals[current_animal_id].sticky_propertes.annotation_source = ns_death_time_annotation::ns_posture_image;
 			properties_for_all_animals.stationary_path_id = worm;
 			this->saved_ = true;
-			for (unsigned int j = 0; j < current_region_data->by_hand_timing_data[worm.group_id].animals.size(); j++){
-				if (ns_fix_annotation(current_region_data->by_hand_timing_data[worm.group_id].animals[j].fast_movement_cessation,*current_worm))
+			for (unsigned int j = 0; j < handle().data->by_hand_timing_data[worm.group_id].animals.size(); j++){
+				if (ns_fix_annotation(handle().data->by_hand_timing_data[worm.group_id].animals[j].fast_movement_cessation,*current_worm))
 					saved_ = false;
-				if (ns_fix_annotation(current_region_data->by_hand_timing_data[worm.group_id].animals[j].translation_cessation,*current_worm))
+				if (ns_fix_annotation(handle().data->by_hand_timing_data[worm.group_id].animals[j].translation_cessation,*current_worm))
 					saved_ = false;
-				if (ns_fix_annotation(current_region_data->by_hand_timing_data[worm.group_id].animals[j].movement_cessation,*current_worm))
+				if (ns_fix_annotation(handle().data->by_hand_timing_data[worm.group_id].animals[j].movement_cessation,*current_worm))
 					saved_ = false;
-				if (ns_fix_annotation(current_region_data->by_hand_timing_data[worm.group_id].animals[j].death_posture_relaxation_termination_,*current_worm))
+				if (ns_fix_annotation(handle().data->by_hand_timing_data[worm.group_id].animals[j].death_associated_expansion_stop,*current_worm))
 					saved_ = false;
-				if (ns_fix_annotation(current_region_data->by_hand_timing_data[worm.group_id].animals[j].death_posture_relaxation_start, *current_worm))
+				if (ns_fix_annotation(handle().data->by_hand_timing_data[worm.group_id].animals[j].death_associated_expansion_start, *current_worm))
+					saved_ = false; 
+				if (ns_fix_annotation(handle().data->by_hand_timing_data[worm.group_id].animals[j].death_associated_post_expansion_contraction_stop, *current_worm))
+					saved_ = false;
+				if (ns_fix_annotation(handle().data->by_hand_timing_data[worm.group_id].animals[j].death_associated_post_expansion_contraction_start, *current_worm))
 					saved_ = false;
 			}
 
@@ -886,7 +1049,7 @@ public:
 			if (!saved_){
 
 				if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Updating events to storyboard"));
-				update_events_to_storyboard(external_rescale_factor);
+				update_events_to_storyboard(external_rescale_factor,handle);
 				saved_ = true;
 			}
 			//initialize worm timing data
@@ -902,35 +1065,73 @@ public:
 			for (unsigned int i = 0; i < timepoints.size(); i++){
 				timepoints[i].path_timepoint_element = &current_worm->element(i);
 				timepoints[i].element_id = i;
-				timepoints[i].movement_analyzer = & current_region_data->movement_analyzer;  //*
+				timepoints[i].movement_analyzer = &handle().data->movement_analyzer;  //*
 				timepoints[i].group_id = properties_for_all_animals.stationary_path_id.group_id;
 				timepoints[i].set_visulaization_type(current_visualization_type);
 			}
-//			current_by_hand_timing_data->animals[current_animal_id].first_frame_time = timepoints[0].path_timepoint_element->absolute_time;
 
 
-			telemetry_zoom_factor = timepoints.size() / 250;
-			if (telemetry_zoom_factor < .1)
-				telemetry_zoom_factor = 1;
-			//allocate image buffer
+			if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Starting asynch image load"));
+		
+			handle().data->movement_analyzer.load_images_for_group_asynch(worm.group_id, number_of_valid_elements, asynch_loading_sql(), false, false, local_image_cache);
 			
-			if (current_image.im == 0)
-				current_image.im = new ns_image_standard();
-
-
-			set_current_timepoint(current_time,true,true);
+			if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Setting current timepoint"));
+			set_current_timepoint(current_time,handle,current_time!=0, true);
+			telemetry_zoom_factor = timepoints.size() / 250;
+			if (telemetry_zoom_factor < 1)
+				telemetry_zoom_factor = 1;
+			
+			if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Setting telemetry zoom"));
 			{
-				ns_image_standard temp_buffer;
+				unsigned long latest_death_time = 0;
+				//make sure the death time is shown on the graph
+				for (unsigned int i = 0; i < handle().data->machine_timing_data[worm.group_id].animals.size(); i++) {
+					if (handle().data->machine_timing_data[worm.group_id].animals[i].movement_cessation.time.period_end > latest_death_time) {
+						latest_death_time = handle().data->machine_timing_data[worm.group_id].animals[i].movement_cessation.time.period_end;
+						//cerr << "m:" << latest_death_time << "\n";
+					}
+				}
+				for (unsigned int i = 0; i < handle().data->by_hand_timing_data[worm.group_id].animals.size(); i++) {
+					if (handle().data->by_hand_timing_data[worm.group_id].animals[i].movement_cessation.time.period_end > latest_death_time) {
+						latest_death_time = handle().data->by_hand_timing_data[worm.group_id].animals[i].movement_cessation.time.period_end;
+						//cerr << "h:" << latest_death_time << "\n";
+					}
+				}
+				//cerr << "h:" << latest_death_time << "\n";
+				if (last_time_at_current_telementry_zoom(handle) < latest_death_time) {
+					unsigned zoom_timepoint(0);
+					for (unsigned int zoom_timepoint = 0; zoom_timepoint < timepoints.size(); zoom_timepoint++) {
+						if (timepoints[zoom_timepoint].path_timepoint_element->absolute_time >= latest_death_time)
+							break;
+					}
+					zoom_timepoint = zoom_timepoint + 0.25*(timepoints.size() - zoom_timepoint);
+					//cout << zoom_timepoint << "\n";
+					if (zoom_timepoint != 0)
+						telemetry_zoom_factor = timepoints.size() / zoom_timepoint;
+				}
 
-				if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Loading first image."));
-				timepoints[current_timepoint_id].load_image(1024,current_image,sql(),temp_buffer,1);
+				if (telemetry_zoom_factor > timepoints.size() / 250)
+					telemetry_zoom_factor = timepoints.size() / 250;
+				if (telemetry_zoom_factor < 1)
+					telemetry_zoom_factor = 1;
 			}
+			
+			
+			if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Loading first image."));
+			timepoints[current_timepoint_id].load_image(1024,current_image,sql(),local_image_cache, memory_pool,1);
+			if (!current_image.loaded || current_image.im == 0)
+				throw ns_ex("The current animal's image was not loaded.");
+			const ns_image_properties current_prop = current_image.im->properties();
 			if (previous_images.size() != max_buffer_size || next_images.size() != max_buffer_size) {
 				previous_images.resize(max_buffer_size);
 				next_images.resize(max_buffer_size);
 				for (unsigned int i = 0; i < max_buffer_size; i++) {
-					previous_images[i].im = new ns_image_standard();
-					next_images[i].im = new ns_image_standard();
+					if (previous_images[i].im == 0)
+						previous_images[i].im = memory_pool.get(current_prop);
+					previous_images[i].im->use_more_memory_to_avoid_reallocations(true);
+					if (next_images[i].im == 0)
+						next_images[i].im = memory_pool.get(current_prop);
+					next_images[i].im->use_more_memory_to_avoid_reallocations(true);
 				}
 				for (unsigned int i = 0; i < max_buffer_size; i++)
 					previous_images[i].im->init(current_image.im->properties());
@@ -939,8 +1140,9 @@ public:
 			}
 
 			if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Drawing Metadata."));
-			draw_metadata(&timepoints[current_timepoint_id],*current_image.im, external_rescale_factor);
+			draw_metadata(&timepoints[current_timepoint_id],*current_image.im,handle, external_rescale_factor);
 
+			handle.release();
 			if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Requesting Refresh."));
 			request_refresh();
 			lock.release();
@@ -948,12 +1150,12 @@ public:
 
 		}
 		catch(ns_ex & ex){
-
 			if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Closing worm on error."));
 			close_worm();
-			cerr << "Error loading worm from region " << metadata.plate_name() << " : " << ex.text() << "\n";
+			ns_ex ex2("Error loading worm from region ");
+			ex2 << metadata.plate_name() << " : " << ex.text();
 			ns_hide_worm_window();
-			throw;
+			throw ex;
 		}
 	}
 
@@ -967,7 +1169,6 @@ public:
 	//	data_cache.clear();
 		close_worm();
 	//	data_cache.clear();
-		current_region_data = 0;
 		properties_for_all_animals = ns_death_time_annotation();
 	}
 
@@ -999,37 +1200,52 @@ public:
 		}
 		return ret+str;
 	}
-	bool movement_quantification_data_loaded() {
-		if (current_region_data == 0)
-			return false;
-		return current_region_data->movement_quantification_data_is_loaded();
+	bool movement_quantification_data_loaded(ns_death_time_posture_solo_annotater_data_cache_storage::handle_t & handle) {
+		if (current_region_id == 0 || !data_cache.is_loaded(current_region_id))
+			return false;		
+		return handle().data->movement_quantification_data_is_loaded();
 	}
-	void load_movement_analysis(ns_sql & sql) {
-		if (current_region_data == 0)
+	void load_movement_quantification_if_needed(ns_death_time_posture_solo_annotater_data_cache_storage::handle_t * handle) {
+		ns_death_time_posture_solo_annotater_data_cache_storage::handle_t local_handle;
+		if (handle == 0) {
+		  try{
+			data_cache.get_region_movement_data_no_create(current_region_id, local_handle);
+			handle = &local_handle;
+		  }
+		  catch(ns_ex & ex){
+		    throw ns_ex("Error while accessing previously loaded movement data:") << ex.text();
+		  }
+		}
+
+		if (!movement_quantification_data_loaded(*handle)) 
+			load_movement_analysis(*handle,sql());
+	}
+
+	//XXX THIS BREAKS LOCKS ENCAPSULATION
+	void load_movement_analysis(ns_death_time_posture_solo_annotater_data_cache_storage::handle_t & handle, ns_sql & sql) {
+		if (current_region_id != 0 )
 			return;
-		
-		ns_acquire_lock_for_scope lock(image_buffer_access_lock,__FILE__, __LINE__);
-		current_region_data->load_movement_analysis(current_region_data->metadata.region_id, sql, true);
+
+		handle().data->load_movement_analysis(current_region_id, sql, true);
 		
 		//we now need to update all fields that referred to the previous movement analysis object
-		current_worm = &current_region_data->movement_analyzer[	properties_for_all_animals.stationary_path_id.group_id].paths[properties_for_all_animals.stationary_path_id.path_id]; 
+		auto cur_worm = &handle().data->movement_analyzer.group(current_worm_id.group_id).paths[current_worm_id.path_id];
 	      
-			for (unsigned int i = 0; i < timepoints.size(); i++){
-				timepoints[i].path_timepoint_element = &current_worm->element(i);
-				timepoints[i].movement_analyzer = & current_region_data->movement_analyzer;  //*
+		for (unsigned int i = 0; i < timepoints.size(); i++){
+			timepoints[i].path_timepoint_element = &cur_worm->element(i);
+			timepoints[i].movement_analyzer = &handle().data->movement_analyzer;  
 			       
-			}
-			for (unsigned int i = 0; i < previous_images.size(); i++) {
-			  previous_images[i].loaded = false;
-			  next_images[i].loaded = false;
-			}
+		}
+		for (unsigned int i = 0; i < previous_images.size(); i++) {
+			previous_images[i].loaded = false;
+			next_images[i].loaded = false;
+		}
 			
-			ns_image_standard temp_buffer;
-			timepoints[current_timepoint_id].load_image(1024, current_image, sql, temp_buffer, 1);
-		 
-			lock.release();
+		timepoints[current_timepoint_id].load_image(1024, current_image, sql,local_image_cache, memory_pool, 1);
+		handle.release();
 	}
-	void output_worm_frames(const string &base_dir,const std::string & filename, ns_sql & sql){
+	//this breaks locking encapsulation
+	void output_worm_frames(const string &base_dir,const std::string & filename, ns_death_time_posture_solo_annotater_data_cache_storage::handle_t & handle,ns_sql & sql){
 		const string bd(base_dir);
 		const string base_directory(bd + DIR_CHAR_STR + filename);
 		ns_dir::create_directory_recursive(base_directory);
@@ -1037,51 +1253,51 @@ public:
 		const string movement_directory(base_directory + DIR_CHAR_STR + "movement");
 		ns_dir::create_directory_recursive(gray_directory);
 		ns_dir::create_directory_recursive(movement_directory);
-	
-		current_region_data->load_movement_analysis(current_region_data->metadata.region_id,sql,true);
-		current_worm = &current_region_data->movement_analyzer[properties_for_all_animals.stationary_path_id.group_id].paths[properties_for_all_animals.stationary_path_id.path_id];
+
+		handle().data->load_movement_analysis(current_region_id,sql,true);
 		
 		//add in by hand annotations so they are outputted correctly.
 		std::vector<ns_death_time_annotation> by_hand_annotations;
-		for (unsigned long i = 0; i < current_region_data->by_hand_timing_data.size(); i++){
-				current_region_data->by_hand_timing_data[i].animals.begin()->generate_event_timing_data(by_hand_annotations);
+		for (unsigned long i = 0; i < handle().data->by_hand_timing_data.size(); i++){
+			handle().data->by_hand_timing_data[i].animals.begin()->generate_event_timing_data(by_hand_annotations);
 				ns_death_time_annotation_compiler c;
 				for (unsigned int j = 0; j < by_hand_annotations.size(); j++)
-					c.add(by_hand_annotations[j],current_region_data->metadata);
-				current_region_data->movement_analyzer.add_by_hand_annotations(c);
+					c.add(by_hand_annotations[j], handle().data->metadata);
+				handle().data->movement_analyzer.add_by_hand_annotations(c);
 		}
 		
-		
+		auto cur_worm = &handle().data->movement_analyzer.group(current_worm_id.group_id).paths[current_worm_id.path_id];
+
 		//we're reallocating all the elements so we need to link them in.
 		for (unsigned int i = 0; i < timepoints.size(); i++){
-				timepoints[i].path_timepoint_element = &current_worm->element(i);
+				timepoints[i].path_timepoint_element = &cur_worm->element(i);
 		}
 		const std::string outfile(base_directory + DIR_CHAR_STR + filename + "_movement_quantification.csv");
 		ofstream o(outfile.c_str());
-		current_region_data->movement_analyzer.group(properties_for_all_animals.stationary_path_id.group_id).paths.begin()->write_detailed_movement_quantification_analysis_header(o);
+		handle().data->movement_analyzer.group(properties_for_all_animals.stationary_path_id.group_id).paths.begin()->write_detailed_movement_quantification_analysis_header(o);
 		o << "\n";
-		current_region_data->movement_analyzer.write_detailed_movement_quantification_analysis_data(current_region_data->metadata,o,false,properties_for_all_animals.stationary_path_id.group_id);
+		handle().data->movement_analyzer.write_detailed_movement_quantification_analysis_data(handle().data->metadata,o,false,properties_for_all_animals.stationary_path_id.group_id);
 		o.close();
 
 
 	//	string base_filename(base_directory + DIR_CHAR_STR + filename);
 		ns_image_standard mvt_tmp;
-		current_region_data->load_images_for_worm(properties_for_all_animals.stationary_path_id,current_element_id()+1,sql);
+		handle().data->load_images_for_worm(properties_for_all_animals.stationary_path_id,current_element_id()+1,sql,local_image_cache);
 		unsigned long num_dig = ceil(log10((double)this->current_element_id()));
 
 		for (unsigned int i = 0; i <= this->current_element_id(); i++){
 			if (timepoints[i].path_timepoint_element->excluded)
 				continue;
-			const ns_image_standard * im(current_region_data->movement_analyzer.group(properties_for_all_animals.stationary_path_id.group_id).paths[properties_for_all_animals.stationary_path_id.path_id].element(i).image_p());
+			const ns_image_standard * im(handle().data->movement_analyzer.group(properties_for_all_animals.stationary_path_id.group_id).paths[properties_for_all_animals.stationary_path_id.path_id].element(i).image_p());
 			if (im == 0)
 				continue;
 			//ns_image_properties prop(im.properties());
 			ns_save_image(gray_directory + DIR_CHAR_STR + filename + "_grayscale_" + pad_zeros(ns_to_string(i+1),num_dig) + ".tif",*im);
-			current_region_data->movement_analyzer.group(properties_for_all_animals.stationary_path_id.group_id).paths[properties_for_all_animals.stationary_path_id.path_id].element(i).generate_movement_visualization(mvt_tmp);
+			handle().data->movement_analyzer.group(properties_for_all_animals.stationary_path_id.group_id).paths[properties_for_all_animals.stationary_path_id.path_id].element(i).generate_movement_visualization(mvt_tmp);
 			//ns_image_properties prop(im.properties()
 			ns_save_image(movement_directory + DIR_CHAR_STR + filename +  "_" + pad_zeros(ns_to_string(i+1),num_dig) + ".tif",mvt_tmp);
 		}
-		
+		handle.release();
 		
 	}
 	
@@ -1093,18 +1309,21 @@ public:
 	void display_current_frame();
 	ns_vector_2i worm_image_offset_due_to_telemetry_graph_spacing;
 	private:
-	void update_events_to_storyboard(double external_rescale_factor){
+	void update_events_to_storyboard(double external_rescale_factor, ns_death_time_posture_solo_annotater_data_cache_storage::handle_t &handle){
+		auto cur_hand_data = current_by_hand_timing_data(handle);
 		properties_for_all_animals.annotation_time = ns_current_time();
-		current_by_hand_timing_data().animals[current_animal_id].specified = true;
+		cur_hand_data->animals[current_animal_id].specified = true;
 		click_event_cache.resize(0);
-		for (unsigned int i = 0; i < current_by_hand_timing_data().animals.size(); i++){
-			current_by_hand_timing_data().animals[i].generate_event_timing_data(click_event_cache);
-			current_by_hand_timing_data().animals[i].specified = true;
+		for (unsigned int i = 0; i < cur_hand_data->animals.size(); i++){
+			cur_hand_data->animals[i].generate_event_timing_data(click_event_cache);
+			cur_hand_data->animals[i].specified = true;
 		}
+		//anyone who is working with the solo annotater already must have the storyboard lock
 		ns_specify_worm_details(properties_for_all_animals.region_info_id,properties_for_all_animals.stationary_path_id,properties_for_all_animals,click_event_cache,external_rescale_factor);
 	}
 		
 	ns_alignment_type alignment_type;
+
 };
 
 #endif

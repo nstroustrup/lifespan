@@ -5,7 +5,7 @@
 #include "ns_xml.h"
 
 struct ns_region_metadata{
-	ns_region_metadata():time_at_which_animals_had_zero_age(0),
+	ns_region_metadata():time_at_which_animals_had_zero_age(0),experiment_id(0),
 		time_of_last_valid_sample(0),region_id(0),sample_id(0), position_of_region_in_sample(0,0),position_of_sample_on_scanner(0,0),size(0,0),movement_rebuild_timestamp(0),by_hand_annotation_timestamp(0){}
 
 	std::string device,
@@ -82,7 +82,7 @@ struct ns_region_metadata{
 			return s + ":" + strain_condition_1;
 		return s + ":" + strain_condition_1+ ":" + strain_condition_2;
 	}
-	const std::string plate_type_summary() const{
+	const std::string plate_type_summary(const std::string & separator = "::",bool force_alphanumeric=false) const{
 		std::string type;
 
 		const std::string * details[6] = {&	strain_condition_1,
@@ -94,13 +94,27 @@ struct ns_region_metadata{
 		&environmental_conditions};
 		if (genotype.size() != 0)
 			type+=genotype;
-		else type+= strain;
-		for (unsigned int i = 0; i < 6; i++){
-			if (details[i]->size() != 0){
-				type+="::";
-				type+=*(details[i]);
-			}
+		else if (strain.size() != 0) type+= strain;
+		if (force_alphanumeric) {
+			for (unsigned int i = 0; i < type.size(); i++)
+				if (!isalnum(type[i]))
+					type[i] = '+';
 		}
+		for (unsigned int i = 0; i < 6; i++){
+			if (details[i]->size() == 0)
+				continue;
+			if (!type.empty())
+				type+= separator;
+			if (force_alphanumeric) {
+				for (unsigned int j = 0; j < details[i]->size(); j++)
+					if (!isalnum((*details[i])[j]))
+						type += '+';
+					else
+						type+= (*details[i])[j];
+			}
+			else type+=*(details[i]);
+		}
+		
 		return type;
 	}
 	char incubator_column() const{

@@ -13,7 +13,7 @@ typedef enum{ns_delete_volatile,ns_delete_long_term,ns_delete_both_volatile_and_
 ///stored in main memory
 #define NS_IMAGE_WHOLE_MAXIMUM_AREA 2*1024.0*1024.0*1024.0
 
-typedef enum{ns_jpeg, ns_tiff, ns_tiff_uncompressed,ns_tiff_lzw,ns_tiff_zip,ns_jp2k,ns_wrm, ns_csv, ns_xml,ns_unknown} ns_image_type;
+typedef enum{ns_jpeg, ns_tiff, ns_tiff_uncompressed,ns_tiff_lzw,ns_tiff_zip,ns_jp2k,ns_wrm,ns_wrm_gz, ns_csv, ns_csv_gz, ns_xml, ns_xml_gz, ns_unknown} ns_image_type;
 void ns_add_image_suffix(std::string & str, const ns_image_type & type);
 
 bool ns_fix_filename_suffix(std::string & filename, const ns_image_type & type);
@@ -107,7 +107,7 @@ protected:
 template<class storage_buffer>
 class ns_image_stream_reciever{
 public:
-	ns_image_stream_reciever(const long max_line_block_height, const ns_image_stream_reciever * reciever):_max_line_block_height(max_line_block_height),_properties(ns_image_properties(0,0,0)){}
+	ns_image_stream_reciever(const long max_line_block_height, const ns_image_stream_reciever * reciever):_max_line_block_height(max_line_block_height),_properties(ns_image_properties(0,0,0)),output_buffer(0){}
 	typedef storage_buffer storage_buffer_type;
 
 	///verify that derived objects can instantiate the ability
@@ -154,7 +154,7 @@ class ns_image_stream_sender{
 public:
 
 
-	ns_image_stream_sender(const ns_image_properties & properties, const sender_t * sender):_properties(properties){verify_constraints(sender);}
+	ns_image_stream_sender(const ns_image_properties & properties, const sender_t * sender):_max_line_block_height(0),_properties(properties){verify_constraints(sender);}
 	typedef ns_component component_type;
 	typedef sender_internal_state_t internal_state_t;
 	///stream senders need to be able to "send" image lines, ie write
@@ -753,6 +753,7 @@ public:
 	}
 	void set_description(const std::string & dsc){
 	  reciever_t::_properties.description = dsc;
+	  sender_t::_properties.description = dsc;
 	}
 	const float finline sample_f(const float y, const float x) const{
 

@@ -66,8 +66,8 @@ public:
 		vis_info.from_xml(h.input_stream().properties().description);
 	}
 	enum {ns_bottom_border_height=25,ns_text_distance_from_bottom=17,ns_text_height=16};
-	void load_image(const unsigned long buffer_height,ns_annotater_image_buffer_entry & im,ns_sql & sql,ns_image_standard & temp_buffer,const unsigned long resize_factor_){
-		ns_annotater_timepoint::load_image(buffer_height,im,sql,temp_buffer,resize_factor_);
+	void load_image(const unsigned long buffer_height,ns_annotater_image_buffer_entry & im,ns_sql & sql,ns_simple_local_image_cache & image_cache, ns_annotater_memory_pool & pool,const unsigned long resize_factor_){
+		ns_annotater_timepoint::load_image(buffer_height,im,sql,image_cache,pool,resize_factor_);
 		//black out graph
 		unsigned long max_time(0);
 		for (unsigned int i = 0; i < vis_info.worms.size(); i++){
@@ -272,10 +272,10 @@ public:
 		ns_timing_data_and_death_time_annotation_matcher<ns_timing_data> matcher;
 		matcher.save_death_timing_data_to_set(timing_data,orphaned_events,set,true);
 		set.add(extra_annotations);
-		ns_acquire_for_scope<std::ostream> out(annotation_file.output());
+		ns_acquire_for_scope<ns_ostream> out(annotation_file.output());
 		if (out.is_null())
 			throw ns_ex("Could not open output file.");
-		set.write(out());
+		set.write(out()());
 		out.release();
 		ns_update_main_information_bar(ns_to_string(set.events.size()) + " events saved at " + ns_format_time_string_for_human(ns_current_time()));
 		ns_update_worm_information_bar(ns_to_string(set.events.size()) + " events saved at " + ns_format_time_string_for_human(ns_current_time()));
@@ -435,7 +435,7 @@ public:
 			}
 		}
 		
-		timepoints[current_timepoint_id].load_image(ns_death_time_posture_annotater_timepoint::ns_bottom_border_height,current_image,sql(),asynch_load_specification.temp_buffer,resize_factor);
+		timepoints[current_timepoint_id].load_image(ns_death_time_posture_annotater_timepoint::ns_bottom_border_height,current_image,sql(),local_image_cache,memory_pool,resize_factor);
 
 		//initialize input/output file and load known annotations from disk
 		ns_image_server_results_subject sub;

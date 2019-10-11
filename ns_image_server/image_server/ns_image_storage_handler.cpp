@@ -1,6 +1,7 @@
 #include "ns_image_storage_handler.h"
 #include "ns_image_server.h"
 #include <functional>
+#include <random>
 
 using namespace std;
 
@@ -184,6 +185,16 @@ ns_image_storage_source_handle<ns_8_bit>  ns_storage_request_from_local_cache(co
 
 ns_image_storage_source_handle<ns_8_bit> ns_storage_request_from_storage(const ns_image_storage_handler * image_storage, ns_image_server_image & im, ns_sql & sql) {
 	return image_storage->request_from_storage(im, &sql);
+}
+
+
+ns_image_storage_source_handle<ns_8_bit> ns_request_cached_image(const ns_image_storage_handler * image_storage, ns_image_server_image & im, ns_sql & sql, std::string & unique_id) {
+	if (unique_id == "")
+		unique_id = image_storage->add_to_local_cache(im, ns_tiff_lzw, &sql);
+	return image_storage->request_from_local_cache(unique_id, false);
+}
+void ns_delete_from_local_cache(const ns_image_storage_handler * image_storage, const std::string & id) {
+	image_storage->delete_from_local_cache(id);
 }
 
 ns_image_storage_reciever_handle<ns_8_bit> ns_storage_request_local_cache_storage(const ns_image_storage_handler * image_storage,
@@ -425,9 +436,10 @@ bool ns_image_storage_handler::assign_unique_filename(ns_image_server_image & im
 	return true;
 }
 
-ifstream * ns_image_storage_handler::request_metadata_from_disk(ns_image_server_image & image,const bool binary,ns_image_server_sql * sql) const{
+
+ns_istream * ns_image_storage_handler::request_metadata_from_disk(ns_image_server_image & image,const bool binary,ns_image_server_sql * sql, bool allow_db_lookup) const{
 	if (image.filename.size() == 0 || image.path.size() == 0 || image.partition.size() == 0) 
-		if (!image.load_from_db(image.id, sql)) 
+		if (!allow_db_lookup || !image.load_from_db(image.id, sql))
 			throw ns_ex("Could not find image record for time path image analyzer metadata");
 
 	ns_file_location_specification spec(look_up_image_location_no_extension_alteration (image, sql));
@@ -441,18 +453,39 @@ ifstream * ns_image_storage_handler::request_metadata_from_disk(ns_image_server_
 		throw ns_ex("ns_image_storage_handler::request_metadata_from_disk()::Could not access long term storage at ") << spec.long_term_directory << ns_network_io;
 	}
 
-	ifstream * i;
-	if (binary) i = new ifstream(spec.absolute_long_term_filename().c_str(), ios_base::binary);
-	else i = new ifstream(spec.absolute_long_term_filename().c_str());
+	ns_istream * i(0);
+	ns_image_type type = ns_image_type_from_filename(spec.filename);
+	bool file_does_not_exist(false);
+	try {
+		if (type != ns_csv_gz && type != ns_wrm_gz && type != ns_xml_gz) {
+			if (binary) i = new ns_istream(new std::ifstream(spec.absolute_long_term_filename().c_str(), ios_base::binary));
+			else i = new ns_istream(new std::ifstream(spec.absolute_long_term_filename().c_str()));
+		}
+		else {
+			try {	//gzstream does not fail properly on non-existant files.
+				if (!ns_dir::file_exists(spec.absolute_long_term_filename().c_str()))
+					file_does_not_exist = true;
+				//if (binary) i = new ns_istream(new igzstream(spec.absolute_long_term_filename().c_str()));	//always load binary!
+				else i = new ns_istream(new igzstream(spec.absolute_long_term_filename().c_str(), ios_base::binary | ios_base::in));
+			}
+			catch (const std::exception & ex) {
+				throw ns_ex(ex.what());
+			}
+		}
+	}
+	catch (...) {
+		if (i != 0) delete i;
+		throw;
+	}
 
-	if (i->fail()){
+	if (file_does_not_exist || (*i)().fail()){
 		delete i;
 		throw ns_ex("ns_image_storage_handler::request_metadata_from_disk()::Could not open file ") << spec.absolute_long_term_filename() << ns_file_io;
 	}
 	return i;
 }
 
-ofstream * ns_image_storage_handler::request_metadata_output(ns_image_server_image & image, const ns_image_type & image_type, const bool binary, ns_image_server_sql * sql) const {
+ns_ostream * ns_image_storage_handler::request_metadata_output(ns_image_server_image & image, const ns_image_type & image_type, const bool binary, ns_image_server_sql * sql) const {
 
 	if (image.filename.size() == 0 || image.path.size() == 0 || image.partition.size() == 0) image.load_from_db(image.id, sql);
 	//std::string existing_filename_extension(ns_dir::extract_extension(image.filename));
@@ -472,10 +505,26 @@ ofstream * ns_image_storage_handler::request_metadata_output(ns_image_server_ima
 				std::string("ns_image_storage_handler::request_metadata_output(1)::Could not access long term storage when attempting to write ") + spec.relative_directory + DIR_CHAR_STR + spec.filename, sql);
 			throw ns_ex("ns_image_storage_handler:: request_metadata_output()::Long term storage location is not writeable: ") << spec.absolute_long_term_filename() << ns_network_io;
 		}
-		ofstream * o;
-		if(binary) o = new ofstream(spec.absolute_long_term_filename().c_str(), ios_base::binary);
-		else o = new ofstream(spec.absolute_long_term_filename().c_str());
-		if (o->fail()){
+		ns_ostream * o;
+		bool file_is_not_writeable = false;
+		if (image_type != ns_wrm_gz && image_type != ns_csv_gz && image_type != ns_xml_gz) {
+			if (binary) o = new ns_ostream(new std::ofstream(spec.absolute_long_term_filename().c_str(), ios_base::binary));
+			else o = new ns_ostream(new std::ofstream(spec.absolute_long_term_filename().c_str()));
+		}
+		else {
+			try {
+				if (!ns_dir::file_is_writeable(spec.absolute_long_term_filename().c_str()))
+					file_is_not_writeable = true;
+				if (binary) o = new ns_ostream(new ogzstream(spec.absolute_long_term_filename().c_str(), std::ios::out | ios_base::binary));
+				else 
+					throw ns_ex("ns_image_storage_handler:: request_metadata_output()::gzip files must be opened as binary!");
+				//o = new ns_ostream(new ogzstream(spec.absolute_long_term_filename().c_str()));
+			}
+			catch (const std::exception & ex) {
+				throw ns_ex(ex.what());
+			}
+		}
+		if (file_is_not_writeable || (*o)().fail()){
 			delete o;
 			ns_image_handler_submit_alert(ns_alert::ns_long_term_storage_error,
 				"Could not access long term storage.",
@@ -847,10 +896,10 @@ std::string ns_image_storage_handler::add_to_local_cache(ns_image_server_image &
 		for (unsigned int i = 0; i < cache_filename.size(); i++)
 			if (cache_filename[i] == '/' || cache_filename[i] == '\\') cache_filename[i] = '_';
 		std::string dir = volatile_storage_directory + DIR_CHAR_STR + ns_image_server_cache_directory();
+		ns_dir::convert_slashes(dir);
+		ns_dir::create_directory_recursive(dir);
 		std::string output_filename = dir + DIR_CHAR_STR + cache_filename;
 		ns_dir::convert_slashes(output_filename);
-
-
 
 
 		//guarentee unique filename for this process
@@ -870,7 +919,7 @@ std::string ns_image_storage_handler::add_to_local_cache(ns_image_server_image &
 
 		//	ns_imag_handler_register_server_event(ns_image_server_event("ns_image_storage_handler::Opening LT ",false) << display_filename << " for input." << ns_ts_minor_event);
 		if (simulate_long_term_storage_errors || !ns_dir::copy_file(file_location.absolute_long_term_filename(), output_filename))
-			throw ns_ex("Could not find file ") << file_location.absolute_long_term_filename();
+			throw ns_ex("Could not copy file ") << file_location.absolute_long_term_filename() << "\n to local cache location: " << output_filename;
 		return cache_filename;
 
 
@@ -1263,14 +1312,28 @@ ns_file_location_specification ns_image_storage_handler::get_file_specification_
 	ns_add_image_suffix(spec.filename, ns_csv);
 	return spec;
 }
-ns_image_server_image ns_image_storage_handler::get_region_movement_metadata_info(ns_64_bit region_info_id,const std::string & data_source,ns_sql & sql) const{
-	ns_file_location_specification spec(get_file_specification_for_movement_data(region_info_id,data_source,&sql));
+
+
+ns_image_server_image ns_image_storage_handler::get_region_movement_metadata(ns_64_bit region_info_id, const std::string& metadata_type, ns_sql& sql) const {
+	ns_file_location_specification spec(get_file_specification_for_movement_data(region_info_id, metadata_type, &sql));
 	ns_image_server_image im;
 	im.filename = spec.filename;
 	im.partition = spec.partition;
 	im.path = spec.relative_directory;
 	return im;
 }
+#ifndef NS_ONLY_IMAGE_ACQUISITION
+ns_time_path_movement_result_files ns_image_storage_handler::get_region_movement_quantification_metadata(ns_64_bit region_info_id,ns_sql & sql) const{
+	ns_time_path_movement_result_files files;
+	ns_image_server_image im(get_region_movement_metadata(region_info_id, files.base_name(), sql));
+	im.filename = ns_dir::extract_filename_without_extension(im.filename);
+	files.set_from_base_db_record(im);
+	files.only_quantification_specified = false;
+	
+	return files;
+}
+
+#endif
 ns_file_location_specification  ns_image_storage_handler::get_file_specification_for_path_data(const ns_file_location_specification & region_spec) const{
 	ns_file_location_specification spec(region_spec);
 	spec.relative_directory += DIR_CHAR_STR;
@@ -1600,8 +1663,9 @@ ns_socket_connection ns_image_storage_handler::connect_to_fileserver_node(ns_sql
 	std::vector<unsigned int> order(hosts.size());
 	for (unsigned int i = 0; i < hosts.size(); i++)
 		order[i] = i;
-
-	random_shuffle(order.begin(), order.end());
+	std::random_device rd;
+	std::mt19937 g(rd());
+	std::shuffle(order.begin(), order.end(),g);
 
 
 	for (unsigned int i = 0; i < hosts.size(); i++){

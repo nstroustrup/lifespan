@@ -27,16 +27,14 @@ public:
 	
 	void write_column_format(std::ostream & o)const;
 	void write_split_file_column_format(std::ostream & censored_and_transition_file, std::ostream & state_file)const;
-	void read_column_format(const ns_annotation_type_to_load & t,std::istream & o, const bool exclude_fast_moving_animals=true);
+	void read_column_format(const ns_annotation_type_to_load & t,std::istream & o, const bool exclude_fast_moving_animals=true, const bool single_line=false);
 	void read_xml(const ns_annotation_type_to_load & t,std::istream & i);
 	void write_xml(std::ostream & o) const;
 
-	void add(const ns_death_time_annotation & a){events.push_back(a);}
-	void add(const ns_death_time_annotation_set & s){
-		events.insert(events.end(),s.events.begin(),s.events.end());
-	}
+	void add(const ns_death_time_annotation& a);
+	void add(const ns_death_time_annotation_set& s);
 	std::vector<ns_death_time_annotation> events;
-
+	bool compare(const ns_death_time_annotation_set& set) const;
 	//make the set act like a vector
 	ns_death_time_annotation & operator[](const unsigned long i){return events[i];}
 	const ns_death_time_annotation & operator[](const unsigned long i) const{return events[i];}
@@ -65,12 +63,16 @@ public:
 template<class T>
 struct ns_dying_animal_description_group{
 	ns_dying_animal_description_group():death_annotation(0),last_slow_movement_annotation(0),last_fast_movement_annotation(0),
-									death_posture_relaxation_start(0), death_posture_relaxation_termination_(0),stationary_worm_dissapearance(0){}
+									death_associated_expansion_start(0), death_associated_expansion_stop(0), 
+									death_associated_post_expansion_contraction_start(0), death_associated_post_expansion_contraction_stop(0),
+		stationary_worm_dissapearance(0){}
 	T *death_annotation,
 								*last_slow_movement_annotation,
 								*last_fast_movement_annotation,
-								*death_posture_relaxation_start,
-								*death_posture_relaxation_termination_,
+								*death_associated_expansion_start,
+								*death_associated_expansion_stop,
+								*death_associated_post_expansion_contraction_start,
+								*death_associated_post_expansion_contraction_stop,
 								*stationary_worm_dissapearance;
 	std::vector<T *> slow_moving_state_annotations,
 				   posture_changing_state_annotations,
@@ -93,6 +95,10 @@ struct ns_dying_animal_description_base {
 template<class annotation_t>
 struct ns_dying_animal_description_set_base {
 	typedef std::vector< ns_dying_animal_description_base<annotation_t> > description_set_type;
+	//each description corresponds to a worm.
+	//normally, each location will have just a worm,
+	//but when users annotate extra worms, then these additional worms
+	//each get their own description.
 	description_set_type descriptions;
 	unsigned long unassigned_multiple_worms;
 };
@@ -109,6 +115,7 @@ public:
 	ns_death_time_annotation_set annotations;
 	
 	ns_death_time_annotation_compiler_location(const ns_death_time_annotation & a);
+	void add_location(ns_stationary_path_id& id);
 	bool location_matches(const unsigned long distance_cutoff_squared,const ns_vector_2i & position) const;
 	bool attempt_to_add(const unsigned long distance_cutoff_squared,const ns_death_time_annotation & a);
 	bool add_event(const ns_death_time_annotation & a);
@@ -130,7 +137,7 @@ class ns_death_time_annotation_compiler_region{
 
 public:
 
-	ns_death_time_annotation_compiler_region(const unsigned long match_distance_=30):match_distance_squared(match_distance_*match_distance_){}
+	ns_death_time_annotation_compiler_region():match_distance_squared(125*125){}
 	typedef std::vector<ns_death_time_annotation_compiler_location> ns_location_list;
 	void output_visualization_csv(std::ostream & o,const bool output_header) const;
 
@@ -139,6 +146,7 @@ public:
 	ns_death_time_annotation_set non_location_events;
 	ns_death_time_annotation_set fast_moving_animals;
 	void add(const ns_death_time_annotation & e, const bool create_new_location);
+	void create_location(const ns_stationary_path_id & s, const ns_vector_2i& position, const ns_vector_2i& size);
 	void clear();
 	ns_region_metadata metadata;
 
@@ -157,11 +165,10 @@ public:
 	void clear(){regions.clear();}
 	ns_region_list regions;
 	
-	enum{match_distance=5};
 	
 	void remove_all_but_specified_event_type(const ns_death_time_annotation_set::ns_annotation_type_to_load & t);
 	void generate_survival_curve_set(ns_lifespan_experiment_set & survival_curves, const ns_death_time_annotation::ns_by_hand_annotation_integration_strategy & death_times_to_use,const bool use_by_hand_worm_cluster_annotations, const bool warn_on_movement_problems) const;
-	void generate_animal_event_method_comparison(std::ostream & o, double & total_mean_squared_error, ns_64_bit & number_of_animals) const;
+	void generate_animal_event_method_comparison(std::ostream & o,  double & total_death_mean_squared_error, double & total_expansion_mean_squared_error, double & total_contraction_mean_squared_error, ns_64_bit & death_N, ns_64_bit & expansion_N, ns_64_bit & contraction_N) const;
 	
 	#ifdef NS_GENERATE_IMAGE_STATISTICS
 	void generate_detailed_animal_data_file(const bool output_region_image_data,const ns_capture_sample_region_statistics_set & region_data,std::ostream & o) const;
@@ -172,6 +179,7 @@ public:
 	void add(const ns_death_time_annotation_set & set,const ns_region_metadata & metadata);
 	void add(const ns_death_time_annotation_compiler & compiler, const ns_creation_type = ns_create_all);
 	void add(const ns_death_time_annotation & e,const ns_region_metadata & metadata);
+	void add_path(const ns_64_bit &region_info_id, const ns_stationary_path_id &p, const ns_vector_2i & position, const ns_vector_2i & size, const ns_region_metadata & metadata);
 	
 
 	void generate_validation_information(std::ostream & o) const;
@@ -188,14 +196,14 @@ public:
 class ns_multiple_worm_cluster_death_annotation_handler{
 public:
 	//we need the properties to make sure generated annotations have correct excluded, flag, etc information
-	static void generate_correct_annotations_for_multiple_worm_cluster(
+	static bool generate_correct_annotations_for_multiple_worm_cluster(
 				const ns_death_time_annotation::ns_multiworm_censoring_strategy & censoring_strategy,
 				const ns_death_time_annotation & properties,
 				const ns_dying_animal_description_set_const & d, 
 				ns_death_time_annotation_set & set,
 				const ns_death_time_annotation::ns_by_hand_annotation_integration_strategy & death_times_to_use);
 	
-	static void generate_correct_annotations_for_multiple_worm_cluster(
+	static bool generate_correct_annotations_for_multiple_worm_cluster(
 				const ns_death_time_annotation & properties,
 				const ns_dying_animal_description_set_const & d,
 				ns_death_time_annotation_set & set,

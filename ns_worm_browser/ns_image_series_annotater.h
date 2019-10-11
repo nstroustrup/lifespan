@@ -1,8 +1,11 @@
 #ifndef NS_TIME_SERIES_ANNOTATER_H
 #define NS_TIME_SERIES_ANNOTATER_H
 #include "ns_image.h"
+#include "ns_image_pool.h"
 
 
+
+typedef ns_image_pool<ns_image_standard, ns_wasteful_overallocation_resizer, true> ns_annotater_memory_pool;
 
 void ns_update_main_information_bar(const std::string & status);
 void ns_update_worm_information_bar(const std::string & status);
@@ -19,31 +22,39 @@ struct ns_annotater_image_buffer_entry{
 ns_color_8 ns_annotation_flag_color(ns_death_time_annotation & a);
 class ns_annotater_timepoint{
 public:
-	
 	unsigned long resize_factor;
 	virtual ns_image_storage_source_handle<ns_8_bit> get_image(ns_sql & sql)=0;
-	virtual void load_image(const unsigned long bottom_border,ns_annotater_image_buffer_entry & im,ns_sql & sql,ns_image_standard & temp_buffer,const unsigned long resize_factor_=1){
+	virtual void load_image(const unsigned long bottom_border,ns_annotater_image_buffer_entry & im,ns_sql & sql, ns_simple_local_image_cache &image_cache, ns_annotater_memory_pool & pool,const unsigned long resize_factor_=1){
 		resize_factor = resize_factor_;
-		get_image(sql).input_stream().pump(temp_buffer,1024);
-		ns_image_properties prop(temp_buffer.properties());
-		prop.width/=resize_factor;
-		prop.height/=resize_factor;
-		prop.height+=bottom_border;
-		prop.resolution/=resize_factor;
-	//	cerr << resize_factor << "\n";
-		//temp_buffer.resample(prop,*im.im);
-		im.im->init(prop);
-		for (unsigned int y = 0; y < prop.height-bottom_border; y++){
-			for (unsigned int x = 0; x < prop.width; x++){
-				for (unsigned int c = 0; c < prop.components; c++)
-				((*im.im)[y][prop.components*x +c   ]) = (temp_buffer)[resize_factor*y][prop.components*resize_factor*x+c];
+		ns_image_storage_source_handle<ns_8_bit>  source(get_image(sql));
+
+		ns_image_standard * temp_buffer = pool.get(source.input_stream().properties());
+		try {
+			source.input_stream().pump(*temp_buffer, 1024);
+			ns_image_properties prop(temp_buffer->properties());
+			prop.width /= resize_factor;
+			prop.height /= resize_factor;
+			prop.height += bottom_border;
+			prop.resolution /= resize_factor;
+			//	cerr << resize_factor << "\n";
+				//temp_buffer.resample(prop,*im.im);
+			im.im->init(prop);
+			for (unsigned int y = 0; y < prop.height - bottom_border; y++) {
+				for (unsigned int x = 0; x < prop.width; x++) {
+					for (unsigned int c = 0; c < prop.components; c++)
+						((*im.im)[y][prop.components*x + c]) = (*temp_buffer)[resize_factor*y][prop.components*resize_factor*x + c];
+				}
 			}
+			for (unsigned int y = prop.height - bottom_border; y < prop.height; y++) {
+				for (unsigned int x = 0; x < prop.components*prop.width; x++) {
+					(*im.im)[y][x] = 0;
+
+				}
+			}
+			pool.release(temp_buffer);
 		}
-		for (unsigned int y = prop.height-bottom_border; y < prop.height; y++){
-			for (unsigned int x = 0; x < prop.components*prop.width; x++){
-				(*im.im)[y][x] = 0;
-		
-			}
+		catch (...) {
+			pool.release(temp_buffer);
 		}
 		im.loaded = true;
 	}
@@ -66,7 +77,6 @@ public:
 	ns_annotater_image_buffer_entry * swap_1,
 					  				 * swap_2;
 	ns_image_series_annotater * annotater;
-	ns_image_standard temp_buffer;
 	unsigned long bottom_border_size;
 	ns_annotater_timepoint * timepoint;
 	double external_rescale_factor;
@@ -80,17 +90,18 @@ public:
 };
 
 void report_changes_made_to_screen();
-
 class ns_image_series_annotater{
 protected:
-  virtual inline ns_annotater_timepoint * timepoint(const unsigned long i){throw ns_ex("should be redefined!");}
+
+
+    virtual inline ns_annotater_timepoint * timepoint(const unsigned long i){throw ns_ex("should be redefined!");}
 	virtual inline unsigned long number_of_timepoints(){throw ns_ex("should be redefined!");}
 	unsigned long resize_factor;
 	ns_lock image_buffer_access_lock;
 	ns_annotater_image_buffer_entry current_image;
 	std::vector<ns_annotater_image_buffer_entry> previous_images;
 	std::vector<ns_annotater_image_buffer_entry> next_images;
-	ns_image_series_annotater(const unsigned long resize_factor_, const unsigned long bottom_border_size):image_buffer_access_lock("ns_da_ib"),resize_factor(resize_factor_),image_bottom_border_size(bottom_border_size){}
+ ns_image_series_annotater(const unsigned long resize_factor_, const unsigned long bottom_border_size):local_image_cache(1024*1024*8),image_buffer_access_lock("ns_da_ib"),resize_factor(resize_factor_),image_bottom_border_size(bottom_border_size),fast_forward_requested(false),fast_back_requested(false){}
 	
 	virtual void draw_metadata(ns_annotater_timepoint * tp,ns_image_standard & im, double external_rescale_factor)=0;
 	
@@ -112,7 +123,7 @@ protected:
 		ns_acquire_lock_for_scope lock2(spec.launch_lock,__FILE__,__LINE__);
 	
 		try{
-		spec.timepoint->load_image(spec.bottom_border_size,*spec.image,spec.sql(),spec.temp_buffer,spec.annotater->resize_factor);
+		spec.timepoint->load_image(spec.bottom_border_size,*spec.image,spec.sql(),spec.annotater->local_image_cache, spec.annotater->memory_pool,spec.annotater->resize_factor);
 		}
 		catch(ns_ex & ex){
 			std::cerr << "Error: " << ex.text() << "\n";
@@ -161,10 +172,14 @@ protected:
 	unsigned long current_timepoint_id;
 
 	ns_acquire_for_scope<ns_sql> sql;
+	ns_acquire_for_scope<ns_sql> asynch_loading_sql;
+	static ns_annotater_memory_pool memory_pool;
 public:
-	
 
-	typedef enum {ns_none,ns_forward, ns_back, ns_fast_forward, ns_fast_back,ns_stop,ns_save,ns_rewind_to_zero,ns_number_of_annotater_actions} ns_image_series_annotater_action;
+	ns_simple_local_image_cache local_image_cache;
+	void clear_sql() { if (!sql.is_null())sql.release(); if (!asynch_loading_sql.is_null())asynch_loading_sql.release();}
+
+	typedef enum {ns_none,ns_forward, ns_back, ns_fast_forward, ns_fast_back,ns_stop,ns_save,ns_rewind_to_zero,ns_recalculate,ns_switch_grouping,ns_cycle_graphs,ns_number_of_annotater_actions} ns_image_series_annotater_action;
 
 	ns_image_series_annotater_action fast_movement_requested()const{
 		if(fast_forward_requested)
@@ -174,7 +189,7 @@ public:
 		return ns_none;
 	}
 
-	~ns_image_series_annotater(){clear_base();sql.release();}
+	~ns_image_series_annotater() { clear_base(); clear_sql(); }
 	const unsigned long image_bottom_border_size;
 
 	virtual void clear() {}
@@ -183,20 +198,58 @@ public:
 
 		image_buffer_access_lock.wait_to_acquire(__FILE__, __LINE__);
 		for (unsigned int i = 0; i < previous_images.size(); i++){
-			ns_safe_delete(previous_images[i].im);
+			if (previous_images[i].im != 0)
+			memory_pool.release(previous_images[i].im);
+			previous_images[i].im = 0;
 			previous_images[i].loaded = false;
 		}
 		for (unsigned int i = 0; i < next_images.size(); i++){
-			ns_safe_delete(next_images[i].im);
+			if (next_images[i].im != 0)
+			memory_pool.release(next_images[i].im);
+			next_images[i].im = 0;
 			next_images[i].loaded = false;
 		}
 		previous_images.resize(0);
 		next_images.resize(0);
-		ns_safe_delete(current_image.im);
+
+		if (current_image.im != 0)
+		memory_pool.release(current_image.im);
+		current_image.im = 0;
 		current_image.loaded = false;
 		image_buffer_access_lock.release();
 	}
 	virtual void save_annotations(const ns_death_time_annotation_set & extra_annotations)const=0 ;
+
+	bool jump_to_position(unsigned long new_timepoint_id,ns_handle_error_handler error_handler, double external_rescale_factor, bool asynch = false) {
+		ns_acquire_lock_for_scope lock(image_buffer_access_lock, __FILE__, __LINE__);
+		if (new_timepoint_id == current_timepoint_id)
+			return true;
+		if (sql.is_null())
+			sql.attach(image_server.new_sql_connection(__FILE__, __LINE__));
+
+		if (number_of_timepoints() == 0 || new_timepoint_id >= number_of_timepoints()) {
+			stop_fast_movement();
+			lock.release();
+			return false;
+		}
+		for (unsigned int i = 0; i < previous_images.size(); i++)
+			previous_images[i].loaded = false;
+		for (unsigned int i = 0; i < next_images.size(); i++)
+			next_images[i].loaded = false;
+			current_timepoint_id = new_timepoint_id;
+
+		if (asynch) {
+			if (debug_handlers) std::cerr << "A";
+			load_image_asynch(timepoint(current_timepoint_id), current_image, error_handler, external_rescale_factor, &current_image, 0);
+		}
+		else {
+			if (debug_handlers) std::cerr << "Q";
+			timepoint(current_timepoint_id)->load_image(asynch_load_specification.bottom_border_size, current_image, sql(), local_image_cache, memory_pool, resize_factor);
+			draw_metadata(timepoint(current_timepoint_id), *current_image.im, external_rescale_factor);
+		}
+		image_buffer_access_lock.release();
+		return true;
+	}
 	bool step_forward(ns_handle_error_handler error_handler, double external_rescale_factor, bool asynch=false){
 		ns_acquire_lock_for_scope lock(image_buffer_access_lock,__FILE__, __LINE__);
 	
@@ -235,25 +288,27 @@ public:
 			draw_metadata(timepoint(current_timepoint_id),*previous_images[0].im,external_rescale_factor);
 			ns_swap<ns_annotater_image_buffer_entry> s;
 			s(previous_images[0],current_image);
+			image_buffer_access_lock.release();
+			return true;
 		}
 		else{
 	//		cerr << "Loading " << current_timepoint_id << "\n";
 			if (asynch) {
 				if (debug_handlers) std::cerr << "A";
 				load_image_asynch(timepoint(current_timepoint_id), previous_images[0], error_handler,external_rescale_factor, &current_image, &previous_images[0]);
+				image_buffer_access_lock.release();
+				return false;
 			}
 			else{
 				if (debug_handlers) std::cerr << "Q";
-				timepoint(current_timepoint_id)->load_image(asynch_load_specification.bottom_border_size,previous_images[0],sql(),asynch_load_specification.temp_buffer,resize_factor);
+				timepoint(current_timepoint_id)->load_image(asynch_load_specification.bottom_border_size,previous_images[0],sql(),local_image_cache,memory_pool,resize_factor);
 				draw_metadata(timepoint(current_timepoint_id),*previous_images[0].im,external_rescale_factor);
 				ns_swap<ns_annotater_image_buffer_entry> s;
 				s(previous_images[0],current_image);
+				image_buffer_access_lock.release();
+				return true;
 			}
 		}
-//		output_buffer_state();
-//		cerr << "---\n";
-		image_buffer_access_lock.release();
-		return true;
 	}
 	bool step_back(ns_handle_error_handler error_handler, double external_rescale_factor, bool asynch=false){
 		ns_acquire_lock_for_scope lock(image_buffer_access_lock, __FILE__, __LINE__);
@@ -303,7 +358,7 @@ public:
 			else{
 
 				if (debug_handlers) std::cerr << "Q";
-				timepoint(current_timepoint_id)->load_image(asynch_load_specification.bottom_border_size,next_images[0],sql(),asynch_load_specification.temp_buffer,resize_factor);
+				timepoint(current_timepoint_id)->load_image(asynch_load_specification.bottom_border_size,next_images[0],sql(),local_image_cache, memory_pool, resize_factor);
 				draw_metadata(timepoint(current_timepoint_id),*next_images[0].im,external_rescale_factor);
 				ns_swap<ns_annotater_image_buffer_entry> s;
 				s(next_images[0],current_image);

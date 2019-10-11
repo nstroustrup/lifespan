@@ -901,7 +901,7 @@ for ($i = 0; $i < sizeof($jobs); $i++){
 
     $sql->send_query($lock_jobs_query);
     for ($i = 0; $i < sizeof($samples_to_process); $i++){
-
+    $last_job = $i == sizeof($samples_to_process);
       if ($delete_files_from_disk){
 	//make a processing job for the sample--this will allow us to delete all temprary data later on.
 	$job = new ns_processing_job();
@@ -924,7 +924,7 @@ for ($i = 0; $i < sizeof($jobs); $i++){
 	    $file_deletion_job->region_id = $sample_regions[$i][$b][0];
 	    $file_deletion_job->save_to_db($sql);
 
-	    ns_delete_region_from_database($sample_regions[$i][$b][0],$sql);
+	    ns_delete_region_from_database($sample_regions[$i][$b][0],$sql,$last_job);
 	  }
 
 	}
@@ -942,9 +942,6 @@ for ($i = 0; $i < sizeof($jobs); $i++){
 	$sql->send_query($query);
       }
     }
-
-
-
 
     ns_update_job_queue($sql);
     if(!($clear_region == ''))

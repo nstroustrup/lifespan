@@ -979,7 +979,7 @@ int main(int argc, char ** argv){
 		splash += " ==                                    ==\n";
 		splash += " ==        Nicholas Stroustrup         ==\n";
 		splash += " ==    Center for Genomic Regulation   ==\n";
-		splash += " ==          Barcelona, 2018           ==\n";
+		splash += " ==          Barcelona, 2019           ==\n";
 		splash += " ========================================\n";
 		std::cout << splash;
 
@@ -1096,9 +1096,10 @@ int main(int argc, char ** argv){
 
 		//if we are acting as a capture server, we need to have access to the local sql buffer.
 		if (image_server.act_as_an_image_capture_server()) {
-			ns_acquire_for_scope <ns_local_buffer_connection> local_sql(image_server.new_local_buffer_connection(__FILE__, __LINE__, false));
+			ns_acquire_for_scope <ns_local_buffer_connection> local_sql(0);
 			//check for a missing local buffer database
 			try {
+				local_sql.attach(image_server.new_local_buffer_connection(__FILE__, __LINE__, false));
 				image_server.check_for_local_sql_database_access(&local_sql());
 			}
 			catch (ns_ex & ex) {

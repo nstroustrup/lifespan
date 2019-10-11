@@ -114,7 +114,7 @@ public:
 	unsigned int software_version_major(){return 2;}
 	///image server nodes check the cluster to see if they are running the latest version of the software,
 	///which is specified by (major).(minor).(software_version_compile).
-	unsigned int software_version_minor(){return 1;}
+	unsigned int software_version_minor(){return 3;}
 	///image server nodes check the cluster to see if they are running the latest version of the software,
 	///which is specified by (major).(minor).(software_version_compile).
 	unsigned int software_version_compile(){return _software_version_compile;}
@@ -394,7 +394,7 @@ public:
 	void get_storyboard(const ns_experiment_storyboard_spec & spec, ns_storyboard_cache::const_handle_t & handle, ns_sql & sql);
 	void clean_up_storyboard_cache(bool remove_all, ns_sql & sql);
 
-
+	void update_posture_analysis_model_registry(ns_sql& sql,bool force);
 	ns_time_path_solver_parameters get_position_analysis_model(const std::string & model_name,bool create_default_if_does_not_exist=false,const ns_64_bit region_info_id_for_default=0, ns_sql * sql_for_default=0) const;
 	#endif
 	///Clear all SVM machine learning models from the model cache so they are
@@ -711,6 +711,25 @@ private:
 	#endif
 
 	bool cleared;
+};
+
+
+struct ns_time_series_denoising_parameters {
+	ns_time_series_denoising_parameters() :movement_score_normalization(ns_none) {}
+	typedef enum { ns_none = 0, ns_subtract_out_plate_median = 1, ns_subtract_out_median = 2, ns_subtract_out_median_of_end = 3, ns_subtract_out_device_median = 4 } ns_movement_score_normalization_type;
+	ns_movement_score_normalization_type movement_score_normalization;
+	static ns_time_series_denoising_parameters load_from_db(const ns_64_bit region_id, ns_sql & sql);
+	std::string to_string() const {
+		switch (movement_score_normalization) {
+		case ns_none: return "None";
+		case ns_subtract_out_median: return "Sub Med";
+		case ns_subtract_out_median_of_end: return "Sub End";
+		case ns_subtract_out_plate_median: return "Plate Med";
+		case ns_subtract_out_device_median: return "Device Med";
+		default: throw ns_ex("Unknown normalization technique:") << (unsigned long)movement_score_normalization;
+		}
+	}
+	static ns_movement_score_normalization_type default_strategy() { return ns_none; }
 };
 
 ///All behavior is coordinated through a global instance of the image server.

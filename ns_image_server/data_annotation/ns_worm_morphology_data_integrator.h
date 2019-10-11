@@ -60,8 +60,10 @@ struct ns_worm_morphology_data_integrator_timepoint {
 	ns_region_area region_area;
 
 };
+template<class allocator_T>
 class ns_worm_morphology_data_integrator {
 public:
+	ns_worm_morphology_data_integrator(ns_time_path_image_movement_analysis_memory_pool<allocator_T> & memory_pool) :analyzer(memory_pool) {}
 	std::vector<std::vector<ns_worm_morphology_data_integrator_timepoint> > timepoints;
 	void load_data_and_annotations_from_db(const ns_64_bit & region_id, ns_sql & sql) {
 
@@ -75,7 +77,7 @@ public:
 		ns_acquire_for_scope<ns_analyzed_image_time_path_death_time_estimator> death_time_estimator(
 			ns_get_death_time_estimator_from_posture_analysis_model(posture_analysis_model_handle().model_specification));
 		const ns_time_series_denoising_parameters time_series_denoising_parameters(ns_time_series_denoising_parameters::load_from_db(region_id, sql));
-		analyzer.load_completed_analysis(region_id, solution, time_series_denoising_parameters, &death_time_estimator(), sql, true);
+		analyzer.load_completed_analysis_(region_id, solution, time_series_denoising_parameters, &death_time_estimator(), sql, true);
 
 		timepoints.resize(solution.timepoints.size());
 		for (unsigned int i = 0; i < solution.timepoints.size(); i++) {
@@ -236,7 +238,7 @@ public:
 	std::vector<ns_image_server_captured_image_region> region_image_records;
 
 
-	ns_time_path_image_movement_analyzer analyzer;
+	ns_time_path_image_movement_analyzer<allocator_T> analyzer;
 
 	ns_region_metadata metadata;
 

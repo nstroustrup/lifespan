@@ -77,6 +77,10 @@ public:
 	template<class a, class b>
 	friend class ns_cache_request;
 
+	bool eq(const ns_simple_cache_data_handle< data_t, cache_key_t, locked> & l) const {
+		return l.data == this->data;
+	}
+
 private:
 	data_t * data; //the image cached in memory.
 	bool unlinked_singleton;
@@ -113,7 +117,10 @@ private:
 	bool write;
 
 };
-
+template<class data_t, class cache_key_t, bool locked>
+bool operator==(const ns_simple_cache_data_handle<data_t, cache_key_t, locked> & l, const ns_simple_cache_data_handle<data_t, cache_key_t, locked> & r) {
+	return l.eq(r);
+}
 template<class second_t>
 struct ns_cache_object_sort_by_age {
 	ns_cache_object_sort_by_age() {}
@@ -233,19 +240,40 @@ public:
 		}
 	}
 	typedef enum { ns_read, ns_write, ns_unlinked_singleton } ns_request_type;
-       
-	void get_for_read(const typename data_t::id_type & id, const_handle_t & cache_object, typename data_t::external_source_type & external_source){
-	  get_image(id,&cache_object,external_source, ns_read,false);
+      
+	bool is_cached(const typename data_t::id_type & id){
+		if (locked) {
+			//wait for any delete jobs to finish.
+			delete_lock.wait_to_acquire(__FILE__, __LINE__);
+			delete_lock.release();
+			lock.wait_to_acquire(__FILE__, __LINE__);
+		}
+		typename cache_t::iterator p = data_cache.find(data_t::to_id(id));
+		bool loaded = p != data_cache.end();
+		lock.release();
+		return loaded;
 	}
-
+	void get_for_read(const typename data_t::id_type & id, const_handle_t & cache_object, typename data_t::external_source_type & external_source){
+	  get_image(id,&cache_object,&external_source, ns_read,false);
+	}
+	void get_for_read_no_create(const typename data_t::id_type & id, const_handle_t & cache_object) {
+		if (!get_image(id, &cache_object, 0, ns_read, false)) {
+			throw ns_ex("simple_cache::get_for_read_no_create()::Requesting an object that has not previously been loaded");
+		}
+	}
 	void get_for_write(const typename data_t::id_type & id, handle_t & cache_object, typename data_t::external_source_type & external_source) {
-		get_image(id, &cache_object, external_source, ns_write,false);
+		get_image(id, &cache_object, &external_source, ns_write,false);
+	}	
+	void get_for_write_no_create(const typename data_t::id_type & id, handle_t & cache_object) {
+		if (!get_image(id, &cache_object, 0, ns_write, false)) {
+			throw ns_ex("Requesting a non-existant object");
+		}
 	}
 	void get_unlinked_singleton(const typename data_t::id_type & id, handle_t & cache_object, typename data_t::external_source_type & external_source) {
-		get_image(id, &cache_object, external_source, ns_unlinked_singleton, false);
+		get_image(id, &cache_object, &external_source, ns_unlinked_singleton, false);
 	}
 	void get_unlinked_singleton(const typename data_t::id_type & id, const_handle_t & cache_object, typename data_t::external_source_type & external_source) {
-		get_image(id, &cache_object, external_source, ns_unlinked_singleton, false);
+		get_image(id, &cache_object, &external_source, ns_unlinked_singleton, false);
 	}
 
 	//clears the cache without allowing any of its contents the opportunity to clean up any external resources
@@ -469,32 +497,28 @@ private:
 	//data_type_t will be either data_type or const data_type depending on whether 
 	//if only_try_to_get is set to true, then get_image will return false if the 
 	//requested object is currently checked out for either read or write.
+
+	//if external_source is set to 0, then get_image will return false if image doesn't already exist in the cache.
 	template<class handle_t>
 	bool get_image(const typename data_t::id_type & id,
 					handle_t * handle,
-					typename data_t::external_source_type & external_source,
+					typename data_t::external_source_type * external_source,
 					ns_request_type request_type, bool only_try_to_get) {
 		//check to see if we have this in the cache somewhere
 		bool currently_have_write_lock(false), currently_have_table_lock(false);
 
 		if (request_type == ns_unlinked_singleton) {
+		  if (external_source == 0)return false;
 			handle->unlinked_singleton = true;
 			data_t * data = new data_t;
 			try {
-			  //if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("get_image::loading from external source"));
-				data->load_from_external_source(id, external_source);
-
-				//	if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("get_image::loaded from external source"));
+				data->load_from_external_source(id, *external_source);
 			}
 			catch (...) {
-
-			  //if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("get_image::throwing exception!"));
 				delete data;
 				throw;
 			}
-			//if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("get_image::assigning data"));
 			handle->data = data;
-			//if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("get_image::done."));
 			return true;
 		}
 
@@ -512,7 +536,12 @@ private:
 
 			//create a new cache entry if one isn't already there!
 			if (p == data_cache.end()) {
-				//std::cerr << "$";
+			  
+			  if (external_source == 0){
+			    if (locked)lock.release();
+			    return false;
+			  }
+			  //std::cerr << "$";
 				typename cache_t::iterator p;
 				//create a new cache entry for the new image, and reserve it for writing
 				//{
@@ -523,18 +552,12 @@ private:
 				p->second->object_write_lock.wait_to_acquire(__FILE__, __LINE__); 
 				currently_have_table_lock = false;
 
-				//if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("get_image::calling setup_new_cache_object_and_handle_and_release_locks"));
-				setup_new_cache_object_and_handle_and_release_locks(id,handle,external_source,request_type,p);
+				setup_new_cache_object_and_handle_and_release_locks(id,handle,*external_source,request_type,p);
 
-				//if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("get_image::finished setup_new_cache_object_and_handle_and_release_locks"));
 				return true;
 			}
 
 			//some cleanup needs to be done.
-			//if (p->second.to_be_deleted)
-			//	read_only = false;
-
-			//if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("get_image::found existing entry"));
 			if (request_type == ns_write) {
 
 				//if we want write access, we need to wait until anyone currently reading is finished
@@ -567,9 +590,15 @@ private:
 				//if we find an old broken entry from a previous failed load.
 				//we will try to reload using this entry
 				if (p->second->to_be_deleted) {
-					std::cerr << "%";
+				  if (external_source == 0){
+				    if (!only_try_to_get)
+				      p->second->object_write_lock.release();
+				    lock.release();
+				    return false;
+				  }
+				  //std::cerr << "%";
 					currently_have_table_lock = false;
-					setup_new_cache_object_and_handle_and_release_locks(id, handle, external_source, request_type, p);
+					setup_new_cache_object_and_handle_and_release_locks(id, handle, *external_source, request_type, p);
 					return true;
 				}
 
@@ -600,7 +629,7 @@ private:
 					object_write_requests_pending--;
 					currently_have_write_lock = true;
 					if (could_not_get_object) {
-						lock.release();
+					  lock.release();
 						return false;
 					}
 				}
@@ -608,9 +637,14 @@ private:
 				//if we find an old broken entry from a previous failed load.
 				//we will try to reload using this entry
 				if (p->second->to_be_deleted) {
-					std::cerr << "%";
+				  if (external_source == 0){
+				    if (!only_try_to_get)
+				      p->second->object_write_lock.release();
+				    if (locked)lock.release();
+				    return false;
+				  }					//std::cerr << "%";
 					currently_have_table_lock = false;
-					setup_new_cache_object_and_handle_and_release_locks(id, handle, external_source, request_type, p);
+					setup_new_cache_object_and_handle_and_release_locks(id, handle, *external_source, request_type, p);
 					return true;
 				}
 
@@ -763,6 +797,8 @@ template<class data_t, class cache_key_t, bool locked>
   //and waiting for the write lock will continue;
 	if (obj != 0){
 		if (locked) obj->object_metadata_lock.wait_to_acquire(__FILE__, __LINE__);
+		if (obj->number_checked_out_by_any_threads == 0)
+			std::cout << "Yikes";
 		obj->number_checked_out_by_any_threads--;
 		if (locked) obj->object_metadata_lock.release();
 		if (locked && write) obj->object_write_lock.release();

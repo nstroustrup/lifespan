@@ -483,7 +483,7 @@ void ns_image_server_captured_image_region::create_storage_for_worm_results(ns_i
 	im.path = region_dir + DIR_CHAR + "detected_data";
 	im.filename = filename(&sql);
 	if (interpolated) im.filename += "_i";
-	ns_add_image_suffix(im.filename, ns_wrm);
+	ns_add_image_suffix(im.filename, ns_wrm_gz);
 	im.partition = image_server_const.image_storage.get_partition_for_experiment(experiment_id,&sql);
 
 	sql.send_query("BEGIN");
@@ -631,6 +631,7 @@ const ns_image_server_image ns_image_server_captured_image_region::create_storag
 
 void ns_image_server_captured_image_region::update_all_processed_image_records(ns_sql & sql){
 	sql << "UPDATE sample_region_images SET ";
+	bool needs_comma(false);
 	for (unsigned long i = 0; i < op_images_.size(); i++){
 		if (i == ns_unprocessed)
 			continue;
@@ -638,10 +639,10 @@ void ns_image_server_captured_image_region::update_all_processed_image_records(n
 
 		if (ns_processing_step_db_table_name(task) !=  "sample_region_images")
 			continue;
-
+		if (needs_comma)
+				sql << ",";
 		sql << ns_processing_step_db_column_name(task) << "=" << op_images_[i];
-		if (i != op_images_.size()-1)
-			sql << ",";
+		needs_comma = true;
 	}
 	sql << " WHERE id = " << region_images_id;
 	sql.send_query();

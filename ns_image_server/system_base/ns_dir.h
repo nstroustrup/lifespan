@@ -70,7 +70,8 @@ class ns_dir{
 	static unsigned long get_free_disk_space(const std::string & path);
 
 	static ns_64_bit get_directory_size(const std::string & path, const std::string & du_path="du", const bool recurse=true);
-	static ns_64_bit get_file_size(const std::string file);
+	static unsigned long get_file_timestamp(const std::string & file);
+	static ns_64_bit get_file_size(const std::string& file);
 
 	static const bool file_exists(const std::string & f);
 	static const bool file_is_writeable(const std::string & f);

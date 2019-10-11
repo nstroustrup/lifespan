@@ -105,7 +105,7 @@ struct ns_survival_timepoint_event_count{
 	
 struct ns_metadata_worm_properties{
 	ns_metadata_worm_properties():events(0),properties_override_set(false),control_group(-1){}
-	typedef enum{ns_long_distance_movement_cessation,ns_local_movement_cessation,ns_death} ns_survival_event_type;
+	typedef enum{ns_long_distance_movement_cessation,ns_local_movement_cessation,ns_death,ns_death_associated_expansion, ns_typeless_censoring_events,ns_number_of_event_types} ns_survival_event_type;
 	long control_group;
 	unsigned long event_period_end_time;
 	ns_survival_event_type event_type;
@@ -119,6 +119,8 @@ struct ns_metadata_worm_properties{
 				case ns_long_distance_movement_cessation: return "Long Distance Movement Cessation";
 				case ns_local_movement_cessation: return "Local Movement Cessation";
 				case ns_death:	return "Death";
+				case ns_death_associated_expansion:	return "Death-Associated Expansion";
+				case ns_typeless_censoring_events:	return "Censoring Event";
 				default: throw ns_ex("ns_region_metadata::event_type_to_string()::Unknown Event Type");
 			}
 	}
@@ -149,7 +151,7 @@ private:
 };
 
 struct ns_survival_timepoint_event{
-	ns_survival_timepoint_event(){}
+	ns_survival_timepoint_event() { events.reserve(50); }
 	std::vector<ns_survival_timepoint_event_count> events;
 	void add(const ns_survival_timepoint_event_count & );
 	void add(const ns_survival_timepoint_event & e);
@@ -163,8 +165,10 @@ struct ns_survival_timepoint{
 	
 	unsigned long absolute_time;
 	ns_survival_timepoint_event deaths,
-								long_distance_movement_cessations,
-								local_movement_cessations;
+		long_distance_movement_cessations,
+		local_movement_cessations,
+		death_associated_expansions,
+		typeless_censoring_events;
 	void add(const ns_survival_timepoint & t);
 };
 
@@ -279,9 +283,10 @@ struct ns_survival_statistics{
 	}
 };
 struct ns_multi_event_survival_statistics{
-	 ns_survival_statistics death,
-								long_distance_movement_cessation,
-								local_movement_cessations;
+	ns_survival_statistics death,
+		long_distance_movement_cessation,
+		local_movement_cessations,
+		death_associated_expansion_start;
 };
 struct ns_survival_data_with_censoring_timeseries{
 	void resize(unsigned long i, const double v);
@@ -311,9 +316,10 @@ struct ns_survival_data_with_censoring{
 	}
 };	
 struct ns_multi_event_survival_data_with_censoring{
-	 ns_survival_data_with_censoring death,
-								long_distance_movement_cessation,
-								local_movement_cessations;
+	ns_survival_data_with_censoring death,
+		long_distance_movement_cessation,
+		local_movement_cessations,
+		death_associated_expansion_start;
 };
 
 class ns_survival_data{
@@ -340,6 +346,7 @@ private:
 		generate_risk_timeseries(ns_movement_cessation,risk_timeseries.death);
 		generate_risk_timeseries(ns_translation_cessation,risk_timeseries.local_movement_cessations);
 		generate_risk_timeseries(ns_fast_movement_cessation,risk_timeseries.long_distance_movement_cessation);
+		generate_risk_timeseries(ns_death_associated_expansion_start, risk_timeseries.death_associated_expansion_start);
 	}
 	void generate_risk_timeseries(const ns_movement_event & event_type,ns_survival_data_with_censoring & survival) const;
 	
@@ -353,7 +360,7 @@ struct ns_lifespan_device_normalization_statistics{
 		multiplicative_additive_device_regression_additive_coefficient(0),
 		multiplicative_additive_device_regression_multiplicative_coefficient(0),
 		multiplicative_device_regression_coefficient(0),external_control_mean_fix_point_specified(false),
-		device_censoring_count_used(0),device_death_count_used(0){}
+		device_censoring_count_used(0),device_death_count_used(0), grand_strain_mean_used(0), device_strain_mean_used(0), is_a_control_plate(false){}
 
 	ns_region_metadata strain_info;
 	ns_survival_statistics grand_strain_mean,
@@ -382,7 +389,7 @@ struct ns_lifespan_device_normalization_statistics{
 	//bool external_fix_point_specified()const{return control_mean_external_fix_point >=0;}
 };
 struct ns_lifespan_device_normalization_statistics_for_device{
-	ns_lifespan_device_normalization_statistics_for_device(){}
+	ns_lifespan_device_normalization_statistics_for_device():device_had_control_plates(false) {}
 //	std::vector<ns_lifespan_device_normalization_statistics *> control_strains;
 	ns_survival_statistics device_control_plate_statistics;
 	ns_lifespan_device_normalization_statistics regression_statistics;
@@ -414,7 +421,7 @@ struct ns_lifespan_device_normalization_statistics_set{
 	ns_survival_statistics grand_control_mean;
 	std::map<std::string,ns_survival_statistics> grand_strain_mean;
 	ns_device_stats_list devices;
-	ns_lifespan_device_normalization_statistics_set(const ns_movement_event & e):normalization_event_type(e){}
+	ns_lifespan_device_normalization_statistics_set(const ns_movement_event & e):normalization_event_type(e), produce_identity(false){}
 	ns_movement_event normalization_event_type;
 	bool produce_identity;
 
@@ -509,7 +516,7 @@ struct ns_lifespan_device_normalization_statistics_set{
 	}
 };
 struct ns_device_temperature_normalization_data{
-	ns_device_temperature_normalization_data():produce_identity_(false){}
+	ns_device_temperature_normalization_data():produce_identity_(false), external_fixed_control_mean_lifespan(0), fix_control_mean_lifespan(false){}
 	void produce_identity(){produce_identity_ = true;}
 	std::vector<ns_region_metadata> control_strains;
 	ns_region_metadata::ns_strain_description_detail_type strain_description_detail_type;
@@ -542,7 +549,7 @@ public:
 
 	typedef enum {ns_do_not_include_control_groups,ns_include_control_groups} ns_control_group_behavior;
 
-	void generage_aggregate_risk_timeseries(const ns_region_metadata & m,ns_survival_data_with_censoring & risk_timeseries, std::vector<unsigned long> & t) const;
+	void generate_aggregate_risk_timeseries(const ns_region_metadata & m, bool filter_by_strain, const std::string& specific_device, const ns_64_bit& specific_region_id, ns_survival_data_with_censoring& movement_based_survival, ns_survival_data_with_censoring& death_associated_expansion_survival, std::vector<unsigned long> & t, bool use_external_time) const;
 
 	static void out_detailed_JMP_header(const ns_time_handing_behavior & time_handling_behavior, std::ostream & o, const std::string & time_units,const std::string & terminator="\n");
 	static void out_detailed_JMP_event_data(const ns_time_handing_behavior & time_handling_behavior,std::ostream & o, const ns_lifespan_device_normalization_statistics * regression_stats,const ns_region_metadata & metadata,const ns_metadata_worm_properties & prop,const double time_scaling_factor,const std::string & terminator="\n", const bool output_raw_data_as_regression=false,const bool output_full_censoring_detail=false);

@@ -11,14 +11,6 @@
 
 using namespace std;
 
-#ifdef NS_USE_MACHINE_LEARNING
-#ifndef NS_USE_TINYSVM
-void ns_svm_model_specification::ns_svm_deleter(svm_model* m) {
-	if (m != 0)
-		svm_free_and_destroy_model(&m);
-}
-#endif
-#endif
 
 
 std::string ns_remove_bad_filename_characters(const std::string & st,char rep = '_')  //from somewhere on stackoverflow

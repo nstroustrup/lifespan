@@ -1,0 +1,6 @@
+posture_cutoff, 1
+stationary_cutoff, 1561.36
+hold_time_seconds, 144000
+software_version, 2.1
+death_time_expansion_cutoff, 150
+death_time_expansion_time_kernel, 14400

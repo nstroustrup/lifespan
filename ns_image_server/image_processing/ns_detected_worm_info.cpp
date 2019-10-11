@@ -3101,3 +3101,13 @@ void ns_calculate_res_aware_edges(ns_image_bitmap & im, ns_image_bitmap & edge_b
 	std::vector<ns_edge_ui> tmp3;
 	 ns_calculate_res_aware_edges(im,edge_bitmap,tmp1,tmp2,tmp3,edges,temp_flood_fill_stack,temp);
 }*/
+
+
+#ifdef NS_USE_MACHINE_LEARNING
+#ifndef NS_USE_TINYSVM
+void ns_svm_model_specification::ns_svm_deleter(svm_model* m) {
+	if (m != 0)
+		svm_free_and_destroy_model(&m);
+}
+#endif
+#endif

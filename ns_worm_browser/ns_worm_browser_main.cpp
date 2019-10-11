@@ -903,8 +903,10 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 	static void annotate_worm_detection_training_set(const std::string& value) {
 		ns_image_file_chooser im_cc;
 		ns_run_in_main_thread<ns_image_file_chooser> run_mt(&im_cc);
-		if (im_cc.chosen)
-		worm_learner.annotate_worm_detection_training_set(im_cc.result);
+		if (im_cc.chosen) {
+			image_server.add_subtext_to_current_event(std::string("Annotating ") + im_cc.result, &worm_learner.get_sql_connection());
+			worm_learner.annotate_worm_detection_training_set(im_cc.result);
+		}
 	
 	}
 	static void generate_SVM_training_data(const std::string & value){
@@ -4206,7 +4208,7 @@ void ns_set_menu_bar_activity_internal(bool activate){
 			ns_set_main_window_annotation_controls_activity(true);
 	}
 	else {
-		cerr << "starting animation drawing\n";
+		//cerr << "starting animation drawing\n";
 		main_window->draw_animation = true;
 		schedule_repeating_callback(0);
 

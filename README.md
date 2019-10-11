@@ -20,6 +20,8 @@ All Rights Reserved
 
 **Major Revisions**
 
+2019.08.01: version 2.3 is finished and merged into the v2 branch.  This update contains major user interface performance improvements in the worm browser, performance upgrades, and many bugfixes. 
+
 2018.08.01: version 2 is declared stable
 
 2017.08.02: version 2 beta is ready for testing

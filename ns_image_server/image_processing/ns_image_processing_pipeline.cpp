@@ -664,7 +664,7 @@ void ns_image_processing_pipeline::process_region(const ns_image_server_captured
 				region_image.load_from_db(region_image.region_images_id,&sql);
 				if (region_image.capture_time == 0)
 					throw ns_ex("No capture time specified!");
-				sql << "SELECT maximum_number_of_worms_per_plate FROM sample_region_image_info WHERE id = " << region_image.region_info_id;
+				sql << "SELECT maximum_number_of_worms_per_plate, last_worm_detection_model_used FROM sample_region_image_info WHERE id = " << region_image.region_info_id;
 				ns_sql_result res;
 				sql.get_rows(res);
 				if (res.size() == 0)
@@ -701,6 +701,12 @@ void ns_image_processing_pipeline::process_region(const ns_image_server_captured
 						vis_type,
 						image_stats
 					));
+
+					if (res[0][1] != model().model_specification.model_name) {
+						sql << "UPDATE sample_region_image_info SET last_worm_detection_model_used = '" << model().model_specification.model_name << "' WHERE id = " << region_image.region_info_id;
+						sql.send_query();
+					}
+
 				}//implicitly release static mask back to cache.
 
 				image_server.register_job_duration(ns_process_worm_detection,tm.stop());
@@ -712,7 +718,6 @@ void ns_image_processing_pipeline::process_region(const ns_image_server_captured
 				color_converter.set_output_components(3);
 				ns_image_stream_binding<ns_image_stream_color_converter<ns_component, ns_image_stream_static_offset_buffer<ns_component> >,
 										ns_image_whole<ns_component> > to_color(color_converter,temporary_image,_image_chunk_size);
-
 				//draw without labels
 				if (operations[ns_process_worm_detection]){
 					spatial_average.pump(to_color,_image_chunk_size);

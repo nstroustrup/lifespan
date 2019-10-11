@@ -110,6 +110,9 @@ struct ns_box{
 	
 };
 
+std::string ns_check_analyses_are_up_to_date(const unsigned long region_id, const unsigned long experiment_id, ns_sql & sql);
+bool ns_warn_user_about_out_of_date_analyses(const unsigned long region_id, const unsigned long experiment_id, ns_sql& sql);
+
 struct ns_area_box{
 	ns_box screen_coords,
 		   image_coords;

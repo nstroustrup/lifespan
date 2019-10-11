@@ -1216,6 +1216,19 @@ bool ns_image_server::upgrade_tables(ns_sql_connection * sql, const bool just_te
 
 			changes_made = true;
 		}
+
+		if (!ns_sql_column_exists(t_suf + "sample_region_image_info", "last_posture_analysis_model_used", sql)) {
+			if (just_test_if_needed)
+				return true;
+			cout << "Adding adding model tracking columns to sample_region_image_info\n";
+			*sql << "ALTER TABLE `sample_region_image_info`"
+				"ADD COLUMN `last_posture_analysis_model_used` TEXT NOT NULL AFTER `worm_detection_model`,"
+				"ADD COLUMN `last_posture_analysis_method_used` VARCHAR(10) NOT NULL AFTER `last_posture_analysis_model_used`,"
+				"ADD COLUMN `last_worm_detection_model_used` TEXT NOT NULL AFTER `last_posture_analysis_method_used`,"
+				"ADD COLUMN `last_position_analysis_model_used` TEXT NOT NULL AFTER `last_worm_detection_model_used`";
+			sql->send_query();
+		}
+
 		if (!ns_sql_column_exists("hosts", "system_hostname", sql)) {
 			if (just_test_if_needed)
 				return true;

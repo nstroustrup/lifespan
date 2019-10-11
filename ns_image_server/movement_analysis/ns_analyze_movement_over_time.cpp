@@ -41,8 +41,31 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 	ns_image_server_results_subject results_subject;
 	results_subject.region_id = job.region_id;
 
+	sql << "SELECT last_worm_detection_model_used, worm_detection_model FROM sample_region_image_info WHERE id = " << job.region_id;
+	ns_sql_result res;
+	sql.get_rows(res);
+	if (res.empty())
+		throw ns_ex("Could not find the region in the database!");
+	if (res[0][0] != "" && res[0][0] != res[0][1])
+		throw ns_ex("The worm detection model file has been changed from ") << res[0][0] << " to " << res[0][1] << " without re-runing worm detection.  This means all images are out of date!  Either change it back or re-run movement detection. ";
+
 	bool invalidated_old_data(false);
 	const bool skip_inferred_worm_analysis(image_server->get_cluster_constant_value("skip_inferred_worm_analysis", "false", &sql) != "false");
+
+	//we get the posture analysis model file first, even though it is not needed until after the time path solover is run
+	//in case there is a problem with the model file.  We want to throw an error quickly, rather than after many steps have already been run/
+	ns_time_path_image_movement_analysis_memory_pool<ns_overallocation_resizer> memory_pool;
+	ns_time_path_image_movement_analyzer<ns_overallocation_resizer> time_path_image_analyzer(memory_pool);
+	ns_image_server::ns_posture_analysis_model_cache::const_handle_t posture_analysis_model_handle;
+	image_server->get_posture_analysis_model_for_region(job.region_id, posture_analysis_model_handle, sql);
+	ns_acquire_for_scope<ns_analyzed_image_time_path_death_time_estimator> death_time_estimator(
+		ns_get_death_time_estimator_from_posture_analysis_model(posture_analysis_model_handle().model_specification));
+
+	ns_posture_analysis_model posture_analysis_method_used;
+	bool posture_analysis_method_was_used(false);
+	posture_analysis_method_used = posture_analysis_model_handle().model_specification;
+	posture_analysis_method_was_used = true;
+
 	
 	ns_time_path_solution time_path_solution;
 	if (skip_inferred_worm_analysis) {
@@ -96,7 +119,7 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 			time_path_solution.fill_gaps_and_add_path_prefixes(prefix_length);
 
 			time_path_solution.identify_subregions_labels_from_subregion_mask(job.region_id, sql);
-			
+
 			if (log_output)
 				image_server->register_server_event(ns_image_server_event("Caching image data for inferred worm positions."), &sql);
 			ns_image_server_time_path_inferred_worm_aggregator ag;
@@ -133,19 +156,14 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 		position_3d_file_output.release();
 
 		image_server->results_storage.write_animal_position_timeseries_3d_launcher(results_subject, ns_image_server_results_storage::ns_3d_plot, sql);
-		
-	
+
+
 	}
 
 	if (time_path_solution.timepoints.empty())
 		throw ns_ex("The specified region does not appear to have any valid timepoints.  Has worm detection been run on any images?");
 
-	ns_time_path_image_movement_analysis_memory_pool<ns_overallocation_resizer> memory_pool;
-	ns_time_path_image_movement_analyzer<ns_overallocation_resizer> time_path_image_analyzer(memory_pool);
-	ns_image_server::ns_posture_analysis_model_cache::const_handle_t posture_analysis_model_handle;
-	image_server->get_posture_analysis_model_for_region(job.region_id, posture_analysis_model_handle, sql);
-	ns_acquire_for_scope<ns_analyzed_image_time_path_death_time_estimator> death_time_estimator(
-		ns_get_death_time_estimator_from_posture_analysis_model(posture_analysis_model_handle().model_specification));
+
 
 	const ns_time_series_denoising_parameters time_series_denoising_parameters(ns_time_series_denoising_parameters::load_from_db(job.region_id, sql));
 
@@ -362,14 +380,16 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 		image_server->register_server_event(ex, &sql);
 	}
 
-	
-
-	//update db stats
+	if (!posture_analysis_method_was_used)
+		throw ns_ex("Unknown posture analysis method used");
+		//update db stats
 	sql << "UPDATE sample_region_image_info SET "
 		<< "latest_movement_rebuild_timestamp = UNIX_TIMESTAMP(NOW()),"
 		<< "last_timepoint_in_latest_movement_rebuild = " << time_path_image_analyzer.last_timepoint_in_analysis() << ","
-		<< "number_of_timepoints_in_latest_movement_rebuild = " << time_path_image_analyzer.number_of_timepoints_in_analysis()
-		<< " WHERE id = " << job.region_id;
+		<< "number_of_timepoints_in_latest_movement_rebuild = " << time_path_image_analyzer.number_of_timepoints_in_analysis() << ","
+		<< "last_posture_analysis_model_used='" << posture_analysis_method_used.name << "',"
+		<< "last_posture_analysis_method_used='" << ns_posture_analysis_model::method_to_string(posture_analysis_method_used.posture_analysis_method) << "' "
+		<< "WHERE id = " << job.region_id;
 	sql.send_query();
 	if (!censoring_file_io_problems.empty()) {
 		ns_ex ex("One or more file i/o issues encountered during analysis:");

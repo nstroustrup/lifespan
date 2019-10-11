@@ -747,19 +747,6 @@ ns_64_bit ns_processing_job_maintenance_processor::run_job(ns_sql & sql) {
 			ns_high_precision_timer tm;
 			tm.start();
 			ns_time_path_solution solution;
-			/*solution.load_from_db(job.region_id, sql, true);
-			ns_time_path_image_movement_analyzer analyzer;
-			const ns_time_series_denoising_parameters time_series_denoising_parameters(ns_time_series_denoising_parameters::load_from_db(job.region_id, sql));
-
-			ns_image_server::ns_posture_analysis_model_cache::const_handle_t posture_analysis_model_handle;
-			image_server->get_posture_analysis_model_for_region(job.region_id, posture_analysis_model_handle, sql);
-
-			ns_acquire_for_scope<ns_analyzed_image_time_path_death_time_estimator> death_time_estimator(
-				ns_get_death_time_estimator_from_posture_analysis_model(posture_analysis_model_handle().model_specification));
-			analyzer.load_completed_analysis(job.region_id, solution, time_series_denoising_parameters, &death_time_estimator(), sql);
-			death_time_estimator.release();
-			analyzer.generate_movement_posture_visualizations(false, job.region_id, solution, sql);*/
-			//
 			image_server_const.add_subtext_to_current_event("Loading data from disk...", &sql);
 			solution.load_from_db(job.region_id, sql, true);
 

@@ -1603,10 +1603,11 @@ public:
 
 		//add(ns_menu_item_spec(generate_survival_curve_from_hand_annotations,"&Calibration/Generate Survival Curves from by hand annotations"));
 
+		add(ns_menu_item_spec(generate_movement_image_analysis_optimization_data, "Calibration/Posture Analaysis/Build new Threshold model from storyboard annnotations"));
+		add(ns_menu_item_spec(generate_worm_markov_posture_model_from_by_hand_annotations, "Calibration/Posture Analaysis/_Build new HMM Model from storyboard annnotations/(This feature is in alpha testing)", 0, FL_MENU_INACTIVE));
 		add(ns_menu_item_spec(generate_worm_markov_posture_model_from_by_hand_annotations, "Calibration/Posture Analaysis/_Build new HMM Model from storyboard annnotations/From this experiment"));
 		add(ns_menu_item_spec(generate_worm_markov_posture_model_from_by_hand_annotations, "Calibration/Posture Analaysis/Build new HMM Model from storyboard annnotations/From Observation Files"));
 		add(ns_menu_item_spec(compare_machine_and_by_hand_annotations, "&Calibration/Posture Analaysis/_Compare Storyboard annotations to fully-automated results"));
-		add(ns_menu_item_spec(generate_movement_image_analysis_optimization_data, "Calibration/Posture Analaysis/_Build new threshold model from storyboard annnotations"));
 
 
 		add(ns_menu_item_spec(annotate_worm_detection_training_set, "Calibration/Worm Detection/_Annotate Worm Detection Training Set"));
@@ -1698,7 +1699,7 @@ public:
 		for (unsigned int i = 0; i < worm_learner.databases_available.size(); i++)
 			db_spec.options.push_back(worm_learner.databases_available[i]);
 		add(db_spec);
-		add(ns_menu_item_spec(show_extra_menus, "Config/Set Behavior/_Show Image Analysis Diagnostic Tools"));
+		add(ns_menu_item_spec(show_extra_menus, "Config/_Set Behavior/_Show Image Analysis Diagnostic Tools"));
 		ns_menu_item_spec caching(precache_storyboard_images, "Config/Set Behavior/_Storyboard pre-caching");
 		caching.options.push_back(std::string("Pre-Cache to speed up image loading"));
 		caching.options.push_back(std::string("Do not cache"));

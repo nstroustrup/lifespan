@@ -375,6 +375,62 @@ void ns_worm_learner::create_feature_time_series(const std::string & directory){
 	out.close();
 }
 
+std::string ns_check_analyses_are_up_to_date(const unsigned long region_id, const unsigned long experiment_id, ns_sql & sql){
+	sql << "SELECT r.name, s.name, r.posture_analysis_model,r.last_posture_analysis_model_used,r.posture_analysis_method,r.last_posture_analysis_method_used,r.worm_detection_model,r.last_worm_detection_model_used "
+		"FROM sample_region_image_info as r, capture_samples as s WHERE ";
+	if (region_id == 0)
+		sql << "r.sample_id = s.id AND s.experiment_id = " << experiment_id;
+	else sql << "r.id = " << region_id;
+	ns_sql_result res;
+	sql.get_rows(res);
+	std::string output;
+	for (unsigned int i = 0; i < res.size(); i++) {
+		std::string t;
+		if ((res[i][3] != "" && res[i][2] != res[i][3]) ||
+			(res[i][5] != "0" && res[i][5] != "" && res[i][4] != res[i][5])) {
+			t += std::string("The posture analysis model has been changed from ") + res[i][3] + "(" + res[i][5] + ") to " + res[i][2] + "(" + res[i][4] + ").";
+			t += "The data must be re-analyzed for this change to be reflected in the output.  Consider re-running movement analysis (\"Re-calculate Death times from Movement Analysis\").\n";
+		}
+		if (res[i][7] != "" && res[i][6] != res[i][7]) {
+			t += std::string("The worm detection model has been changed from ") + res[i][7] + " to " + res[i][6] + ".";
+			t += "The data must be re-analyzed for this change to be reflected in the output.  You can 1) delete stored images and re-run worm detection and movement analysis 2) switch the model specification back again on the web interface.\n";
+		}
+		if (!t.empty()) {
+			output += "** Problem(s) with ";
+			output += res[i][1] + "::" + res[i][0] + ": ";
+			output += t;
+		}
+	}
+	return output;
+}
+
+bool ns_warn_user_about_out_of_date_analyses(const unsigned long region_id, const unsigned long experiment_id, ns_sql& sql) {
+	std::string analysis_errors = ns_check_analyses_are_up_to_date(region_id, experiment_id, sql);
+	if (!analysis_errors.empty()) {
+		ns_text_dialog td;
+		td.grid_text.push_back("Out of date analyses have been detected:");
+		td.grid_text.resize(td.grid_text.size() + 1);
+		td.grid_text.rbegin()->reserve(100);
+		for (unsigned int i = 0; i < analysis_errors.size(); i++) {
+			if (analysis_errors[i] == '\n') {
+				td.grid_text.resize(td.grid_text.size() + 1);
+				td.grid_text.rbegin()->reserve(100);
+			}
+			else td.grid_text.rbegin()->push_back(analysis_errors[i]);
+		}
+		td.w = 1000;
+		td.h = 400;
+		ns_run_in_main_thread_custom_wait<ns_text_dialog> b(&td);
+		ns_choice_dialog dialog;
+		dialog.title = "Do you want to continue?";
+		dialog.option_1 = "Continue";
+		dialog.option_2 = "Stop";
+		ns_run_in_main_thread<ns_choice_dialog> c(&dialog);
+		if (dialog.result != 1)
+			return false;
+	}
+	return true;
+}
 void ns_worm_learner::load_current_experiment_movement_results(const ns_death_time_annotation_set::ns_annotation_type_to_load & annotations_to_load, const unsigned long experiment_id){		
 	if (data_selector.current_experiment_id() == 0)
 		throw ns_ex("ns_worm_learner::No experiment selected!");
@@ -4607,7 +4663,13 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 			if (metadata.by_hand_annotation_timestamp > metadata.movement_rebuild_timestamp && metadata.movement_rebuild_timestamp != 0)
 				regions_needing_censoring_recalculation.push_back(metadata.region_id);
 		}
+
+
+	if (!ns_warn_user_about_out_of_date_analyses(0, experiment_id, sql))
+		return;
+
 	if (!regions_needing_censoring_recalculation.empty()) {
+
 		class ns_choice_dialog dialog;
 		dialog.title = ns_to_string(regions_needing_censoring_recalculation.size()) + " regions have by-hand annotations that are not encorporated into the censoring calculations.  How should this be handled?\n";
 		dialog.title += "Immediately: Recalculate censoring immediately on this machine\n";
@@ -8078,12 +8140,16 @@ bool ns_worm_learner::start_death_time_annotation(const ns_behavior_mode m, cons
 				switch(m){
 					case ns_worm_learner::ns_annotate_storyboard_region:
 						subject.region_id = data_selector.current_region().region_id;
+						if (!ns_warn_user_about_out_of_date_analyses(subject.region_id,0,get_sql_connection()))
+							return false;
 						break;
 					case ns_worm_learner::ns_annotate_storyboard_sample:
 						subject.sample_id = data_selector.current_sample().sample_id;
 						break;
 					case ns_worm_learner::ns_annotate_storyboard_experiment:
 						subject.experiment_id = data_selector.current_experiment_id();
+						if (!ns_warn_user_about_out_of_date_analyses(0, subject.experiment_id, get_sql_connection()))
+							return false;
 						break;
 				}
 				subject.event_to_mark = ns_image_server::movement_event_used_for_animal_storyboards();

@@ -67,9 +67,9 @@ endforeach()
 list(APPEND ns_image_server_base_INCLUDE_DIRS ${ns_external_HEADER_DIRS})
 
 set (ns_external_SOURCES  "")
+list (APPEND ns_external_SOURCES "${PROJECT_SOURCE_DIR}/../external_compile_libraries/gzstream/gzstream.C")
 if (NOT ONLY_IMAGE_ACQUISITION)
 list (APPEND ns_external_SOURCES "${PROJECT_SOURCE_DIR}/../external_libraries/libsvm/svm.cpp" 
-"${PROJECT_SOURCE_DIR}/../external_compile_libraries/gzstream/gzstream.C"
 "${PROJECT_SOURCE_DIR}/../external_libraries/ctmf/ctmf.c" 
 "${PROJECT_SOURCE_DIR}/../external_libraries/triangle/triangle.cpp"
 "${PROJECT_SOURCE_DIR}/../external_libraries/gmm/gmm.cpp"

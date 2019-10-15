@@ -7391,7 +7391,7 @@ void ns_worm_learner::draw_worm_window_image(ns_image_standard & image){
 
 	//cerr << "Draw requests a worm window size of " << worm_window.image_size << "\n";
 
-	if (worm_window.gl_buffer_properties.width != worm_window.gl_image_size.x || worm_window.gl_buffer_properties.height != worm_window.gl_image_size.y
+	if (worm_window.gl_buffer_properties.width != buffer_size.x || worm_window.gl_buffer_properties.height != buffer_size.y
 		|| worm_window.gl_buffer_properties.components != 3){
 		
 		if (worm_window.gl_buffer != 0){
@@ -7905,6 +7905,7 @@ void ns_worm_learner::draw_animation(const double &t){
 
 void ns_gl_window_data::update_display() {
 
+	ns_acquire_lock_for_scope lock(display_lock, __FILE__, __LINE__);
 	unsigned long new_gl_image_pane_width = (gl_image_size.x);
 	unsigned long new_gl_image_pane_height = (gl_image_size.y);
 
@@ -7913,7 +7914,6 @@ void ns_gl_window_data::update_display() {
 	if (new_gl_image_pane_height == 0)
 		new_gl_image_pane_height = 100;
 
-	ns_acquire_lock_for_scope lock(display_lock, __FILE__, __LINE__);
 	float zoom_x = (float)((float)new_gl_image_pane_width) / gl_buffer_properties.width;
 	float zoom_y = (float)((float)new_gl_image_pane_height) / gl_buffer_properties.height;
 	if (zoom_x < .01)
@@ -7932,12 +7932,18 @@ void ns_gl_window_data::update_display() {
 
 	//	cerr << "update display needs to resize the worm image to " << image_size << "\n";
 		//xxxx
+	#ifndef MESA
+		glDrawBuffer(GL_FRONT_AND_BACK);
+	#endif
 	glClear(GL_COLOR_BUFFER_BIT);
 	glPixelZoom(image_zoom * display_rescale_factor, image_zoom * display_rescale_factor);
 	glRasterPos2i((GLint)-1, (GLint)-1);
 	//glPixelStorei(GL_PACK_ALIGNMENT, 1);
+
 	glDrawPixels(gl_buffer_properties.width, gl_buffer_properties.height, GL_RGB, GL_UNSIGNED_BYTE, gl_buffer);
-	glFlush();
+	#ifndef MESA
+	glDrawBuffer(GL_BACK);
+	#endif 
 	lock.release();
 }
 

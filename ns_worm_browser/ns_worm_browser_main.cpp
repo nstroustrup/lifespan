@@ -289,6 +289,7 @@ class ns_worm_gl_window : public Fl_Gl_Window {
 	bool have_focus;
 
     void fix_viewport(int width,int height) {
+		return;
         glLoadIdentity();
      
     	glShadeModel (GL_FLAT);
@@ -302,16 +303,11 @@ class ns_worm_gl_window : public Fl_Gl_Window {
     }
     // DRAW METHOD
     void draw() {
-        if (!valid()) { 
-			valid(1); 
-			fix_viewport(w(), h()); 
-			glClearColor(1, 1, 1, 1); 
-			 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear buffer
-			 glLoadIdentity ();             /* clear the matrix */
-			 glTranslatef (0.0, 0.0, -5.0); /* viewing transformation */
-			 glScalef (1.0, 1.0, 1.0);      /* modeling transformation */
-			 glColor3f(0,0,0);
-		}      
+		if (!valid()) {
+			glShadeModel(GL_FLAT);
+			glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+			glClearColor(0.0, 0.0, 0.0, 0.0);
+		}
 
 		  try{
 				worm_learner.worm_window.update_display();
@@ -409,7 +405,8 @@ public:
 
     // OPENGL WINDOW CONSTRUCTOR
     ns_worm_gl_window (int X,int Y,int W,int H,const char*L=0) : Fl_Gl_Window(X,Y,W,H,L),mouse_is_down(false),mouse_click_location(0,0),have_focus(false) {
-       //xxxx
+
+		Fl_Gl_Window::mode(FL_RGB8);
 		end();
     }
 };
@@ -422,6 +419,7 @@ class ns_worm_stats_gl_window : public Fl_Gl_Window {
 	bool have_focus;
 
 	void fix_viewport(int width, int height) {
+		return;
 		glLoadIdentity();
 
 		glShadeModel(GL_FLAT);
@@ -436,14 +434,9 @@ class ns_worm_stats_gl_window : public Fl_Gl_Window {
 	// DRAW METHOD
 	void draw() {
 		if (!valid()) {
-			valid(1);
-			fix_viewport(w(), h());
-			glClearColor(1, 1, 1, 1);
-			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear buffer
-			glLoadIdentity();             /* clear the matrix */
-			glTranslatef(0.0, 0.0, -5.0); /* viewing transformation */
-			glScalef(1.0, 1.0, 1.0);      /* modeling transformation */
-			glColor3f(0, 0, 0);
+			glShadeModel(GL_FLAT);
+			glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+			glClearColor(0.0, 0.0, 0.0, 0.0);
 		}
 
 		try {
@@ -2726,7 +2719,6 @@ public:
     ns_worm_terminal_worm_window (int W,int H,const char*L=0) : Fl_Window(W,H,L), have_focus(false){
         // OpenGL window
 		begin();
-		
 		ns_vector_2i size(worm_learner.worm_window.gl_image_size.x, worm_learner.worm_window.gl_image_size.y + image_window_size_difference(worm_learner.worm_window.display_rescale_factor).y);
 	
         gl_window = new  ns_worm_gl_window(30, 30, size.x,size.y);

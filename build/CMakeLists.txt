@@ -11,12 +11,12 @@ endif()
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/modules/")
 
-set(CMAKE_BUILD_TYPE Release)
+set(CMAKE_BUILD_TYPE RelWithDebInfo)
 
-file(GLOB_RECURSE image_server_SOURCES "${PROJECT_SOURCE_DIR}/../ns_image_server/image_server//*.cpp")
-file(GLOB_RECURSE image_server_HEADERS "${PROJECT_SOURCE_DIR}/../ns_image_server/image_server//*.h")
-list(REMOVE_ITEM image_server_SOURCES "${PROJECT_SOURCE_DIR}/../ns_image_server/image_server//ns_image_server_main.cpp")
-list(REMOVE_ITEM image_server_SOURCES "${PROJECT_SOURCE_DIR}/../ns_image_server/image_server//stdafx.cpp")
+file(GLOB_RECURSE image_server_SOURCES "${PROJECT_SOURCE_DIR}/../ns_image_server/image_server/*.cpp")
+file(GLOB_RECURSE image_server_HEADERS "${PROJECT_SOURCE_DIR}/../ns_image_server/image_server/*.h")
+list(REMOVE_ITEM image_server_SOURCES "${PROJECT_SOURCE_DIR}/../ns_image_server/image_server/ns_image_server_main.cpp")
+list(REMOVE_ITEM image_server_SOURCES "${PROJECT_SOURCE_DIR}/../ns_image_server/image_server/stdafx.cpp")
 
 file(GLOB_RECURSE data_annotation_SOURCES "${PROJECT_SOURCE_DIR}/../ns_image_server/data_annotation/*.cpp")
 file(GLOB_RECURSE data_annotation_HEADERS "${PROJECT_SOURCE_DIR}/../ns_image_server/data_annotation/*.h")
@@ -202,7 +202,9 @@ if (BUILD_WORM_BROWSER)
  FIND_PACKAGE(FLTK REQUIRED)
  FIND_PACKAGE(OpenGL REQUIRED)
 
-add_executable (ns_worm_browser "${PROJECT_SOURCE_DIR}/../ns_worm_browser/ns_worm_browser_main.cpp" "${PROJECT_SOURCE_DIR}/../ns_worm_browser/ns_worm_browser.cpp")
+file(GLOB worm_browser_SOURCES "${PROJECT_SOURCE_DIR}/../ns_worm_browser/*.cpp")
+list(REMOVE_ITEM worm_browser_SOURCES "${PROJECT_SOURCE_DIR}/../ns_worm_browser/stdafx.cpp")
+add_executable(ns_worm_browser ${worm_browser_SOURCES})
 target_include_directories(ns_worm_browser PRIVATE ${NS_INC})
 target_include_directories(ns_worm_browser PRIVATE "${PROJECT_SOURCE_DIR}/../ns_worm_browser")
 target_link_libraries(ns_worm_browser ${FLTK_LIBRARIES})

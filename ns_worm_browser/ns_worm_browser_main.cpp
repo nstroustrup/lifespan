@@ -2914,7 +2914,7 @@ public:
 
 		delete annotation_group;
 	}
-	typedef enum{survival_groupind_width = 120, movement_graph_organizer_width=120,death_type_width=100};
+	enum{survival_groupind_width = 120, movement_graph_organizer_width=120,death_type_width=100};
 	ns_worm_terminal_stats_window(int W, int H, const char* L = 0) : Fl_Window(W, H, L), have_focus(false) {
 		// OpenGL window
 		begin();
@@ -4004,9 +4004,8 @@ int main() {
 		float dd,menu_d;
 
 		main_window->get_window_size_needed(main_window_requested_size.x, main_window_requested_size.y, dd, menu_d);
-		main_window->size(main_window_requested_size.x, main_window_requested_size.y);
-
 		dlock.release();
+		main_window->size(main_window_requested_size.x, main_window_requested_size.y);
 
 		ns_worm_browser_output_debug(__LINE__, __FILE__, "Displaying splash image");
 		ns_image_standard im;

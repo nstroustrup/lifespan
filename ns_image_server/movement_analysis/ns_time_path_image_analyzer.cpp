@@ -1868,7 +1868,7 @@ void ns_time_path_image_movement_analyzer<allocator_T>::reanalyze_with_different
 
 template<class allocator_T>
 bool ns_time_path_image_movement_analyzer<allocator_T>::load_image_quantification_and_rerun_death_time_detection(const ns_64_bit region_id, const ns_time_path_solution& solution_, const ns_time_series_denoising_parameters& times_series_denoising_parameters,
-	const ns_analyzed_image_time_path_death_time_estimator* e, ns_sql& sql) {
+	const ns_analyzed_image_time_path_death_time_estimator* e, ns_sql& sql, unsigned long debug_specific_worm) {
 	region_info_id = region_id;
 	externally_specified_plate_observation_interval = get_externally_specified_last_measurement(region_id, sql);
 	load_from_solution(solution_);
@@ -1942,6 +1942,13 @@ bool ns_time_path_image_movement_analyzer<allocator_T>::load_image_quantificatio
 			if (number_of_valid_points <= 1 || groups[g].paths[p].element_count() > 0 && groups[g].paths[p].element(0).absolute_time > this->last_timepoint_in_analysis()) {
 				groups[g].paths[p].entirely_excluded = true;
 				continue;
+			}
+			if (debug_specific_worm != -1) {
+				if (debug_specific_worm != g)
+					continue;
+				else
+					//for debug, recalculate the smoothed data
+					groups[g].paths[p].denoise_movement_series_and_calculate_intensity_slopes(0, times_series_denoising_parameters);
 			}
 			groups[g].paths[p].analyze_movement(e, ns_stationary_path_id(g, p, analysis_id), last_timepoint_in_analysis_);
 			groups[g].paths[p].calculate_movement_quantification_summary(groups[g].paths[p].movement_analysis_result);
@@ -2235,15 +2242,14 @@ void ns_analyzed_image_time_path_element_measurements::read(istream & in, ns_vec
 		throw ns_ex("Invalid Specification 27");
 	get_int(in, change_in_total_stabilized_intensity_1x);//28
 	if (in.fail())
-	throw ns_ex("Invalid Specification 27");
+	throw ns_ex("Invalid Specification 28");
 	get_int(in, change_in_total_stabilized_intensity_2x);//29
 	if (in.fail())
-	throw ns_ex("Invalid Specification 27");
+	throw ns_ex("Invalid Specification 29");
 	get_int(in, change_in_total_stabilized_intensity_4x);//30
-
-	//cout << "ctsi: " << change_in_total_stabilized_intensity_4x << " ";
 	if (in.fail())
-		throw ns_ex("Invalid Specification 28");
+		throw ns_ex("Invalid Specification 30");
+	get_int(in, total_intensity_within_stabilized_denoised);//30
 	string tmp;
 	char a = get_int(in, tmp);
 	if (in.fail())
@@ -2279,7 +2285,7 @@ void ns_analyzed_image_time_path_element_measurements::read(istream & in, ns_vec
 #endif
 
 	//open for future use
-	for (unsigned int i = 0; i < 7; i++) {
+	for (unsigned int i = 0; i < 6; i++) {
 		char a = get_int(in, tmp);
 		if (a == '\n')
 			break;
@@ -2408,21 +2414,22 @@ void ns_analyzed_image_time_path_element_measurements::write_header(ostream & ou
 		",change_in_total_stabilized_intensity_1x"
 		",change_in_total_stabilized_intensity_2x"
 		",change_in_total_stabilized_intensity_4x";
+		",total_intensity_within_stabilized_denoised";
 
-	for (unsigned int i = 0; i < 7; i++)
+	for (unsigned int i = 0; i < 6; i++)
 		out << ",blank";
 }
 void ns_analyzed_image_time_path_element_measurements::write(ostream & out,const ns_vector_2d & offset, const bool & saturated_offset) const {
-	out <<interframe_time_scaled_movement_sum << ","//5
-		<<movement_alternate_worm_sum << ","//6
-		<<change_in_total_region_intensity << ","//7
-		<<change_in_total_foreground_intensity << ","//8
-		<<total_foreground_area << ","//9
-		<<total_intensity_within_foreground << ","//10
-		<<total_region_area << ","//11
-		<<total_intensity_within_region << ","//12
-		<<total_alternate_worm_area << ","//13
-		<<total_intensity_within_alternate_worm << ","//14
+	out << interframe_time_scaled_movement_sum << ","//5
+		<< movement_alternate_worm_sum << ","//6
+		<< change_in_total_region_intensity << ","//7
+		<< change_in_total_foreground_intensity << ","//8
+		<< total_foreground_area << ","//9
+		<< total_intensity_within_foreground << ","//10
+		<< total_region_area << ","//11
+		<< total_intensity_within_region << ","//12
+		<< total_alternate_worm_area << ","//13
+		<< total_intensity_within_alternate_worm << ","//14
 		<< (saturated_offset ? "1" : "0") << ","//15
 		<< offset.x << ","//16
 		<< offset.y << ","//17
@@ -2438,7 +2445,8 @@ void ns_analyzed_image_time_path_element_measurements::write(ostream & out,const
 		<< total_stabilized_area << ","//27
 		<< change_in_total_stabilized_intensity_1x << ","//28
 		<< change_in_total_stabilized_intensity_2x << ","//29
-		<< change_in_total_stabilized_intensity_4x;//30
+		<< change_in_total_stabilized_intensity_4x << ","//30
+		<< total_intensity_within_stabilized_denoised;
 		#ifdef NS_CALCULATE_OPTICAL_FLOW
 		o << ","; //deliberately left blank to mark old record format
 		scaled_flow_magnitude.write(o); o << ",";
@@ -2449,7 +2457,7 @@ void ns_analyzed_image_time_path_element_measurements::write(ostream & out,const
 		raw_flow_dy.write(o);
 		#endif
 
-	for (unsigned int i = 0; i < 7; i++)
+	for (unsigned int i = 0; i < 6; i++)
 		out << ",";
 }
 template<class allocator_T>
@@ -4814,85 +4822,70 @@ public:
 private:
 	ns_analyzed_image_time_path::ns_element_list * elements;
 };
-/*
-class ns_spatially_averaged_movement_data_accessor {
+
+class ns_stabilized_intensity_data_accessor {
 public:
-	ns_spatially_averaged_movement_data_accessor(ns_analyzed_image_time_path::ns_element_list & l) :elements(&l) {}
+	ns_stabilized_intensity_data_accessor(ns_analyzed_image_time_path::ns_element_list& l) :elements(&l) {}
 	unsigned long size()const { return elements->size(); }
 	const unsigned long time(const unsigned long i) { return (*elements)[i].absolute_time; }
-	double raw(const unsigned long i) {
-		if (i == 0)
-			return raw(1);
-		if ((*elements)[i - 1].measurements.total_intensity_within_stabilized == 0)
-			return 0;
-		//XXX This is the definition of a "spatially averaged movement score".
-		//and in the current version used  used to identify death time
-		return  (*elements)[i].measurements.spatial_averaged_movement_sum;
+	ns_64_bit raw(const unsigned long i) {
 		
+		return (*elements)[i].measurements.total_intensity_within_stabilized;
 
 	}
-	double & processed(const unsigned long i) {
-		return (*elements)[i].measurements.denoised_spatial_averaged_movement_score;
+	ns_64_bit & processed(const unsigned long i) {
+		return (*elements)[i].measurements.total_intensity_within_stabilized_denoised;
 	}
 private:
-	ns_analyzed_image_time_path::ns_element_list * elements;
-};*/
-/*
-class ns_intensity_data_accessor{
-public:
-	ns_intensity_data_accessor(ns_analyzed_image_time_path::ns_element_list & l):elements(&l){}
-	unsigned long size()const {return elements->size();}
-	const unsigned long time(const unsigned long i){return (*elements)[i].absolute_time;}
-	double raw(const unsigned long i){
-		return (*elements)[i].measurements.change_in_average_normalized_worm_intensity;
-	}
-	double & processed(const unsigned long i){
-		return (*elements)[i].measurements.denoised_change_in_average_normalized_worm_intensity;
-	}
-private:
-	ns_analyzed_image_time_path::ns_element_list * elements;
+	ns_analyzed_image_time_path::ns_element_list* elements;
 };
 
-class ns_size_data_accessor{
+typedef enum { ns_mean, ns_median } ns_kernel_smoothing_type;
+template <class T, ns_kernel_smoothing_type smoothing_type>
+class ns_kernel_smoother {
 public:
-	ns_size_data_accessor(ns_analyzed_image_time_path::ns_element_list & l):elements(&l){}
-	unsigned long size()const {return elements->size();}
-	const unsigned long time(const unsigned long i){return (*elements)[i].absolute_time;}
-	double raw(const unsigned long i){
-		return (*elements)[i].measurements.total_foreground_area;
+	void ns_kernel_smooth(const unsigned int kernel_width, T& data) {
+		(*this)(kernel_width, data);
 	}
-	double & processed(const unsigned long i){
-		return (*elements)[i].measurements.normalized_foreground_area;
-	}
-private:
-	ns_analyzed_image_time_path::ns_element_list * elements;
-};*/
-
-template <class T>
-class ns_kernel_smoother{
-public:
-	void ns_kernel_smooth(const unsigned int kernel_width,T & data){
-		(*this)(kernel_width,data);
-	}
-	void operator()(const int kernel_width,T & data){
+	void operator()(const int kernel_width, T& data) {
 		if (data.size() == 0)
 			return;
-		if (kernel_width%2 == 0)
+		if (kernel_width % 2 == 0)
 			throw ns_ex("Kernel width must be odd");
-		
-		if (1){
-			for (unsigned int i = 0; i < kernel_width; i++)
-				data.processed(i) = data.raw(i);
-			for (unsigned int i = kernel_width; i < data.size()-kernel_width; i++){
+		for (unsigned int i = 0; i < data.size(); i++) {
+			long start = i - kernel_width,
+				stop = i + kernel_width + 1;
+			if (start < 0) start = 0;
+			if (stop > data.size()) stop = data.size();
+
+			if (smoothing_type == ns_mean) {
 				double s(0);
-				for (int di = -kernel_width; di <= kernel_width; di++)
-					s+= data.raw(i+di);
-				s+=data.raw(i);
-				data.processed(i)=s/(2*kernel_width+2);
+				for (unsigned int j = start; j < stop; j++)
+					s += data.raw(j);
+				data.processed(i) = s / (stop - start);
 			}
-			for (unsigned int i = data.size()-kernel_width; i < data.size(); i++)
-				data.processed(i) = data.raw(i);
+			else {
+				median_buffer.resize(stop - start);
+				for (unsigned int j = start; j < stop; j++)
+					median_buffer[j-start] = data.raw(j);
+				data.processed(i) = median(median_buffer);
+			}
 		}
+	}
+private:
+	std::vector<ns_64_bit> median_buffer;
+	template<class T2>
+	T2 median(std::vector<T2>& v) {
+		if (v.empty())
+			throw ns_ex("Requesting median of empty set");
+
+		auto n = v.size() / 2;
+		nth_element(v.begin(), v.begin() + n, v.end());
+		if (v.size() & 1)	//odd
+			return v[n];
+		auto med = v[n];
+		auto max_it = max_element(v.begin(), v.begin() + n);
+		return (*max_it + med) / 2.0;
 	}
 };
 struct ns_slope_accessor_total_in_region {
@@ -4913,7 +4906,7 @@ struct ns_slope_accessor_total_in_foreground {
 };
 struct ns_slope_accessor_total_in_stabilized_1x {
 	static inline const ns_s64_bit total_intensity(const unsigned long i, const ns_analyzed_image_time_path::ns_element_list & list) {
-		return list[i].measurements.total_intensity_within_stabilized;
+		return list[i].measurements.total_intensity_within_stabilized_denoised;
 	}
 	static inline ns_s64_bit & slope(const unsigned long i, ns_analyzed_image_time_path::ns_element_list & list) {
 		return list[i].measurements.change_in_total_stabilized_intensity_1x;
@@ -4921,7 +4914,7 @@ struct ns_slope_accessor_total_in_stabilized_1x {
 }; 
 struct ns_slope_accessor_total_in_stabilized_2x {
 	static inline const ns_s64_bit total_intensity(const unsigned long i, const ns_analyzed_image_time_path::ns_element_list & list) {
-		return list[i].measurements.total_intensity_within_stabilized;
+		return list[i].measurements.total_intensity_within_stabilized_denoised;
 	}
 	static inline ns_s64_bit & slope(const unsigned long i, ns_analyzed_image_time_path::ns_element_list & list) {
 		return list[i].measurements.change_in_total_stabilized_intensity_2x;
@@ -4929,7 +4922,7 @@ struct ns_slope_accessor_total_in_stabilized_2x {
 }; 
 struct ns_slope_accessor_total_in_stabilized_4x {
 	static inline const ns_s64_bit total_intensity(const unsigned long i, const ns_analyzed_image_time_path::ns_element_list & list) {
-		return list[i].measurements.total_intensity_within_stabilized;
+		return list[i].measurements.total_intensity_within_stabilized_denoised;
 	}
 	static inline ns_s64_bit & slope(const unsigned long i, ns_analyzed_image_time_path::ns_element_list & list) {
 		return list[i].measurements.change_in_total_stabilized_intensity_4x;
@@ -5023,7 +5016,8 @@ void ns_analyzed_image_time_path::denoise_movement_series_and_calculate_intensit
 		return;
 
 	
-	const int kernel_width(1);
+	const int movement_kernel_width(1),
+		intensity_kernel_width(3);
 	ns_movement_data_accessor acc(elements);
 	//ns_spatially_averaged_movement_data_accessor acc_spatial(elements);
 
@@ -5036,8 +5030,14 @@ void ns_analyzed_image_time_path::denoise_movement_series_and_calculate_intensit
 		if (elements[i].measurements.movement_score < -1e300)
 			cerr << "YIKES";
 	}
-	ns_kernel_smoother<ns_movement_data_accessor>m;
-	m(kernel_width, acc);
+	//smooth raw movement data
+	ns_kernel_smoother<ns_movement_data_accessor, ns_mean> smooth_data;
+	smooth_data(movement_kernel_width, acc);
+
+	//we want to denoise intensities so that our estimates of change in intensity work better.
+	ns_stabilized_intensity_data_accessor acc_2(elements);
+	ns_kernel_smoother < ns_stabilized_intensity_data_accessor, ns_median> smooth_data_2;
+	smooth_data_2(intensity_kernel_width, acc_2);
 
 		
 	const int start_i = this->first_stationary_timepoint();  //do not use frames before worm arrives to calculate slope, as the worm's appearence will produce a very large spurious slope.

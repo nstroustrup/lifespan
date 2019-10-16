@@ -1599,9 +1599,10 @@ public:
 		//add(ns_menu_item_spec(generate_survival_curve_from_hand_annotations,"&Calibration/Generate Survival Curves from by hand annotations"));
 
 		add(ns_menu_item_spec(generate_movement_image_analysis_optimization_data, "Calibration/Posture Analaysis/Build new Threshold model from storyboard annnotations"));
-		add(ns_menu_item_spec(generate_worm_markov_posture_model_from_by_hand_annotations, "Calibration/Posture Analaysis/_Build new HMM Model from storyboard annnotations/(This feature is in alpha testing)", 0, FL_MENU_INACTIVE));
-		add(ns_menu_item_spec(generate_worm_markov_posture_model_from_by_hand_annotations, "Calibration/Posture Analaysis/_Build new HMM Model from storyboard annnotations/From this experiment"));
-		add(ns_menu_item_spec(generate_worm_markov_posture_model_from_by_hand_annotations, "Calibration/Posture Analaysis/Build new HMM Model from storyboard annnotations/From Observation Files"));
+		ns_menu_item_spec st3(generate_worm_markov_posture_model_from_by_hand_annotations, "Calibration/Posture Analaysis/_Build new HMM Model from storyboard annnotations");
+		st3.options.push_back(ns_menu_item_options("From this experiment"));
+		st3.options.push_back(ns_menu_item_options("From observation Files"));
+		add(st3);
 		add(ns_menu_item_spec(compare_machine_and_by_hand_annotations, "&Calibration/Posture Analaysis/_Compare Storyboard annotations to fully-automated results"));
 
 
@@ -2252,17 +2253,17 @@ public:
 
 class ns_death_event_solo_annotation_group : public Fl_Pack {
 public:
-	Fl_Button * forward_button,
-		*back_button,
-		*play_forward_button,
-		*play_reverse_button,
-		*stop_button,
-		*goto_death_time_button,
-		*save_button,
-		*visualization_button,
-		*graph_button,
-		*zoom_in_button,
-		*zoom_out_button;
+	Fl_Button* forward_button,
+		* back_button,
+		* play_forward_button,
+		* play_reverse_button,
+		* stop_button,
+		* goto_death_time_button,
+		* save_button,
+		* visualization_button,
+		* graph_button,
+		* zoom_in_button,
+		* zoom_out_button,* hmm_button;
 	Fl_Output * info_bar;
 	enum{button_width=18,button_height=18,export_button_width=50,
 		 visualization_button_width=32, graph_button_width = 50,space_width=9,hmm_width=32};
@@ -2338,19 +2339,20 @@ public:
 		graph_button->callback(ns_handle_death_time_solo_annotation_button,
 			new ns_death_time_solo_posture_annotater::ns_image_series_annotater_action(ns_death_time_solo_posture_annotater::ns_step_graph));
 
-		save_button = new Fl_Button(4*button_width+ visualization_button_width+graph_button_width + space_width,0, export_button_width,button_height,"Export");
+		hmm_button = new Fl_Button(4 * button_width + visualization_button_width + graph_button_width + space_width, 0, hmm_width, button_height, "HMM");
+		hmm_button->callback(ns_handle_death_time_solo_annotation_button,
+			new ns_death_time_solo_posture_annotater::ns_image_series_annotater_action(ns_death_time_solo_posture_annotater::ns_rerun_movement_analysis));
+
+		save_button = new Fl_Button(4*button_width+ visualization_button_width+graph_button_width + space_width+ hmm_width,0, export_button_width,button_height,"Export");
 		save_button->  callback(ns_handle_death_time_solo_annotation_button,
 			new ns_death_time_solo_posture_annotater::ns_image_series_annotater_action(ns_death_time_solo_posture_annotater::ns_write_quantification_to_disk));
 
-		save_button = new Fl_Button(4 * button_width + visualization_button_width + graph_button_width + space_width, 0, export_button_width, button_height, "HMM");
-		save_button->callback(ns_handle_death_time_solo_annotation_button,
-			new ns_death_time_solo_posture_annotater::ns_image_series_annotater_action(ns_death_time_solo_posture_annotater::ns_write_quantification_to_disk));
 
-		zoom_out_button = new Fl_Button(4 * button_width + visualization_button_width + graph_button_width + space_width+ export_button_width, 0, button_width, button_height, "-");
+		zoom_out_button = new Fl_Button(4 * button_width + visualization_button_width + graph_button_width + space_width+ export_button_width+ hmm_width, 0, button_width, button_height, "-");
 		zoom_out_button->callback(ns_handle_death_time_solo_annotation_button,
 
 			new ns_death_time_solo_posture_annotater::ns_image_series_annotater_action(ns_death_time_solo_posture_annotater::ns_time_zoom_out_step));
-		zoom_in_button = new Fl_Button(5 * button_width + visualization_button_width + graph_button_width + space_width+ export_button_width, 0, button_width, button_height, "+");
+		zoom_in_button = new Fl_Button(5 * button_width + visualization_button_width + graph_button_width + space_width+ export_button_width+ hmm_width, 0, button_width, button_height, "+");
 		zoom_in_button->callback(ns_handle_death_time_solo_annotation_button,
 			new ns_death_time_solo_posture_annotater::ns_image_series_annotater_action(ns_death_time_solo_posture_annotater::ns_time_zoom_in_step));
 

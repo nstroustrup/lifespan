@@ -688,7 +688,7 @@ public:
 	ns_animal_telemetry telemetry;
 	ns_animal_telemetry::ns_graph_contents graph_contents;
 
-	typedef enum { ns_none, ns_forward, ns_back, ns_fast_forward, ns_fast_back, ns_stop, ns_save, ns_rewind_to_zero, ns_write_quantification_to_disk, ns_step_visualization, ns_step_graph, ns_time_zoom_in_step, ns_time_zoom_out_step, ns_number_of_annotater_actions } ns_image_series_annotater_action;
+	typedef enum { ns_none, ns_forward, ns_back, ns_fast_forward, ns_fast_back, ns_stop, ns_save, ns_rewind_to_zero, ns_write_quantification_to_disk, ns_step_visualization, ns_step_graph, ns_time_zoom_in_step, ns_time_zoom_out_step, ns_rerun_movement_analysis,ns_number_of_annotater_actions } ns_image_series_annotater_action;
 
 	inline ns_annotater_timepoint* timepoint(const unsigned long i) { return &timepoints[i]; }
 	inline unsigned long number_of_timepoints() { return timepoints.size(); }

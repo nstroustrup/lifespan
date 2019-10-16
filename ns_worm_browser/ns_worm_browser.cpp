@@ -8382,7 +8382,41 @@ void ns_worm_learner::navigate_solo_worm_annotation(ns_death_time_solo_posture_a
 			//death_time_solo_annotater.request_refresh(); //report_changes_made_to_screen();
 			break;
 		case ns_death_time_solo_posture_annotater::ns_write_quantification_to_disk: 
-			death_time_solo_annotater.register_click(ns_vector_2i(0,0),ns_death_time_solo_posture_annotater::ns_output_images, worm_window.display_rescale_factor); break;
+			death_time_solo_annotater.register_click(ns_vector_2i(0,0),ns_death_time_solo_posture_annotater::ns_output_images, worm_window.display_rescale_factor);
+			break;
+
+		case ns_death_time_solo_posture_annotater::ns_rerun_movement_analysis: {
+			ns_processing_job job;
+			const unsigned long region_id(death_time_solo_annotater.current_region_id);
+			job.region_id = region_id;
+			job.maintenance_task = ns_maintenance_rebuild_movement_from_stored_image_quantification;
+			ns_sql& sql = get_sql_connection();
+			analyze_worm_movement_across_frames(job, &image_server, sql, true,death_time_solo_annotater.current_worm_id.group_id);
+			ns_image_server_results_subject subject;
+			subject.region_id = region_id;
+			/*
+			ns_image_server_results_file results(image_server.results_storage.machine_death_times(subject, ns_image_server_results_storage::ns_censoring_and_movement_transitions, "time_path_image_analysis", sql, true));
+			ns_acquire_for_scope<ns_istream> tp_i(results.input());
+			if (tp_i.is_null())
+				cout << "Could not load results file.";
+			ns_death_time_annotation_set set;
+			set.read(ns_death_time_annotation_set::ns_censoring_and_movement_transitions, tp_i()(), true);
+			tp_i.release();
+			ns_death_time_annotation_compiler survival_curve_compiler;
+			survival_curve_compiler.add(set);
+			ns_hand_annotation_loader by_hand_annotations;
+			by_hand_annotations.load_region_annotations(ns_death_time_annotation_set::ns_censoring_and_movement_transitions, region_id, sql);
+			survival_curve_compiler.add(by_hand_annotations.annotations, ns_death_time_annotation_compiler::ns_do_not_create_regions);
+			ns_lifespan_experiment_set survival_curves;
+			survival_curve_compiler.generate_survival_curve_set(survival_curves, ns_death_time_annotation::ns_only_machine_annotations, false, false);
+			cout << survival_curves.curves.size();
+			survival_curves.generate_survival_statistics();
+			std::ofstream tmp("tmp2.csv");
+			survival_curves.output_JMP_file(ns_death_time_annotation::ns_only_machine_annotations, ns_lifespan_experiment_set::ns_output_single_event_times, ns_lifespan_experiment_set::ns_days, tmp, ns_lifespan_experiment_set::ns_simple);
+			tmp.close();*/
+			break;
+		}
+
 		default: throw ns_ex("Unkown death time annotater action");
 	}
 }

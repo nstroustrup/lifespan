@@ -31,7 +31,7 @@ void invalidate_stored_data_depending_on_movement_analysis(const ns_processing_j
 	sql.send_query();
 	already_performed = true;
 }
-void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image_server * image_server, ns_sql & sql, bool log_output) {
+void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image_server * image_server, ns_sql & sql, bool log_output, long specific_worm) {
 	if (job.region_id == 0)
 		throw ns_ex("Movement data can be rebuilt only for regions.");
 
@@ -168,6 +168,8 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 	const ns_time_series_denoising_parameters time_series_denoising_parameters(ns_time_series_denoising_parameters::load_from_db(job.region_id, sql));
 
 	if (job.maintenance_task == ns_maintenance_rebuild_movement_data || job.maintenance_task == ns_maintenance_rebuild_movement_data_from_stored_solution) {
+		if (specific_worm != -1)
+			throw ns_ex("Cannot focus on a specific worm when all images need to be re-processed.");
 		//load in worm images and analyze them for non-translating animals for posture changes
 		if (log_output)
 			image_server->register_server_event(ns_image_server_event("Analyzing images for animal posture changes."), &sql);
@@ -222,7 +224,9 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 	else if (job.maintenance_task == ns_maintenance_rebuild_movement_from_stored_images) {
 		//load in previously calculated image quantification from disk for re-analysis
 		//This is good, for example, if changes have been made to the movement quantification analyzer
-		//and it needs to be rerun though the actual images don't need to be requantified.
+		//and it needs to be rerun though the actual images
+		if (specific_worm != -1)
+			throw ns_ex("Cannot focus on a specific worm when all images need to be re-analyzed.");
 		if (log_output)
 			image_server->register_server_event(ns_image_server_event("Quantifying stored animal posture images"), &sql);
 		bool reanalyze_optical_flow(false);
@@ -241,20 +245,17 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 		//This is good, for example, if changes have been made to the movement quantification analyzer
 		//and it needs to be rerun though the actual images don't need to be requantified.
 		//or if by hand annotations have been performed and the alignment in the output files should be redone.
-		if (log_output)
+		if (log_output){
 			image_server->register_server_event(ns_image_server_event("Analyzing stored animal posture quantification."), &sql);
-		time_path_image_analyzer.load_image_quantification_and_rerun_death_time_detection(job.region_id, time_path_solution, time_series_denoising_parameters, &death_time_estimator(), sql);
+			if (specific_worm != -1)
+				image_server->add_subtext_to_current_event(std::string("Running in debug mode to focus on a specific worm with id ") + ns_to_string(specific_worm), &sql);
+		}
+		time_path_image_analyzer.load_image_quantification_and_rerun_death_time_detection(job.region_id, time_path_solution, time_series_denoising_parameters, &death_time_estimator(), sql,specific_worm);
+		if (specific_worm != -1)
+			return;
 		time_path_image_analyzer.obtain_analysis_id_and_save_movement_data(job.region_id, sql,
 			ns_time_path_image_movement_analyzer<ns_overallocation_resizer>::ns_require_existing_record,
 			ns_time_path_image_movement_analyzer<ns_overallocation_resizer>::ns_write_data);
-
-		///xxx debug check
-		/*ns_time_path_image_movement_analyzer<ns_overallocation_resizer> analyzer_2(memory_pool);
-		analyzer_2.load_completed_analysis_(job.region_id, time_path_solution, time_series_denoising_parameters, &death_time_estimator(), sql, true);
-		analyzer_2.obtain_analysis_id_and_save_movement_data(job.region_id, sql,
-			ns_time_path_image_movement_analyzer<ns_overallocation_resizer>::ns_require_existing_record,
-			ns_time_path_image_movement_analyzer<ns_overallocation_resizer>::ns_do_not_write_data);
-		time_path_image_analyzer.compare(analyzer_2);*/
 	}
 	if (job.maintenance_task == ns_maintenance_recalculate_censoring) {
 		if (log_output)

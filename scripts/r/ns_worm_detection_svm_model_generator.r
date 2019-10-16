@@ -19,7 +19,7 @@ library(rgl)
 library("ranger")
 
 base_analysis_directory = "X:\\microscopy\\lifespan_machine\\2019_10=worm_detection_training_set\\analysis"
-model_file_to_analyze = "training_sets\\high_24_plus_fscore_features_without_reg_i"
+model_file_to_analyze = "training_sets\\high_24_plus_fscore_features"
 #.5 means equal weighting.  deviations towards 1 reduces false-negative and increases false positives
 prefer_false_positives = .75;
 

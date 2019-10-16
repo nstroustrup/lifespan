@@ -3326,7 +3326,7 @@ void ns_calculate_running_extrema(const ns_extrema_plot_type & plot_type, const 
 
 		//now set y_min
 		if (plot_type == ns_band) {
-			if (source[j].x.size() >= 3) {
+			if (!too_short) {
 				bspline.calculate_with_standard_params(source[j].x, temp2, num_steps, ns_bspline::ns_very_low);
 				for (unsigned int i = 0; i < bspline.positions.size(); i++) {
 					dest[j].y_min[i] = bspline.positions[i].y;

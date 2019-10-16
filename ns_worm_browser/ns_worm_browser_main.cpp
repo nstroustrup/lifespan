@@ -2265,7 +2265,7 @@ public:
 		*zoom_out_button;
 	Fl_Output * info_bar;
 	enum{button_width=18,button_height=18,export_button_width=50,
-		 visualization_button_width=32, graph_button_width = 50,space_width=9};
+		 visualization_button_width=32, graph_button_width = 50,space_width=9,hmm_width=32};
 	static unsigned long all_buttons_width() {
 		return 5 * button_width + visualization_button_width + graph_button_width + export_button_width+ space_width;
 	}
@@ -2340,6 +2340,10 @@ public:
 
 		save_button = new Fl_Button(4*button_width+ visualization_button_width+graph_button_width + space_width,0, export_button_width,button_height,"Export");
 		save_button->  callback(ns_handle_death_time_solo_annotation_button,
+			new ns_death_time_solo_posture_annotater::ns_image_series_annotater_action(ns_death_time_solo_posture_annotater::ns_write_quantification_to_disk));
+
+		save_button = new Fl_Button(4 * button_width + visualization_button_width + graph_button_width + space_width, 0, export_button_width, button_height, "HMM");
+		save_button->callback(ns_handle_death_time_solo_annotation_button,
 			new ns_death_time_solo_posture_annotater::ns_image_series_annotater_action(ns_death_time_solo_posture_annotater::ns_write_quantification_to_disk));
 
 		zoom_out_button = new Fl_Button(4 * button_width + visualization_button_width + graph_button_width + space_width+ export_button_width, 0, button_width, button_height, "-");

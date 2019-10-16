@@ -1462,10 +1462,10 @@ void ns_image_server::create_and_configure_sql_database(bool local, const std::s
 		db(local ? local_buffer_db : possible_sql_databases[0]),
 		hostname(local ? local_buffer_ip : sql_server_addresses[0]);
 	std::cout << "**Configuring database " << db << " on server " << hostname << "**\n";
-	std::cout << "Please enter sql server admin username: ";
+	std::cout << "To modify schema, please provide a username with administrative privileges on your sql server: ";
 	std::string root_username;
 	getline(cin,root_username);
-	std::cout << "Please enter sql server admin password: ";
+	std::cout << "Please enter the password for this account: ";
 	std::string root_password = get_hidden_password();
 
 	ns_sql_connection sql;
@@ -1492,7 +1492,7 @@ void ns_image_server::create_and_configure_sql_database(bool local, const std::s
 			cout << "\n";
 			if (a == "y") {
 				cout << "Are you sure?  This will drop your database schema and erase all metadata that you have not already backed up to disk.\n"
-						"Only proceed if you have no data or really understand what you are doing.\n"
+						"Only proceed if you really understand what you are doing.\n"
 						"To proceed, type y . To cancel and do nothing, type n : ";
 				while (true) {
 					string b;

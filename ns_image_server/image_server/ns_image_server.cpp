@@ -3502,7 +3502,7 @@ void ns_image_server::update_posture_analysis_model_registry(ns_sql& sql, bool f
 		bool found_in_registry = false;
 		for (unsigned int j = 0; j < models_in_registry.size(); j++) {
 			if (names[i] == models_in_registry[j][0]) {
-				const unsigned long last_modified_time = atol(models_in_registry[i][2].c_str());
+				const unsigned long last_modified_time = atol(models_in_registry[j][2].c_str());
 				if (last_modified_time >= file_modified_times[i])
 					found_in_registry = true;
 				break;

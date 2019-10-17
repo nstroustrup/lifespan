@@ -991,7 +991,7 @@ int main(int argc, char ** argv){
 			if (image_server.act_as_an_image_capture_server())
 				image_server.create_and_configure_sql_database(true, "");
 			image_server.create_and_configure_sql_database(false, schema_filename);
-			std::cout << "\Checking for recent sql schema updates...\n";
+			std::cout << "Checking for recent sql schema updates...\n";
 			override_sql_db = "";
 			sql_update_requested = true;
 		}

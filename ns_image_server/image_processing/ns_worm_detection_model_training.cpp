@@ -1,4 +1,4 @@
-#include "ns_machine_learning_training_set.h"
+#include "ns_worm_detection_model_training.h"
 
 #include "ns_detected_worm_info.h"
 #include "ns_progress_reporter.h"

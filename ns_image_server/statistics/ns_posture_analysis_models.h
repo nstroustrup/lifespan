@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <iostream>
 #include "ns_analyzed_image_time_path_element_measurements.h"
+#include "ns_death_time_annotation.h"
 #include <set>
 
 class ns_analyzed_image_time_path;

@@ -1786,6 +1786,8 @@ void ns_time_path_image_movement_analyzer<allocator_T>::calculate_optimzation_st
 
 			if (!paths_to_test.empty() && paths_to_test.find(this->generate_stationary_path_id(g, p)) == paths_to_test.end())
 				continue;
+			//if (this->region_info_id == 56317 && g == 5 || g == 6)
+			//	cerr << "WHA";
 			ns_time_path_posture_movement_solution by_hand_posture_movement_solution(groups[g].paths[p].reconstruct_movement_state_solution_from_annotations(groups[g].paths[p].movement_analysis_result.first_valid_element_id.period_start_index, groups[g].paths[p].movement_analysis_result.last_valid_element_id.period_end_index, groups[g].paths[p].by_hand_annotation_event_times));
 			//if (by_hand_posture_movement_solution.moving.skipped) {
 				//cout << "Encountered a by hand annotation in which the animal never slowed: " << g << "\n";
@@ -1793,7 +1795,7 @@ void ns_time_path_image_movement_analyzer<allocator_T>::calculate_optimzation_st
 			//}
 			s.animals.resize(s.animals.size() + 1);
 
-			//first calculate the probabilities of the machine and by hand solutions
+			//set upstructures for debug output
 			ns_hmm_solver hmm_solver;
 			if (generate_path_info) {
 				s.animals.rbegin()->state_info_times.resize(groups[g].paths[p].element_count());
@@ -1804,14 +1806,14 @@ void ns_time_path_image_movement_analyzer<allocator_T>::calculate_optimzation_st
 
 			
 			
-			//cerr << "<m\n";
+
+			//first calculate the probabilities of the machine and by hand solutions
 			hmm_solver.probability_of_path_solution(groups[g].paths[p], *e, groups[g].paths[p].movement_analysis_result.machine_movement_state_solution, s.animals.rbegin()->machine_state_info, generate_path_info);
-			//cerr << "m>\n";
-			//cerr << "<h\n";
+	
 			hmm_solver.probability_of_path_solution(groups[g].paths[p], *e, by_hand_posture_movement_solution, s.animals.rbegin()->by_hand_state_info, generate_path_info);
-			//cerr << "h>\n";
+			
 			s.animals.rbegin()->solution_loglikelihood = groups[g].paths[p].movement_analysis_result.machine_movement_state_solution.loglikelihood_of_solution;
-			//std::cout << s.animals.rbegin()->solution_loglikelihood << "\n";
+		
 			
 			//now go through and calculate the errors betweeen the machine and by hand calculations
 			for (unsigned int i = 0; i < ns_hmm_movement_analysis_optimizatiom_stats_record::number_of_states; i++) {
@@ -4358,7 +4360,7 @@ void ns_output_subimage(const ns_image_standard & im,const long offset,ns_image_
 }
 
 void ns_hmm_movement_analysis_optimizatiom_stats::write_error_header(std::ostream & o,const std::vector<std::string> & extra_columns) {
-	o << "Experiment,Device,Plate Name,Animal Details,Group ID,Path ID,Excluded,Censored,Number of Worms, Cross Validation Info,Cross Validation Replicate ID";
+	o << "Experiment,Device,Plate Name,Animal Details,Group ID,Path ID,Excluded,Censored,Number of Worms, Cross Validation Genotype,Cross Validation Info,Cross Validation Replicate ID";
 	for (unsigned int j = 0; j < ns_hmm_movement_analysis_optimizatiom_stats_record::number_of_states; j++) {
 		const std::string state = ns_movement_event_to_string(ns_hmm_movement_analysis_optimizatiom_stats_record::states[j]);
 		o << "," << state << " identified by hand?, " << state << " identified by machine?," <<
@@ -4370,7 +4372,7 @@ void ns_hmm_movement_analysis_optimizatiom_stats::write_error_header(std::ostrea
 	o << "\n";
 }
 
-void ns_hmm_movement_analysis_optimizatiom_stats::write_error_data(std::ostream & o, const std::string & cross_validation_info, const unsigned long & replicate_id,const std::map<ns_64_bit,ns_region_metadata> & metadata_cache) const{
+void ns_hmm_movement_analysis_optimizatiom_stats::write_error_data(std::ostream & o, const std::string & genotype_set, const std::string & cross_validation_info, const unsigned long & replicate_id,const std::map<ns_64_bit,ns_region_metadata> & metadata_cache) const{
 
 	for (unsigned int k = 0; k < animals.size(); k++) {
 		auto m = metadata_cache.find(animals[k].properties.region_info_id);
@@ -4382,7 +4384,7 @@ void ns_hmm_movement_analysis_optimizatiom_stats::write_error_data(std::ostream 
 			<< (animals[k].properties.is_excluded() ? "1" : "0") << ","
 			<< (animals[k].properties.is_censored() ? "1" : "0") << ","
 			<< animals[k].properties.number_of_worms() << ","
-			<< cross_validation_info << "," << replicate_id;
+			<< genotype_set << "," << cross_validation_info << "," << replicate_id;
 		for (unsigned int s = 0; s < ns_hmm_movement_analysis_optimizatiom_stats_record::number_of_states; s++) {
 			auto state_p = animals[k].measurements.find(ns_hmm_movement_analysis_optimizatiom_stats_record::states[s]);
 			if (state_p == animals[k].measurements.end())
@@ -4588,7 +4590,8 @@ ns_time_path_posture_movement_solution ns_analyzed_image_time_path::reconstruct_
 				s.expanding.start_index = expansion_start.second;
 			else if (movement_cessation.second == -1)
 				throw ns_ex("Partially annotated expanding state in non-dying animal!");
-			else s.expanding.start_index = movement_cessation.second;
+			else 
+				s.expanding.start_index = movement_cessation.second;
 	}
 	s.post_expansion_contracting.skipped = (post_expansion_contraction_end.first == -1);
 	if (!s.post_expansion_contracting.skipped) {

@@ -550,9 +550,6 @@
     <ClCompile Include="..\ns_image_server\movement_analysis\ns_experiment_storyboard.cpp">
       <Filter>movement_analysis</Filter>
     </ClCompile>
-    <ClCompile Include="..\ns_image_server\movement_analysis\ns_machine_learning_training_set.cpp">
-      <Filter>movement_analysis</Filter>
-    </ClCompile>
     <ClCompile Include="..\ns_image_server\image_acquisition\ns_captured_image_statistics_set.cpp">
       <Filter>image_acquisition</Filter>
     </ClCompile>
@@ -699,6 +696,12 @@
     </ClCompile>
     <ClCompile Include="..\ns_worm_browser\ns_worm_detection_set_annotater.cpp">
       <Filter>worm_browser</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\movement_analysis\ns_posture_analysis_cross_validation.cpp">
+      <Filter>movement_analysis</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ns_image_server\image_processing\ns_worm_detection_model_training.cpp">
+      <Filter>image_processing</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -1137,9 +1140,6 @@
     <ClInclude Include="..\ns_image_server\image_acquisition\ns_resampler.h">
       <Filter>image_acquisition</Filter>
     </ClInclude>
-    <ClInclude Include="..\ns_image_server\movement_analysis\ns_machine_learning_training_set.h">
-      <Filter>movement_analysis</Filter>
-    </ClInclude>
     <ClInclude Include="..\ns_image_server\movement_analysis\ns_experiment_storyboard.h">
       <Filter>movement_analysis</Filter>
     </ClInclude>
@@ -1163,6 +1163,9 @@
     </ClInclude>
     <ClInclude Include="..\ns_worm_browser\ns_worm_detection_set_annotater.h">
       <Filter>worm_browser</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\image_processing\ns_worm_detection_model_training.h">
+      <Filter>image_processing</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

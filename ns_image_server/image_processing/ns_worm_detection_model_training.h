@@ -1,5 +1,5 @@
-#ifndef NS_MACHINE_LEARNING_TRAINING_SET_H
-#define NS_MACHINE_LEARNING_TRAINING_SET_H
+#ifndef NS_WORM_DETECTION_MODEL_TRAINING_H
+#define NS_WORM_DETECTION_MODEL_TRAINING_H
 
 #include "ns_detected_worm_info.h"
 #include "ns_progress_reporter.h"

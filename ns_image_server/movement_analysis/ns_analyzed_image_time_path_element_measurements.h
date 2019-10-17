@@ -1,6 +1,8 @@
 #pragma once
 #include "ns_ex.h"
 #include <iostream>
+#include "ns_vector.h"
+#include <ostream>
 struct ns_analyzed_image_time_path_element_measurements {
 
 	//This is the quantification used to identify death times in old versions of the lifespan machine

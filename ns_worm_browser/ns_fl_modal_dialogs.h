@@ -147,7 +147,8 @@ class ns_text_display_window : public Fl_Window {
 	bool have_focus;
 public:
 	Fl_Text_Display *text;
-	bool * wait_for_it;
+	bool* window_closed;
+	bool dialog_has_closed;
 	ns_close_button *button;
 	Fl_Text_Buffer buff;
 	enum{button_width=100,button_height=35,buffer=10};
@@ -180,9 +181,8 @@ public:
 	}
 	static void on_click(Fl_Widget * w){
 		ns_close_button * b = (ns_close_button *)(w);
-		bool * wait_for_it = b->main_window->wait_for_it;
 		b->main_window->hide();
-		*wait_for_it = false;
+		*b->main_window->window_closed = true;
 	}
 };
 
@@ -205,20 +205,22 @@ public:
 
 class ns_text_dialog{
 public:
-	ns_text_dialog() :w(600), h(400) {}
+	ns_text_dialog() :w(600), h(400),win(0) {}
 	std::string text,title;
 	std::vector<std::string> grid_text;
 	unsigned long w, h;
-	bool wait_for_it;
+	bool wait_for_it, window_closed;
+	ns_text_display_window* win;
 	void act(){
-		ns_text_display_window * win = new ns_text_display_window(w,h,title.c_str());
-		win->wait_for_it = &wait_for_it;
+		win = new ns_text_display_window(w,h,title.c_str());
+		win->window_closed = &window_closed;
 		if(text.size() != 0)
 		win->set_text(text);
 		if (grid_text.size() != 0)
 			win->set_text(grid_text);
 		win->set_modal();
 		win->show();
+		window_closed = false;
 	}
 
 };
@@ -230,7 +232,7 @@ public:
 		data = t;
 		wait_for_it = true;
 		Fl::awake(ns_run_in_main_thread<T>::main_thread_call,(void *)(this));
-		while(wait_for_it)ns_thread::sleep(1);
+		while(wait_for_it)ns_thread::sleep_milliseconds(100);
 	}
 	static void main_thread_call(void * t){
 		ns_run_in_main_thread<T>* tt = (ns_run_in_main_thread<T>*)(t);
@@ -249,19 +251,29 @@ private:
 };
 
 template<class T>
-class ns_run_in_main_thread_custom_wait{
+class ns_run_in_main_thread_wait_for_close{
 public:
-	ns_run_in_main_thread_custom_wait(T * t){
+	ns_run_in_main_thread_wait_for_close(T * t){
 		data = t;
 		t->wait_for_it = true;
-		Fl::awake(ns_run_in_main_thread<T>::main_thread_call,(void *)(this));
+		Fl::awake(ns_run_in_main_thread_wait_for_close<T>::main_thread_call,(void *)(this));
+		//wait for window to be launched
 		while(t->wait_for_it)
-			ns_thread::sleep(1);
-		//cout << "WHA";
+			ns_thread::sleep_milliseconds(100);
+		//wait for window to be closed
+		while (!t->window_closed)
+			ns_thread::sleep_milliseconds(100);
 	}
 	static void main_thread_call(void * t){
-		ns_run_in_main_thread<T> * tt = (ns_run_in_main_thread<T> *)(t);
-		tt->data->act();
+		ns_run_in_main_thread_wait_for_close<T> * tt = (ns_run_in_main_thread_wait_for_close<T> *)(t);
+		try {
+			tt->data->act();
+		}
+		catch (...) {
+			tt->data->wait_for_it = false;
+			throw;
+		}
+		tt->data->wait_for_it = false;
 	}
 private:
 	T * data;

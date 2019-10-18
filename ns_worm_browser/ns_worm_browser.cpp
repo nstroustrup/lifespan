@@ -421,7 +421,7 @@ bool ns_warn_user_about_out_of_date_analyses(const unsigned long region_id, cons
 		}
 		td.w = 1000;
 		td.h = 400;
-		ns_run_in_main_thread_custom_wait<ns_text_dialog> b(&td);
+		ns_run_in_main_thread_wait_for_close<ns_text_dialog> b(&td);
 		ns_choice_dialog dialog;
 		dialog.title = "Do you want to continue?";
 		dialog.option_1 = "Continue";
@@ -1754,7 +1754,7 @@ void ns_worm_learner::compare_machine_and_by_hand_annotations(){
 	td.title = "Results";
 	td.w = 1000;
 	td.h = 400;
-	ns_run_in_main_thread_custom_wait<ns_text_dialog> b(&td);
+	ns_run_in_main_thread_wait_for_close<ns_text_dialog> b(&td);
 }
 
 
@@ -1869,7 +1869,7 @@ void ns_worm_learner::output_movement_analysis_optimization_data(const ns_optimi
 	td.title = "Results";
 	td.w = 1000;
 	td.h = 400;
-	ns_run_in_main_thread_custom_wait<ns_text_dialog> b(&td);
+	ns_run_in_main_thread_wait_for_close<ns_text_dialog> b(&td);
 
 }
 
@@ -2191,7 +2191,7 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 		td.title = "HMM Model Generation Results";
 		td.w = 1000;
 		td.h = 700;
-		ns_run_in_main_thread_custom_wait<ns_text_dialog> b(&td);
+		ns_run_in_main_thread_wait_for_close<ns_text_dialog> b(&td);
 	}
 	
 	o_all.release();
@@ -2234,7 +2234,7 @@ void ns_worm_learner::calculate_hmm_from_files(const std::string & path) {
 	td.title = "HMM Model Generation Results";
 	td.w = 1000;
 	td.h = 700;
-	ns_run_in_main_thread_custom_wait<ns_text_dialog> b(&td);
+	ns_run_in_main_thread_wait_for_close<ns_text_dialog> b(&td);
 
 }
 
@@ -3724,7 +3724,7 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 				for (unsigned int i = 0; i < problems.size(); i++)
 					td.grid_text.push_back(problems[i].text());
 				td.title = "Re-calculate censoring immediately";
-				ns_run_in_main_thread_custom_wait<ns_text_dialog> dd(&td);
+				ns_run_in_main_thread_wait_for_close<ns_text_dialog> dd(&td);
 				if (problems.size() * 4 > total_number_of_regions)
 					throw ns_ex("Too many errors.  Canceling data export.");
 			}
@@ -4347,7 +4347,7 @@ void ns_worm_learner::handle_file_request(const string & fname) {
 				td.grid_text.push_back("The following issues were identified in the schedule you supplied:");
 				td.grid_text.insert(td.grid_text.end(),warnings.begin(),warnings.end());
 				td.title = "Capture Schedule Information";
-				ns_run_in_main_thread_custom_wait<ns_text_dialog> b(&td);
+				ns_run_in_main_thread_wait_for_close<ns_text_dialog> b(&td);
 
 			}
 		}

@@ -717,7 +717,7 @@ std::string ns_get_input_string(const std::string title,const std::string defaul
 	td.grid_text.push_back("WHA");
 	td.grid_text.push_back("BAH");
 	td.title = "Warning";
-	ns_run_in_main_thread_custom_wait<ns_text_dialog> n(&td);
+	ns_run_in_main_thread_wait_for_close<ns_text_dialog> n(&td);
 
 	
 	ns_choice_dialog c;

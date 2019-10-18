@@ -96,6 +96,15 @@ struct ns_plate_replicate_generator {
 		return e.region_id;
 	}
 	static int minimum_subgroup_size() { return 10; }
+}; 
+struct ns_genotype_replicate_generator {
+	typedef std::string index_type;
+	static index_type get_index_for_observation(const ns_hmm_emission& e) {
+		if (e.genotype == 0)
+			return "";
+		return *e.genotype;
+	}
+	static int minimum_subgroup_size() { return 10; }
 };
 struct ns_device_replicate_generator {
 	typedef ns_64_bit index_type;
@@ -135,6 +144,9 @@ public:
 	bool build_individual_cross_validation_set(int k_fold_validation, const ns_emperical_posture_quantification_value_estimator& all_observations) {
 		return build_independent_replicates<ns_individual_replicate_generator>(k_fold_validation, all_observations);
 	}
+	bool build_genotype_cross_validation_set(int k_fold_validation, const ns_emperical_posture_quantification_value_estimator& all_observations) {
+		return build_independent_replicates<ns_individual_replicate_generator>(k_fold_validation, all_observations);
+	}
 	void build_all_vs_all_set(const ns_emperical_posture_quantification_value_estimator& all_observations) {
 		replicates.resize(1);
 		//now load all observations into the training or test sets
@@ -157,7 +169,7 @@ public:
 			r.err.resize(replicates.size(), 0);
 			r.N.resize(replicates.size(), 0);
 
-			bool found_animals;
+			bool found_animals = false;
 			for (unsigned int e = 0; e < replicates.size(); e++) {
 				unsigned long movement_Nc(0);
 				double movement_square_error(0);
@@ -192,6 +204,25 @@ public:
 			r.var_err = sqrt(r.var_err) / replicates.size();
 		}
 		return results;
+	}
+
+	bool build_genotype_cross_validation_set(int k_fold_validation, const ns_emperical_posture_quantification_value_estimator& all_observations, std::map<ns_64_bit, ns_region_metadata>& genotype_lookup) {
+
+	
+		//copy observations to label them by genotype
+		ns_emperical_posture_quantification_value_estimator observations = all_observations;
+		std::map < ns_64_bit, std::string> genotype_table;
+		for (auto p = genotype_lookup.begin(); p != genotype_lookup.end(); ++p)
+			genotype_table[p->first] = p->second.device_regression_match_description();
+
+		for (auto p = observations.observed_values.begin(); p != observations.observed_values.end(); ++p)
+			for (auto q = p->second.begin(); q != p->second.end(); ++q) {
+				auto r = genotype_table.find(q->region_id);
+				if (r == genotype_table.end())
+					throw ns_ex("Could not find region ") << q->region_id << " in metadata cache.";
+				q->genotype = &r->second;
+			}
+		return build_independent_replicates<ns_genotype_replicate_generator>(k_fold_validation, observations);
 	}
 
 private:
@@ -297,6 +328,7 @@ struct ns_hmm_cross_validation_manager {
 			throw ns_ex("ns_hmm_cross_validation_set::all_vs_all()::Could not find all set");
 		return p->second;
 	}
+	
 	void generate_cross_validations_to_test(int k_fold_validation, const ns_emperical_posture_quantification_value_estimator& all_observations, bool try_different_states) {
 		validation_runs_sorted_by_validation_type.clear();
 		{
@@ -331,6 +363,14 @@ struct ns_hmm_cross_validation_manager {
 		}
 	}
 
+	void generate_genotype_cross_validations_to_test(int k_fold_validation, const ns_emperical_posture_quantification_value_estimator& all_observations, std::map<ns_64_bit, ns_region_metadata>& genotype_lookup) {
+
+		ns_hmm_cross_validation_set& set = validation_runs_sorted_by_validation_type["genotype"];
+		if (!set.build_genotype_cross_validation_set(k_fold_validation, all_observations,genotype_lookup))
+			validation_runs_sorted_by_validation_type.erase("genotype");
+		else set.description = "Genotype Cross-Validation";
+	}
+
 };
 
 
@@ -338,6 +378,7 @@ void ns_run_hmm_cross_validation(std::string & results_text, ns_image_server_res
 	const bool run_hmm_cross_validation = true;
 	const bool test_different_state_restrictions_on_viterbi_algorithm = false;
 
+	int k_fold_validation = run_hmm_cross_validation ? 5 : 1;
 
 
 	std::map<ns_64_bit, ns_region_metadata> metadata_cache;
@@ -378,8 +419,13 @@ void ns_run_hmm_cross_validation(std::string & results_text, ns_image_server_res
 	for (auto p = observations_sorted_by_genotype.begin(); p != observations_sorted_by_genotype.end(); p++) {
 		std::cout << ns_to_string_short((100.0 * estimators_compiled) / observations_sorted_by_genotype.size(), 2) << "%...";
 		estimators_compiled++;
-		int k_fold_validation = run_hmm_cross_validation ? 5 : 1;
 		different_validation_approaches_for_each_genotype[p->first].generate_cross_validations_to_test(k_fold_validation, p->second, test_different_state_restrictions_on_viterbi_algorithm);
+	}
+	{
+		//cross validate across genotypes
+		auto all_genotypes = observations_sorted_by_genotype.find("all");
+		if (all_genotypes != observations_sorted_by_genotype.end())
+			different_validation_approaches_for_each_genotype["all"].generate_genotype_cross_validations_to_test(k_fold_validation, all_genotypes->second, metadata_cache);
 	}
 	if (different_validation_approaches_for_each_genotype.size() == 0)
 		results_text += "No genotype or condition specific HMM models were built";

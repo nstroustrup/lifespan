@@ -4855,7 +4855,7 @@ public:
 			return;
 		if (kernel_width % 2 == 0)
 			throw ns_ex("Kernel width must be odd");
-		for (unsigned int i = 0; i < data.size(); i++) {
+		for (long i = 0; i < data.size(); i++) {
 			long start = i - kernel_width,
 				stop = i + kernel_width + 1;
 			if (start < 0) start = 0;

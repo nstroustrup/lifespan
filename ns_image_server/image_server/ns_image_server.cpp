@@ -3824,7 +3824,7 @@ ns_image_server_results_file ns_image_server_results_storage::optimized_posture_
 	return ns_image_server_results_file(results_directory, spec.experiment_name + DIR_CHAR_STR + dir, fname);
 }
 
-ns_image_server_results_file ns_image_server_results_storage::time_path_image_analysis_quantification(ns_image_server_results_subject & spec,const std::string & type, const bool store_in_results_directory,ns_sql & sql, bool abbreviated_time_series, bool compress_file_names) const{
+ns_image_server_results_file ns_image_server_results_storage::time_path_image_analysis_quantification(ns_image_server_results_subject & spec,const std::string & type, const bool store_in_results_directory,ns_sql & sql, bool abbreviated_time_series, bool compress_file_names, const ns_image_type& file_type) const{
 		spec.get_names(sql);
 		string fname(""),dir("");
 		string abbreviated;
@@ -3843,7 +3843,7 @@ ns_image_server_results_file ns_image_server_results_storage::time_path_image_an
 			else fname = spec.experiment_filename();
 		}
 		fname += type + abbreviated;
-		ns_add_image_suffix(fname,ns_csv_gz);
+		ns_add_image_suffix(fname, file_type);
 
 		if (store_in_results_directory)
  			return ns_image_server_results_file(results_directory,spec.experiment_name + DIR_CHAR_STR + dir, fname);

@@ -203,7 +203,7 @@ public:
 											spec.region_filename() + "hand_curation.xml");
 	}
 
-	ns_image_server_results_file time_path_image_analysis_quantification(ns_image_server_results_subject & spec,const std::string & type, const bool store_in_results_directory,ns_sql & sql, bool abbreviated_time_series=false, bool compress_file_names=true) const;
+	ns_image_server_results_file time_path_image_analysis_quantification(ns_image_server_results_subject & spec,const std::string & type, const bool store_in_results_directory,ns_sql & sql, bool abbreviated_time_series=false, bool compress_file_names=true, const ns_image_type & file_type = ns_csv_gz) const;
 
 	ns_image_server_results_file optimized_posture_analysis_parameter_set(ns_image_server_results_subject & spec, const std::string & type, ns_sql & sql) const;
 

@@ -7403,10 +7403,24 @@ void ns_worm_learner::navigate_solo_worm_annotation(ns_death_time_solo_posture_a
 			job.region_id = region_id;
 			job.maintenance_task = ns_maintenance_rebuild_movement_from_stored_image_quantification;
 			ns_sql& sql = get_sql_connection();
-			analyze_worm_movement_across_frames(job, &image_server, sql, true,death_time_solo_annotater.current_worm_id.group_id);
+			ns_hmm_movement_analysis_optimizatiom_stats path_information;
+			analyze_worm_movement_across_frames(job, &image_server, sql, true, death_time_solo_annotater.current_worm_id.group_id, &path_information);
 			ns_image_server_results_subject subject;
 			subject.region_id = region_id;
-			/*
+			ns_image_server_results_file results((image_server.results_storage.time_path_image_analysis_quantification(subject, std::string("hmm_path=") + "_animal_" + ns_to_string(death_time_solo_annotater.current_worm_id.group_id), true, sql,false,false,ns_csv)));
+			
+			ns_acquire_for_scope<ns_ostream>  path_stats_output(results.output());
+			if (path_stats_output()().fail()) {
+				std::cout << "Could not open " << results.output_filename() << " for output\n";
+			}
+			else {
+				cout << "Writing HMM diagnostic output to the results directory posture analysis\\regions directory " << results.output_filename() << "\n";
+				std::map<ns_64_bit, ns_region_metadata> metadata;
+				metadata[region_id].load_from_db(region_id, "",sql);
+				path_information.write_hmm_path_header(path_stats_output()());
+				path_information.write_hmm_path_data(path_stats_output()(), metadata);
+				path_stats_output.release();
+			}			/*
 			ns_image_server_results_file results(image_server.results_storage.machine_death_times(subject, ns_image_server_results_storage::ns_censoring_and_movement_transitions, "time_path_image_analysis", sql, true));
 			ns_acquire_for_scope<ns_istream> tp_i(results.input());
 			if (tp_i.is_null())

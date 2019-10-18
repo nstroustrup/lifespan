@@ -334,7 +334,10 @@ struct ns_hmm_cross_validation_manager {
 		{
 			ns_hmm_cross_validation_set& set = validation_runs_sorted_by_validation_type["all"];
 			set.build_all_vs_all_set(all_observations);
+			for (unsigned int i = 0; i < set.replicates.size(); i++)
+				set.replicates[i].generate_detailed_path_info = true;
 			set.description = "No Cross-Validation";
+			
 		}
 		if (try_different_states) {
 

@@ -31,7 +31,7 @@ void invalidate_stored_data_depending_on_movement_analysis(const ns_processing_j
 	sql.send_query();
 	already_performed = true;
 }
-void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image_server * image_server, ns_sql & sql, bool log_output, long specific_worm) {
+void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image_server * image_server, ns_sql & sql, bool log_output, long specific_worm, ns_hmm_movement_analysis_optimizatiom_stats*optional_debug_results) {
 	if (job.region_id == 0)
 		throw ns_ex("Movement data can be rebuilt only for regions.");
 
@@ -240,19 +240,40 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 
 		invalidate_stored_data_depending_on_movement_analysis(job, sql, invalidated_old_data);
 	}
-	else if (job.maintenance_task == ns_maintenance_rebuild_movement_from_stored_image_quantification){
+	else if (job.maintenance_task == ns_maintenance_rebuild_movement_from_stored_image_quantification) {
 		//load in previously calculated image quantification from disk for re-analysis
 		//This is good, for example, if changes have been made to the movement quantification analyzer
 		//and it needs to be rerun though the actual images don't need to be requantified.
 		//or if by hand annotations have been performed and the alignment in the output files should be redone.
-		if (log_output){
+		if (log_output) {
 			image_server->register_server_event(ns_image_server_event("Analyzing stored animal posture quantification."), &sql);
 			if (specific_worm != -1)
-				image_server->add_subtext_to_current_event(std::string("Running in debug mode to focus on a specific worm with id ") + ns_to_string(specific_worm), &sql);
+				image_server->add_subtext_to_current_event(std::string("Running in debug mode to focus on a specific worm with id ") + ns_to_string(specific_worm) + "\n", &sql);
 		}
-		time_path_image_analyzer.load_image_quantification_and_rerun_death_time_detection(job.region_id, time_path_solution, time_series_denoising_parameters, &death_time_estimator(), sql,specific_worm);
-		if (specific_worm != -1)
+		time_path_image_analyzer.load_image_quantification_and_rerun_death_time_detection(job.region_id, time_path_solution, time_series_denoising_parameters, &death_time_estimator(), sql, specific_worm);
+		//if the user is asking to debug a specific region and worm, we can generate extra debug information
+		if (specific_worm != -1) {
+			std::set < ns_stationary_path_id> individuals;
+			individuals.emplace(ns_stationary_path_id(specific_worm, 0, time_path_image_analyzer.db_analysis_id()));
+			if (optional_debug_results != 0) {
+				if (posture_analysis_model_handle().model_specification.posture_analysis_method == ns_posture_analysis_model::ns_hidden_markov ||
+					posture_analysis_model_handle().model_specification.posture_analysis_method == ns_posture_analysis_model::ns_threshold_and_hmm) {
+					//get by hand annotation 
+					ns_hand_annotation_loader by_hand_region_annotations;
+					ns_region_metadata metadata;
+					try {
+						metadata = by_hand_region_annotations.load_region_annotations(ns_death_time_annotation_set::ns_censoring_and_movement_transitions, job.region_id, sql);
+					}
+					catch (ns_ex & ex) {
+						image_server->register_server_event(ex, &sql);
+						metadata.load_from_db(job.region_id, "", sql);
+					}
+					time_path_image_analyzer.add_by_hand_annotations(by_hand_region_annotations.annotations);
+					time_path_image_analyzer.calculate_optimzation_stats_for_current_hmm_estimator(*optional_debug_results, &posture_analysis_model_handle().model_specification.hmm_posture_estimator, individuals, true);
+				}
+			}
 			return;
+		}
 		time_path_image_analyzer.obtain_analysis_id_and_save_movement_data(job.region_id, sql,
 			ns_time_path_image_movement_analyzer<ns_overallocation_resizer>::ns_require_existing_record,
 			ns_time_path_image_movement_analyzer<ns_overallocation_resizer>::ns_write_data);

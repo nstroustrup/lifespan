@@ -4934,10 +4934,11 @@ struct ns_slope_accessor_total_in_stabilized_4x {
 
 //this calculates a time series of slope values, with the specified kernel width
 //the particular measurements used are specified by data_accessor_t
-template<int slope_kernel_half_width,class data_accessor_t>
+typedef enum { ns_regress_on_fewer_values, ns_force_toward_zero } ns_slope_calculator_edge_handling_behavior;
+template<int slope_kernel_half_width,class data_accessor_t, ns_slope_calculator_edge_handling_behavior edge_behavior>
 class ns_slope_calculator{
 public:
-	ns_slope_calculator< slope_kernel_half_width, data_accessor_t>(ns_analyzed_image_time_path::ns_element_list & list, const int start_i, std::vector<ns_64_bit > & vals, std::vector<ns_64_bit > times){
+	ns_slope_calculator< slope_kernel_half_width, data_accessor_t, edge_behavior>(ns_analyzed_image_time_path::ns_element_list & list, const int start_i, std::vector<ns_64_bit > & vals, std::vector<ns_64_bit > times){
 		
 		const int slope_kernel_width = slope_kernel_half_width * 2 + 1;
 
@@ -4959,19 +4960,22 @@ public:
 		if (max_kernel_half_width > slope_kernel_half_width)
 			max_kernel_half_width = slope_kernel_half_width;
 
-		//first, we "warm up" by filling in the left-most times with increasingly large kernel widths
 		ns_linear_regression_model model;
+		//first, we "warm up" by filling in the left-most times with increasingly large kernel widths
 		data_accessor_t::slope(start_i, list) = 0;
 		for (unsigned int h_w = 1; h_w <= max_kernel_half_width; h_w++) {
-			const int w(2 * h_w+1);
+			const int w(2 * h_w + 1);
 			vals.resize(w);
 			times.resize(w);
 			for (unsigned int i = 0; i < w; i++) {
 				vals[i] = data_accessor_t::total_intensity(i + start_i, list);
 				times[i] = list[i + start_i].absolute_time;
 			}
-			ns_linear_regression_model_parameters params(model.fit(vals, times));
-			data_accessor_t::slope(start_i + h_w, list) = params.slope * 60 * 60;
+			if (edge_behavior == ns_regress_on_fewer_values) {
+				ns_linear_regression_model_parameters params(model.fit(vals, times));
+				data_accessor_t::slope(start_i + h_w, list) = params.slope * 60 * 60;
+			}else
+				data_accessor_t::slope(start_i + h_w, list) = 0;
 		}
 		//if there is enough data to run the full kernel, do so
 		if (max_kernel_half_width == slope_kernel_half_width) {
@@ -4994,23 +4998,24 @@ public:
 			}
 		}
 
+		
 		//finally, we "warm down" by filling in the left-most times with increasingly small kernel widths
-		for (unsigned int h_w = max_kernel_half_width ; h_w >= 1; h_w--) {
-			const int w(2 * h_w+1);
+		for (unsigned int h_w = max_kernel_half_width; h_w >= 1; h_w--) {
+			const int w(2 * h_w + 1);
 			vals.resize(w);
 			times.resize(w);
 			for (unsigned int i = 0; i < w; i++) {
-				vals[i] = data_accessor_t::total_intensity(list.size() - i -1, list);
+				vals[i] = data_accessor_t::total_intensity(list.size() - i - 1, list);
 				times[i] = list[list.size() - i - 1].absolute_time;
 			}
-			ns_linear_regression_model_parameters params(model.fit(vals, times));
-			data_accessor_t::slope(list.size() - h_w - 1, list) = params.slope * 60 * 60;
+			if (edge_behavior == ns_regress_on_fewer_values) {
+				ns_linear_regression_model_parameters params(model.fit(vals, times));
+				data_accessor_t::slope(list.size() - h_w - 1, list) = params.slope * 60 * 60;
+			}
+			else
+				data_accessor_t::slope(list.size() - h_w - 1, list) = 0;
 		}
 		data_accessor_t::slope(list.size() - 1, list) = 0;
-
-		//for (unsigned int i = list.size() - slope_kernel_half_width - 1; i < list.size(); i++) {
-		//	data_accessor_t::slope(i, list) = params.slope * 60 * 60; // units: per hour
-		//}
 	}
 };
 
@@ -5045,11 +5050,11 @@ void ns_analyzed_image_time_path::denoise_movement_series_and_calculate_intensit
 		
 	const int start_i = this->first_stationary_timepoint();  //do not use frames before worm arrives to calculate slope, as the worm's appearence will produce a very large spurious slope.
 	std::vector<ns_64_bit > tmp1, tmp2;
-	ns_slope_calculator<4, ns_slope_accessor_total_in_region> total_change_calculator(elements,start_i,tmp1,tmp2);
-	ns_slope_calculator<4, ns_slope_accessor_total_in_foreground> foreground_change_calculator(elements, start_i, tmp1, tmp2);
-	ns_slope_calculator<4, ns_slope_accessor_total_in_stabilized_1x> stabilized_change_calculator_1x(elements, start_i, tmp1, tmp2);
-	ns_slope_calculator<8, ns_slope_accessor_total_in_stabilized_2x> stabilized_change_calculator_2x(elements, start_i, tmp1, tmp2);
-	ns_slope_calculator<16, ns_slope_accessor_total_in_stabilized_4x> stabilized_change_calculator_4x(elements,start_i, tmp1, tmp2);
+	ns_slope_calculator<4, ns_slope_accessor_total_in_region, ns_force_toward_zero> total_change_calculator(elements,start_i,tmp1,tmp2);
+	ns_slope_calculator<4, ns_slope_accessor_total_in_foreground, ns_force_toward_zero> foreground_change_calculator(elements, start_i, tmp1, tmp2);
+	ns_slope_calculator<4, ns_slope_accessor_total_in_stabilized_1x, ns_force_toward_zero> stabilized_change_calculator_1x(elements, start_i, tmp1, tmp2);
+	ns_slope_calculator<8, ns_slope_accessor_total_in_stabilized_2x, ns_force_toward_zero> stabilized_change_calculator_2x(elements, start_i, tmp1, tmp2);
+	ns_slope_calculator<16, ns_slope_accessor_total_in_stabilized_4x, ns_force_toward_zero> stabilized_change_calculator_4x(elements,start_i, tmp1, tmp2);
 }
 
 void ns_match_histograms(const ns_image_standard & im1, const ns_image_standard & im2, float * histogram_matching_factors) {

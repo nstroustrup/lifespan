@@ -152,12 +152,15 @@ struct ns_graph_specifics{
 						 number_of_y_major_ticks(5),
 						 number_of_x_minor_ticks(40),
 						 number_of_y_minor_ticks(40),
-						 boundary(20,40),
+						 boundary_bottom_and_left(20,40),
+						 boundary_top_and_right(2,2),
 						 aspect_ratio(1.0){};
 	double dx,dy;	//reltationship between data scale and screen pixels
 	ns_graph_axes axes;
 
-	ns_vector_2i boundary;
+	//the distance from the edge of the image to the axes.
+	ns_vector_2i boundary_bottom_and_left,boundary_top_and_right;
+
 	unsigned long x_axis_pos;  //position of the x axis in screen pixels
 	int global_independant_variable_id;
 
@@ -193,6 +196,7 @@ public:
 
 	///generates a graph of all data specified in contents
 	ns_graph_specifics draw(ns_image_standard & image);
+	void draw_legend(const std::string & title, long line_width, bool do_not_resize_image,ns_image_standard& image);
 	void draw(std::string & svg_output);
 	void draw(std::ostream & svg_output);
 	void draw(ns_svg & svg_output);

@@ -49,10 +49,11 @@ void ns_graph::calculate_graph_specifics(const unsigned int width, const unsigne
 	const unsigned int & h(height);
 
 	//the boundary is calculated based on the size of the text in the margins, in draw()
-	const ns_vector_2i & border(s.boundary);
+	const ns_vector_2i& bottom_left_border(s.boundary_bottom_and_left),
+		top_right_border(s.boundary_top_and_right);
 
-	if (2*border.x+1 >= (long)width || 2*border.y+1 >= (long)height)
-		throw ns_ex("ns_graph::Border (") << border.x << "," << border.y << ") is too large for graph with the dimentions" << w << "x" << h << "pix";
+	if ((bottom_left_border.x+top_right_border.x)+1 >= (long)width || (bottom_left_border.y + top_right_border.y) +1 >= (long)height)
+		throw ns_ex("ns_graph::Border (") << bottom_left_border.x << "-" << top_right_border.x << "," << bottom_left_border.y << "-" << top_right_border << ") is too large for graph with the dimentions" << w << "x" << h << "pix";
 
 	const int & global_independant_variable_id(s.global_independant_variable_id);
 
@@ -149,8 +150,8 @@ void ns_graph::calculate_graph_specifics(const unsigned int width, const unsigne
 		axes[3]++;
 	}
 
-	dy = (h-2*border.y-1)/(axes[3]-axes[2]+1.5*specified_axes.axis_offset(1));
-	dx = (w-2*border.x-1)/(axes[1]-axes[0]+1.5*specified_axes.axis_offset(0));
+	dy = (h- (bottom_left_border.y + top_right_border.y)-1)/(axes[3]-axes[2]+1.5*specified_axes.axis_offset(1));
+	dx = (w- (bottom_left_border.x + top_right_border.x) -1)/(axes[1]-axes[0]+1.5*specified_axes.axis_offset(0));
 	//cerr << "dy = (" << h << "-2*" << border<<"-1) = " << (h-2*border-1) << "/(ceil(" << axes[3] <<"-" << axes[2]<< "))=" << ceil(axes[1]-axes[0]) << " = " << dy;
 
 
@@ -176,16 +177,16 @@ void ns_graph::calculate_graph_specifics(const unsigned int width, const unsigne
 	}
 	bool zero_error(false);
 	if (specified_axes.axis_position[0] == ns_graph_axes::ns_at_zero) {
-		if ((int)(h - border.y) < (int)(dy * (0 - axes[2]))) {
+		if ((int)(h - (bottom_left_border.y + top_right_border.y)) < (int)(dy * (0 - axes[2]))) {
 			cout << "Cannot place x axis at zero, because of the boundary set at " << axes[2] << "(pixel location: " << dy * axes[2] << "). Placing it at the min value.";
 			zero_error = true;
 		}
-		s.x_axis_pos = (int)(h - border.y) - (int)(dy * (0 - axes[2]));
+		s.x_axis_pos = (int)(h - bottom_left_border.y) - (int)(dy * (0 - axes[2]));
 	}
 	if (specified_axes.axis_position[0] == ns_graph_axes::ns_at_min_value || zero_error)
-		s.x_axis_pos = (int)(h-border.y);
+		s.x_axis_pos = (int)(h- bottom_left_border.y);
 	else //at max value
-		s.x_axis_pos = border.y;
+		s.x_axis_pos = bottom_left_border.y;
 	/*if (!std::isfinite<double>(s.x_axis_pos))
 		throw ns_ex("Non-finite x axis position found:\n") <<
 		"h:" << h << "\n"
@@ -201,6 +202,76 @@ void ns_graph_axes::check_for_sanity() const{
 }
 
 
+void ns_graph::draw_legend(const std::string& title, long line_width, bool do_not_resize_image, ns_image_standard& image) {
+	unsigned long border = 5;
+	unsigned long line_spacing = 5;
+	ns_font& font(font_server.get_default_font());
+	font.set_height(y_axis_properties.text_size * FREETYPE_SCALE_FACTOR);
+	std::vector<std::string> cropped_labels;
+	std::vector<ns_color_8> colors;
+	cropped_labels.reserve(contents.size());
+	colors.reserve(contents.size());
+
+	for (unsigned int i = 0; i < contents.size(); i++) {
+		if (contents[i]->data_label.empty() || contents[i]->type == ns_graph_object::ns_graph_independant_variable)
+			continue;
+		cropped_labels.push_back(contents[i]->data_label);
+		if (cropped_labels.rbegin()->size() > 26)
+			cropped_labels.rbegin()->resize(26);
+		if (contents[i]->properties.line.draw)
+			colors.push_back(contents[i]->properties.line.color);
+		else colors.push_back(contents[i]->properties.point.color);
+	}
+
+	ns_vector_2i largest_dimension;
+	{
+		ns_font_output_dimension dim(0, 0);
+		if (title.size() > 0)
+			dim = font.draw_color(0, 0, ns_color_8(0, 0, 0), title, image, false);
+		largest_dimension = ns_vector_2i(dim.w, dim.h);
+		for (unsigned int i = 0; i < cropped_labels.size(); i++) {
+			dim = font.draw_color(0, 0, ns_color_8(0, 0, 0), cropped_labels[i], image, false);
+			if (dim.w > largest_dimension.x)
+				largest_dimension.x = dim.w;
+			if (dim.h > largest_dimension.y)
+				largest_dimension.y = dim.h;
+		}
+	}
+	ns_image_properties prop;
+	prop.width = border + line_width + border + largest_dimension.x + border;
+	unsigned long number_of_lines = cropped_labels.size() + (title.empty() ? 0 : 1);
+	prop.height = border + (largest_dimension.y + line_spacing) * (number_of_lines+1) + border;
+	prop.components = 3;
+	if (!do_not_resize_image)
+		image.resize(prop);
+	for (unsigned int y = 0; y < image.properties().height; y++) {
+		for (unsigned int x = 0; x < 3 * image.properties().width; x++)
+			image[y][x] = 255;
+	}
+	if (do_not_resize_image) {
+		if (prop.height > image.properties().height) {
+			font.draw(border, largest_dimension.y, ns_color_8(0, 0, 0), "Could not draw legend (x)", image);
+			return;
+		}
+		if (prop.width > image.properties().width) {
+			font.draw(border, largest_dimension.y, ns_color_8(0, 0, 0), "Could not draw legend (x)", image);
+			return;
+		}
+	}
+
+	unsigned long cur_y = border+ (largest_dimension.y + line_spacing)*1;
+	const unsigned long text_x(border + line_width + border);
+	if (!title.empty()) {
+		font.draw_color(text_x, cur_y, ns_color_8(0, 0, 0), title, image);
+		cur_y += largest_dimension.y + line_spacing;
+	}
+	for (unsigned long i = 0; i < cropped_labels.size(); i++) {
+		const int line_pos = cur_y - largest_dimension.y / 2;
+		image.draw_line_color_thick(ns_vector_2i(border, line_pos), ns_vector_2i(border+line_width, line_pos),colors[i],3);
+		font.draw_color(text_x, cur_y, ns_color_8(0, 0, 0), cropped_labels[i], image);
+		cur_y += largest_dimension.y + line_spacing;
+	}
+}
 ns_graph_specifics ns_graph::draw(ns_image_standard & image) {
 	//check to see if input data isn't self-contradicting.
 	//Also, see if a scatter plot is desired (no global independant variable specified)
@@ -228,7 +299,10 @@ ns_graph_specifics ns_graph::draw(ns_image_standard & image) {
 		if (title_properties.text.draw) {
 			ns_acquire_lock_for_scope font_lock(font_server.default_font_lock, __FILE__, __LINE__);
 			font_server.get_default_font().set_height(title_properties.text_size*FREETYPE_SCALE_FACTOR);
-			font_server.get_default_font().draw_color(w / 3, (3 * h) / 4, title_properties.text.color, "(No Data)", image);
+			ns_font_output_dimension d =
+				font_server.get_default_font().draw_color(0,0, title_properties.text.color, "(No Data Points)", image,false);
+
+			font_server.get_default_font().draw_color((w-d.w)/2, (h - d.h) / 2, title_properties.text.color, "(No Data Points)", image);
 			font_lock.release();
 		}
 		return ns_graph_specifics();
@@ -282,20 +356,23 @@ ns_graph_specifics ns_graph::draw(ns_image_standard & image) {
 		font_lock.release();
 	}
 
-	spec.boundary.x = (unsigned int)(4*MAJOR_TICK_HEIGHT*y_axis_properties.tick_mark_rescale_factor +y_text_size.w);
-	spec.boundary.y = (unsigned int)(4*MAJOR_TICK_HEIGHT*x_axis_properties.tick_mark_rescale_factor +x_text_size.h);
+	spec.boundary_bottom_and_left.x = (unsigned int)(4*MAJOR_TICK_HEIGHT*y_axis_properties.tick_mark_rescale_factor +y_text_size.w);
+	spec.boundary_bottom_and_left.y = (unsigned int)(4*MAJOR_TICK_HEIGHT*x_axis_properties.tick_mark_rescale_factor +x_text_size.h);
+	spec.boundary_top_and_right.x = x_text_size.h;  //this needs to be big enough to allow the half of the last x axis label tick to be rendered
+	spec.boundary_top_and_right.y = y_text_size.h; //this needs to be big enough to allow the top of the last y axis label tick to be rendered
 	
 
 	spec.global_independant_variable_id = check_input_data();
 	calculate_graph_specifics(w,h,spec,axes);
-	const ns_vector_2i & border(spec.boundary);
+	const ns_vector_2i& bottom_left_border(spec.boundary_bottom_and_left),
+		top_right_border(spec.boundary_top_and_right);
 
 
 	//start drawing the graph!
 	int line_l_width = x_axis_properties.line.width/2,
 		line_r_width = x_axis_properties.line.width/2 + x_axis_properties.line.width%2;
 	//draw x axis
-	for (unsigned int _x = border.x; _x < w-border.x; _x++){
+	for (unsigned int _x = bottom_left_border.x; _x < w- top_right_border.x; _x++){
 		for (int dy = -line_l_width; dy < line_r_width; dy++){
 			image[spec.x_axis_pos+dy][3*_x+0] = x_axis_properties.line.color.x;	
 			image[spec.x_axis_pos+dy][3*_x+1] = x_axis_properties.line.color.y;	
@@ -307,11 +384,11 @@ ns_graph_specifics ns_graph::draw(ns_image_standard & image) {
 	//draw y axis
 	line_l_width = y_axis_properties.line.width/2;
 	line_r_width = y_axis_properties.line.width/2 + x_axis_properties.line.width%2;
-	for (unsigned int _y = border.y; _y < h-border.y; _y++){
+	for (unsigned int _y = top_right_border.y; _y < h- bottom_left_border.y; _y++){
 		for (int dx = -line_l_width; dx < line_r_width; dx++){
-			image[_y][3*(border.x+dx)+0] = y_axis_properties.line.color.x;
-			image[_y][3*(border.x+dx)+1] = y_axis_properties.line.color.y;
-			image[_y][3*(border.x+dx)+2] = y_axis_properties.line.color.z;
+			image[_y][3*(bottom_left_border.x+dx)+0] = y_axis_properties.line.color.x;
+			image[_y][3*(bottom_left_border.x +dx)+1] = y_axis_properties.line.color.y;
+			image[_y][3*(bottom_left_border.x +dx)+2] = y_axis_properties.line.color.z;
 		}
 	}
 
@@ -320,7 +397,7 @@ ns_graph_specifics ns_graph::draw(ns_image_standard & image) {
 	ns_acquire_lock_for_scope font_lock(font_server.default_font_lock, __FILE__, __LINE__);
 	font_server.get_default_font().set_height(x_axis_properties.text_size*FREETYPE_SCALE_FACTOR);
 	for (unsigned int i = 0; i <= spec.number_of_x_major_ticks; i++){
-		unsigned int x = (border.x+(int)(spec.dx*(spec.major_x_tick*i+spec.axes.axis_offset(0))));
+		unsigned int x = (bottom_left_border.x+(int)(spec.dx*(spec.major_x_tick*i+spec.axes.axis_offset(0))));
 
 		int y1, y2;
 		if (axes.axis_position[1] == ns_graph_axes::ns_at_zero) {
@@ -345,19 +422,19 @@ ns_graph_specifics ns_graph::draw(ns_image_standard & image) {
 			ns_font_output_dimension d = font_server.get_default_font().get_render_size(text);
 			int xp = x - d.w / 2;
 			if (xp < 0) xp = 0;
-			font_server.get_default_font().draw(xp,h-border.y+2*MAJOR_TICK_HEIGHT*x_axis_properties.tick_mark_rescale_factor+d.h,x_axis_properties.text.color,text,image);
+			font_server.get_default_font().draw(xp,h- bottom_left_border.y+2*MAJOR_TICK_HEIGHT*x_axis_properties.tick_mark_rescale_factor+d.h,x_axis_properties.text.color,text,image);
 		}
 	}
 	if (x_axis_properties.text.draw) {
 		ns_font_output_dimension d = font_server.get_default_font().get_render_size(x_axis_label);
-		font_server.get_default_font().draw((image.properties().width-d.w)/2, h - 2*MAJOR_TICK_HEIGHT*x_axis_properties.tick_mark_rescale_factor, x_axis_properties.text.color, x_axis_label, image);
+		font_server.get_default_font().draw((image.properties().width-top_right_border.x+bottom_left_border.x-d.w)/2, h - 2*MAJOR_TICK_HEIGHT*x_axis_properties.tick_mark_rescale_factor, x_axis_properties.text.color, x_axis_label, image);
 	}
 	//y axis
 	font_server.get_default_font().set_height(y_axis_properties.text_size*FREETYPE_SCALE_FACTOR);
 	for (unsigned int i = 0; i <= spec.number_of_y_major_ticks; i++){
-		unsigned int y = h - border.y -(int)(spec.dy*(spec.major_y_tick*i+spec.axes.axis_offset(1)));
+		unsigned int y = h - bottom_left_border.y -(int)(spec.dy*(spec.major_y_tick*i+spec.axes.axis_offset(1)));
 
-		image.draw_line_color_thick(ns_vector_2i(border.x-2*MAJOR_TICK_HEIGHT*y_axis_properties.tick_mark_rescale_factor,y),ns_vector_2i(border.x,y),y_axis_properties.line.color, y_axis_properties.tick_mark_rescale_factor);
+		image.draw_line_color_thick(ns_vector_2i(bottom_left_border.x -2*MAJOR_TICK_HEIGHT*y_axis_properties.tick_mark_rescale_factor,y),ns_vector_2i(bottom_left_border.x,y),y_axis_properties.line.color, y_axis_properties.tick_mark_rescale_factor);
 		if (y_axis_properties.text.draw){
 			std::string text;
 			if (y_axis_properties.text_decimal_places == -1)
@@ -366,22 +443,22 @@ ns_graph_specifics ns_graph::draw(ns_image_standard & image) {
 			ns_font_output_dimension d = font_server.get_default_font().get_render_size(text);
 			int yp = y + d.h / 2;
 			//if (yp < 0) yp = 0;
-			font_server.get_default_font().draw(border.x-d.w- 3*MAJOR_TICK_HEIGHT*y_axis_properties.tick_mark_rescale_factor,yp,y_axis_properties.text.color,text,image);
+			font_server.get_default_font().draw(bottom_left_border.x -d.w- 3*MAJOR_TICK_HEIGHT*y_axis_properties.tick_mark_rescale_factor,yp,y_axis_properties.text.color,text,image);
 		}
 	}
 
 	 //y axis height (h-2*border.y)
 	if (y_axis_properties.text.draw) {
 		ns_font_output_dimension d = font_server.get_default_font().get_render_size(y_axis_label, ns_pi / 2);
-		int height_offset_between_y_axis_and_text = h - 2 * border.y - (d.h);
-		font_server.get_default_font().draw(MAJOR_TICK_HEIGHT*y_axis_properties.tick_mark_rescale_factor,border.y + height_offset_between_y_axis_and_text/2, ns_pi / 2, y_axis_properties.text.color, y_axis_label, image);
+		const int y_pos = (h + top_right_border.y - bottom_left_border.y  - d.h)/2;
+		font_server.get_default_font().draw(MAJOR_TICK_HEIGHT*y_axis_properties.tick_mark_rescale_factor, y_pos, ns_pi / 2, y_axis_properties.text.color, y_axis_label, image);
 	}
 	font_lock.release();
 	//draw minor ticks
 	if (x_axis_properties.draw_tick_marks){
 		//x axis
 		for (unsigned int i = 0; i <= spec.number_of_x_minor_ticks; i++){
-			int x = border.x+(int)(spec.dx*(spec.minor_x_tick*i+spec.axes.axis_offset(0)));
+			int x = bottom_left_border.x+(int)(spec.dx*(spec.minor_x_tick*i+spec.axes.axis_offset(0)));
 			if (x < 0 || x >= w)
 				throw ns_ex("ns_graph::Error drawing x axis minor ticks");
 			int y1, y2;
@@ -408,11 +485,11 @@ ns_graph_specifics ns_graph::draw(ns_image_standard & image) {
 	if (y_axis_properties.draw_tick_marks){
 		//y axis
 		for (unsigned int i = 0; i<= spec.number_of_y_minor_ticks;i++){
-			int y = h - border.y -(int)(spec.dy*(spec.minor_y_tick*i + spec.axes.axis_offset(1)));		
+			int y = h - bottom_left_border.y -(int)(spec.dy*(spec.minor_y_tick*i + spec.axes.axis_offset(1)));
 			if (y < 0 || y >= h)
 				throw ns_ex("ns_graph::Error drawing y axis minor ticks");
 
-			image.draw_line_color_thick(ns_vector_2i(border.x-MINOR_TICK_HEIGHT*y_axis_properties.tick_mark_rescale_factor,y),ns_vector_2i(border.x,y),y_axis_properties.line.color,y_axis_properties.tick_mark_rescale_factor);
+			image.draw_line_color_thick(ns_vector_2i(bottom_left_border.x-MINOR_TICK_HEIGHT*y_axis_properties.tick_mark_rescale_factor,y),ns_vector_2i(bottom_left_border.x,y),y_axis_properties.line.color,y_axis_properties.tick_mark_rescale_factor);
 		}
 	}
 
@@ -433,7 +510,7 @@ ns_graph_specifics ns_graph::draw(ns_image_standard & image) {
 	if (title_properties.text.draw){
 		ns_acquire_lock_for_scope font_lock(font_server.default_font_lock, __FILE__, __LINE__);
 		font_server.get_default_font().set_height(title_properties.text_size*FREETYPE_SCALE_FACTOR);
-		font_server.get_default_font().draw_color(w/3,(3*border.y)/4,title_properties.text.color,title,image);
+		font_server.get_default_font().draw_color(w/3,(3* top_right_border.y)/4,title_properties.text.color,title,image);
 		font_lock.release();
 	}
 	return spec;
@@ -477,8 +554,9 @@ void ns_graph::draw(ns_svg & svg){
 
 	ns_graph_specifics spec;
 	spec.aspect_ratio = aspect_ratio;
-	spec.boundary.x= 7;
-	spec.boundary.y= 7;
+	spec.boundary_bottom_and_left.x= 7;
+	spec.boundary_bottom_and_left.y= 7;
+	spec.boundary_top_and_right = spec.boundary_bottom_and_left;
 	
 	spec.global_independant_variable_id = check_input_data();
 	calculate_graph_specifics(w,h,spec,axes);
@@ -491,17 +569,18 @@ void ns_graph::draw(ns_svg & svg){
 
 
 	//draw x axis
-	svg.draw_line(ns_vector_2d(spec.boundary.x,spec.x_axis_pos),ns_vector_2d(w-spec.boundary.x,spec.x_axis_pos),x_axis_properties.line.color,(float).1);
+	svg.draw_line(ns_vector_2d(spec.boundary_bottom_and_left.x,spec.x_axis_pos),ns_vector_2d(w-spec.boundary_top_and_right.x,spec.x_axis_pos),x_axis_properties.line.color,(float).1);
 
 	//draw y axis
-	svg.draw_line(ns_vector_2d(spec.boundary.x,spec.boundary.y),ns_vector_2d(spec.boundary.x,h-spec.boundary.y),x_axis_properties.line.color,(float).1);
+	svg.draw_line(ns_vector_2d(spec.boundary_bottom_and_left.x,spec.boundary_bottom_and_left.y),ns_vector_2d(spec.boundary_bottom_and_left.x,h-spec.boundary_top_and_right.y),x_axis_properties.line.color,(float).1);
 
-	ns_vector_2i & border = spec.boundary;
+	const ns_vector_2i& bottom_left_border = spec.boundary_bottom_and_left,
+		top_right_border = spec.boundary_top_and_right;
 
 	//x axis
 	for (unsigned int i = 0; i <= spec.number_of_x_major_ticks; i++){
 		//major ticks
-		double x = spec.boundary.x + ((spec.dx*spec.major_x_tick*i));
+		double x = bottom_left_border.x + ((spec.dx*spec.major_x_tick*i));
 			
 		if (x_axis_properties.draw_tick_marks)
 		svg.draw_line(ns_vector_2d(x,spec.x_axis_pos-.4),ns_vector_2d(x,spec.x_axis_pos+.4),x_axis_properties.line.color,(float).1);
@@ -517,10 +596,10 @@ void ns_graph::draw(ns_svg & svg){
 
 	//y axis
 	for (unsigned int i = 0; i <= spec.number_of_y_major_ticks; i++){
-		double y = h - border.y -(spec.dy*spec.major_y_tick*i);
+		double y = h - bottom_left_border.y -(spec.dy*spec.major_y_tick*i);
 		//major ticks
 		if (y_axis_properties.draw_tick_marks)
-			svg.draw_line(ns_vector_2d(spec.boundary.x-.4,y),ns_vector_2d(spec.boundary.x+.4,y),y_axis_properties.line.color,(float).1);
+			svg.draw_line(ns_vector_2d(bottom_left_border.x-.4,y),ns_vector_2d(bottom_left_border.x+.4,y),y_axis_properties.line.color,(float).1);
 		
 		if (y_axis_properties.text.draw){
 			std::string text;
@@ -534,16 +613,16 @@ void ns_graph::draw(ns_svg & svg){
 	//draw minor ticks
 	//x axis
 	for (unsigned int i = 0; i <= spec.number_of_x_minor_ticks; i++){
-		double x = spec.boundary.x+(spec.dx*(spec.minor_x_tick*i + spec.axes.axis_offset(0)));
+		double x = bottom_left_border.x+(spec.dx*(spec.minor_x_tick*i + spec.axes.axis_offset(0)));
 		if (x < 0 || x >= w) throw ns_ex("ns_graph::Error drawing x axis minor ticks");
 		svg.draw_line(ns_vector_2d(x,spec.x_axis_pos-.2),ns_vector_2d(x,spec.x_axis_pos+.2),x_axis_properties.line.color,(float).1);
 	}
 	//y axis
 	for (unsigned int i = 0; i<= spec.number_of_y_minor_ticks;i++){
-		double y = h - spec.boundary.y -(spec.dy*(spec.minor_y_tick*i+spec.axes.axis_offset(1)));		
+		double y = h - bottom_left_border.y -(spec.dy*(spec.minor_y_tick*i+spec.axes.axis_offset(1)));
 		if (y < 0 || y >= h)
 			throw ns_ex("ns_graph::Error drawing y axis minor ticks");
-		svg.draw_line(ns_vector_2d(spec.boundary.x-.2,y),ns_vector_2d(spec.boundary.x+.2,y),y_axis_properties.line.color,(float).1);
+		svg.draw_line(ns_vector_2d(bottom_left_border.x-.2,y),ns_vector_2d(bottom_left_border.x+.2,y),y_axis_properties.line.color,(float).1);
 	}
 
 	//plot data
@@ -562,7 +641,7 @@ void ns_graph::draw(ns_svg & svg){
 	}
 	
 	if (title_properties.text.draw)
-		svg.draw_text(title,ns_vector_2d(w/3,(3*border.y)/4),title_properties.text.color,(float)title_properties.text_size);
+		svg.draw_text(title,ns_vector_2d(w/3,(3* top_right_border.y)/4),title_properties.text.color,(float)title_properties.text_size);
 }
 
 
@@ -579,7 +658,7 @@ void ns_graph::draw(ostream & svg_output){
 }
 void ns_graph::plot_object(const ns_graph_object & y, const ns_graph_object & x, ns_image_standard & image, const ns_graph_specifics & spec){
 	const ns_graph_axes & axes(spec.axes);
-	const ns_vector_2i &border(spec.boundary);
+	const ns_vector_2i &border_bl(spec.boundary_bottom_and_left),& border_tr(spec.boundary_top_and_right);
 	const double &dx(spec.dx);
 	const double &dy(spec.dy);
 
@@ -654,17 +733,17 @@ void ns_graph::plot_object(const ns_graph_object & y, const ns_graph_object & x,
 				if (data_index < 0 || data_index >= (unsigned int)y.y.size() || data_index >= (unsigned int)x.x.size())
 					continue;
 				//otherwise draw the data.
-				unsigned int pixel_top((int)(h-border.y)-(int)(dy*(y.y[data_index]-axes.boundary(2)+spec.axes.axis_offset(1))));
-				if (debug_range_checking && h-border.y < dy*(y.y[data_index]-axes.boundary(2)))
-					throw ns_ex("Something went wrong in graph logic.  Graph height: ") << h << ", border: " << border.y <<
+				unsigned int pixel_top((int)(h- border_bl.y)-(int)(dy*(y.y[data_index]-axes.boundary(2)+spec.axes.axis_offset(1))));
+				if (debug_range_checking && h- border_bl.y < dy*(y.y[data_index]-axes.boundary(2)))
+					throw ns_ex("Something went wrong in graph logic.  Graph height: ") << h << ", border: " << border_bl.y <<
 					", dy: " << dy << ", boundary(2): " << axes.boundary(2) << " y.y[" << data_index << "]: " << y.y[data_index];
 				int pixel_bottom;
 				if (!y.properties.fill_between_y_and_ymin)
 					pixel_bottom = spec.x_axis_pos + (unsigned int)(spec.dy*spec.axes.axis_offset(1)); // Again if it could be < 0 (below) it needs to be signed.
 				else {
-					pixel_bottom = (int)(h - border.y) - (int)(dy*(y.y_min[data_index] - axes.boundary(2) + spec.axes.axis_offset(1)));
-					if (debug_range_checking && h - border.y < dy*(y.y_min[data_index] - axes.boundary(2)))
-						throw ns_ex("Something went wrong in graph logic.  Graph height: ") << h << ", border: " << border.y <<
+					pixel_bottom = (int)(h - border_bl.y) - (int)(dy*(y.y_min[data_index] - axes.boundary(2) + spec.axes.axis_offset(1)));
+					if (debug_range_checking && h - border_bl.y < dy*(y.y_min[data_index] - axes.boundary(2)))
+						throw ns_ex("Something went wrong in graph logic.  Graph height: ") << h << ", border: " << border_bl.y <<
 						", dy: " << dy << ", boundary(2): " << axes.boundary(2) << " y.y[" << data_index << "]: " << y.y[data_index];
 				}
 				if (pixel_top > pixel_bottom){
@@ -674,7 +753,7 @@ void ns_graph::plot_object(const ns_graph_object & y, const ns_graph_object & x,
 				}
 				if (pixel_bottom < 0 && !y.properties.draw_negatives)
 					continue; 
-				const unsigned long screen_position_x = pixel_x + border.x;
+				const unsigned long screen_position_x = pixel_x + border_bl.x;
 				for (unsigned int _y = pixel_top; _y < pixel_bottom; _y++){
 					for (unsigned int c = 0; c < 3; c++) {
 						if (debug_range_checking && (_y >= h || (screen_position_x)+c >= w)) {
@@ -689,7 +768,7 @@ void ns_graph::plot_object(const ns_graph_object & y, const ns_graph_object & x,
 								"y.y[data_index]=" << y.y[data_index] << "\n"
 								"screen_position_x=" << (screen_position_x) << "\n"
 								"c=" << c << "\n"
-								"border.y=" << border.y << "\n"
+								"border.y=" << border_bl.y << "\n"
 								"dy=" << dy << "\n"
 								"y.y_min[data_index]=" << y.y_min[data_index] << "\n"
 								"spec.axes.axis_offset(1)=" << spec.axes.axis_offset(1) << "\n"
@@ -698,7 +777,7 @@ void ns_graph::plot_object(const ns_graph_object & y, const ns_graph_object & x,
 								"axes.boundary(0)=" << axes.boundary(0) << "\n"
 								"spec.axes.axis_offset(0)=" << spec.axes.axis_offset(0) << "\n"
 								"dx=" << dx << "\n"
-								"border.x=" << border.x << "\n"
+								"border.x=" << border_bl.x << "\n"
 								"axes[3]=" << axes[3] << "\n"
 								"axes[2]=" << axes[2] << "\n"
 								"axes[1]=" << axes[1] << "\n"
@@ -739,10 +818,10 @@ void ns_graph::plot_object(const ns_graph_object & y, const ns_graph_object & x,
 					for (int i = 0; i < (int)y.y.size()-1; i++){
 						if ((y.y[i] < 0 || y.y[i+1] < 0) && !y.properties.draw_negatives)
 							continue;
-						int x0 = border.x + (unsigned int)(dx*(x.x[i]-axes.boundary(0)+ spec.axes.axis_offset(0))),
-							x1 = border.x + (unsigned int)(dx*(x.x[i+1]-axes.boundary(0)+ spec.axes.axis_offset(0))),
-							y0 = h-border.y - (unsigned int)(dy*(y.y[i]-axes.boundary(2)+ spec.axes.axis_offset(1))),
-							y1 = h-border.y - (unsigned int)(dy*(y.y[i+1]-axes.boundary(2)+ spec.axes.axis_offset(1)));
+						int x0 = border_bl.x + (unsigned int)(dx*(x.x[i]-axes.boundary(0)+ spec.axes.axis_offset(0))),
+							x1 = border_bl.x + (unsigned int)(dx*(x.x[i+1]-axes.boundary(0)+ spec.axes.axis_offset(0))),
+							y0 = h- border_bl.y - (unsigned int)(dy*(y.y[i]-axes.boundary(2)+ spec.axes.axis_offset(1))),
+							y1 = h- border_bl.y - (unsigned int)(dy*(y.y[i+1]-axes.boundary(2)+ spec.axes.axis_offset(1)));
 						if (debug_range_checking) {
 							if (x0 < 0 || x0 >= (int)w)
 								throw ns_ex("ns_graph::Could not draw line due to x0");
@@ -761,10 +840,10 @@ void ns_graph::plot_object(const ns_graph_object & y, const ns_graph_object & x,
 					for (int i = 0; i < (int)y.y.size()-1; i++){
 						if ((y.y[i] < 0 || y.y[i+1] < 0) && !y.properties.draw_negatives)
 							continue;
-						int x0 = border.x + (unsigned int)(dx*(x.x[i]-axes.boundary(0)+ spec.axes.axis_offset(0)))+1,
-							x1 = border.x + (unsigned int)(dx*(x.x[i+1]-axes.boundary(0)+ spec.axes.axis_offset(0))),
-							y0 = h-border.y - (unsigned int)(dy*(y.y[i]-axes.boundary(2)+ spec.axes.axis_offset(1))),
-							y1 = h-border.y - (unsigned int)(dy*(y.y[i+1]-axes.boundary(2)+ spec.axes.axis_offset(1)));
+						int x0 = border_bl.x + (unsigned int)(dx*(x.x[i]-axes.boundary(0)+ spec.axes.axis_offset(0)))+1,
+							x1 = border_bl.x + (unsigned int)(dx*(x.x[i+1]-axes.boundary(0)+ spec.axes.axis_offset(0))),
+							y0 = h- border_bl.y - (unsigned int)(dy*(y.y[i]-axes.boundary(2)+ spec.axes.axis_offset(1))),
+							y1 = h- border_bl.y - (unsigned int)(dy*(y.y[i+1]-axes.boundary(2)+ spec.axes.axis_offset(1)));
 						if (debug_range_checking) {
 							if (x0 < 0 || x0 >= (int)w)
 								throw ns_ex("ns_graph::Could not draw line due to x0");
@@ -796,9 +875,9 @@ void ns_graph::plot_object(const ns_graph_object & y, const ns_graph_object & x,
 						if (y.y[i] < 0 && !y.properties.draw_negatives)
 							continue;
 						double  p0(dx*(x.x[i]-axes.boundary(0)+ spec.axes.axis_offset(0)));
-						int x0 = border.x + (unsigned int)(p0-d_off),
-							x1 = border.x + (unsigned int)(p0+d_off),
-							y0 = h-border.y - (unsigned int)(dy*(y.y[i]-axes.boundary(2)+ spec.axes.axis_offset(1)));
+						int x0 = border_bl.x + (unsigned int)(p0-d_off),
+							x1 = border_bl.x + (unsigned int)(p0+d_off),
+							y0 = h-border_bl.y - (unsigned int)(dy*(y.y[i]-axes.boundary(2)+ spec.axes.axis_offset(1)));
 						if (debug_range_checking) {
 							if (x0 < 0 || x0 >= (int)w)throw ns_ex("ns_graph::Could not draw line due to x0");
 							if (x1 < 0 || x1 >= (int)w)
@@ -831,8 +910,8 @@ void ns_graph::plot_object(const ns_graph_object & y, const ns_graph_object & x,
 									shape_x >= -point_half_width && shape_x <= point_half_width)
 									color = &y.properties.point.color;
 								for (unsigned int c = 0; c < 3; c++){
-									int rx = 3*(border.x + (int)(dx*(x.x[i] - axes.boundary(0)+ spec.axes.axis_offset(0)) + shape_x))+c,
-										ry = (int)(h-border.y)-(int)(dy*(y.y[i]-axes.boundary(2)+ spec.axes.axis_offset(1)))+ shape_y;
+									int rx = 3*(border_bl.x + (int)(dx*(x.x[i] - axes.boundary(0)+ spec.axes.axis_offset(0)) + shape_x))+c,
+										ry = (int)(h-border_bl.y)-(int)(dy*(y.y[i]-axes.boundary(2)+ spec.axes.axis_offset(1)))+ shape_y;
 									if (debug_range_checking) {
 										if (ry < 0 || ry >= (int)h)
 											throw ns_ex("ns_graph::Could not draw point due to ry");
@@ -862,8 +941,8 @@ void ns_graph::plot_object(const ns_graph_object & y, const ns_graph_object & x,
 									if (!edge)
 										color = &y.properties.point.color;
 								for (unsigned int c = 0; c < 3; c++) {
-									int rx = 3 * (border.x + (int)(dx * (x.x[i] - axes.boundary(0) + spec.axes.axis_offset(0)) + shape_x)) + c,
-										ry = (int)(h - border.y) - (int)(dy * (y.y[i] - axes.boundary(2) + spec.axes.axis_offset(1))) + shape_y;
+									int rx = 3 * (border_bl.x + (int)(dx * (x.x[i] - axes.boundary(0) + spec.axes.axis_offset(0)) + shape_x)) + c,
+										ry = (int)(h - border_bl.y) - (int)(dy * (y.y[i] - axes.boundary(2) + spec.axes.axis_offset(1))) + shape_y;
 									if (debug_range_checking) {
 										if (ry < 0 || ry >= (int)h)
 											throw ns_ex("ns_graph::Could not draw point due to ry");
@@ -887,8 +966,8 @@ void ns_graph::plot_object(const ns_graph_object & y, const ns_graph_object & x,
 							for (int shape_x = -point_half_width -line_width; shape_x <= point_half_width + line_width; shape_x++){
 								const ns_color_8 * color(&y.properties.point.edge_color);
 								for (unsigned int c = 0; c < 3; c++){
-									int rx = 3*(border.x + (int)(dx*(x.x[i] - axes.boundary(0)+ spec.axes.axis_offset(0)) + shape_x))+c,
-										ry = (int)(h-border.y)-(int)(dy*(y.y[i]-axes.boundary(2)+ spec.axes.axis_offset(1)))+ shape_y;
+									int rx = 3*(border_bl.x + (int)(dx*(x.x[i] - axes.boundary(0)+ spec.axes.axis_offset(0)) + shape_x))+c,
+										ry = (int)(h- border_bl.y)-(int)(dy*(y.y[i]-axes.boundary(2)+ spec.axes.axis_offset(1)))+ shape_y;
 									if (debug_range_checking) {
 										if (ry < 0 || ry >= (int)h)
 											throw ns_ex("ns_graph::Could not draw vertical line due to ry");
@@ -908,9 +987,9 @@ void ns_graph::plot_object(const ns_graph_object & y, const ns_graph_object & x,
 		}
 	}
 	else if (y.type == ns_graph_object::ns_graph_vertical_line){
-		for (unsigned int _y = 0; _y < h-border.y- spec.dy*spec.axes.axis_offset(1); _y++){
+		for (unsigned int _y = border_tr.y; _y < h- border_bl.y- spec.dy*spec.axes.axis_offset(1); _y++){
 			for (unsigned int x = 0; x < y.x.size(); x++){
-				int rx = 3*(border.x + (unsigned int)(dx*(y.x[x]-axes.boundary(0)+ spec.axes.axis_offset(0))));
+				int rx = 3*(border_bl.x + (unsigned int)(dx*(y.x[x]-axes.boundary(0)+ spec.axes.axis_offset(0))));
 				for (unsigned int c = 0; c < 3; c++){
 					if (rx +c> 3*w) 
 						break;
@@ -923,8 +1002,8 @@ void ns_graph::plot_object(const ns_graph_object & y, const ns_graph_object & x,
 	}
 	else if (y.type == ns_graph_object::ns_graph_horizontal_line) {
 		for (unsigned int i = 0; i < y.y.size(); i++) {
-			for (unsigned int pixel_x = border.x; pixel_x < w - border.x; pixel_x++) {
-				int pixel_y = (int)(h - border.y-1) - (int)(dy*(y.y[i] - axes.boundary(2) + spec.axes.axis_offset(1)));
+			for (unsigned int pixel_x = border_bl.x; pixel_x < w - border_tr.x; pixel_x++) {
+				int pixel_y = (int)(h - border_bl.y-1) - (int)(dy*(y.y[i] - axes.boundary(2) + spec.axes.axis_offset(1)));
 				for (unsigned int c = 0; c < 3; c++) {
 					if (debug_range_checking && (pixel_y >= h || pixel_x >= w))
 						throw ns_ex("Graph vertical line error");
@@ -940,7 +1019,7 @@ void ns_graph::plot_object(const ns_graph_object & y, const ns_graph_object & x,
 
 void ns_graph::plot_object(const ns_graph_object & y, const ns_graph_object & x, ns_svg & svg, const ns_graph_specifics & spec){
 	const ns_graph_axes & axes(spec.axes);
-	const ns_vector_2i &border(spec.boundary);
+	const ns_vector_2i& border_bl(spec.boundary_bottom_and_left), & border_tr(spec.boundary_top_and_right);
 	const double &dx(spec.dx);
 	const double &dy(spec.dy);
 
@@ -969,8 +1048,8 @@ void ns_graph::plot_object(const ns_graph_object & y, const ns_graph_object & x,
 					for (unsigned int i = 0; i < x.x.size(); i++){
 						if ((y.y[i] < 0) && !y.properties.draw_negatives)
 							continue;
-						const double _y(h-border.y-dy*(y.y[i]-axes.boundary(2)+ spec.axes.axis_offset(1))),
-									_x(border.x +dx*(x.x[i] - axes.boundary(0)+ spec.axes.axis_offset(0)));
+						const double _y(h-border_bl.y-dy*(y.y[i]-axes.boundary(2)+ spec.axes.axis_offset(1))),
+									_x(border_bl.x +dx*(x.x[i] - axes.boundary(0)+ spec.axes.axis_offset(0)));
 						points.push_back(ns_vector_2d(_x,_y));
 					}
 					break;
@@ -980,10 +1059,10 @@ void ns_graph::plot_object(const ns_graph_object & y, const ns_graph_object & x,
 					for (unsigned int i = 0; i < x.x.size()-1; i++){
 						if ((y.y[i] < 0) && !y.properties.draw_negatives)
 							continue;
-						const double y0(h-border.y-dy*(y.y[i]-axes.boundary(2))),
-									 x0(border.x +dx*(x.x[i] - axes.boundary(0)));
-						const double y1(h-border.y-dy*(y.y[i+1]-axes.boundary(2))),
-									x1(border.x +dx*(x.x[i+1] - axes.boundary(0)));
+						const double y0(h- border_bl.y-dy*(y.y[i]-axes.boundary(2))),
+									 x0(border_bl.x +dx*(x.x[i] - axes.boundary(0)));
+						const double y1(h- border_bl.y-dy*(y.y[i+1]-axes.boundary(2))),
+									x1(border_bl.x +dx*(x.x[i+1] - axes.boundary(0)));
 						points.push_back(ns_vector_2d(x0,y0));
 						points.push_back(ns_vector_2d(x1,y0));
 						points.push_back(ns_vector_2d(x1,y1));
@@ -1008,10 +1087,10 @@ void ns_graph::plot_object(const ns_graph_object & y, const ns_graph_object & x,
 					for (int i = 0; i < (int)y.y.size()-1; i++){
 						if ((y.y[i] < 0 || y.y[i+1] < 0) && !y.properties.draw_negatives)
 							continue;
-						double	x0 = border.x + (dx*(x.x[i]-axes.boundary(0))),
-								x1 = border.x + (dx*(x.x[i+1]-axes.boundary(0))),
-								y0 = h-border.y - (dy*(y.y[i]-axes.boundary(2))),
-								y1 = h-border.y - (dy*(y.y[i+1]-axes.boundary(2)));
+						double	x0 = border_bl.x + (dx*(x.x[i]-axes.boundary(0))),
+								x1 = border_bl.x + (dx*(x.x[i+1]-axes.boundary(0))),
+								y0 = h- border_bl.y - (dy*(y.y[i]-axes.boundary(2))),
+								y1 = h- border_bl.y - (dy*(y.y[i+1]-axes.boundary(2)));
 						points.push_back(ns_vector_2d(x0,y0));
 						points.push_back(ns_vector_2d(x1,y1));
 					}
@@ -1022,9 +1101,9 @@ void ns_graph::plot_object(const ns_graph_object & y, const ns_graph_object & x,
 					for (int i = 0; i < (int)y.y.size()-1; i++){
 						if ((y.y[i] < 0) && !y.properties.draw_negatives)
 						continue;
-						double	x0 = border.x + (dx*(x.x[i]-axes.boundary(0))),
-								x1 = border.x + (dx*(x.x[i+1]-axes.boundary(0))),
-								y0 = h-border.y - (dy*(y.y[i]-axes.boundary(2)));
+						double	x0 = border_bl.x + (dx*(x.x[i]-axes.boundary(0))),
+								x1 = border_bl.x + (dx*(x.x[i+1]-axes.boundary(0))),
+								y0 = h- border_bl.y - (dy*(y.y[i]-axes.boundary(2)));
 						points.push_back(ns_vector_2d(x0,y0));
 						points.push_back(ns_vector_2d(x1,y0));
 					}
@@ -1046,7 +1125,7 @@ void ns_graph::plot_object(const ns_graph_object & y, const ns_graph_object & x,
 			for (unsigned int i = 0; i < y.y.size(); i++){
 				if ((y.y[i] < 0) && !y.properties.draw_negatives)
 					continue;
-				ns_vector_2d center(spec.boundary.x + dx*(x.x[i] - axes.boundary(0)),h - (spec.boundary.y+dy*(y.y[i]-axes.boundary(2))));
+				ns_vector_2d center(border_bl.x + dx*(x.x[i] - axes.boundary(0)),h - (border_bl.y+dy*(y.y[i]-axes.boundary(2))));
 				ns_vector_2d offset(point_half_width,point_half_width);
 				if (y.hyperlinks.size() <= i)
 					svg.draw_rectangle(center-offset,center+offset,y.properties.point.edge_color,y.properties.point.color,y.properties.point.opacity,(y.properties.point.edge_width > 0),true,y.properties.point.edge_width);
@@ -1059,8 +1138,8 @@ void ns_graph::plot_object(const ns_graph_object & y, const ns_graph_object & x,
 		}
 	}
 	else if (y.type == ns_graph_object::ns_graph_vertical_line){
-		unsigned int x = (border.x + (unsigned int)(dx*(y.x[0]-axes.boundary(2))));
-		svg.draw_line(ns_vector_2d(x,0),ns_vector_2d(x,h-border.y),y.properties.line.color,(float).3);
+		unsigned int x = (border_bl.x + (unsigned int)(dx*(y.x[0]-axes.boundary(2))));
+		svg.draw_line(ns_vector_2d(x, border_tr.y),ns_vector_2d(x,h- border_bl.y),y.properties.line.color,(float).3);
 	}
 	else
 		throw ns_ex("ns_graph::Support for specified graph object not yet supported");

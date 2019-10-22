@@ -382,6 +382,7 @@ std::string ns_check_analyses_are_up_to_date(const unsigned long region_id, cons
 	if (region_id == 0)
 		sql << "r.sample_id = s.id AND s.experiment_id = " << experiment_id;
 	else sql << "r.sample_id = s.id AND r.id = " << region_id ;
+	sql << " AND r.censored = 0 AND s.censored = 0 ";
 	ns_sql_result res;
 	sql.get_rows(res);
 	std::string output;

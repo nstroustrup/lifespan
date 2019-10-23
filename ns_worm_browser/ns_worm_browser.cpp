@@ -1880,6 +1880,8 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 	const std::string experiment_name(data_selector.current_experiment_name());
 	ns_sql & sql(get_sql_connection());
 
+	bool test_strict_ordering(true);
+
 	ns_64_bit experiment_id = data_selector.current_experiment_id();
 	ns_64_bit plate_id = 0;
 	std::string device_name;
@@ -2126,6 +2128,7 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 							ns_death_time_annotation a(movement_results.samples[i].regions[j]->time_path_image_analyzer->group(g).paths[p].sticky_properties());
 							if (a.is_excluded() ||
 								a.is_censored() ||
+								a.flag.event_should_be_excluded() ||
 								movement_results.samples[i].regions[j]->time_path_image_analyzer->group(g).paths[p].sticky_properties().event_observation_type != ns_death_time_annotation::ns_standard ||
 								movement_results.samples[i].regions[j]->time_path_image_analyzer->group(g).paths[p].by_hand_death_time().fully_unbounded() ||
 								movement_results.samples[i].regions[j]->time_path_image_analyzer->group(g).paths[p].sticky_properties().number_of_worms() > 1)
@@ -2141,11 +2144,19 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 							//add the observation to each group it belongs to--the "all observations" group and its genotype-specific group.
 							const std::string plate_type_summary(movement_results.samples[i].regions[j]->metadata.plate_type_summary("-", true));
 							observations_sorted_by_genotype["all"].add_observation(NS_CURRENT_POSTURE_MODEL_VERSION, a, path, internal_device_id);
+							if (test_strict_ordering)
+							observations_sorted_by_genotype["all_with_strict_event_ordering"].add_observation(NS_CURRENT_POSTURE_MODEL_VERSION, a, path, internal_device_id);
 							observations_sorted_by_genotype[plate_type_summary].add_observation(NS_CURRENT_POSTURE_MODEL_VERSION, a, path, internal_device_id);
 							auto c1 = number_of_individuals_per_genotype.find("all");
-							if (c1 == number_of_individuals_per_genotype.end())
+							if (c1 == number_of_individuals_per_genotype.end()) 
 								number_of_individuals_per_genotype["all"] = 1;
-							else c1->second++;
+							else c1->second++; 
+							if (test_strict_ordering){
+								c1 = number_of_individuals_per_genotype.find("all_with_strict_event_ordering");
+								if (c1 == number_of_individuals_per_genotype.end()) 
+									number_of_individuals_per_genotype["all_with_strict_event_ordering"] = 1;
+								else c1->second++;
+							}
 							auto c2 = number_of_individuals_per_genotype.find(plate_type_summary);
 							if (c2 == number_of_individuals_per_genotype.end())
 								number_of_individuals_per_genotype[plate_type_summary] = 1;

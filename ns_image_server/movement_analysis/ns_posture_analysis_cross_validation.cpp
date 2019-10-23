@@ -373,7 +373,6 @@ struct ns_hmm_cross_validation_manager {
 			validation_runs_sorted_by_validation_type.erase("genotype");
 		else set.description = "Genotype Cross-Validation";
 	}
-
 };
 
 
@@ -411,10 +410,9 @@ void ns_run_hmm_cross_validation(std::string & results_text, ns_image_server_res
 	for (auto p = observations_sorted_by_genotype.begin(); p != observations_sorted_by_genotype.end(); p++) {
 		std::cout << ns_to_string_short((100.0 * estimators_compiled) / observations_sorted_by_genotype.size(), 2) << "%...";
 		estimators_compiled++;
-		//xxx
-		//ns_acquire_for_scope<ns_ostream> all_observations(image_server.results_storage.time_path_image_analysis_quantification(sub, std::string("hmm_obs=") + p->first, true, sql).output());
-		//p->second.write_observation_data(all_observations()(), experiment_name);
-		//all_observations.release();
+		ns_acquire_for_scope<ns_ostream> all_observations(image_server.results_storage.time_path_image_analysis_quantification(sub, std::string("hmm_obs=") + p->first, true, sql).output());
+		p->second.write_observation_data(all_observations()(), sub.experiment_name);
+		all_observations.release();
 	}
 	std::cout << "\nPrepping for Cross Validation...\n";
 	//set up models for cross validation
@@ -429,7 +427,7 @@ void ns_run_hmm_cross_validation(std::string & results_text, ns_image_server_res
 		auto all_genotypes = observations_sorted_by_genotype.find("all");
 		if (all_genotypes != observations_sorted_by_genotype.end())
 			different_validation_approaches_for_each_genotype["all"].generate_genotype_cross_validations_to_test(k_fold_validation, all_genotypes->second, metadata_cache);
-	}
+	} 
 	if (different_validation_approaches_for_each_genotype.size() == 0)
 		results_text += "No genotype or condition specific HMM models were built";
 	else {
@@ -452,6 +450,8 @@ void ns_run_hmm_cross_validation(std::string & results_text, ns_image_server_res
 		num_built++;
 		if (p->first == "all")
 			model_building_and_testing_info[p->first] = "== HMM model built from all animal types ==\n";
+		else if (p->first == "all_with_strict_event_ordering")
+			model_building_and_testing_info[p->first] = "== HMM model built from all animal types using a restricted state ordering scheme ==\n";
 		else {
 			const std::string plate_type_long = metadata_cache_by_name[p->first].device_regression_match_description();
 			model_building_and_testing_info[p->first] = "== HMM model for group \"" + plate_type_long + "\" ==\n";
@@ -460,7 +460,10 @@ void ns_run_hmm_cross_validation(std::string & results_text, ns_image_server_res
 		for (auto q = p->second.validation_runs_sorted_by_validation_type.begin(); q != p->second.validation_runs_sorted_by_validation_type.end(); q++) {
 			for (auto r = q->second.replicates.begin(); r != q->second.replicates.end();) {
 				try {
-					r->training_set.build_estimator_from_observations(model_building_and_testing_info[p->first], ns_emperical_posture_quantification_value_estimator::ns_all_states);
+					ns_emperical_posture_quantification_value_estimator::ns_states_permitted states = ns_emperical_posture_quantification_value_estimator::ns_all_states;
+					if (p->first == "all_with_strict_event_ordering")
+						states = ns_emperical_posture_quantification_value_estimator::ns_no_expansion_while_alive;
+					r->training_set.build_estimator_from_observations(model_building_and_testing_info[p->first], states);
 					++r;
 				}
 				catch (ns_ex & ex) {
@@ -506,7 +509,7 @@ void ns_run_hmm_cross_validation(std::string & results_text, ns_image_server_res
 			const std::string plate_type_summary(movement_results.samples[i].regions[j]->metadata.plate_type_summary("-", true));
 			for (auto p = different_validation_approaches_for_each_genotype.begin(); p != different_validation_approaches_for_each_genotype.end(); p++) {
 
-				if (p->first == "all" || p->first == plate_type_summary) {
+				if (p->first == "all" || p->first == "all_with_strict_event_ordering" || p->first == plate_type_summary) {
 					for (auto cross_validation_runs = p->second.validation_runs_sorted_by_validation_type.begin(); cross_validation_runs != p->second.validation_runs_sorted_by_validation_type.end(); ++cross_validation_runs) {
 
 						//xxx 

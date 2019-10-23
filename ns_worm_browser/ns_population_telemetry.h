@@ -11,8 +11,8 @@ struct ns_worm_lookup_info {
 	ns_stationary_path_id id;
 };
 struct ns_lookup_index {
-	ns_lookup_index(const unsigned long mt, const unsigned long dt) :movement_time(mt), death_associated_expansion_time(dt) {}
-	unsigned long movement_time, death_associated_expansion_time;
+	ns_lookup_index(const double mt, const double dt) :movement_time(mt), death_associated_expansion_time(dt) {}
+	double movement_time, death_associated_expansion_time;
 };
 bool operator <(const ns_lookup_index& a, const ns_lookup_index& b);
 
@@ -269,8 +269,8 @@ private:
 		else {
 			axes2.boundary(0) = tmin * .95;
 			axes2.boundary(1) = tmax * 1.05;
-			axes2.boundary(2) = ymin*.95;
-			axes2.boundary(3) = ymax * 1.05;
+			axes2.boundary(2) = min(ymin*.95, ymin * 1.05);	//could be negative
+			axes2.boundary(3) = max(ymax*.95,ymax * 1.05);
 		}
 
 		movement_vs_posture.set_graph_display_options("", axes2, (1.1*movement_vs_posture_image.properties().width) / (float)movement_vs_posture_image.properties().height);
@@ -780,7 +780,7 @@ public:
 							y->time.best_estimate_event_time_for_possible_partially_unbounded_interval() != 0) {
 							if (l->properties.is_excluded() || l->properties.is_censored() || l->properties.flag.event_should_be_excluded())
 								continue;
-							unsigned long mtt(x->time.best_estimate_event_time_for_possible_partially_unbounded_interval()),
+							double mtt(x->time.best_estimate_event_time_for_possible_partially_unbounded_interval()),
 								ett(y->time.best_estimate_event_time_for_possible_partially_unbounded_interval());
 							double mt(((double)mtt - metadata.time_at_which_animals_had_zero_age) / 60.0 / 60.0 / 24),
 								et(((double)ett - metadata.time_at_which_animals_had_zero_age) / 60.0 / 60.0 / 24);

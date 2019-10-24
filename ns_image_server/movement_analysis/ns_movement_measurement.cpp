@@ -89,25 +89,24 @@ void ns_worm_movement_summary_series::generate_censoring_annotations(const ns_re
 	//unsigned long index_of_last_death = calculate_missing_moving_worms(missing_worm_return_strategy);
 	if (measurements.size() == 1)
 		throw ns_ex("Generating censoring annotation for summary series with only one observation!");
-	if (!measurements.empty() && estimated_number_of_worms_alive_at_measurement_end > 0){
-		set.add(
-			ns_death_time_annotation(ns_moving_worm_disappearance,
-			0,m.region_id,
-			ns_death_time_annotation_time_interval((measurements.rbegin()+1)->time,measurements.rbegin()->time),
-			ns_vector_2i(0,0),
-			ns_vector_2i(0,0),
+	if (!measurements.empty() && estimated_number_of_worms_alive_at_measurement_end > 0){		
+		ns_death_time_annotation b(ns_moving_worm_disappearance,
+			0, m.region_id,
+			ns_death_time_annotation_time_interval((measurements.rbegin() + 1)->time, measurements.rbegin()->time),
+			ns_vector_2i(0, 0),
+			ns_vector_2i(0, 0),
 			ns_death_time_annotation::ns_censored_at_end_of_experiment,
-			ns_death_time_annotation_event_count(estimated_number_of_worms_alive_at_measurement_end,0),ns_current_time(),
+			ns_death_time_annotation_event_count(estimated_number_of_worms_alive_at_measurement_end, 0), ns_current_time(),
 			ns_death_time_annotation::ns_lifespan_machine,
 			ns_death_time_annotation::ns_inferred_censoring_event,
-			ns_stationary_path_id(0,0, analysis_id),false,false,ns_plate_subregion_info(),
+			ns_stationary_path_id(0, 0, analysis_id), false, false, ns_plate_subregion_info(),
 			ns_death_time_annotation::ns_explicitly_observed,
 			"Apparently Moving at end of experiment",
-			1,0,
+			1, 0,
 			this->multiworm_cluster_censoring_strategy,
-			missing_worm_return_strategy,ns_death_time_annotation::ns_standard,
-			this->by_hand_strategy)
-		);
+			missing_worm_return_strategy, ns_death_time_annotation::ns_standard,
+			this->by_hand_strategy);
+		set.add(b);
 	}
 
 	for (unsigned int i = 1; i < measurements.size(); i++) {
@@ -149,25 +148,25 @@ void ns_worm_movement_summary_series::generate_censoring_annotations(const ns_re
 				image_server.register_server_event(ns_image_server::ns_register_in_central_db, ns_ex("In region ") << m.sample_name << "::" << m.region_name << "(" << m.region_id << "): A large number, " << ns_to_string(missing_censored) << ", animals went missing in a single timepoint.  Consider inspecting at the movement timeseries file for this region for unusual population dynamics.");
 			//if (missing_censored == 35)
 			//	cout << "WHA";
-			set.add(
-				ns_death_time_annotation(ns_moving_worm_disappearance,
-					0, m.region_id,
-					ns_death_time_annotation_time_interval(measurements[i - 1].time, measurements[i].time),
-					ns_vector_2i(0, 0),
-					ns_vector_2i(0, 0),
-					ns_death_time_annotation::ns_missing_censored,
-					ns_death_time_annotation_event_count(missing_censored, 0), ns_current_time(),
-					ns_death_time_annotation::ns_lifespan_machine,
-					ns_death_time_annotation::ns_inferred_censoring_event,
-					ns_stationary_path_id(0, 0, analysis_id), false, false, ns_plate_subregion_info(),
-					ns_death_time_annotation::ns_explicitly_observed,
-					"An individual went missing from the region and never returned",
-					1, 0,
-					this->multiworm_cluster_censoring_strategy,
-					missing_worm_return_strategy,
-					ns_death_time_annotation::ns_standard,
-					this->by_hand_strategy)
-			);
+			
+			ns_death_time_annotation b(ns_moving_worm_disappearance,
+				0, m.region_id,
+				ns_death_time_annotation_time_interval(measurements[i - 1].time, measurements[i].time),
+				ns_vector_2i(0, 0),
+				ns_vector_2i(0, 0),
+				ns_death_time_annotation::ns_missing_censored,
+				ns_death_time_annotation_event_count(missing_censored, 0), ns_current_time(),
+				ns_death_time_annotation::ns_lifespan_machine,
+				ns_death_time_annotation::ns_inferred_censoring_event,
+				ns_stationary_path_id(0, 0, analysis_id), false, false, ns_plate_subregion_info(),
+				ns_death_time_annotation::ns_explicitly_observed,
+				"An individual went missing from the region and never returned",
+				1, 0,
+				this->multiworm_cluster_censoring_strategy,
+				missing_worm_return_strategy,
+				ns_death_time_annotation::ns_standard,
+				this->by_hand_strategy);
+			set.add(b);
 		}
 	}
 }

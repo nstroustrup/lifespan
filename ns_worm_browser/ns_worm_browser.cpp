@@ -4011,7 +4011,7 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 		machine_set.include_only_events_detected_by_machine();
 		machine_hand_set.include_only_events_detected_by_machine();
 		if (machine_set.curves.size() == 0)
-			throw ns_ex("The current experiment does not have any valid plates.");
+			throw ns_ex("No deaths were observed on any plate in the current experiment.  This could be because no worms died during the observation interval, or because the worm detection or posture analysis model files do not match the data.");
 
 		cerr << "Computing Risk Time series...\n";
 		machine_set.generate_survival_statistics();

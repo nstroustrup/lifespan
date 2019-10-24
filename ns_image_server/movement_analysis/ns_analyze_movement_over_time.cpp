@@ -298,16 +298,18 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 		metadata.load_from_db(job.region_id, "", sql);
 	}
 
-	//this is where death time annotations are written to disk
+	//this is where machine death time annotations are written to disk
 	ns_death_time_annotation_set set;
 	time_path_image_analyzer.produce_death_time_annotations(set);
+	
+	//now we run the censoring calculations!
 	ns_death_time_annotation_compiler compiler;
 	compiler.add(set);
 	compiler.add(by_hand_region_annotations.annotations);
 	std::vector<ns_ex> censoring_file_io_problems;
 	ns_ex censoring_problem;
+	
 	try {
-		ns_death_time_annotation_set censoring_set;
 		//calculate censoring events according to different censoring strategies
 		ns_death_time_annotation::ns_by_hand_annotation_integration_strategy by_hand_annotation_integration_strategy[2] =
 		{ ns_death_time_annotation::ns_machine_annotations_if_no_by_hand,ns_death_time_annotation::ns_only_machine_annotations };
@@ -315,7 +317,7 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 		for (unsigned int by_hand_annotation_strategy = 0; by_hand_annotation_strategy < 2; by_hand_annotation_strategy++) {
 			//previously multiple different censoring strategies were applied and all data written to disk.
 			//this allowed users to compare different strategies and identify potential issues.
-			//However, this diagnostic was almost never performed and simply caused confusion
+			//However, this diagnostic was almost never performed and the multitude of different files was confusing
 			//So now we just choose the one that in our experience works the best.
 
 			//for (unsigned int censoring_strategy = ns_death_time_annotation::ns_discard_multi_worm_clusters; censoring_strategy < (int)ns_death_time_annotation::ns_number_of_multiworm_censoring_strategies; censoring_strategy++) {
@@ -337,7 +339,7 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 					(ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy,
 					missing_return_strategy,
 					compiler, ns_include_unchanged);
-				summary_series.generate_censoring_annotations(metadata, time_path_image_analyzer.db_analysis_id(),censoring_set);
+				summary_series.generate_censoring_annotations(metadata, time_path_image_analyzer.db_analysis_id(),set);
 				try {
 					ns_image_server_results_file movement_timeseries(image_server->results_storage.movement_timeseries_data(
 						by_hand_annotation_integration_strategy[by_hand_annotation_strategy],
@@ -354,13 +356,11 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 					censoring_file_io_problems.push_back(ex);
 				}
 			//}
-			set.add(censoring_set);
 		}
 	}
 	catch (ns_ex & ex) {
 		censoring_problem = ex;
 	}
-
 
 	//output worm movement and death time annotations to disk
 

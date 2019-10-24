@@ -34,6 +34,10 @@ public:
 	void add(const ns_death_time_annotation& a);
 	void add(const ns_death_time_annotation_set& s);
 	std::vector<ns_death_time_annotation> events;
+	void reserve(const std::vector<ns_death_time_annotation>::size_type& s) {
+		if (events.size() < s)
+			events.reserve(s);
+	}
 	bool compare(const ns_death_time_annotation_set& set) const;
 	//make the set act like a vector
 	ns_death_time_annotation & operator[](const unsigned long i){return events[i];}

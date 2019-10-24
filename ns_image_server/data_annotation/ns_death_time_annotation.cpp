@@ -2434,7 +2434,7 @@ ns_death_time_annotation_time_interval ns_death_time_annotation_compiler_region:
 typedef enum { ns_generate_machine_annotations, ns_generate_by_hand_annotations, ns_generate_best_annotation } ns_annotation_generation_type;
 
 
-void ns_add_normal_death_to_set(const ns_annotation_generation_type & requested_annotation_type, ns_dying_animal_description_base<const ns_death_time_annotation>& death, ns_death_time_annotation properties_to_transfer, const ns_death_time_annotation_time_interval & latest_interval, const ns_death_time_annotation::ns_by_hand_annotation_integration_strategy & by_hand_annotation_integration_strategy, const  const bool use_by_hand_worm_cluster_annotations,ns_death_time_event_compiler_time_aggregator & aggregator) {
+void ns_add_normal_death_to_set(const ns_annotation_generation_type & requested_annotation_type, ns_dying_animal_description_base<const ns_death_time_annotation>& death, ns_death_time_annotation properties_to_transfer, const ns_death_time_annotation_time_interval & latest_interval, const ns_death_time_annotation::ns_by_hand_annotation_integration_strategy & by_hand_annotation_integration_strategy, const bool use_by_hand_worm_cluster_annotations,ns_death_time_event_compiler_time_aggregator & aggregator) {
 	//add 1) death 2) slow movement cessation, 3) fast movement cessation and 3) death time expansion start 4) death time expansion stop 5) death time contraction start 6) death time contraction stop
 	const ns_death_time_annotation* a[7] = { 0,0,0,0,0,0,0 };
 

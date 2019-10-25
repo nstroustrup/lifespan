@@ -582,6 +582,7 @@
     <ClCompile Include="..\ns_image_server\image_processing\ns_spine_drawer.cpp" />
     <ClCompile Include="..\ns_image_server\image_processing\ns_subpixel_image_alignment.cpp" />
     <ClCompile Include="..\ns_image_server\image_processing\ns_worm_detection_constants.cpp" />
+    <ClCompile Include="..\ns_image_server\image_processing\ns_worm_detection_model_training.cpp" />
     <ClCompile Include="..\ns_image_server\image_processing\ns_worm_detector.cpp" />
     <ClCompile Include="..\ns_image_server\image_processing\ns_worm_training_set_image.cpp" />
     <ClCompile Include="..\ns_image_server\image_processing\ns_xvid.cpp" />
@@ -600,8 +601,8 @@
     <ClCompile Include="..\ns_image_server\movement_analysis\ns_experiment_storyboard.cpp" />
     <ClCompile Include="..\ns_image_server\movement_analysis\ns_hidden_markov_model_posture_analyzer.cpp" />
     <ClCompile Include="..\ns_image_server\movement_analysis\ns_machine_analysis_data_loader.cpp" />
-    <ClCompile Include="..\ns_image_server\movement_analysis\ns_machine_learning_training_set.cpp" />
     <ClCompile Include="..\ns_image_server\movement_analysis\ns_movement_measurement.cpp" />
+    <ClCompile Include="..\ns_image_server\movement_analysis\ns_posture_analysis_cross_validation.cpp" />
     <ClCompile Include="..\ns_image_server\movement_analysis\ns_time_path_image_analyzer.cpp" />
     <ClCompile Include="..\ns_image_server\movement_analysis\ns_time_path_solver.cpp" />
     <ClCompile Include="..\ns_image_server\statistics\ns_normal_distribution.cpp" />
@@ -709,6 +710,7 @@
     <ClInclude Include="..\ns_image_server\image_processing\ns_spine_drawer.h" />
     <ClInclude Include="..\ns_image_server\image_processing\ns_svm_model_specification.h" />
     <ClInclude Include="..\ns_image_server\image_processing\ns_worm_detection_constants.h" />
+    <ClInclude Include="..\ns_image_server\image_processing\ns_worm_detection_model_training.h" />
     <ClInclude Include="..\ns_image_server\image_processing\ns_worm_detector.h" />
     <ClInclude Include="..\ns_image_server\image_processing\ns_worm_training_set_image.h" />
     <ClInclude Include="..\ns_image_server\image_processing\ns_xvid.h" />
@@ -741,7 +743,6 @@
     <ClInclude Include="..\ns_image_server\movement_analysis\ns_experiment_storyboard.h" />
     <ClInclude Include="..\ns_image_server\movement_analysis\ns_hidden_markov_model_posture_analyzer.h" />
     <ClInclude Include="..\ns_image_server\movement_analysis\ns_image_server_time_path_inferred_worm_aggregator.h" />
-    <ClInclude Include="..\ns_image_server\movement_analysis\ns_machine_learning_training_set.h" />
     <ClInclude Include="..\ns_image_server\movement_analysis\ns_time_path_image_analyzer.h" />
     <ClInclude Include="..\ns_image_server\movement_analysis\ns_time_path_posture_movement_solution.h" />
     <ClInclude Include="..\ns_image_server\movement_analysis\ns_time_path_solver.h" />

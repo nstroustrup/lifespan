@@ -37,7 +37,7 @@
 #include "ns_resampler.h"
 #include "ns_detected_worm_info.h"
 #include "ns_progress_reporter.h"
-#include "ns_machine_learning_training_set.h"
+#include "ns_worm_detection_model_training.h"
 #include "ns_xml.h"
 #include "ns_time_path_solver.h"
 //#include "ns_time_path_analyzer.h"
@@ -56,6 +56,7 @@ using namespace std;
 #include "ns_experiment_storyboard_annotater.h"
 #include "ns_death_time_solo_posture_annotater.h"
 #include "ns_worm_detection_set_annotater.h"
+#include "ns_posture_analysis_cross_validation.h"
 
 extern bool output_debug_messages;
 extern std::ofstream debug_output;
@@ -678,7 +679,6 @@ public:
 	void export_experiment_data(const unsigned long experiment_id);
 	bool import_experiment_data(const std::string & database_name,const std::string & directory, const bool reuse_database);
 	
-	typedef enum{ns_lifespan,ns_thermotolerance,ns_quiecent ,ns_v2} ns_parameter_set_range;
 	typedef enum{ns_whole_experiment,ns_device,ns_plate} ns_optimization_subject;
 	void output_movement_analysis_optimization_data(const ns_optimization_subject & subject, const ns_parameter_set_range & range, bool run_posture, bool run_expansion);
 

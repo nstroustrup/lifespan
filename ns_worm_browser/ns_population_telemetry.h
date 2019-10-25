@@ -11,8 +11,8 @@ struct ns_worm_lookup_info {
 	ns_stationary_path_id id;
 };
 struct ns_lookup_index {
-	ns_lookup_index(const unsigned long mt, const unsigned long dt) :movement_time(mt), death_associated_expansion_time(dt) {}
-	unsigned long movement_time, death_associated_expansion_time;
+	ns_lookup_index(const double mt, const double dt) :movement_time(mt), death_associated_expansion_time(dt) {}
+	double movement_time, death_associated_expansion_time;
 };
 bool operator <(const ns_lookup_index& a, const ns_lookup_index& b);
 
@@ -22,13 +22,23 @@ struct ns_survival_graph {
 	std::string name;
 	ns_color_8 color;
 };
+
+struct ns_survival_plot_data_grouping {
+	ns_survival_plot_data_grouping() {}
+	ns_survival_plot_data_grouping(const ns_64_bit& r, const std::string& s, const ns_color_8& c):output_location_id(r),group_name(s),color(c){	}
+	ns_64_bit output_location_id;
+	std::string group_name;
+	ns_color_8 color;
+};
+
+
 class ns_population_telemetry {
 public:
 	typedef enum { ns_none, ns_survival, ns_movement_vs_posture, ns_number_of_graph_types } ns_graph_contents;
 	typedef enum { ns_group_by_device, ns_group_by_strain, ns_aggregate_all, ns_group_by_death_type, ns_survival_grouping_num} ns_survival_grouping;
 	typedef enum { ns_plot_death_times_absolute, ns_plot_death_times_residual,ns_movement_plot_num } ns_movement_plot_type;
 	typedef enum { ns_plot_movement_death,ns_plot_expansion_death, ns_death_plot_num } ns_death_plot_type;
-	typedef enum { ns_plot_death_types, ns_by_hand_machine,ns_regression_type_num } ns_regression_type;
+	typedef enum { ns_plot_death_types, ns_by_hand_machine,ns_best_guess_vs_best_guess,ns_regression_type_num } ns_regression_type;
 	static std::string survival_grouping_name(const ns_survival_grouping& g) {
 		switch (g) {
 		case ns_group_by_strain:
@@ -65,6 +75,8 @@ public:
 			return "Death Types";
 		case ns_by_hand_machine:
 			return "By hand vs Machine";
+		case ns_best_guess_vs_best_guess:
+			return "Best Guess";
 		default: throw ns_ex("Unknown movement plot type");
 		}
 	}
@@ -105,17 +117,20 @@ public:
 	ns_death_plot_type death_plot;
 	ns_movement_plot_type movement_plot;
 	ns_regression_type regression_plot;
-
+	void plot_death_time_expansion(bool plot) {
+		plot_death_time_expansion_ = false;
+	}
 private:
 
-
+	bool plot_death_time_expansion_;
 	bool _show;
 	unsigned long group_id;
-	ns_image_standard survival_image, movement_vs_posture_image;
+	ns_image_standard survival_image,survival_image_legend, movement_vs_posture_image, movement_vs_posture_image_legend;
 	ns_graph survival,movement_vs_posture;
 	ns_graph_specifics survival_specifics, movement_vs_posture_specifics;
 	std::vector<ns_survival_graph> survival_curves;
 	std::vector<ns_survival_graph> movement_vs_posture_vals;
+	std::string survival_curve_title, survival_curve_note, movement_vs_posture_title, movement_vs_posture_note;
 	std::string movement_vs_posture_x_axis_label, movement_vs_posture_y_axis_label;
 	ns_color_8 movement_vs_posture_x_axis_color, movement_vs_posture_y_axis_color;
 	ns_graph_object time_vals, unity_line;
@@ -161,6 +176,7 @@ private:
 			survival_curves[i].vals.properties.line.width = 2;
 			survival_curves[i].vals.properties.point.draw = false;
 			survival_curves[i].vals.properties.draw_negatives = false;
+			survival_curves[i].vals.data_label = survival_curves[i].name;
 			survival.add_reference(&survival_curves[i].vals);
 		}
 		survival.x_axis_label = "Age (days)";
@@ -176,6 +192,7 @@ private:
 
 		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Rendering survival graph"));
 		survival_specifics = survival.draw(survival_image);
+		survival.draw_legend(survival_curve_title,20,true,survival_image_legend);
 
 		if (graph_contents != ns_movement_vs_posture)
 			return;
@@ -239,41 +256,36 @@ private:
 			movement_vs_posture_vals[i].vals.properties.point.edge_color = ns_color_8(0, 0, 0);
 			movement_vs_posture_vals[i].vals.properties.point.edge_width = 1;
 			movement_vs_posture_vals[i].vals.properties.point.point_shape = ns_graph_color_set::ns_circle;
+			movement_vs_posture_vals[i].vals.data_label = movement_vs_posture_vals[i].name;
 			movement_vs_posture.add_reference(&movement_vs_posture_vals[i].vals);
 		}
 
 
 		ns_graph_axes axes2;
 		if (movement_plot == ns_plot_death_times_absolute) {
-			axes2.boundary(0) = axes2.boundary(2) = tmin;
-			axes2.boundary(1) = axes2.boundary(3) = tmax;
+			axes2.boundary(0) = axes2.boundary(2) = tmin * .95;
+			axes2.boundary(1) = axes2.boundary(3) = tmax*1.05;
 		}
 		else {
-			axes2.boundary(0) = tmin;
-			axes2.boundary(1) = tmax;
-			axes2.boundary(2) = ymin;
-			axes2.boundary(3) = ymax;
+			axes2.boundary(0) = tmin * .95;
+			axes2.boundary(1) = tmax * 1.05;
+			axes2.boundary(2) = min(ymin*.95, ymin * 1.05);	//could be negative
+			axes2.boundary(3) = max(ymax*.95,ymax * 1.05);
 		}
 
-		movement_vs_posture.set_graph_display_options("", axes2, movement_vs_posture_image.properties().width / (float)movement_vs_posture_image.properties().height);
+		movement_vs_posture.set_graph_display_options("", axes2, (1.1*movement_vs_posture_image.properties().width) / (float)movement_vs_posture_image.properties().height);
 		movement_vs_posture_specifics = movement_vs_posture.draw(movement_vs_posture_image);
-		/*for (unsigned long y = 0; y < movement_vs_posture_image.properties().height; y++)
-			for (unsigned long x = 0; x < movement_vs_posture_image.properties().width; x++)
-				for (unsigned long c = 0; c < 3; c++)
-					movement_vs_posture_image[y][3 * x + c] = 125;*/
-
-
-
-
+		movement_vs_posture.draw_legend(movement_vs_posture_title, 20, true, movement_vs_posture_image_legend);
+	
 	}
 	inline void map_value_from_survival_onto_image(const float& x, const float& y, unsigned long& x1, unsigned long& y1) {
-		x1 = survival_specifics.boundary.x + (unsigned int)(survival_specifics.dx * (x - survival_specifics.axes.boundary(0) + survival_specifics.axes.axis_offset(0)));
-		y1 = survival_image.properties().height - survival_specifics.boundary.y - (unsigned int)(survival_specifics.dy * (y - survival_specifics.axes.boundary(2) + survival_specifics.axes.axis_offset(1)));
+		x1 = survival_specifics.boundary_bottom_and_left.x + (unsigned int)(survival_specifics.dx * (x - survival_specifics.axes.boundary(0) + survival_specifics.axes.axis_offset(0)));
+		y1 = survival_image.properties().height - survival_specifics.boundary_bottom_and_left.y - (unsigned int)(survival_specifics.dy * (y - survival_specifics.axes.boundary(2) + survival_specifics.axes.axis_offset(1)));
 	}
 
 	inline void map_value_from_movement_vs_survival_onto_image(const float& x, const float& y, unsigned long& x1, unsigned long& y1) {
-		x1 = survival_image.properties().width + border().x + movement_vs_posture_specifics.boundary.x + (unsigned int)(movement_vs_posture_specifics.dx * (x - movement_vs_posture_specifics.axes.boundary(0) + movement_vs_posture_specifics.axes.axis_offset(0)));
-		y1 = movement_vs_posture_image.properties().height - movement_vs_posture_specifics.boundary.y - (unsigned int)(movement_vs_posture_specifics.dy * (y - movement_vs_posture_specifics.axes.boundary(2) + movement_vs_posture_specifics.axes.axis_offset(1)));
+		x1 = survival_image.properties().width + border().x + movement_vs_posture_specifics.boundary_bottom_and_left.x + (unsigned int)(movement_vs_posture_specifics.dx * (x - movement_vs_posture_specifics.axes.boundary(0) + movement_vs_posture_specifics.axes.axis_offset(0)));
+		y1 = movement_vs_posture_image.properties().height - movement_vs_posture_specifics.boundary_bottom_and_left.y - (unsigned int)(movement_vs_posture_specifics.dy * (y - movement_vs_posture_specifics.axes.boundary(2) + movement_vs_posture_specifics.axes.axis_offset(1)));
 	}
 	inline unsigned long map_pixel_from_image_onto_buffer(const unsigned long& x, const unsigned long& y, const ns_vector_2i& position, const ns_vector_2i& buffer_size) {
 		return 3 * ((buffer_size.y - y - position.y - 1) * buffer_size.x + x + position.x);
@@ -324,17 +336,17 @@ public:
 	ns_vector_2d get_graph_value_from_click_position_(const unsigned long& x, const unsigned long& y, ns_graph_contents& graph_selected) const {
 		const unsigned long permissible_time_error(12 * 60 * 60);
 		ns_vector_2d res;
-		const int movement_vs_posture_offset = survival_image.properties().width + 2 * border().x;
+		const int movement_vs_posture_offset = survival_image.properties().width+survival_image_legend.properties().width + 2 * border().x;
 		if (x <= movement_vs_posture_offset) {
 			graph_selected = ns_survival;
 			const unsigned long permissable_error(permissible_time_error * survival_specifics.dx); //how far away the user can click from the exact right position
-			res.x = ((long)x - (long)survival_specifics.boundary.x - (long)border().x) / (survival_specifics.dx) + survival_specifics.axes.boundary(0) - survival_specifics.axes.axis_offset(0);
-			if (x + permissable_error < border().x + survival_specifics.boundary.x || x - border().x >= survival_image.properties().width - survival_specifics.boundary.x+ permissable_error) {
+			res.x = ((long)x - (long)survival_specifics.boundary_bottom_and_left.x - (long)border().x) / (survival_specifics.dx) + survival_specifics.axes.boundary(0) - survival_specifics.axes.axis_offset(0);
+			if (x + permissable_error < border().x + survival_specifics.boundary_bottom_and_left.x || x - border().x >= survival_image.properties().width - survival_specifics.boundary_bottom_and_left.x+ permissable_error) {
 				res.x = 0;
 				graph_selected = ns_none;
 			}
-			res.y = ((long)survival_image.properties().height - survival_specifics.boundary.y - (y - border().y)) / survival_specifics.dy + survival_specifics.axes.boundary(2) - survival_specifics.axes.axis_offset(1);
-			if (y +permissable_error < border().y + survival_specifics.boundary.y || y - border().y >= survival_image.properties().height - survival_specifics.boundary.y+permissable_error) {
+			res.y = ((long)survival_image.properties().height - survival_specifics.boundary_bottom_and_left.y - (y - border().y)) / survival_specifics.dy + survival_specifics.axes.boundary(2) - survival_specifics.axes.axis_offset(1);
+			if (y +permissable_error < border().y + survival_specifics.boundary_bottom_and_left.y || y - border().y >= survival_image.properties().height - survival_specifics.boundary_bottom_and_left.y+permissable_error) {
 				res.y = 0;
 				graph_selected = ns_none;
 			}
@@ -343,13 +355,13 @@ public:
 		else {
 			graph_selected = ns_movement_vs_posture;
 			const unsigned long permissable_error(permissible_time_error * movement_vs_posture_specifics.dx);
-			res.x = ((long)x - movement_vs_posture_offset - (long)movement_vs_posture_specifics.boundary.x) / (movement_vs_posture_specifics.dx) + movement_vs_posture_specifics.axes.boundary(0) - movement_vs_posture_specifics.axes.axis_offset(0);
-			if (x + permissable_error < movement_vs_posture_offset + movement_vs_posture_specifics.boundary.x || x - movement_vs_posture_offset >= movement_vs_posture_image.properties().width - movement_vs_posture_specifics.boundary.x+ permissable_error) {
+			res.x = ((long)x - movement_vs_posture_offset - (long)movement_vs_posture_specifics.boundary_bottom_and_left.x) / (movement_vs_posture_specifics.dx) + movement_vs_posture_specifics.axes.boundary(0) - movement_vs_posture_specifics.axes.axis_offset(0);
+			if (x + permissable_error < movement_vs_posture_offset + movement_vs_posture_specifics.boundary_bottom_and_left.x || x - movement_vs_posture_offset >= movement_vs_posture_image.properties().width - movement_vs_posture_specifics.boundary_bottom_and_left.x+ permissable_error) {
 				res.x = 0;
 				graph_selected = ns_none;
 			}
-			res.y = ((long)movement_vs_posture_image.properties().height - movement_vs_posture_specifics.boundary.y - (y - border().y)) / movement_vs_posture_specifics.dy + movement_vs_posture_specifics.axes.boundary(2) - movement_vs_posture_specifics.axes.axis_offset(1);
-			if (y + permissable_error < border().y + movement_vs_posture_specifics.boundary.y || y - border().y >= movement_vs_posture_image.properties().height - movement_vs_posture_specifics.boundary.y+ permissable_error) {
+			res.y = ((long)movement_vs_posture_image.properties().height - movement_vs_posture_specifics.boundary_bottom_and_left.y - (y - border().y)) / movement_vs_posture_specifics.dy + movement_vs_posture_specifics.axes.boundary(2) - movement_vs_posture_specifics.axes.axis_offset(1);
+			if (y + permissable_error < border().y + movement_vs_posture_specifics.boundary_bottom_and_left.y || y - border().y >= movement_vs_posture_image.properties().height - movement_vs_posture_specifics.boundary_bottom_and_left.y+ permissable_error) {
 				res.y = 0;
 				graph_selected = ns_none;
 			}
@@ -391,7 +403,7 @@ public:
 		return res;
 	}
 
-	ns_population_telemetry() :_show(false), last_graph_contents(ns_none), movement_plot(ns_plot_death_times_absolute),survival_grouping((ns_survival_grouping)0),unity_line(ns_graph_object::ns_graph_dependant_variable), time_vals(ns_graph_object::ns_graph_independant_variable) {
+	ns_population_telemetry() :_show(false), plot_death_time_expansion_(true),last_graph_contents(ns_none), movement_plot(ns_plot_death_times_absolute),survival_grouping((ns_survival_grouping)0),unity_line(ns_graph_object::ns_graph_dependant_variable), time_vals(ns_graph_object::ns_graph_independant_variable) {
 		survival_image.init(ns_image_properties(0, 0, 3));
 		movement_vs_posture_image.init(ns_image_properties(0, 0, 3));
 	}
@@ -401,6 +413,9 @@ public:
 		stats_subset_strain_to_display = strain;
 
 	}
+	//first is annotation for x axis, second is annotation for y axis
+	typedef std::pair<const ns_death_time_annotation*, const ns_death_time_annotation*> ns_plot_pair;
+
 	void update_annotations_and_build_survival(const ns_death_time_annotation_compiler & compiler, const ns_region_metadata & metadata) {
 		survival_curves.resize(0);
 		ns_lifespan_experiment_set set;
@@ -419,10 +434,13 @@ public:
 		
 		ns_region_metadata data_to_process;
 		const bool filter_by_strain = strain_override_specified || viewing_a_storyboard_for_a_specific_strain;
-		if (filter_by_strain)
+		if (filter_by_strain) {
 			if (viewing_a_storyboard_for_a_specific_strain)
 				data_to_process = metadata;
 			else data_to_process = stats_subset_strain_to_display;
+			survival_curve_note = "(" + data_to_process.device_regression_match_description() + ")";
+			movement_vs_posture_note = "(" + data_to_process.device_regression_match_description() + ")";
+		}
 		data_to_process.time_at_which_animals_had_zero_age = metadata.time_at_which_animals_had_zero_age;
 
 		ns_64_bit region_to_view = 0;
@@ -432,6 +450,9 @@ public:
 
 		set.generate_aggregate_risk_timeseries(data_to_process, filter_by_strain, "",region_to_view, movement_survival, death_associated_expansion_survival, time_axis,false);
 		unsigned long time_offset = 0;
+		//the category into which each data from each region is placed. 
+		//indexed by region_id
+		std::map<ns_64_bit, ns_survival_plot_data_grouping> data_categories;
 
 		time_at_which_animals_were_age_zero = metadata.time_at_which_animals_had_zero_age;
 		if (time_axis.size() != 0) {
@@ -452,15 +473,19 @@ public:
 			}
 			else time_offset = 0;
 			if (survival_grouping == ns_aggregate_all || strain_override_specified && survival_grouping == ns_group_by_strain) {
+				//set up survival curve
 				const bool plot_movement(death_plot == ns_plot_movement_death);
 				ns_survival_data_with_censoring_timeseries* survival_data = (plot_movement) ? &movement_survival.data : &death_associated_expansion_survival.data;
 				unsigned long max_t_i(0);
-
+				survival_curve_title = movement_vs_posture_title = "All Individuals";
 				survival_curves.resize(1);
-				survival_curves[0].name = plot_movement ? "Movement Death" : "Expansion Death";
+				if (filter_by_strain)
+					survival_curves[0].name = data_to_process.device_regression_match_description();
+				else survival_curves[0].name = "All animal types";
+				survival_curve_note = "";
 				survival_curves[0].color = plot_movement ? ns_color_8(255, 0, 0) : ns_color_8(0, 0, 255);
-				//load survival data truncating at the last zero found in each group.
 
+				//load survival data truncating at the last zero found in each group.
 				survival_curves[0].vals.type = ns_graph_object::ns_graph_dependant_variable;
 				survival_curves[0].vals.y.resize(survival_data->probability_of_surviving_up_to_interval.size() + time_offset);
 				if (time_offset>0)
@@ -482,16 +507,27 @@ public:
 					survival_curves[0].vals.y.resize(max_t_i);
 					time_axis.resize(max_t_i);
 				}
+				//add info for grouping data on the scatter plot
+				for (auto p = compiler.regions.begin(); p != compiler.regions.end(); p++)
+					data_categories[p->first] = ns_survival_plot_data_grouping(p->first, survival_curves[0].name, survival_curves[0].color);
 			}
 			else if (survival_grouping == ns_group_by_death_type) {
 
+				survival_curve_title = "Death Type";
+				movement_vs_posture_title = "All Individuals";
+				std::string group_label;
+				if (filter_by_strain)
+					group_label = data_to_process.device_regression_match_description();
+				else group_label = "All animal types";
 				unsigned long max_t_i(0);
 
 				survival_curves.resize(2);
-				survival_curves[0].name = "Movement Death";
+				survival_curves[0].name = "Movement Cessation";
 				survival_curves[0].color = ns_color_8(255, 0, 0);
-				survival_curves[1].name = "Expansion Death";
+				survival_curves[1].name = "Death-Associated Expansion";
 				survival_curves[1].color = ns_color_8(0, 0, 255);
+				
+
 				//load survival data truncating at the last zero found in each group.
 				ns_survival_data_with_censoring_timeseries* survival_data[2] = { &movement_survival.data, &death_associated_expansion_survival.data };
 				for (unsigned int j = 0; j < survival_curves.size(); j++) {
@@ -517,17 +553,25 @@ public:
 					survival_curves[1].vals.y.resize(max_t_i);
 					time_axis.resize(max_t_i);
 				}
+				//add info for grouping data on the scatter plot
+				for (auto p = compiler.regions.begin(); p != compiler.regions.end(); p++)
+					data_categories[p->first] = ns_survival_plot_data_grouping(p->first, group_label, survival_curves[0].color);
 			}
 			else if (survival_grouping == ns_group_by_strain) {
-				std::map<std::string, ns_region_metadata> all_strains;
+				survival_curve_title = movement_vs_posture_title = "Animal Type";
+				std::map<std::string, std::pair<ns_region_metadata, ns_survival_plot_data_grouping> > all_strains;
 				for (auto p = set.curves.begin(); p != set.curves.end(); p++)
-					all_strains[p->metadata.device_regression_match_description()] = p->metadata;
+					all_strains[p->metadata.device_regression_match_description()] = std::pair<ns_region_metadata, ns_survival_plot_data_grouping>(p->metadata , ns_survival_plot_data_grouping());
+
 				survival_curves.resize(all_strains.size());
+
+				for (auto p = compiler.regions.begin(); p != compiler.regions.end(); p++)
+					data_categories[p->first] = ns_survival_plot_data_grouping(p->first, p->second.metadata.device_regression_match_description(), survival_curves[0].color);
 				ns_survival_data_with_censoring movement_survival_sub, death_associated_expansion_survival_sub;
 				unsigned long survival_curve_id = 0;
 				unsigned long max_t_i(0);
 				for (auto p = all_strains.begin(); p != all_strains.end(); p++) {
-					set.generate_aggregate_risk_timeseries(p->second, true, "", region_to_view, movement_survival_sub, death_associated_expansion_survival_sub, time_axis, true);
+					set.generate_aggregate_risk_timeseries(p->second.first, true, "", region_to_view, movement_survival_sub, death_associated_expansion_survival_sub, time_axis, true);
 					ns_survival_data_with_censoring_timeseries* survival_data = (death_plot == ns_plot_movement_death) ? &movement_survival_sub.data : &death_associated_expansion_survival_sub.data;
 
 					survival_curves[survival_curve_id].vals.type = ns_graph_object::ns_graph_dependant_variable;
@@ -550,6 +594,9 @@ public:
 
 					survival_curves[survival_curve_id].color = ns_rainbow<ns_color_8>(survival_curve_id / (float)all_strains.size());
 					survival_curves[survival_curve_id].name = p->first;
+					//prep lookup table for grouping scatter plot
+					p->second.second.color = survival_curves[survival_curve_id].color;
+					p->second.second.group_name = survival_curves[survival_curve_id].name = p->first;
 					survival_curve_id++;
 				}
 				if (max_t_i < time_axis.size()) {
@@ -558,18 +605,21 @@ public:
 						survival_curves[i].vals.y.resize(max_t_i);
 					time_axis.resize(max_t_i);
 				}
-
+				//add info for grouping data on the scatter plot
+				for (auto p = compiler.regions.begin(); p != compiler.regions.end(); p++)
+					data_categories[p->first] = all_strains[p->second.metadata.device_regression_match_description()].second;
 			}
 			else if (survival_grouping == ns_group_by_device) {
-				std::set<std::string> all_devices;
+				survival_curve_title = movement_vs_posture_title = "Device Name";
+				std::map<std::string, ns_survival_plot_data_grouping> all_devices;
 				for (auto p = set.curves.begin(); p != set.curves.end(); p++)
-					all_devices.insert(all_devices.begin(), p->metadata.device);
+					all_devices.emplace(std::pair<std::string, ns_survival_plot_data_grouping>(p->metadata.device, ns_survival_plot_data_grouping()));
 				survival_curves.resize(all_devices.size());
 				ns_survival_data_with_censoring movement_survival_sub, death_associated_expansion_survival_sub;
 				unsigned long survival_curve_id = 0;
 				unsigned long max_t_i(0);
 				for (auto p = all_devices.begin(); p != all_devices.end(); p++) {
-					set.generate_aggregate_risk_timeseries(data_to_process, filter_by_strain, *p, region_to_view, movement_survival_sub, death_associated_expansion_survival_sub, time_axis, true);
+					set.generate_aggregate_risk_timeseries(data_to_process, filter_by_strain, p->first, region_to_view, movement_survival_sub, death_associated_expansion_survival_sub, time_axis, true);
 					ns_survival_data_with_censoring_timeseries* survival_data = (death_plot == ns_plot_movement_death) ? &movement_survival_sub.data : &death_associated_expansion_survival_sub.data;
 
 					survival_curves[survival_curve_id].vals.type = ns_graph_object::ns_graph_dependant_variable;
@@ -590,7 +640,10 @@ public:
 						survival_curves[survival_curve_id].vals.y[i + time_offset] = survival_data->probability_of_surviving_up_to_interval[i];
 					}
 					survival_curves[survival_curve_id].color = ns_rainbow<ns_color_8>(survival_curve_id / (float)all_devices.size());
-					survival_curves[survival_curve_id].name = *p;
+					survival_curves[survival_curve_id].name = p->first;
+					//prep lookup table for grouping scatter plot
+					p->second.color = survival_curves[survival_curve_id].color;
+					p->second.group_name = survival_curves[survival_curve_id].name = p->first;
 					survival_curve_id++;
 				}
 				if (max_t_i < time_axis.size()) {
@@ -598,6 +651,9 @@ public:
 					for (unsigned int i = 0; i < survival_curves.size(); i++)
 						survival_curves[i].vals.y.resize(max_t_i);
 				}
+				//add info for grouping data on the scatter plot
+				for (auto p = compiler.regions.begin(); p != compiler.regions.end(); p++)
+					data_categories[p->first] = all_devices[p->second.metadata.device];
 			}
 			
 			unsigned long first_valid_timepoint(0);
@@ -616,76 +672,129 @@ public:
 			
 
 			movement_vs_posture_vals.resize(0);
-
+		
 
 			movement_id_lookup.clear();
 
-			std::vector<ns_color_8> colors;
+			//set up groups to plot based on the mappings we set up before
+			{
+				std::map<std::string, unsigned long> group_mappings_to_data;
+				for (auto p = data_categories.begin(); p != data_categories.end(); p++)
+					group_mappings_to_data[p->second.group_name] = 0;
+				movement_vs_posture_vals.resize(group_mappings_to_data.size());
+				{
+					int tm = 0;
+					for (auto p = group_mappings_to_data.begin(); p != group_mappings_to_data.end(); p++) {
+						p->second = tm;
+						tm++;
+					}
+				}
+
+				for (auto p = data_categories.begin(); p != data_categories.end(); p++) {
+					p->second.output_location_id = group_mappings_to_data[p->second.group_name];
+					movement_vs_posture_vals[p->second.output_location_id].name = p->second.group_name;
+					movement_vs_posture_vals[p->second.output_location_id].color = p->second.color;
+				}
+			}
+
+			std::vector<ns_plot_pair> pair_to_plot;  //this is defined out here just to prevent memory being allocated.  it does not hold data
+														//that persists beyond each iteration of the innermost loop
 			for (ns_death_time_annotation_compiler::ns_region_list::const_iterator r = compiler.regions.begin(); r != compiler.regions.end(); r++) {
 				if (region_to_view != 0 && r->first != region_to_view)
 					continue;
 				if (filter_by_strain && r->second.metadata.device_regression_match_description() != data_to_process.device_regression_match_description())
-					continue;
+					continue; 
 				for (ns_death_time_annotation_compiler_region::ns_location_list::const_iterator l = r->second.locations.begin(); l != r->second.locations.end(); l++) {
 					ns_dying_animal_description_set_const set;
 					l->generate_dying_animal_description_const(true, set);
-					for (unsigned int i = 0; i < set.descriptions.size(); i++) {
 
-						std::vector<const ns_death_time_annotation*> x_axis, y_axis;
+					//each worm can add multiple points to the plot, depending on what the user has asked to display
+					//currently only one point per worm is displayed.
+					pair_to_plot.resize(0);
+					pair_to_plot.resize(1);
+
+					//each location can have multiple worms in a group.  We plot each individually, keeping track of the annotations that mark the x and y position of each point.
+					for (unsigned int i = 0; i < set.descriptions.size(); i++) {
 						if (regression_plot == ns_plot_death_types) {
-							if (colors.size() == 0) {
-								colors.push_back(ns_color_8(255, 0, 0));
-								movement_vs_posture_x_axis_color = ns_color_8(255, 0, 0);
-								movement_vs_posture_y_axis_color = ns_color_8(0, 0, 255);
-							}
-							
-							movement_vs_posture_x_axis_label= "Movement Cessation Time (days)"; 
-							movement_vs_posture_y_axis_label= "Death-Associated Expansion (days)";
+							movement_vs_posture_x_axis_label = "Movement Cessation Time (days)";
+							movement_vs_posture_y_axis_label = "Death-Associated Expansion (days)";
+							movement_vs_posture_note = "(Only individuals with both types of deaths are shown)";
 							if (set.descriptions[i].by_hand.death_associated_expansion_start != 0)
-								y_axis.push_back(set.descriptions[i].by_hand.death_associated_expansion_start);
-							else y_axis.push_back(set.descriptions[i].machine.death_associated_expansion_start);
+								pair_to_plot[0].second = set.descriptions[i].by_hand.death_associated_expansion_start;
+							else pair_to_plot[0].second = set.descriptions[i].machine.death_associated_expansion_start;
 							if (set.descriptions[i].by_hand.death_annotation != 0)
-								x_axis.push_back(set.descriptions[i].by_hand.death_annotation);
-							else x_axis.push_back(set.descriptions[i].machine.death_annotation);
+								pair_to_plot[0].first = set.descriptions[i].by_hand.death_annotation;
+							else pair_to_plot[0].first = set.descriptions[i].machine.death_annotation;
 						}
-						else if (regression_plot == ns_by_hand_machine){
-							if (colors.size() == 0) {
-								colors.push_back(ns_color_8(255, 0, 0));
-								colors.push_back(ns_color_8(0, 0, 255));
-								movement_vs_posture_x_axis_color = movement_vs_posture_y_axis_color = ns_color_8(0, 0, 0);
-							}
+						else if (regression_plot == ns_by_hand_machine) {
 
 							movement_vs_posture_x_axis_label = "By Hand Event Time (days)";
 							movement_vs_posture_y_axis_label = "Machine Event Time (days)";
-							x_axis.push_back(set.descriptions[i].by_hand.death_annotation);
-							y_axis.push_back(set.descriptions[i].machine.death_annotation);
-							x_axis.push_back(set.descriptions[i].by_hand.death_associated_expansion_start);
-							y_axis.push_back(set.descriptions[i].machine.death_associated_expansion_start);
-						}
-						if (x_axis.size() == 0)
-							throw ns_ex("Malformed expression");
-						movement_vs_posture_vals.resize(x_axis.size());
-						for (int i = 0; i < x_axis.size(); i++) {
-							if (y_axis[i] != 0 && x_axis[i] != 0 &&
-								x_axis[i]->time.best_estimate_event_time_for_possible_partially_unbounded_interval() != 0 &&
-								y_axis[i]->time.best_estimate_event_time_for_possible_partially_unbounded_interval() != 0) {
-								if (l->properties.is_excluded() || l->properties.is_censored() || l->properties.flag.event_should_be_excluded())
-									continue;
-								unsigned long mtt(x_axis[i]->time.best_estimate_event_time_for_possible_partially_unbounded_interval()),
-									ett(y_axis[i]->time.best_estimate_event_time_for_possible_partially_unbounded_interval());
-								double mt(((double)mtt - metadata.time_at_which_animals_had_zero_age) / 60.0 / 60.0 / 24),
-									et(((double)ett - metadata.time_at_which_animals_had_zero_age) / 60.0 / 60.0 / 24);
-								if (movement_plot == ns_plot_death_times_residual) {
-									et -= mt;
-									ett -= mtt;
-								}
-
-								//cout << "Adding " << mt << "," << et << "\n";
-								movement_id_lookup[ns_lookup_index(mtt, ett)].push_back(ns_worm_lookup_info(x_axis[i]->region_info_id, l->properties.stationary_path_id));
-								movement_vs_posture_vals[i].vals.x.push_back(mt);
-								movement_vs_posture_vals[i].vals.y.push_back(et);
-								movement_vs_posture_vals[i].color = colors[i];
+							if (death_plot == ns_plot_movement_death) {
+								pair_to_plot[0].first = set.descriptions[i].by_hand.death_annotation;
+								pair_to_plot[0].second = set.descriptions[i].machine.death_annotation;
 							}
+							else {
+								pair_to_plot[0].first = set.descriptions[i].by_hand.death_associated_expansion_start;
+								pair_to_plot[0].second = set.descriptions[i].machine.death_associated_expansion_start;
+							}
+
+						}
+						else if (regression_plot = ns_best_guess_vs_best_guess) {
+
+							movement_vs_posture_x_axis_label = "Event Time (days)";
+							movement_vs_posture_y_axis_label = "Event Time (days)";
+
+							if (death_plot == ns_plot_movement_death) {
+								if (set.descriptions[i].by_hand.death_annotation != 0) {
+									pair_to_plot[0].first = set.descriptions[i].by_hand.death_annotation;
+									pair_to_plot[0].second = set.descriptions[i].by_hand.death_annotation;
+								}
+								else {
+									pair_to_plot[0].first = set.descriptions[i].machine.death_annotation;
+									pair_to_plot[0].second = set.descriptions[i].machine.death_annotation;
+								}
+							}
+							else {
+								if (set.descriptions[i].by_hand.death_associated_expansion_start != 0) {
+									pair_to_plot[0].first = set.descriptions[i].by_hand.death_associated_expansion_start;
+									pair_to_plot[0].second = set.descriptions[i].by_hand.death_associated_expansion_start;
+								}
+								else {
+									if (set.descriptions[i].machine.death_associated_expansion_start != 0) {
+										pair_to_plot[0].first = set.descriptions[i].machine.death_associated_expansion_start;
+										pair_to_plot[0].second = set.descriptions[i].machine.death_associated_expansion_start;
+									}
+								}
+							}
+						}
+					}
+
+					if (pair_to_plot.size() == 0)
+						throw ns_ex("Malformed expression");
+					for (int i = 0; i < pair_to_plot.size(); i++) {
+						const ns_death_time_annotation* x(pair_to_plot[i].first),
+							* y(pair_to_plot[i].second);
+						if (x != 0 && y != 0 &&
+							x->time.best_estimate_event_time_for_possible_partially_unbounded_interval() != 0 &&
+							y->time.best_estimate_event_time_for_possible_partially_unbounded_interval() != 0) {
+							if (l->properties.is_excluded() || l->properties.is_censored() || l->properties.flag.event_should_be_excluded())
+								continue;
+							double mtt(x->time.best_estimate_event_time_for_possible_partially_unbounded_interval()),
+								ett(y->time.best_estimate_event_time_for_possible_partially_unbounded_interval());
+							double mt(((double)mtt - metadata.time_at_which_animals_had_zero_age) / 60.0 / 60.0 / 24),
+								et(((double)ett - metadata.time_at_which_animals_had_zero_age) / 60.0 / 60.0 / 24);
+							if (movement_plot == ns_plot_death_times_residual) {
+								et -= mt;
+								ett -= mtt;
+							}
+
+							const unsigned long group_id = data_categories[x->region_info_id].output_location_id;
+							movement_vs_posture_vals[group_id].vals.x.push_back(mt);
+							movement_vs_posture_vals[group_id].vals.y.push_back(et);
+							//set up mapping used to interpret clicks onto the graph.
+							movement_id_lookup[ns_lookup_index(mtt, ett)].push_back(ns_worm_lookup_info(x->region_info_id, l->properties.stationary_path_id));
+							
 						}
 					}
 
@@ -702,17 +811,20 @@ public:
 		if (survival_image.properties().height == 0 || graph_contents != last_graph_contents || last_start_time != start_time || last_stop_time != stop_time || last_rescale_factor != marker_resize_factor) {
 			ns_image_properties prop;
 			prop.components = 3;
-			if (graph_contents == ns_survival){
-				prop.width = graph_size.x - 2 * border().x;
-				prop.height = graph_size.y - 2 * border().y;
-			}
-			else {
-				prop.width = graph_size.x / 2 - 3 * border().x;
-				prop.height = graph_size.y - 3 * border().y;
-			}
+			
+			unsigned long legend_width = 215;
+			if (legend_width > prop.width)
+			if (graph_contents == graph_size.x)
+				throw ns_ex("Legend is wider than graph!");
 
+			prop.width = (graph_size.x - 3 * border().x-2*legend_width)/2;
+			prop.height = graph_size.y - 2*border().y;
+			
+			ns_image_properties legend_prop(prop.height, legend_width,  3);
 			survival_image.init(prop);
 			movement_vs_posture_image.init(prop);
+			survival_image_legend.init(legend_prop);
+			movement_vs_posture_image_legend.init(legend_prop);
 			try {
 
 				draw_base_graph(graph_contents, marker_resize_factor, start_time, stop_time);
@@ -724,6 +836,8 @@ public:
 			catch (...) {
 				survival_image.init(ns_image_properties(0, 0, 3));
 				movement_vs_posture_image.init(ns_image_properties(0, 0, 3));
+				survival_image_legend.init(ns_image_properties(0, 0, 3));
+				movement_vs_posture_image_legend.init(ns_image_properties(0, 0, 3));
 				throw;
 			}
 		}
@@ -733,7 +847,7 @@ public:
 		
 		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Drawing everything"));
 
-		const unsigned long movement_x_offset(2 * border().x + survival_image.properties().width);
+		const unsigned long movement_x_offset(2 * border().x + survival_image.properties().width+ survival_image_legend.properties().width);
 		//top margin
 		for (unsigned int y = 0; y < border().y; y++)
 			for (unsigned int x = 0; x < graph_size.x; x++)
@@ -750,9 +864,14 @@ public:
 				for (unsigned int c = 0; c < 3; c++)
 					buffer[map_pixel_from_image_onto_buffer(x + border().x, y + border().y, position, buffer_size) + c] = survival_image[y][3 * x + c];
 			}
+			//graph legend
+			for (unsigned int x = 0; x < survival_image_legend.properties().width; x++) {
+				for (unsigned int c = 0; c < 3; c++)
+					buffer[map_pixel_from_image_onto_buffer(x + border().x+ survival_image.properties().width, y + border().y, position, buffer_size) + c] = survival_image_legend[y][3 * x + c];
+			}
 
 			//right margin
-			for (unsigned int x = survival_image.properties().width + border().x; x < movement_x_offset; x++)
+			for (unsigned int x = survival_image.properties().width + survival_image_legend.properties().width+border().x; x < movement_x_offset; x++)
 				for (unsigned int c = 0; c < 3; c++)
 					buffer[map_pixel_from_image_onto_buffer(x, y + border().y, position, buffer_size) + c] = 0;
 		}
@@ -770,15 +889,21 @@ public:
 					for (unsigned int c = 0; c < 3; c++)
 						buffer[map_pixel_from_image_onto_buffer(x+ movement_x_offset, y +border.y, position, buffer_size) + c] = 0;*/
 						//graph
+				//graph
 				for (unsigned int x = 0; x < movement_vs_posture_image.properties().width; x++) {
 					for (unsigned int c = 0; c < 3; c++)
 						buffer[map_pixel_from_image_onto_buffer(x + movement_x_offset, y + border().y, position, buffer_size) + c] = movement_vs_posture_image[y][3 * x + c];
 				}
+				//graph legend
+				for (unsigned int x = 0; x < movement_vs_posture_image_legend.properties().width; x++) {
+					for (unsigned int c = 0; c < 3; c++)
+						buffer[map_pixel_from_image_onto_buffer(x + movement_x_offset + movement_vs_posture_image.properties().width, y + border().y, position, buffer_size) + c] = movement_vs_posture_image_legend[y][3 * x + c];
+				}
 
 				//right margin
-				for (unsigned int x = movement_vs_posture_image.properties().width; x < graph_size.x- movement_x_offset; x++)
+				for (unsigned int x = movement_vs_posture_image.properties().width+ movement_vs_posture_image_legend.properties().width+ movement_x_offset; x < graph_size.x; x++)
 					for (unsigned int c = 0; c < 3; c++)
-						buffer[map_pixel_from_image_onto_buffer(x + movement_x_offset, y + border().y, position, buffer_size) + c] = 0;
+						buffer[map_pixel_from_image_onto_buffer(x , y + border().y, position, buffer_size) + c] = 0;
 			}
 			//bottom margin
 			for (unsigned int y = movement_vs_posture_image.properties().height + border().y; y < graph_size.y; y++)

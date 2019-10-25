@@ -852,41 +852,42 @@ void ns_lifespan_experiment_set::out_simple_JMP_event_data(const ns_time_handing
 		//of the interval during which the animal dies
 		if (properties.is_censored() && time_handling_behavior == ns_output_event_intervals)
 			a.time.period_end_was_not_observed = true;
-	
 		if (!a.is_censored() && a.multiworm_censoring_strategy == ns_death_time_annotation::ns_unknown_multiworm_cluster_strategy)
 			continue;
-		if (!(		
-					a.is_censored() && a.disambiguation_type != ns_death_time_annotation::ns_part_of_a_mutliple_worm_disambiguation_cluster
-					||
-					//animals that were stationary but alive at the end of an experiment
-					a.type == ns_movement_cessation && a.excluded == ns_death_time_annotation::ns_censored_at_end_of_experiment
+		if (!(
+			a.is_censored() && a.disambiguation_type != ns_death_time_annotation::ns_part_of_a_mutliple_worm_disambiguation_cluster
+			||
+			//animals that were stationary but alive at the end of an experiment
+			a.type == ns_movement_cessation && a.excluded == ns_death_time_annotation::ns_censored_at_end_of_experiment
 
-					||
-					(
-						//animals explicitly entered as by-hand censored
-						a.multiworm_censoring_strategy == ns_death_time_annotation::ns_by_hand_censoring 
-						||
-						//events for which no sensoring strategy is needed
-						a.multiworm_censoring_strategy == ns_death_time_annotation::ns_no_strategy_needed_for_single_worm_object
-						||
-						//animals for which the specified censoring strategy was used
-						a.multiworm_censoring_strategy == s 
-					)
-					&& 
-					a.by_hand_annotation_integration_strategy == by_hand_strategy 
-					&& 
-					(	a.missing_worm_return_strategy == w 
-						|| 
-						a.missing_worm_return_strategy == ns_death_time_annotation::ns_not_specified
-					)
-					
+			||
+			(
+				//animals explicitly entered as by-hand censored
+				a.multiworm_censoring_strategy == ns_death_time_annotation::ns_by_hand_censoring
+				||
+				//events for which no sensoring strategy is needed
+				a.multiworm_censoring_strategy == ns_death_time_annotation::ns_no_strategy_needed_for_single_worm_object
+				||
+				//animals for which the specified censoring strategy was used
+				a.multiworm_censoring_strategy == s
 				)
+			&&
+			a.by_hand_annotation_integration_strategy == by_hand_strategy
+			&&
+			(a.missing_worm_return_strategy == w
+				||
+				a.missing_worm_return_strategy == ns_death_time_annotation::ns_not_specified
+				)
+
 			)
+			) {
 			continue;
+		}
 
 		//don't include censoring events for fast moving worms that go missing.
-		if (a.type != ns_movement_cessation && a.type != ns_death_associated_expansion_start && a.excluded == ns_death_time_annotation::ns_censored_at_end_of_experiment)
+		if (a.type != ns_movement_cessation && a.type != ns_death_associated_expansion_start && a.excluded == ns_death_time_annotation::ns_censored_at_end_of_experiment) {
 			continue;
+		}
 		if (time_handling_behavior == ns_output_single_event_times){
 			if (a.time.period_start_was_not_observed){	
 				a.time.period_start = a.time.period_end;
@@ -900,6 +901,7 @@ void ns_lifespan_experiment_set::out_simple_JMP_event_data(const ns_time_handing
 		}
 	//	double event_time(a.time.best_estimate_event_time_within_interval() - metadata.time_at_which_animals_had_zero_age);
 
+		
 		metadata.out_JMP_plate_identity_data(o);
 		if (control_group_behavior==ns_include_control_groups){
 			if (prop.control_group == -1)
@@ -1956,7 +1958,7 @@ void ns_survival_data::generate_risk_timeseries(const ns_movement_event & event_
 							timepoint (ns_find_correct_point_for_time(event_time,timepoints));
 						if (timepoint == timepoints.end())
 							throw ns_ex("Could not find timepoint for time") << e->events[k].events[m].time.best_estimate_event_time_within_interval();
-						const unsigned long index_id(timepoint-timepoints.begin());
+						const ns_64_bit index_id(timepoint-timepoints.begin());
 					//	if (/*risk_timeseries.data.number_of_events[index_id] += e->events[k].events[m].number_of_worms() > 1 &&*/ e->events[k].events[m].stationary_path_id.group_id==23)
 				//			cout << "found";
 						risk_timeseries.data.number_of_events[index_id]+=e->events[k].events[m].number_of_worms();//number_of_worms_in_annotation;
@@ -1982,7 +1984,7 @@ void ns_survival_data::generate_risk_timeseries(const ns_movement_event & event_
 					timepoint (ns_find_correct_point_for_time(e->events[k].events[m].time.best_estimate_event_time_within_interval(),timepoints));
 					if (timepoint == timepoints.end())
 						throw ns_ex("Could not find timepoint for time") << e->events[k].events[m].time.best_estimate_event_time_within_interval();
-					const unsigned long index_id(timepoint-timepoints.begin());
+					const ns_64_bit index_id(timepoint-timepoints.begin());
 					risk_timeseries.data.number_of_censoring_events[index_id]+=e->events[k].events[m].number_of_worms();
 					total_number_of_censored+=e->events[k].events[m].number_of_worms();
 				}

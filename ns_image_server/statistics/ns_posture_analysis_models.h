@@ -5,15 +5,20 @@
 #include <algorithm>
 #include <iostream>
 #include "ns_analyzed_image_time_path_element_measurements.h"
+#include "ns_death_time_annotation.h"
 #include <set>
 
 class ns_analyzed_image_time_path;
 struct ns_hmm_emission {
+	ns_hmm_emission() :genotype(0) {}
 	ns_analyzed_image_time_path_element_measurements measurement;
-	unsigned long emission_time; //*NOT USED IN TRAINING...only for debugging and data visualization*/
 	ns_stationary_path_id path_id;
 	ns_64_bit region_id;
 	unsigned long device_id;
+
+	/*NOT USED IN TRAINING...only for debugging and data visualization*/
+	unsigned long emission_time; 
+	std::string* genotype;
 };
 struct ns_hmm_emission_normalization_stats {
 	ns_analyzed_image_time_path_element_measurements path_mean, path_variance;

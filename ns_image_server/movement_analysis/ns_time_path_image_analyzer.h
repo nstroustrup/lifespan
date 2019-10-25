@@ -750,7 +750,7 @@ public:
 							const ns_analysis_db_options &analysis_options = ns_force_creation_of_new_db_record); //do not set ns_analysis_db_options to anything other than ns_force_creation_of_new_db_record unless you
 																												  //understand how this might effect all other cached data!
 	void reanalyze_stored_aligned_images(const ns_64_bit region_id,const ns_time_path_solution & solution_,const ns_time_series_denoising_parameters &,const ns_analyzed_image_time_path_death_time_estimator * e,ns_sql & sql,const bool load_images_after_last_valid_sample, const bool recalculate_flow_images);
-	bool load_image_quantification_and_rerun_death_time_detection(const ns_64_bit region_id, const ns_time_path_solution & solution_, const ns_time_series_denoising_parameters &, const ns_analyzed_image_time_path_death_time_estimator * e, ns_sql & sql);
+	bool load_image_quantification_and_rerun_death_time_detection(const ns_64_bit region_id, const ns_time_path_solution & solution_, const ns_time_series_denoising_parameters &, const ns_analyzed_image_time_path_death_time_estimator * e, ns_sql & sql,unsigned long debug_specific_worm=-1);
 	bool load_completed_analysis_(const ns_64_bit region_id, const ns_time_path_solution& solution_, const ns_time_series_denoising_parameters&, const ns_analyzed_image_time_path_death_time_estimator* e, ns_sql& sql, bool exclude_movement_quantification = false);
 
 	void reanalyze_with_different_movement_estimator(const ns_time_series_denoising_parameters &,const ns_analyzed_image_time_path_death_time_estimator * e);

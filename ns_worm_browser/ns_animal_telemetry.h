@@ -627,13 +627,13 @@ private:
 		graph_bottom_specifics = graph_bottom.draw(base_graph_bottom);
 	}
 	inline void map_value_from_top_graph_onto_image(const float &x, const float &y, unsigned long & x1, unsigned long & y1) {
-		x1 = graph_top_specifics.boundary.x + (unsigned int)(graph_top_specifics.dx*(x - graph_top_specifics.axes.boundary(0) + graph_top_specifics.axes.axis_offset(0)));
-		y1 = base_graph_top.properties().height - graph_top_specifics.boundary.y - (unsigned int)(graph_top_specifics.dy*(y - graph_top_specifics.axes.boundary(2) + graph_top_specifics.axes.axis_offset(1)));
+		x1 = graph_top_specifics.boundary_bottom_and_left.x + (unsigned int)(graph_top_specifics.dx*(x - graph_top_specifics.axes.boundary(0) + graph_top_specifics.axes.axis_offset(0)));
+		y1 = base_graph_top.properties().height - graph_top_specifics.boundary_bottom_and_left.y - (unsigned int)(graph_top_specifics.dy*(y - graph_top_specifics.axes.boundary(2) + graph_top_specifics.axes.axis_offset(1)));
 	}
 
 	inline void map_value_from_bottom_graph_onto_image(const float &x, const float &y, unsigned long & x1, unsigned long & y1) {
-		x1 = graph_bottom_specifics.boundary.x + (unsigned int)(graph_bottom_specifics.dx*(x - graph_bottom_specifics.axes.boundary(0) + graph_bottom_specifics.axes.axis_offset(0)));
-		y1 = base_graph_top.properties().height + border().y + base_graph_bottom.properties().height - graph_bottom_specifics.boundary.y - (unsigned int)(graph_bottom_specifics.dy*(y - graph_bottom_specifics.axes.boundary(2) + graph_bottom_specifics.axes.axis_offset(1)));
+		x1 = graph_bottom_specifics.boundary_bottom_and_left.x + (unsigned int)(graph_bottom_specifics.dx*(x - graph_bottom_specifics.axes.boundary(0) + graph_bottom_specifics.axes.axis_offset(0)));
+		y1 = base_graph_top.properties().height + border().y + base_graph_bottom.properties().height - graph_bottom_specifics.boundary_bottom_and_left.y - (unsigned int)(graph_bottom_specifics.dy*(y - graph_bottom_specifics.axes.boundary(2) + graph_bottom_specifics.axes.axis_offset(1)));
 	}
 	inline unsigned long map_pixel_from_image_onto_buffer(const unsigned long &x, const unsigned long &y, const ns_vector_2i &position, const ns_vector_2i &buffer_size) {
 		return 3 * ((buffer_size.y - y - position.y-1)*buffer_size.x + x + position.x);
@@ -721,7 +721,7 @@ public:
 	//currently does not return a correct y value.
 	ns_vector_2d get_graph_value_from_click_position_(const unsigned long &x, const unsigned long & y) const{
 		ns_vector_2d res;
-		res.x = ((long)x - (long)graph_top_specifics.boundary.x - (long)border().x) / (graph_top_specifics.dx) + graph_top_specifics.axes.boundary(0) - graph_top_specifics.axes.axis_offset(0);
+		res.x = ((long)x - (long)graph_top_specifics.boundary_bottom_and_left.x - (long)border().x) / (graph_top_specifics.dx) + graph_top_specifics.axes.boundary(0) - graph_top_specifics.axes.axis_offset(0);
 
 		//cout << x << " " << res.x << "\n";
 		//y = base_graph.properties().height - graph_specifics.boundary.y - (unsigned int)(graph_specifics.dy*(y - graph_specifics.axes.boundary(2) + graph_specifics.axes.axis_offset(1)));

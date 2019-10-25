@@ -31,7 +31,7 @@ void invalidate_stored_data_depending_on_movement_analysis(const ns_processing_j
 	sql.send_query();
 	already_performed = true;
 }
-void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image_server * image_server, ns_sql & sql, bool log_output) {
+void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image_server * image_server, ns_sql & sql, bool log_output, long specific_worm, ns_hmm_movement_analysis_optimizatiom_stats*optional_debug_results) {
 	if (job.region_id == 0)
 		throw ns_ex("Movement data can be rebuilt only for regions.");
 
@@ -168,6 +168,8 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 	const ns_time_series_denoising_parameters time_series_denoising_parameters(ns_time_series_denoising_parameters::load_from_db(job.region_id, sql));
 
 	if (job.maintenance_task == ns_maintenance_rebuild_movement_data || job.maintenance_task == ns_maintenance_rebuild_movement_data_from_stored_solution) {
+		if (specific_worm != -1)
+			throw ns_ex("Cannot focus on a specific worm when all images need to be re-processed.");
 		//load in worm images and analyze them for non-translating animals for posture changes
 		if (log_output)
 			image_server->register_server_event(ns_image_server_event("Analyzing images for animal posture changes."), &sql);
@@ -222,7 +224,9 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 	else if (job.maintenance_task == ns_maintenance_rebuild_movement_from_stored_images) {
 		//load in previously calculated image quantification from disk for re-analysis
 		//This is good, for example, if changes have been made to the movement quantification analyzer
-		//and it needs to be rerun though the actual images don't need to be requantified.
+		//and it needs to be rerun though the actual images
+		if (specific_worm != -1)
+			throw ns_ex("Cannot focus on a specific worm when all images need to be re-analyzed.");
 		if (log_output)
 			image_server->register_server_event(ns_image_server_event("Quantifying stored animal posture images"), &sql);
 		bool reanalyze_optical_flow(false);
@@ -236,25 +240,43 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 
 		invalidate_stored_data_depending_on_movement_analysis(job, sql, invalidated_old_data);
 	}
-	else if (job.maintenance_task == ns_maintenance_rebuild_movement_from_stored_image_quantification){
+	else if (job.maintenance_task == ns_maintenance_rebuild_movement_from_stored_image_quantification) {
 		//load in previously calculated image quantification from disk for re-analysis
 		//This is good, for example, if changes have been made to the movement quantification analyzer
 		//and it needs to be rerun though the actual images don't need to be requantified.
 		//or if by hand annotations have been performed and the alignment in the output files should be redone.
-		if (log_output)
+		if (log_output) {
 			image_server->register_server_event(ns_image_server_event("Analyzing stored animal posture quantification."), &sql);
-		time_path_image_analyzer.load_image_quantification_and_rerun_death_time_detection(job.region_id, time_path_solution, time_series_denoising_parameters, &death_time_estimator(), sql);
+			if (specific_worm != -1)
+				image_server->add_subtext_to_current_event(std::string("Running in debug mode to focus on a specific worm with id ") + ns_to_string(specific_worm) + "\n", &sql);
+		}
+		time_path_image_analyzer.load_image_quantification_and_rerun_death_time_detection(job.region_id, time_path_solution, time_series_denoising_parameters, &death_time_estimator(), sql, specific_worm);
+		//if the user is asking to debug a specific region and worm, we can generate extra debug information
+		if (specific_worm != -1) {
+			std::set < ns_stationary_path_id> individuals;
+			individuals.emplace(ns_stationary_path_id(specific_worm, 0, time_path_image_analyzer.db_analysis_id()));
+			if (optional_debug_results != 0) {
+				if (posture_analysis_model_handle().model_specification.posture_analysis_method == ns_posture_analysis_model::ns_hidden_markov ||
+					posture_analysis_model_handle().model_specification.posture_analysis_method == ns_posture_analysis_model::ns_threshold_and_hmm) {
+					//get by hand annotation 
+					ns_hand_annotation_loader by_hand_region_annotations;
+					ns_region_metadata metadata;
+					try {
+						metadata = by_hand_region_annotations.load_region_annotations(ns_death_time_annotation_set::ns_censoring_and_movement_transitions, job.region_id, sql);
+					}
+					catch (ns_ex & ex) {
+						image_server->register_server_event(ex, &sql);
+						metadata.load_from_db(job.region_id, "", sql);
+					}
+					time_path_image_analyzer.add_by_hand_annotations(by_hand_region_annotations.annotations);
+					time_path_image_analyzer.calculate_optimzation_stats_for_current_hmm_estimator(*optional_debug_results, &posture_analysis_model_handle().model_specification.hmm_posture_estimator, individuals, true);
+				}
+			}
+			return;
+		}
 		time_path_image_analyzer.obtain_analysis_id_and_save_movement_data(job.region_id, sql,
 			ns_time_path_image_movement_analyzer<ns_overallocation_resizer>::ns_require_existing_record,
 			ns_time_path_image_movement_analyzer<ns_overallocation_resizer>::ns_write_data);
-
-		///xxx debug check
-		/*ns_time_path_image_movement_analyzer<ns_overallocation_resizer> analyzer_2(memory_pool);
-		analyzer_2.load_completed_analysis_(job.region_id, time_path_solution, time_series_denoising_parameters, &death_time_estimator(), sql, true);
-		analyzer_2.obtain_analysis_id_and_save_movement_data(job.region_id, sql,
-			ns_time_path_image_movement_analyzer<ns_overallocation_resizer>::ns_require_existing_record,
-			ns_time_path_image_movement_analyzer<ns_overallocation_resizer>::ns_do_not_write_data);
-		time_path_image_analyzer.compare(analyzer_2);*/
 	}
 	if (job.maintenance_task == ns_maintenance_recalculate_censoring) {
 		if (log_output)
@@ -276,16 +298,18 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 		metadata.load_from_db(job.region_id, "", sql);
 	}
 
-	//this is where death time annotations are written to disk
+	//this is where machine death time annotations are written to disk
 	ns_death_time_annotation_set set;
 	time_path_image_analyzer.produce_death_time_annotations(set);
+	
+	//now we run the censoring calculations!
 	ns_death_time_annotation_compiler compiler;
 	compiler.add(set);
 	compiler.add(by_hand_region_annotations.annotations);
 	std::vector<ns_ex> censoring_file_io_problems;
 	ns_ex censoring_problem;
+	
 	try {
-		ns_death_time_annotation_set censoring_set;
 		//calculate censoring events according to different censoring strategies
 		ns_death_time_annotation::ns_by_hand_annotation_integration_strategy by_hand_annotation_integration_strategy[2] =
 		{ ns_death_time_annotation::ns_machine_annotations_if_no_by_hand,ns_death_time_annotation::ns_only_machine_annotations };
@@ -293,7 +317,7 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 		for (unsigned int by_hand_annotation_strategy = 0; by_hand_annotation_strategy < 2; by_hand_annotation_strategy++) {
 			//previously multiple different censoring strategies were applied and all data written to disk.
 			//this allowed users to compare different strategies and identify potential issues.
-			//However, this diagnostic was almost never performed and simply caused confusion
+			//However, this diagnostic was almost never performed and the multitude of different files was confusing
 			//So now we just choose the one that in our experience works the best.
 
 			//for (unsigned int censoring_strategy = ns_death_time_annotation::ns_discard_multi_worm_clusters; censoring_strategy < (int)ns_death_time_annotation::ns_number_of_multiworm_censoring_strategies; censoring_strategy++) {
@@ -315,7 +339,7 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 					(ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy,
 					missing_return_strategy,
 					compiler, ns_include_unchanged);
-				summary_series.generate_censoring_annotations(metadata, time_path_image_analyzer.db_analysis_id(),censoring_set);
+				summary_series.generate_censoring_annotations(metadata, time_path_image_analyzer.db_analysis_id(),set);
 				try {
 					ns_image_server_results_file movement_timeseries(image_server->results_storage.movement_timeseries_data(
 						by_hand_annotation_integration_strategy[by_hand_annotation_strategy],
@@ -332,13 +356,11 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 					censoring_file_io_problems.push_back(ex);
 				}
 			//}
-			set.add(censoring_set);
 		}
 	}
 	catch (ns_ex & ex) {
 		censoring_problem = ex;
 	}
-
 
 	//output worm movement and death time annotations to disk
 

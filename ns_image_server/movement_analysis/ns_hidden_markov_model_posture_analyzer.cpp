@@ -1169,23 +1169,27 @@ void ns_emperical_posture_quantification_value_estimator::build_estimator_from_o
 	states_permitted_int = states_permitted_;
 	//if the user hasn't explicitly labeled moving weakly post expansion,
 	//use the moving weakly pre expansion as a proxy.
-	if (observed_values.find(ns_hmm_moving_weakly_post_expansion) == observed_values.end()) {
-		observed_values[ns_hmm_moving_weakly_post_expansion] = observed_values[ns_hmm_moving_weakly];
-	}
-	else{
-		auto p = observed_values.find(ns_hmm_moving_weakly_post_expansion);
-		if (p->second.size() < 100) 
-			p->second.insert(p->second.end(), observed_values[ns_hmm_moving_weakly].begin(),observed_values[ns_hmm_moving_weakly].end());
+	if (states_permitted_ != ns_no_expansion_while_alive && states_permitted_ != no_expansion_while_alive_nor_contraction) {
+		if (observed_values.find(ns_hmm_moving_weakly_post_expansion) == observed_values.end()) {
+			observed_values[ns_hmm_moving_weakly_post_expansion] = observed_values[ns_hmm_moving_weakly];
+		}
+		else {
+			auto p = observed_values.find(ns_hmm_moving_weakly_post_expansion);
+			if (p->second.size() < 100)
+				p->second.insert(p->second.end(), observed_values[ns_hmm_moving_weakly].begin(), observed_values[ns_hmm_moving_weakly].end());
 
+		}
+
+		//we mix together expansion annotations with and without animal movement.
+		//this removes any bias the machine has as to whether expansion happens before or after the final movement.
+		auto p_expansion_moving = observed_values.find(ns_hmm_moving_weakly_expanding);
+		auto p_expansion_not_moving = observed_values.find(ns_hmm_not_moving_expanding);
+		if (p_expansion_moving != observed_values.end() && p_expansion_not_moving != observed_values.end()) {
+			p_expansion_moving->second.insert(p_expansion_moving->second.end(), p_expansion_not_moving->second.begin(), p_expansion_not_moving->second.end());
+			p_expansion_not_moving->second = p_expansion_moving->second;
+		}
 	}
-	//we mix together expansion annotations with and without animal movement.
-	//this removes any bias the machine has as to whether expansion happens before or after the final movement.
-	auto p_expansion_moving = observed_values.find(ns_hmm_moving_weakly_expanding);
-	auto p_expansion_not_moving = observed_values.find(ns_hmm_not_moving_expanding);
-	if (p_expansion_moving != observed_values.end() && p_expansion_not_moving != observed_values.end()) {
-		p_expansion_moving->second.insert(p_expansion_moving->second.end(), p_expansion_not_moving->second.begin(), p_expansion_not_moving->second.end());
-		p_expansion_not_moving->second = p_expansion_moving->second;
-	}
+	
 
 	std::vector<unsigned long > state_counts((int)(ns_hmm_unknown_state), 0);
 	for (auto p = observed_values.begin(); p != observed_values.end(); p++) {

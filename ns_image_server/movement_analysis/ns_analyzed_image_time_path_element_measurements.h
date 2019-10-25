@@ -1,6 +1,8 @@
 #pragma once
 #include "ns_ex.h"
 #include <iostream>
+#include "ns_vector.h"
+#include <ostream>
 struct ns_analyzed_image_time_path_element_measurements {
 
 	//This is the quantification used to identify death times in old versions of the lifespan machine
@@ -22,6 +24,7 @@ struct ns_analyzed_image_time_path_element_measurements {
 		total_stabilized_area,
 		total_region_area,
 		total_intensity_within_region,
+		total_intensity_within_stabilized_denoised,
 		total_intensity_within_stabilized,
 		total_intensity_within_foreground,
 		total_intensity_in_previous_frame_scaled_to_current_frames_histogram,

@@ -489,11 +489,11 @@ public:
 		population_telemetry.update_annotations_and_build_survival(compiler, strain_to_display);
 		draw_telemetry();
 	}
-	ns_vector_2i telemetry_size(const ns_population_telemetry::ns_graph_contents& contents) {
+	ns_vector_2i telemetry_size(const ns_population_telemetry::ns_graph_contents& contents) const{
 		if (contents == ns_population_telemetry::ns_survival)
-			return ns_vector_2i(600, 400);
+			return ns_vector_2i(720, 400);
 		else if (contents == ns_population_telemetry::ns_movement_vs_posture)
-			return ns_vector_2i(600 + 400, 400);
+			return ns_vector_2i(720 + 480, 400);
 		else throw ns_ex("Unknown population telemetry contents");
 	}
 	void draw_telemetry();

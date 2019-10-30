@@ -3910,7 +3910,7 @@ void ns_run_startup_routines() {
 		cerr << "Done.\n";
 
 		//example code that runns a movement analysis job for a specific region
-		if (1) {
+		if (0) {
 			ns_processing_job job;
 			const unsigned long region_id(56253);
 			job.region_id = region_id;

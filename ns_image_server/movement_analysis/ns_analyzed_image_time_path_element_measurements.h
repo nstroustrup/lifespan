@@ -26,6 +26,7 @@ struct ns_analyzed_image_time_path_element_measurements {
 		total_intensity_within_region,
 		total_intensity_within_stabilized_denoised,
 		total_intensity_within_stabilized,
+		total_intensity_outside_stabilized_denoised,
 		total_intensity_within_foreground,
 		total_intensity_in_previous_frame_scaled_to_current_frames_histogram,
 		total_alternate_worm_area,
@@ -37,6 +38,9 @@ struct ns_analyzed_image_time_path_element_measurements {
 		change_in_total_stabilized_intensity_2x,
 		change_in_total_stabilized_intensity_4x;
 
+	ns_s64_bit 	change_in_total_outside_stabilized_intensity_1x,
+		change_in_total_outside_stabilized_intensity_2x,
+		change_in_total_outside_stabilized_intensity_4x;
 
 	double
 		movement_score,

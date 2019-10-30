@@ -112,9 +112,12 @@ void ns_hmm_solver::solve(const ns_analyzed_image_time_path & path, const ns_emp
 	if (!start_i_found)
 		throw ns_ex("No unexcluded states!");
 
-	std::vector<double> emission_probabilities;
-	std::vector<std::vector<double> > transition_probability;
-	build_state_transition_matrix(estimator,transition_probability);
+	std::vector<double> emission_log_probabilities;
+	std::vector<std::vector<double> > log_transition_probability;
+	build_state_transition_matrix(estimator, log_transition_probability);
+	for (unsigned int i = 0; i < log_transition_probability.size(); i++)
+		for (unsigned int j = 0; j < log_transition_probability[i].size(); j++)
+			log_transition_probability[i][j] = log(log_transition_probability[i][j]);
 	
 	//get first one to fill in unknowns
 
@@ -136,9 +139,8 @@ void ns_hmm_solver::solve(const ns_analyzed_image_time_path & path, const ns_emp
 	
 		if (movement_states[i] == ns_hmm_unknown_state)
 			throw ns_ex("ns_hmm_solver::probability_of_path_solution()::encountered an unknown state");
-		estimator.probability_for_each_state(path.element(i).measurements, emission_probabilities);
-		cur_p = log(transition_probability[previous_state][movement_states[i]] *
-			emission_probabilities[movement_states[i]]);
+		estimator.log_probability_for_each_state(path.element(i).measurements, emission_log_probabilities);
+		cur_p =log_transition_probability[previous_state][movement_states[i]]+ emission_log_probabilities[movement_states[i]];
 
 		log_likelihood += cur_p;
 		if (generate_path_info) {
@@ -177,8 +179,11 @@ void ns_forbid_requested_hmm_states(const ns_emperical_posture_quantification_va
 double ns_hmm_solver::run_viterbi(const ns_analyzed_image_time_path & path, const ns_emperical_posture_quantification_value_estimator & estimator, const std::vector<unsigned long> path_indices,
 	std::vector<ns_hmm_state_transition_time_path_index > &movement_transitions, std::vector<double > & probabilitiy_of_path, std::vector<unsigned long > & previous_state) {
 	const int number_of_states((int)ns_hmm_unknown_state);
-	std::vector<std::vector<double> > a;
-	build_state_transition_matrix(estimator,a);
+	std::vector<std::vector<double> > state_transition_matrix;
+	build_state_transition_matrix(estimator, state_transition_matrix);
+	for (unsigned int i = 0; i < state_transition_matrix.size(); i++)
+		for (unsigned int j = 0; j < state_transition_matrix[i].size(); j++)
+			state_transition_matrix[i][j] = log(state_transition_matrix[i][j]);
 
 	std::set<ns_hmm_movement_state> defined_states;
 	estimator.defined_states(defined_states);
@@ -203,7 +208,7 @@ double ns_hmm_solver::run_viterbi(const ns_analyzed_image_time_path & path, cons
 		path_forbidden.resize(nobs*mstat, 0);
 		
 		std::vector<double> emission_log_probabilities;
-		estimator.probability_for_each_state(path.element(path_indices[0]).measurements, emission_log_probabilities);
+		estimator.log_probability_for_each_state(path.element(path_indices[0]).measurements, emission_log_probabilities);
 		path_forbidden[ns_hmm_moving_weakly_post_expansion] = 1; //do not allow animals to start as moving weakly post-expansion.  They can only start weakly /pre-expansion/ if the expansion was not observed!
 		path_forbidden[ns_hmm_contracting_post_expansion] = 1; //do not allow animals to start as contracting post-expansion.  They can only start weakly /pre-expansion/ if the expansion was not observed!
 		if (!allow_weakly) path_forbidden[ns_hmm_moving_weakly] = 1;
@@ -213,9 +218,8 @@ double ns_hmm_solver::run_viterbi(const ns_analyzed_image_time_path & path, cons
 			emission_log_probabilities[ns_hmm_missing] = 0;
 		long i, j, t;
 		double max_p, max_prev_i;
-		for (i = 0; i < mstat; i++) probabilitiy_of_path[i] = log(emission_log_probabilities[i]);
+		for (i = 0; i < mstat; i++) probabilitiy_of_path[i] = emission_log_probabilities[i];
 		for (t = 1; t < nobs; t++) {
-		//	std::cout << t << " ";
 			bool missing_disalowed = t >= path_indices[first_appearance_id];
 			if (path.element(t).excluded) {
 				//skip, staying in the same state
@@ -226,14 +230,14 @@ double ns_hmm_solver::run_viterbi(const ns_analyzed_image_time_path & path, cons
 				}
 				continue;
 			}
-			estimator.probability_for_each_state(path.element(path_indices[t]).measurements, emission_log_probabilities);
+			estimator.log_probability_for_each_state(path.element(path_indices[t]).measurements, emission_log_probabilities);
 
 			
 			//identify situations where no state produces a non-zero probability
 			//skip these points, staying in the same state.
 			bool nonzero_state_probability_found = false;
 			for (unsigned int w = 0; w < emission_log_probabilities.size(); w++)
-				if (emission_log_probabilities[w] != 0)
+				if (std::isfinite(emission_log_probabilities[w]))
 					nonzero_state_probability_found = true;
 			if (!nonzero_state_probability_found) {
 				//	std::cout << "Found impossible measurement: \n";
@@ -252,10 +256,10 @@ double ns_hmm_solver::run_viterbi(const ns_analyzed_image_time_path & path, cons
 				max_prev_i = 0;
 				bool found_valid = false;
 				for (i = 0; i < mstat; i++) {
-					if (a[i][j] == 0 || emission_log_probabilities[j] == 0 || path_forbidden[mstat*(t - 1) + i])
+					if (state_transition_matrix[i][j] == 0 || !std::isfinite(emission_log_probabilities[j]) || path_forbidden[mstat*(t - 1) + i])
 						continue;
 					//calculate probability of moving from state i at time t-1 to state j now
-					const double cur = probabilitiy_of_path[mstat*(t - 1)+i] + log(a[i][j] * emission_log_probabilities[j]);
+					const double cur = probabilitiy_of_path[mstat*(t - 1)+i] + state_transition_matrix[i][j] + emission_log_probabilities[j];
 					if (!std::isnan(cur) && std::isfinite(cur) && (!found_valid || cur > max_p)) {
 						max_p = cur;
 						max_prev_i = i;
@@ -343,7 +347,7 @@ double ns_hmm_solver::run_viterbi(const ns_analyzed_image_time_path & path, cons
 			out << t << "," << renormalization_factors[t];
 			for (unsigned int j = 0; j < mstat; j++)
 				out << "," << probabilitiy_of_path[mstat*t + j];
-			estimator.probability_for_each_state(path.element(path_indices[t]).measurements, emission_log_probabilities);
+			estimator.log_probability_for_each_state(path.element(path_indices[t]).measurements, emission_log_probabilities);
 			for (unsigned int j = 0; j < mstat; j++)
 				out << "," << emission_log_probabilities[j];
 			for (unsigned int j = 0; j < mstat; j++)
@@ -772,33 +776,44 @@ private:
 		gmm_var[3];
 };
 struct ns_intensity_accessor_1x {
-	double operator()(const ns_analyzed_image_time_path_element_measurements & e) const {
+	const double & operator()(const ns_analyzed_image_time_path_element_measurements & e) const {
 		return e.change_in_total_stabilized_intensity_1x;
 	}	
 }; 
 struct ns_intensity_emission_accessor_1x {
-	double operator()(const ns_hmm_emission & e) const {
+	const double& operator()(const ns_hmm_emission & e) const {
 		return e.measurement.change_in_total_stabilized_intensity_1x;
 	}
 }; 
 struct ns_intensity_accessor_2x {
-	double operator()(const ns_analyzed_image_time_path_element_measurements & e) const {
+	const double& operator()(const ns_analyzed_image_time_path_element_measurements & e) const {
 		return e.change_in_total_stabilized_intensity_2x;
 	}
 };
 struct ns_intensity_emission_accessor_2x {
-	double operator()(const ns_hmm_emission & e) const {
+	const double& operator()(const ns_hmm_emission & e) const {
 		return e.measurement.change_in_total_stabilized_intensity_2x;
 	}
 };
 struct ns_intensity_accessor_4x {
-	double operator()(const ns_analyzed_image_time_path_element_measurements & e) const {
+	const double& operator()(const ns_analyzed_image_time_path_element_measurements & e) const {
 		return e.change_in_total_stabilized_intensity_4x;
 	}
 };
 struct ns_intensity_emission_accessor_4x {
-	double operator()(const ns_hmm_emission & e) const {
+	const double& operator()(const ns_hmm_emission & e) const {
 		return e.measurement.change_in_total_stabilized_intensity_4x;
+	}
+};
+
+struct ns_stabilized_region_vs_outside_intensity_emission_comparitor {
+	const double& operator()(const ns_hmm_emission& e) const {
+		return e.measurement.change_in_total_outside_stabilized_intensity_2x - e.measurement.change_in_total_stabilized_intensity_2x;
+	}
+};
+struct ns_stabilized_region_vs_outside_intensity_comparitor{
+	const double& operator()(const ns_analyzed_image_time_path_element_measurements& e) const {
+		return e.change_in_total_outside_stabilized_intensity_2x-e.change_in_total_stabilized_intensity_2x;
 	}
 };
 struct ns_movement_accessor {
@@ -815,6 +830,37 @@ struct ns_movement_emission_accessor {
 		else return log(d);
 	}
 };
+
+struct ns_outside_intensity_accessor_1x {
+	const double& operator()(const ns_analyzed_image_time_path_element_measurements& e) const {
+		return e.change_in_total_outside_stabilized_intensity_1x;
+	}
+};
+struct ns_outside_intensity_emission_accessor_1x {
+	const double& operator()(const ns_hmm_emission& e) const {
+		return e.measurement.change_in_total_outside_stabilized_intensity_1x;
+	}
+};
+struct ns_outside_intensity_accessor_2x {
+	const double& operator()(const ns_analyzed_image_time_path_element_measurements& e) const {
+		return e.change_in_total_outside_stabilized_intensity_2x;
+	}
+};
+struct ns_outside_intensity_emission_accessor_2x {
+	const double& operator()(const ns_hmm_emission& e) const {
+		return e.measurement.change_in_total_outside_stabilized_intensity_2x;
+	}
+};
+struct ns_outside_intensity_accessor_4x {
+	const double& operator()(const ns_analyzed_image_time_path_element_measurements& e) const {
+		return e.change_in_total_outside_stabilized_intensity_4x;
+	}
+};
+struct ns_outside_intensity_emission_accessor_4x {
+	const double& operator()(const ns_hmm_emission& e) const {
+		return e.measurement.change_in_total_outside_stabilized_intensity_4x;
+	}
+};
 class ns_emission_probabiliy_model{
 public:
 
@@ -823,13 +869,23 @@ public:
 		intensity_1x.build_from_data< ns_intensity_emission_accessor_1x>(observations);
 		intensity_2x.build_from_data< ns_intensity_emission_accessor_2x>(observations);
 		intensity_4x.build_from_data< ns_intensity_emission_accessor_4x>(observations);
+		outside_intensity_1x.build_from_data< ns_outside_intensity_emission_accessor_1x>(observations);
+		outside_intensity_2x.build_from_data< ns_outside_intensity_emission_accessor_2x>(observations);
+		outside_intensity_4x.build_from_data< ns_outside_intensity_emission_accessor_4x>(observations);
+		stabilized_outside_comparison.build_from_data<ns_stabilized_region_vs_outside_intensity_emission_comparitor>(observations);
 	}
 	//the pdf values are proportional to the probability of observing a range of values within a small dt of an observation.
 	//so as long as we are always comparing observations at the same t, we can multiply these together.
-	double point_emission_probability(const ns_analyzed_image_time_path_element_measurements & e) const {
-		return movement.point_emission_pdf(e) * pow(intensity_1x.point_emission_pdf(e)
-													* intensity_2x.point_emission_pdf(e)
-													* intensity_4x.point_emission_pdf(e),1/3.0);	//we multiple all intensities to the 1/3 power so they don't dominate over movement.
+	double point_emission_log_probability(const ns_analyzed_image_time_path_element_measurements & e) const {
+		return log(movement.point_emission_pdf(e))
+			+ (log(intensity_1x.point_emission_pdf(e)) +
+				log(intensity_2x.point_emission_pdf(e)) +
+				log(intensity_4x.point_emission_pdf(e))) / 3	//we multiple all intensities to the 1/3 power so they don't dominate over movement.
+		+(log(outside_intensity_1x.point_emission_pdf(e)) +
+			log(outside_intensity_2x.point_emission_pdf(e)) +
+			log(outside_intensity_4x.point_emission_pdf(e))) / 3;	//we multiple all intensities to the 1/3 power so they don't dominate over movement.
+			+ log(stabilized_outside_comparison.point_emission_pdf(e));	//keep pdf values from getting too small (eg. large negative numbers
+			
 	}
 	void log_sub_probabilities(const ns_analyzed_image_time_path_element_measurements & m,std::vector<double> & measurements, std::vector<double> & probabilities) const {
 		measurements.resize(0);
@@ -838,32 +894,49 @@ public:
 		ns_intensity_accessor_1x i1;
 		ns_intensity_accessor_2x i2;
 		ns_intensity_accessor_4x i4;
+		ns_outside_intensity_accessor_1x o1;
+		ns_outside_intensity_accessor_2x o2;
+		ns_outside_intensity_accessor_4x o4;
+
+		ns_stabilized_region_vs_outside_intensity_comparitor d;
 
 		measurements.reserve(5);
 		measurements.push_back(ma(m));
 		if (!std::isfinite(*measurements.rbegin()) || *measurements.rbegin() < -1e300)
-			std::cerr << "Yikes";
+			std::cerr << "Yikes!";
 		measurements.push_back(i1(m));
 		measurements.push_back(i2(m));
 		measurements.push_back(i4(m));
+		measurements.push_back(o1(m));
+		measurements.push_back(o2(m));
+		measurements.push_back(o4(m));
+		measurements.push_back(d(m));
 
 		probabilities.reserve(4);
 		probabilities.push_back(log(movement.point_emission_pdf(m)));
 		probabilities.push_back(log(intensity_1x.point_emission_pdf(m)));
 		probabilities.push_back(log(intensity_2x.point_emission_pdf(m)));
 		probabilities.push_back(log(intensity_4x.point_emission_pdf(m)));
+		probabilities.push_back(log(outside_intensity_1x.point_emission_pdf(m)));
+		probabilities.push_back(log(outside_intensity_2x.point_emission_pdf(m)));
+		probabilities.push_back(log(outside_intensity_4x.point_emission_pdf(m)));
+		probabilities.push_back(log(stabilized_outside_comparison.point_emission_pdf(m)));
 
 	}
 	void sub_probability_names(std::vector<std::string> & names) const {
 		names.resize(0);
-		names.reserve(4);
+		names.reserve(7);
 		names.push_back("m");
 		names.push_back("i1");
 		names.push_back("i2");
 		names.push_back("i4");
+		names.push_back("o1");
+		names.push_back("o2");
+		names.push_back("o4");
+		names.push_back("d");
 	}
 	unsigned long number_of_sub_probabilities() const {
-		return 5;
+		return 8;
 	}
 	static void write_header(std::ostream & o)  {
 		o << "Permissions,Movement State,Variable,";
@@ -878,6 +951,14 @@ public:
 		intensity_2x.write(o);
 		o << "\n" << extra_data << "," << ns_hmm_movement_state_to_string(state) << ",i4,";
 		intensity_4x.write(o);
+		o << "\n" << extra_data << "," << ns_hmm_movement_state_to_string(state) << ",o1,";
+		outside_intensity_1x.write(o);
+		o << "\n" << extra_data << "," << ns_hmm_movement_state_to_string(state) << ",o2,";
+		outside_intensity_2x.write(o);
+		o << "\n" << extra_data << "," << ns_hmm_movement_state_to_string(state) << ",o4,";
+		outside_intensity_4x.write(o);
+		o << "\n" << extra_data << "," << ns_hmm_movement_state_to_string(state) << ",d,";
+		stabilized_outside_comparison.write(o);
 	}
 	void read(std::istream & i,ns_hmm_movement_state & state, int & extra_data) {
 
@@ -913,16 +994,33 @@ public:
 			else if (tmp == "i2")
 				intensity_2x.read(i);
 			else if (tmp == "i4")
-				intensity_4x.read(i);
+				intensity_4x.read(i);	
+			else if (tmp == "o1")
+				outside_intensity_1x.read(i);
+			else if (tmp == "o2")
+				outside_intensity_2x.read(i);
+			else if (tmp == "o4")
+				outside_intensity_4x.read(i);
+			else if (tmp == "d")
+				stabilized_outside_comparison.read(i);
 			r++;
 			if (r == 4)
 				break;
 		}
 	}
 	ns_emission_probabiliy_gausian_sub_model<ns_movement_accessor> movement;
+
 	ns_emission_probabiliy_gausian_sub_model<ns_intensity_accessor_1x> intensity_1x;
 	ns_emission_probabiliy_gausian_sub_model<ns_intensity_accessor_2x> intensity_2x;
 	ns_emission_probabiliy_gausian_sub_model<ns_intensity_accessor_4x> intensity_4x;
+
+	ns_emission_probabiliy_gausian_sub_model<ns_outside_intensity_accessor_1x> outside_intensity_1x;
+	ns_emission_probabiliy_gausian_sub_model<ns_outside_intensity_accessor_2x> outside_intensity_2x;
+	ns_emission_probabiliy_gausian_sub_model<ns_outside_intensity_accessor_4x> outside_intensity_4x;
+
+	ns_emission_probabiliy_gausian_sub_model<ns_stabilized_region_vs_outside_intensity_comparitor> stabilized_outside_comparison;
+
+
 
 
 };
@@ -964,11 +1062,11 @@ bool ns_emperical_posture_quantification_value_estimator::state_defined(const ns
 
 }
 
-void ns_emperical_posture_quantification_value_estimator::probability_for_each_state(const ns_analyzed_image_time_path_element_measurements & e, std::vector<double> & d) const {
+void ns_emperical_posture_quantification_value_estimator::log_probability_for_each_state(const ns_analyzed_image_time_path_element_measurements & e, std::vector<double> & d) const {
 	d.resize(0);
-	d.resize((int)ns_hmm_unknown_state,0);
+	d.resize((int)ns_hmm_unknown_state,-INFINITY);
 	for (auto p = emission_probability_models.begin(); p != emission_probability_models.end(); p++) {
-		const double tmp(p->second->point_emission_probability(e));
+		const double tmp(p->second->point_emission_log_probability(e));
 		d[p->first] = tmp;
 	}
 }

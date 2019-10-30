@@ -539,7 +539,9 @@ void ns_time_path_image_movement_analyzer<allocator_T>::finish_up_and_write_to_l
 		for (long j = s; j < chunk.stop_i- (long)ns_analyzed_image_time_path::movement_time_kernel_width; j++)
 			groups[group_id].paths[path_id].elements[j].clear_movement_images(memory_pool.registered_image_pool);
 	}
-	groups[group_id].paths[path_id].denoise_movement_series_and_calculate_intensity_slopes(0, *shared_state->time_series_denoising_parameters);
+
+	std::vector<ns_64_bit> tmp1, tmp2;
+	groups[group_id].paths[path_id].denoise_movement_series_and_calculate_intensity_slopes(0, *shared_state->time_series_denoising_parameters,tmp1,tmp2);
 }
 
 template<class allocator_T>
@@ -1101,14 +1103,15 @@ void ns_time_path_image_movement_analyzer<allocator_T>::process_raw_images(const
 
 		//output progres information
 		if (write_status_to_db) {
-			int last_n(0);
+			int last_p(0);
 			while (true) {
-				int n = thread_pool.number_of_jobs_pending();
-				if (n != last_n) {
+				const int n = thread_pool.number_of_jobs_pending();
+				const int p = (100 * (groups.size() - n)) / groups.size();
+				if (p-last_p >= 5) {
 					ns_acquire_lock_for_scope lock(shared_state.sql_lock, __FILE__, __LINE__);
-					image_server_const.add_subtext_to_current_event(ns_to_string((100 * (groups.size()-n)) / groups.size()) + "%...", (write_status_to_db ? (&sql) : 0));
+					image_server_const.add_subtext_to_current_event(ns_to_string(p) + "%...", (write_status_to_db ? (&sql) : 0));
 					lock.release();
-					last_n = n;
+					last_p = p;
 				}
 				if (n == 0)
 					break;
@@ -1928,7 +1931,7 @@ bool ns_time_path_image_movement_analyzer<allocator_T>::load_image_quantificatio
 	//if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Normalizing scores"));
 	normalize_movement_scores_over_all_paths(e->software_version_number(), times_series_denoising_parameters, sql);
 	if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Calculating quantifications"));
-
+	std::vector< ns_64_bit> tmp1, tmp2;
 	for (unsigned long g = 0; g < groups.size(); g++)
 		for (unsigned long p = 0; p < groups[g].paths.size(); p++) {
 			unsigned long number_of_valid_points(0);
@@ -1949,7 +1952,7 @@ bool ns_time_path_image_movement_analyzer<allocator_T>::load_image_quantificatio
 					continue;
 				else
 					//for debug, recalculate the smoothed data
-					groups[g].paths[p].denoise_movement_series_and_calculate_intensity_slopes(0, times_series_denoising_parameters);
+					groups[g].paths[p].denoise_movement_series_and_calculate_intensity_slopes(0, times_series_denoising_parameters,tmp1,tmp2);
 			}
 			groups[g].paths[p].analyze_movement(e, ns_stationary_path_id(g, p, analysis_id), last_timepoint_in_analysis_);
 			groups[g].paths[p].calculate_movement_quantification_summary(groups[g].paths[p].movement_analysis_result);
@@ -2206,55 +2209,50 @@ void ns_analyzed_image_time_path_element_measurements::read(istream & in, ns_vec
 	saturated_offset = (t != 0);//15
 
 	get_double(in, registration_offset.x);//16
-	if (in.fail())
-		throw ns_ex("Invalid Specification 15");
+	if (in.fail())		throw ns_ex("Invalid Specification 15");
 	get_double(in, registration_offset.y);//17
-	if (in.fail())
-		throw ns_ex("Invalid Specification 17");
+	if (in.fail())		throw ns_ex("Invalid Specification 17");
 	get_int(in, movement_sum);//18
-	if (in.fail())
-		throw ns_ex("Invalid Specification 18");
+	if (in.fail())		throw ns_ex("Invalid Specification 18");
 	get_double(in, denoised_movement_score);//19
-	if (in.fail())
-		throw ns_ex("Invalid Specification 19");
+	if (in.fail())		throw ns_ex("Invalid Specification 19");
 	get_double(in, movement_score);//20
-	if (in.fail())
-		throw ns_ex("Invalid Specification 20");
+	if (in.fail())		throw ns_ex("Invalid Specification 20");
 	get_int(in, total_intensity_within_stabilized);//21
-	if (in.fail())
-		throw ns_ex("Invalid Specification 21");
+	if (in.fail())		throw ns_ex("Invalid Specification 21");
 	get_double(in, spatial_averaged_movement_sum_cropped);//22
-	if (in.fail())
-		throw ns_ex("Invalid Specification 22");
+	if (in.fail())		throw ns_ex("Invalid Specification 22");
 	get_double(in, spatial_averaged_movement_sum_uncropped);//23
-	if (in.fail())
-		throw ns_ex("Invalid Specification 23");
+	if (in.fail())		throw ns_ex("Invalid Specification 23");
 	get_double(in, spatial_averaged_movement_score_uncropped);//24
-	if (in.fail())
-		throw ns_ex("Invalid Specification 24");
+	if (in.fail())		throw ns_ex("Invalid Specification 24");
 	get_double(in, spatial_averaged_movement_score_cropped);//25
-	if (in.fail())
-		throw ns_ex("Invalid Specification 25");
+	if (in.fail())		throw ns_ex("Invalid Specification 25");
 	get_int(in, total_intensity_in_previous_frame_scaled_to_current_frames_histogram);//26
-	if (in.fail())
-		throw ns_ex("Invalid Specification 26");
+	if (in.fail())		throw ns_ex("Invalid Specification 26");
 	get_int(in, total_stabilized_area);//27
-	if (in.fail())
-		throw ns_ex("Invalid Specification 27");
+	if (in.fail())		throw ns_ex("Invalid Specification 27");
 	get_int(in, change_in_total_stabilized_intensity_1x);//28
-	if (in.fail())
-	throw ns_ex("Invalid Specification 28");
+	if (in.fail())	throw ns_ex("Invalid Specification 28");
 	get_int(in, change_in_total_stabilized_intensity_2x);//29
-	if (in.fail())
-	throw ns_ex("Invalid Specification 29");
+	if (in.fail())	throw ns_ex("Invalid Specification 29");
 	get_int(in, change_in_total_stabilized_intensity_4x);//30
-	if (in.fail())
-		throw ns_ex("Invalid Specification 30");
-	get_int(in, total_intensity_within_stabilized_denoised);//30
+	if (in.fail())		throw ns_ex("Invalid Specification 30");
+	get_int(in, total_intensity_within_stabilized_denoised);//31	
+	if (in.fail())	throw ns_ex("Invalid Specification 31"); 
+	get_int(in, change_in_total_outside_stabilized_intensity_1x);//32	
+	if (in.fail())	throw ns_ex("Invalid Specification 32"); 
+	get_int(in, change_in_total_outside_stabilized_intensity_2x);//33	
+	if (in.fail())	throw ns_ex("Invalid Specification 33");
+	get_int(in, change_in_total_outside_stabilized_intensity_4x);//34	
+	if (in.fail())	throw ns_ex("Invalid Specification 34");
+	get_int(in, total_intensity_outside_stabilized_denoised);//35	
+	if (in.fail()) throw ns_ex("Invalid Specification 35");
 	string tmp;
 	char a = get_int(in, tmp);
 	if (in.fail())
-		throw ns_ex("Invalid Specification 29");
+	
+
 	if (a == '\n') {
 		//old style records
 #ifdef NS_CALCULATE_OPTICAL_FLOW
@@ -2286,7 +2284,7 @@ void ns_analyzed_image_time_path_element_measurements::read(istream & in, ns_vec
 #endif
 
 	//open for future use
-	for (unsigned int i = 0; i < 6; i++) {
+	for (unsigned int i = 0; i < 2; i++) {
 		char a = get_int(in, tmp);
 		if (a == '\n')
 			break;
@@ -2414,10 +2412,14 @@ void ns_analyzed_image_time_path_element_measurements::write_header(ostream & ou
 		",total_stabilized_area"
 		",change_in_total_stabilized_intensity_1x"
 		",change_in_total_stabilized_intensity_2x"
-		",change_in_total_stabilized_intensity_4x";
-		",total_intensity_within_stabilized_denoised";
+		",change_in_total_stabilized_intensity_4x"
+		",total_intensity_within_stabilized_denoised"
+		",change_in_total_outside_stabilized_intensity_1x"
+		",change_in_total_outside_stabilized_intensity_2x"
+		",change_in_total_outside_stabilized_intensity_4x"
+		",total_intensity_outside_stabilized_denoised";
 
-	for (unsigned int i = 0; i < 6; i++)
+	for (unsigned int i = 0; i < 2; i++)
 		out << ",blank";
 }
 void ns_analyzed_image_time_path_element_measurements::write(ostream & out,const ns_vector_2d & offset, const bool & saturated_offset) const {
@@ -2447,7 +2449,11 @@ void ns_analyzed_image_time_path_element_measurements::write(ostream & out,const
 		<< change_in_total_stabilized_intensity_1x << ","//28
 		<< change_in_total_stabilized_intensity_2x << ","//29
 		<< change_in_total_stabilized_intensity_4x << ","//30
-		<< total_intensity_within_stabilized_denoised;
+		<< total_intensity_within_stabilized_denoised << ","
+		<< change_in_total_outside_stabilized_intensity_1x << ","//31
+		<< change_in_total_outside_stabilized_intensity_2x << ","//32
+		<< change_in_total_outside_stabilized_intensity_4x << ","//33
+		<< total_intensity_outside_stabilized_denoised;
 		#ifdef NS_CALCULATE_OPTICAL_FLOW
 		o << ","; //deliberately left blank to mark old record format
 		scaled_flow_magnitude.write(o); o << ",";
@@ -2458,7 +2464,7 @@ void ns_analyzed_image_time_path_element_measurements::write(ostream & out,const
 		raw_flow_dy.write(o);
 		#endif
 
-	for (unsigned int i = 0; i < 6; i++)
+	for (unsigned int i = 0; i < 2; i++)
 		out << ",";
 }
 template<class allocator_T>
@@ -4833,15 +4839,28 @@ private:
 class ns_stabilized_intensity_data_accessor {
 public:
 	ns_stabilized_intensity_data_accessor(ns_analyzed_image_time_path::ns_element_list& l) :elements(&l) {}
-	unsigned long size()const { return elements->size(); }
-	const unsigned long time(const unsigned long i) { return (*elements)[i].absolute_time; }
-	ns_64_bit raw(const unsigned long i) {
-		
+	auto size()const { return elements->size(); }
+	const unsigned long & time(const unsigned long i) { return (*elements)[i].absolute_time; }
+	const ns_64_bit & raw(const unsigned long i) {
 		return (*elements)[i].measurements.total_intensity_within_stabilized;
-
 	}
 	ns_64_bit & processed(const unsigned long i) {
 		return (*elements)[i].measurements.total_intensity_within_stabilized_denoised;
+	}
+private:
+	ns_analyzed_image_time_path::ns_element_list* elements;
+};
+
+class ns_stabilized_outside_intensity_data_accessor {
+public:
+	ns_stabilized_outside_intensity_data_accessor(ns_analyzed_image_time_path::ns_element_list& l) :elements(&l) {}
+	auto size()const { return elements->size(); }
+	const unsigned long & time(const unsigned long i) { return (*elements)[i].absolute_time; }
+	ns_64_bit raw(const unsigned long i) {
+		return (*elements)[i].measurements.total_intensity_within_region - (*elements)[i].measurements.total_intensity_within_stabilized;
+	}
+	ns_64_bit& processed(const unsigned long i) {
+		return (*elements)[i].measurements.total_intensity_outside_stabilized_denoised;
 	}
 private:
 	ns_analyzed_image_time_path::ns_element_list* elements;
@@ -4896,7 +4915,7 @@ private:
 	}
 };
 struct ns_slope_accessor_total_in_region {
-	static inline const ns_s64_bit total_intensity(const unsigned long i, const ns_analyzed_image_time_path::ns_element_list & list) {
+	static inline const ns_s64_bit & total_intensity(const unsigned long i, const ns_analyzed_image_time_path::ns_element_list & list) {
 		return list[i].measurements.total_intensity_within_region;
 	}
 	static inline ns_s64_bit & slope(const unsigned long i, ns_analyzed_image_time_path::ns_element_list & list) {
@@ -4904,7 +4923,7 @@ struct ns_slope_accessor_total_in_region {
 	}
 }; 
 struct ns_slope_accessor_total_in_foreground {
-	static inline const ns_s64_bit total_intensity(const unsigned long i, const ns_analyzed_image_time_path::ns_element_list & list) {
+	static inline const ns_s64_bit & total_intensity(const unsigned long i, const ns_analyzed_image_time_path::ns_element_list & list) {
 		return list[i].measurements.total_intensity_within_foreground;
 	}
 	static inline ns_s64_bit & slope(const unsigned long i, ns_analyzed_image_time_path::ns_element_list & list) {
@@ -4912,7 +4931,7 @@ struct ns_slope_accessor_total_in_foreground {
 	}
 };
 struct ns_slope_accessor_total_in_stabilized_1x {
-	static inline const ns_s64_bit total_intensity(const unsigned long i, const ns_analyzed_image_time_path::ns_element_list & list) {
+	static inline const ns_s64_bit & total_intensity(const unsigned long i, const ns_analyzed_image_time_path::ns_element_list & list) {
 		return list[i].measurements.total_intensity_within_stabilized_denoised;
 	}
 	static inline ns_s64_bit & slope(const unsigned long i, ns_analyzed_image_time_path::ns_element_list & list) {
@@ -4920,7 +4939,7 @@ struct ns_slope_accessor_total_in_stabilized_1x {
 	}
 }; 
 struct ns_slope_accessor_total_in_stabilized_2x {
-	static inline const ns_s64_bit total_intensity(const unsigned long i, const ns_analyzed_image_time_path::ns_element_list & list) {
+	static inline const ns_s64_bit & total_intensity(const unsigned long i, const ns_analyzed_image_time_path::ns_element_list & list) {
 		return list[i].measurements.total_intensity_within_stabilized_denoised;
 	}
 	static inline ns_s64_bit & slope(const unsigned long i, ns_analyzed_image_time_path::ns_element_list & list) {
@@ -4928,11 +4947,35 @@ struct ns_slope_accessor_total_in_stabilized_2x {
 	}
 }; 
 struct ns_slope_accessor_total_in_stabilized_4x {
-	static inline const ns_s64_bit total_intensity(const unsigned long i, const ns_analyzed_image_time_path::ns_element_list & list) {
+	static inline const ns_s64_bit & total_intensity(const unsigned long i, const ns_analyzed_image_time_path::ns_element_list & list) {
 		return list[i].measurements.total_intensity_within_stabilized_denoised;
 	}
 	static inline ns_s64_bit & slope(const unsigned long i, ns_analyzed_image_time_path::ns_element_list & list) {
 		return list[i].measurements.change_in_total_stabilized_intensity_4x;
+	}
+};
+struct ns_slope_accessor_total_outside_stabilized_1x {
+	static inline const ns_s64_bit& total_intensity(const unsigned long i, const ns_analyzed_image_time_path::ns_element_list& list) {
+		return list[i].measurements.total_intensity_outside_stabilized_denoised;
+	}
+	static inline ns_s64_bit& slope(const unsigned long i, ns_analyzed_image_time_path::ns_element_list& list) {
+		return list[i].measurements.change_in_total_outside_stabilized_intensity_1x;
+	}
+};
+struct ns_slope_accessor_total_outside_stabilized_2x {
+	static inline const ns_s64_bit& total_intensity(const unsigned long i, const ns_analyzed_image_time_path::ns_element_list& list) {
+		return list[i].measurements.total_intensity_outside_stabilized_denoised;
+	}
+	static inline ns_s64_bit& slope(const unsigned long i, ns_analyzed_image_time_path::ns_element_list& list) {
+		return list[i].measurements.change_in_total_outside_stabilized_intensity_2x;
+	}
+};
+struct ns_slope_accessor_total_outside_stabilized_4x {
+	static inline const ns_s64_bit& total_intensity(const unsigned long i, const ns_analyzed_image_time_path::ns_element_list& list) {
+		return list[i].measurements.total_intensity_outside_stabilized_denoised;
+	}
+	static inline ns_s64_bit& slope(const unsigned long i, ns_analyzed_image_time_path::ns_element_list& list) {
+		return list[i].measurements.change_in_total_outside_stabilized_intensity_4x;
 	}
 };
 
@@ -5023,7 +5066,7 @@ public:
 	}
 };
 
-void ns_analyzed_image_time_path::denoise_movement_series_and_calculate_intensity_slopes(const unsigned long change_time_in_seconds, const ns_time_series_denoising_parameters & times_series_denoising_parameters){
+void ns_analyzed_image_time_path::denoise_movement_series_and_calculate_intensity_slopes(const unsigned long change_time_in_seconds, const ns_time_series_denoising_parameters & times_series_denoising_parameters, std::vector<ns_64_bit >& tmp1, std::vector<ns_64_bit >& tmp2){
 	if (elements.size() == 0)
 		return;
 
@@ -5042,23 +5085,31 @@ void ns_analyzed_image_time_path::denoise_movement_series_and_calculate_intensit
 		if (elements[i].measurements.movement_score < -1e300)
 			cerr << "YIKES";
 	}
-	//smooth raw movement data
-	ns_kernel_smoother<ns_movement_data_accessor, ns_mean> smooth_data;
-	smooth_data(movement_kernel_width, acc);
-
-	//we want to denoise intensities so that our estimates of change in intensity work better.
-	ns_stabilized_intensity_data_accessor acc_2(elements);
-	ns_kernel_smoother < ns_stabilized_intensity_data_accessor, ns_median> smooth_data_2;
-	smooth_data_2(intensity_kernel_width, acc_2);
+	{
+		//smooth raw movement data
+		ns_kernel_smoother<ns_movement_data_accessor, ns_mean> smooth_data;
+		smooth_data(movement_kernel_width, acc);
+		//we want to denoise intensities so that our estimates of change in intensity work better.
+		ns_stabilized_intensity_data_accessor acc_2(elements);
+		ns_kernel_smoother < ns_stabilized_intensity_data_accessor, ns_median> smooth_data_2;
+		smooth_data_2(intensity_kernel_width, acc_2);
+		//do the same for the change in intensity outside the stabelized region (eg. non-worms)
+		ns_stabilized_outside_intensity_data_accessor acc_3(elements);
+		ns_kernel_smoother < ns_stabilized_outside_intensity_data_accessor, ns_median> smooth_data_3;
+		smooth_data_3(intensity_kernel_width, acc_3);
+	}
 
 		
 	const int start_i = this->first_stationary_timepoint();  //do not use frames before worm arrives to calculate slope, as the worm's appearence will produce a very large spurious slope.
-	std::vector<ns_64_bit > tmp1, tmp2;
+	
 	ns_slope_calculator<4, ns_slope_accessor_total_in_region, ns_force_toward_zero> total_change_calculator(elements,start_i,tmp1,tmp2);
 	ns_slope_calculator<4, ns_slope_accessor_total_in_foreground, ns_force_toward_zero> foreground_change_calculator(elements, start_i, tmp1, tmp2);
 	ns_slope_calculator<4, ns_slope_accessor_total_in_stabilized_1x, ns_force_toward_zero> stabilized_change_calculator_1x(elements, start_i, tmp1, tmp2);
 	ns_slope_calculator<8, ns_slope_accessor_total_in_stabilized_2x, ns_force_toward_zero> stabilized_change_calculator_2x(elements, start_i, tmp1, tmp2);
 	ns_slope_calculator<16, ns_slope_accessor_total_in_stabilized_4x, ns_force_toward_zero> stabilized_change_calculator_4x(elements,start_i, tmp1, tmp2);
+	ns_slope_calculator<4, ns_slope_accessor_total_outside_stabilized_1x, ns_force_toward_zero> stabilized_outside_change_calculator_1x(elements, start_i, tmp1, tmp2);
+	ns_slope_calculator<8, ns_slope_accessor_total_outside_stabilized_2x, ns_force_toward_zero> stabilized_outside_change_calculator_2x(elements, start_i, tmp1, tmp2);
+	ns_slope_calculator<16, ns_slope_accessor_total_outside_stabilized_4x, ns_force_toward_zero> stabilized_outside_change_calculator_4x(elements, start_i, tmp1, tmp2);
 }
 
 void ns_match_histograms(const ns_image_standard & im1, const ns_image_standard & im2, float * histogram_matching_factors) {
@@ -7168,7 +7219,7 @@ void ns_time_path_image_movement_analyzer<allocator_T>::reanalyze_stored_aligned
 			throw ns_ex("Movement analysis ID specified on disk (") << file_specified_analysis_id << ") does not agree with the ID  specified in database (" << this->analysis_id << ")";
 		if (analysis_id == 0)
 			throw ns_ex("Could not obtain analysis id!");
-
+		std::vector<ns_64_bit> tmp1, tmp2;
 		 long last_r(-5);
 		for (unsigned int i = 0; i < groups.size(); i++){
 			 long cur_r = (100 * i) / groups.size();
@@ -7242,7 +7293,7 @@ void ns_time_path_image_movement_analyzer<allocator_T>::reanalyze_stored_aligned
 				//}
 				clear_images_for_group(i, image_cache);
 				groups[i].paths[j].end_movement_image_loading();
-				groups[i].paths[j].denoise_movement_series_and_calculate_intensity_slopes(0,times_series_denoising_parameters);
+				groups[i].paths[j].denoise_movement_series_and_calculate_intensity_slopes(0,times_series_denoising_parameters, tmp1, tmp2);
 			
 				//groups[i].paths[j].analyze_movement(e,generate_stationary_path_id(i,j));
 				

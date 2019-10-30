@@ -36,7 +36,7 @@ public:
 	bool add_observation(const std::string &software_version, const ns_death_time_annotation & properties, const ns_analyzed_image_time_path * path, const unsigned long device_id );
 	void build_estimator_from_observations(std::string & output, const ns_states_permitted & states_permitted);
 
-	void probability_for_each_state(const ns_analyzed_image_time_path_element_measurements & e,std::vector<double> & p) const;
+	void log_probability_for_each_state(const ns_analyzed_image_time_path_element_measurements & e,std::vector<double> & p) const;
 	void read_observation_data(std::istream & in);
 	void write_observation_data(std::ostream & out,const std::string & experiment_name = "") const;
 	

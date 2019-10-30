@@ -127,9 +127,9 @@ void ns_hmm_solver::solve(const ns_analyzed_image_time_path & path, const ns_emp
 		if (path.element(i).excluded || path.element(i).censored) {
 			if (generate_path_info) {
 				state_info.path[i].state = ns_hmm_unknown_state;
-				state_info.path[i].total_probability = 0;
+				state_info.path[i].total_log_probability = 0;
 				state_info.path[i].sub_measurements.resize(estimator.number_of_sub_probabilities(), 0);
-				state_info.path[i].sub_probabilities.resize(estimator.number_of_sub_probabilities(), 1);
+				state_info.path[i].log_sub_probabilities.resize(estimator.number_of_sub_probabilities(), 0);
 			}
 			continue;
 		}
@@ -143,11 +143,11 @@ void ns_hmm_solver::solve(const ns_analyzed_image_time_path & path, const ns_emp
 		log_likelihood += cur_p;
 		if (generate_path_info) {
 			state_info.path[i].state = movement_states[i];
-			state_info.path[i].total_probability = cur_p;
+			state_info.path[i].total_log_probability = cur_p;
 		}
 	
 		if (generate_path_info)
-			estimator.provide_measurements_and_sub_probabilities(movement_states[i], path.element(i).measurements, state_info.path[i].sub_measurements, state_info.path[i].sub_probabilities);
+			estimator.provide_measurements_and_log_sub_probabilities(movement_states[i], path.element(i).measurements, state_info.path[i].sub_measurements, state_info.path[i].log_sub_probabilities);
 	
 		previous_state = movement_states[i];
 	}
@@ -667,26 +667,22 @@ struct ns_gmm_sorter{
 bool operator<(const ns_gmm_sorter & a, const ns_gmm_sorter & b) {
 	return a.weight < b.weight;
 }
+
 template<class accessor_t>
-class ns_emission_probabiliy_sub_model {
+class ns_emission_probabiliy_gausian_sub_model {
 public:
-	ns_emission_probabiliy_sub_model(): gmm(1, 3) {}
+	ns_emission_probabiliy_gausian_sub_model(): gmm(1, 3) {}
 	template<class data_accessor_t>
 	void build_from_data(const std::vector<ns_hmm_emission> & observations) {
 		data_accessor_t data_accessor;
 		
-		unsigned long number_of_non_zeros(0);
 		double * data = new double[observations.size()];
 		for (unsigned long i = 0; i < observations.size(); i++) {
 			const auto v = data_accessor(observations[i]);
-			if (!data_accessor.is_zero(observations[i])) {
-				data[number_of_non_zeros] = v;
-				number_of_non_zeros++;
-			}
+			data[i] = v;
 		}
-		
-		zero_probability = 1.0 - (number_of_non_zeros / (double)observations.size());
-		if (number_of_non_zeros < 3) {
+
+		if (observations.size() < 3) {
 			gmm_weights[0] = 1;
 			gmm_weights[1] = 0;
 			gmm_weights[2] = 0;
@@ -694,18 +690,17 @@ public:
 				gmm_means[i] = 0;
 				gmm_var[i] = 1;
 			}
-			if (number_of_non_zeros > 1) {
-				for (unsigned int i = 0; i < number_of_non_zeros; i++)
-					gmm_means[0] += data[i];
-				gmm_means[0] /= number_of_non_zeros;
-			}
+			for (unsigned int i = 0; i < observations.size(); i++)
+				gmm_means[0] += data[i];
+			gmm_means[0] /= observations.size();
+			
 			return;
 		}
 		
 		double start_weights[3] = { 1/3.0,1 / 3.0,1 / 3.0 };
-		double start_means[3] = { -1,0,1 };
-		double start_variance[3] = { 1,1,1 };
-		gmm.Train(data, number_of_non_zeros);
+		double start_means[3] = { 0,4,8 };
+		double start_variance[3] = { 1,4,8 };
+		gmm.Train(data, observations.size());
 		double sum_of_weights = 0;
 
 		//we sort in order of weights, so it's easy to visualize the output of the model
@@ -728,13 +723,14 @@ public:
 		for (unsigned int i = 0; i < 3; i++) 
 			gmm_means[i] = -gmm_means[i];
 	}
-	double point_emission_probability(const ns_analyzed_image_time_path_element_measurements & e) const {
+	//Note that we do not calculate the /probability/ of observing the value.
+	//we calculate the value of the /probability density function/ at a certain t
+	//which is bounded between 0 and infinity!
+	double point_emission_pdf(const ns_analyzed_image_time_path_element_measurements & e) const {
 		accessor_t accessor;
 		const double val = accessor(e);
-		const bool is_zero(accessor.is_zero(e));
-		if (is_zero) 
-			return zero_probability;
-		return (1 - zero_probability)*gmm.GetProbability(&val);
+		const double b = gmm.GetProbability(&val);
+		return b;
 	}
 	static void write_header(std::ostream & o)  {
 		o << "P(0)";
@@ -744,13 +740,14 @@ public:
 
 	}
 	void write(std::ostream & o) const {		
-		o << zero_probability ;
+		o << 0 ;	//unused parameter
 		for (unsigned int i = 0; i < 3; i++)
 			o << "," << gmm_weights[i] << "," << gmm_means[i] << "," << gmm_var[i];
 	}
 	void read(std::istream & in) {
 		ns_get_double get_double;
-		get_double(in, zero_probability);
+		double tmp;
+		get_double(in, tmp);
 		if (in.fail()) throw ns_ex("ns_emission_probabiliy_model():read():invalid format");
 		for (unsigned int i = 0; i < 3; i++) {
 			get_double(in, gmm_weights[i]);
@@ -766,14 +763,10 @@ public:
 			gmm.setVariance(i, &gmm_var[i]);
 
 		}
-		//std::cout << "Just read: ";
-		//write(std::cout);
-		//std::cout << "\n";
 	}
 private:
 
 	GMM gmm;
-	double zero_probability;
 	double gmm_weights[3],
 		gmm_means[3],
 		gmm_var[3];
@@ -782,67 +775,44 @@ struct ns_intensity_accessor_1x {
 	double operator()(const ns_analyzed_image_time_path_element_measurements & e) const {
 		return e.change_in_total_stabilized_intensity_1x;
 	}	
-	bool is_zero(const ns_analyzed_image_time_path_element_measurements & e) const {
-		return e.change_in_total_stabilized_intensity_1x == 0;
-	}
 }; 
 struct ns_intensity_emission_accessor_1x {
 	double operator()(const ns_hmm_emission & e) const {
 		return e.measurement.change_in_total_stabilized_intensity_1x;
-	}
-	bool is_zero(const ns_hmm_emission & e) const {
-		return e.measurement.change_in_total_stabilized_intensity_1x == 0;
 	}
 }; 
 struct ns_intensity_accessor_2x {
 	double operator()(const ns_analyzed_image_time_path_element_measurements & e) const {
 		return e.change_in_total_stabilized_intensity_2x;
 	}
-	bool is_zero(const ns_analyzed_image_time_path_element_measurements & e) const {
-		return e.change_in_total_stabilized_intensity_2x == 0;
-	}
 };
 struct ns_intensity_emission_accessor_2x {
 	double operator()(const ns_hmm_emission & e) const {
 		return e.measurement.change_in_total_stabilized_intensity_2x;
-	}
-	bool is_zero(const ns_hmm_emission & e) const {
-		return e.measurement.change_in_total_stabilized_intensity_2x == 0;
 	}
 };
 struct ns_intensity_accessor_4x {
 	double operator()(const ns_analyzed_image_time_path_element_measurements & e) const {
 		return e.change_in_total_stabilized_intensity_4x;
 	}
-	bool is_zero(const ns_analyzed_image_time_path_element_measurements & e) const {
-		return e.change_in_total_stabilized_intensity_4x == 0;
-	}
 };
 struct ns_intensity_emission_accessor_4x {
 	double operator()(const ns_hmm_emission & e) const {
 		return e.measurement.change_in_total_stabilized_intensity_4x;
 	}
-	bool is_zero(const ns_hmm_emission & e) const {
-		return e.measurement.change_in_total_stabilized_intensity_4x == 0;
-	}
 };
 struct ns_movement_accessor {
 	double operator()(const ns_analyzed_image_time_path_element_measurements & e) const {
-		double d = e.death_time_posture_analysis_measure_v2_cropped()+1;
+		const double d = e.death_time_posture_analysis_measure_v2_cropped()+1;
+		if (d <= 0) return -DBL_MAX;
 		return log(d);
-	}
-	bool is_zero(const ns_analyzed_image_time_path_element_measurements & e) const {
-		return e.death_time_posture_analysis_measure_v2_cropped() <= 0;
 	}
 };
 struct ns_movement_emission_accessor {
 	double operator()(const ns_hmm_emission & e) const {
-		double d = e.measurement.death_time_posture_analysis_measure_v2_cropped();
+		const double d = e.measurement.death_time_posture_analysis_measure_v2_cropped()+1;
 		if (d <= 0) return -DBL_MAX;
 		else return log(d);
-	}
-	bool is_zero(const ns_hmm_emission & e) const {
-		return e.measurement.death_time_posture_analysis_measure_v2_cropped() <= 0;
 	}
 };
 class ns_emission_probabiliy_model{
@@ -854,12 +824,14 @@ public:
 		intensity_2x.build_from_data< ns_intensity_emission_accessor_2x>(observations);
 		intensity_4x.build_from_data< ns_intensity_emission_accessor_4x>(observations);
 	}
+	//the pdf values are proportional to the probability of observing a range of values within a small dt of an observation.
+	//so as long as we are always comparing observations at the same t, we can multiply these together.
 	double point_emission_probability(const ns_analyzed_image_time_path_element_measurements & e) const {
-		return movement.point_emission_probability(e) * pow(intensity_1x.point_emission_probability(e)
-														*intensity_2x.point_emission_probability(e)
-														*intensity_4x.point_emission_probability(e),.33333333333);
+		return movement.point_emission_pdf(e) * pow(intensity_1x.point_emission_pdf(e)
+													* intensity_2x.point_emission_pdf(e)
+													* intensity_4x.point_emission_pdf(e),1/3.0);	//we multiple all intensities to the 1/3 power so they don't dominate over movement.
 	}
-	void sub_probabilities(const ns_analyzed_image_time_path_element_measurements & m,std::vector<double> & measurements, std::vector<double> & probabilities) const {
+	void log_sub_probabilities(const ns_analyzed_image_time_path_element_measurements & m,std::vector<double> & measurements, std::vector<double> & probabilities) const {
 		measurements.resize(0);
 		probabilities.resize(0);
 		ns_movement_accessor ma;
@@ -868,7 +840,6 @@ public:
 		ns_intensity_accessor_4x i4;
 
 		measurements.reserve(5);
-		measurements.push_back(ma.is_zero(m));
 		measurements.push_back(ma(m));
 		if (!std::isfinite(*measurements.rbegin()) || *measurements.rbegin() < -1e300)
 			std::cerr << "Yikes";
@@ -876,18 +847,16 @@ public:
 		measurements.push_back(i2(m));
 		measurements.push_back(i4(m));
 
-		probabilities.reserve(5);
-		probabilities.push_back(0);
-		probabilities.push_back(movement.point_emission_probability(m));
-		probabilities.push_back(intensity_1x.point_emission_probability(m));
-		probabilities.push_back(intensity_2x.point_emission_probability(m));
-		probabilities.push_back(intensity_4x.point_emission_probability(m));
+		probabilities.reserve(4);
+		probabilities.push_back(log(movement.point_emission_pdf(m)));
+		probabilities.push_back(log(intensity_1x.point_emission_pdf(m)));
+		probabilities.push_back(log(intensity_2x.point_emission_pdf(m)));
+		probabilities.push_back(log(intensity_4x.point_emission_pdf(m)));
 
 	}
 	void sub_probability_names(std::vector<std::string> & names) const {
 		names.resize(0);
-		names.reserve(5);
-		names.push_back("m0");
+		names.reserve(4);
 		names.push_back("m");
 		names.push_back("i1");
 		names.push_back("i2");
@@ -898,7 +867,7 @@ public:
 	}
 	static void write_header(std::ostream & o)  {
 		o << "Permissions,Movement State,Variable,";
-		ns_emission_probabiliy_sub_model<ns_movement_accessor>::write_header(o);
+		ns_emission_probabiliy_gausian_sub_model<ns_movement_accessor>::write_header(o);
 	}
 	void write(const ns_hmm_movement_state state,int extra_data,std::ostream & o) const {
 		o << extra_data << "," << ns_hmm_movement_state_to_string(state) << ",m,";
@@ -950,16 +919,16 @@ public:
 				break;
 		}
 	}
-	ns_emission_probabiliy_sub_model<ns_movement_accessor> movement;
-	ns_emission_probabiliy_sub_model<ns_intensity_accessor_1x> intensity_1x;
-	ns_emission_probabiliy_sub_model<ns_intensity_accessor_2x> intensity_2x;
-	ns_emission_probabiliy_sub_model<ns_intensity_accessor_4x> intensity_4x;
+	ns_emission_probabiliy_gausian_sub_model<ns_movement_accessor> movement;
+	ns_emission_probabiliy_gausian_sub_model<ns_intensity_accessor_1x> intensity_1x;
+	ns_emission_probabiliy_gausian_sub_model<ns_intensity_accessor_2x> intensity_2x;
+	ns_emission_probabiliy_gausian_sub_model<ns_intensity_accessor_4x> intensity_4x;
 
 
 };
 
 
-void ns_emperical_posture_quantification_value_estimator::provide_measurements_and_sub_probabilities(const ns_hmm_movement_state & state, const ns_analyzed_image_time_path_element_measurements & e, std::vector<double> & measurement, std::vector<double> & sub_probabilitiy) const {
+void ns_emperical_posture_quantification_value_estimator::provide_measurements_and_log_sub_probabilities(const ns_hmm_movement_state & state, const ns_analyzed_image_time_path_element_measurements & e, std::vector<double> & measurement, std::vector<double> & sub_probabilitiy) const {
 	bool undefined_state(false);
 	auto p = emission_probability_models.find(state);
 	
@@ -970,7 +939,7 @@ void ns_emperical_posture_quantification_value_estimator::provide_measurements_a
 		p = emission_probability_models.begin();
 		undefined_state = true;
 	}
-	p->second->sub_probabilities(e, measurement, sub_probabilitiy);
+	p->second->log_sub_probabilities(e, measurement, sub_probabilitiy);
 
 
 	//if we are debugging a state for which the emission model isn't trained, output N/A.
@@ -1012,7 +981,7 @@ void ns_emperical_posture_quantification_value_estimator::output_debug_info(cons
 		std::vector<double> measurements;
 		std::vector<double> probabilities;
 		p->second->sub_probability_names(names);
-		p->second->sub_probabilities(e, measurements, probabilities);
+		p->second->log_sub_probabilities(e, measurements, probabilities);
 		for (unsigned int i = 0; i < names.size(); i++) {
 			o << p->first << ": " << names[i] << ": " << measurements[i] << ": " << probabilities[i] << "\n";
 		}

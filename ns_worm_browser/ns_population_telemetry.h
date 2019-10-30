@@ -705,6 +705,8 @@ public:
 				if (filter_by_strain && r->second.metadata.device_regression_match_description() != data_to_process.device_regression_match_description())
 					continue; 
 				for (ns_death_time_annotation_compiler_region::ns_location_list::const_iterator l = r->second.locations.begin(); l != r->second.locations.end(); l++) {
+					ns_multiple_worm_cluster_death_annotation_handler multiple_worm_handler;
+					//if (l->properties.number_of_worms()>1)
 					ns_dying_animal_description_set_const set;
 					l->generate_dying_animal_description_const(true, set);
 

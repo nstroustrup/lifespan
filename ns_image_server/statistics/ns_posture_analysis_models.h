@@ -51,7 +51,7 @@ public:
 	void output_debug_info(const ns_analyzed_image_time_path_element_measurements & e, std::ostream & o) const;
 	bool state_specified_by_model(const ns_hmm_movement_state s) const;
 	//useful for debugging
-	void provide_measurements_and_sub_probabilities(const ns_hmm_movement_state & state, const ns_analyzed_image_time_path_element_measurements & e, std::vector<double> & measurement, std::vector<double> & sub_probabilitiy ) const;
+	void provide_measurements_and_log_sub_probabilities(const ns_hmm_movement_state & state, const ns_analyzed_image_time_path_element_measurements & e, std::vector<double> & measurement, std::vector<double> & sub_probabilitiy ) const;
 	void provide_sub_probability_names(std::vector<std::string> & names) const;
 	unsigned long number_of_sub_probabilities() const;
 	bool state_defined(const ns_hmm_movement_state & m) const;

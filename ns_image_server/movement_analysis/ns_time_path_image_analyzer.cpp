@@ -4419,13 +4419,13 @@ void ns_hmm_movement_analysis_optimizatiom_stats::write_error_data(std::ostream 
 }
 
 void ns_hmm_movement_analysis_optimizatiom_stats::write_hmm_path_header(std::ostream & o) const {
-	o << "Experiment,Plate Name,Animal Details,Group ID,Path ID,Excluded,Censored,Number of Worms, Time (Days),Machine HMM state, By Hand HMM state, Machine likelihood, By hand likelihood, (Machine - by hand) likelihood, Cumulative (Machine - by hand) likelihood ";
+	o << "Experiment,Plate Name,Animal Details,Group ID,Path ID,Excluded,Censored,Number of Worms, Time (Days),Machine HMM state, By Hand HMM state, Machine likelihood, By hand likelihood, log(p(Machine) / p(by hand)) , Cumulative log(p(Machine) / p(by hand)) ";
 
 	if (animals.size() > 0) {
 		for (unsigned int i = 0; i < animals[0].state_info_variable_names.size(); i++) {
 			o << ", Measurement " << animals[0].state_info_variable_names[i];
-			o << ", Machine P(" << animals[0].state_info_variable_names[i] << ")";
-			o << ", By Hand P(" << animals[0].state_info_variable_names[i] << ")";
+			o << ", log(Machine p(" << animals[0].state_info_variable_names[i] << ") / By Hand p(" << animals[0].state_info_variable_names[i] << "))";
+			o << ", Cumulative log(Machine p(" << animals[0].state_info_variable_names[i] << ") / By Hand p(" << animals[0].state_info_variable_names[i] << "))";
 		}
 	}
 	o << ", Machine Movement Cessation Time Error (days), Machine Expansion time Error (days), Machine post-expansion Contraction time Error (days)\n";
@@ -4437,6 +4437,7 @@ void ns_hmm_movement_analysis_optimizatiom_stats::write_hmm_path_data(std::ostre
 		if (m == metadata_cache.end())
 			throw ns_ex("Could not find metadata for region ") << animals[k].properties.region_info_id;
 		double cumulative_differential_probability(0);
+		std::vector<double> cumulative_sub_probabilities(animals[0].state_info_variable_names.size(), 0);
 		if (animals[k].machine_state_info.path.size() != animals[k].state_info_times.size())
 			throw ns_ex("Invalid path size");
 		for (unsigned int i = 0; i < animals[k].machine_state_info.path.size(); i++) {
@@ -4447,15 +4448,19 @@ void ns_hmm_movement_analysis_optimizatiom_stats::write_hmm_path_data(std::ostre
 				<< (animals[k].properties.number_of_worms()) << ",";
 			o << ((animals[k].state_info_times[i] - m->second.time_at_which_animals_had_zero_age) / 60.0 / 60.0 / 24.0) << ",";
 			o << ns_hmm_movement_state_to_string(animals[k].machine_state_info.path[i].state) << "," << ns_hmm_movement_state_to_string(animals[k].by_hand_state_info.path[i].state) << ",";
-			o << animals[k].machine_state_info.path[i].total_probability << "," << animals[k].by_hand_state_info.path[i].total_probability << ",";
-			double diff_p = (animals[k].machine_state_info.path[i].total_probability - animals[k].by_hand_state_info.path[i].total_probability);
+			o << animals[k].machine_state_info.path[i].total_log_probability << "," << animals[k].by_hand_state_info.path[i].total_log_probability << ",";
+			const double diff_p = (animals[k].machine_state_info.path[i].total_log_probability - animals[k].by_hand_state_info.path[i].total_log_probability);
+			if (animals[k].machine_state_info.path[i].state != ns_hmm_missing)	//missing states don't count in verterbi calculations, so we shouldn't calculate it
+				cumulative_differential_probability += diff_p;
 			o << diff_p << ",";
-			cumulative_differential_probability += diff_p;
 			o << cumulative_differential_probability;
 			for (unsigned int pp = 0; pp < animals[0].state_info_variable_names.size(); pp++) {
-				o << "," << animals[k].machine_state_info.path[i].sub_measurements[pp];
-				o << "," << animals[k].machine_state_info.path[i].sub_probabilities[pp];
-				o << "," << animals[k].by_hand_state_info.path[i].sub_probabilities[pp];
+				const double diff_p_sub(animals[k].machine_state_info.path[i].log_sub_probabilities[pp] - animals[k].by_hand_state_info.path[i].log_sub_probabilities[pp]);
+				if (animals[k].machine_state_info.path[i].state != ns_hmm_missing)	//missing states don't count in verterbi calculations, so we shouldn't calculate it
+					cumulative_sub_probabilities[pp] += diff_p_sub;
+				o << "," << animals[k].machine_state_info.path[i].sub_measurements[pp]
+				  << "," << diff_p_sub
+				  << "," << cumulative_sub_probabilities[pp];
 			}
 			o << ",";
 			auto movement_cessation_p = animals[k].measurements.find(ns_movement_cessation);

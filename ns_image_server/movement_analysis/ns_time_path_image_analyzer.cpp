@@ -4839,7 +4839,7 @@ private:
 class ns_stabilized_intensity_data_accessor {
 public:
 	ns_stabilized_intensity_data_accessor(ns_analyzed_image_time_path::ns_element_list& l) :elements(&l) {}
-	auto size()const { return elements->size(); }
+  std::size_t size()const { return elements->size(); }
 	const unsigned long & time(const unsigned long i) { return (*elements)[i].absolute_time; }
 	const ns_64_bit & raw(const unsigned long i) {
 		return (*elements)[i].measurements.total_intensity_within_stabilized;
@@ -4854,7 +4854,7 @@ private:
 class ns_stabilized_outside_intensity_data_accessor {
 public:
 	ns_stabilized_outside_intensity_data_accessor(ns_analyzed_image_time_path::ns_element_list& l) :elements(&l) {}
-	auto size()const { return elements->size(); }
+  std::size_t size()const { return elements->size(); }
 	const unsigned long & time(const unsigned long i) { return (*elements)[i].absolute_time; }
 	ns_64_bit raw(const unsigned long i) {
 		return (*elements)[i].measurements.total_intensity_within_region - (*elements)[i].measurements.total_intensity_within_stabilized;
@@ -4915,7 +4915,7 @@ private:
 	}
 };
 struct ns_slope_accessor_total_in_region {
-	static inline const ns_s64_bit & total_intensity(const unsigned long i, const ns_analyzed_image_time_path::ns_element_list & list) {
+	static inline const ns_64_bit & total_intensity(const unsigned long i, const ns_analyzed_image_time_path::ns_element_list & list) {
 		return list[i].measurements.total_intensity_within_region;
 	}
 	static inline ns_s64_bit & slope(const unsigned long i, ns_analyzed_image_time_path::ns_element_list & list) {
@@ -4923,7 +4923,7 @@ struct ns_slope_accessor_total_in_region {
 	}
 }; 
 struct ns_slope_accessor_total_in_foreground {
-	static inline const ns_s64_bit & total_intensity(const unsigned long i, const ns_analyzed_image_time_path::ns_element_list & list) {
+	static inline const ns_64_bit & total_intensity(const unsigned long i, const ns_analyzed_image_time_path::ns_element_list & list) {
 		return list[i].measurements.total_intensity_within_foreground;
 	}
 	static inline ns_s64_bit & slope(const unsigned long i, ns_analyzed_image_time_path::ns_element_list & list) {
@@ -4931,7 +4931,7 @@ struct ns_slope_accessor_total_in_foreground {
 	}
 };
 struct ns_slope_accessor_total_in_stabilized_1x {
-	static inline const ns_s64_bit & total_intensity(const unsigned long i, const ns_analyzed_image_time_path::ns_element_list & list) {
+	static inline const ns_64_bit & total_intensity(const unsigned long i, const ns_analyzed_image_time_path::ns_element_list & list) {
 		return list[i].measurements.total_intensity_within_stabilized_denoised;
 	}
 	static inline ns_s64_bit & slope(const unsigned long i, ns_analyzed_image_time_path::ns_element_list & list) {
@@ -4939,7 +4939,7 @@ struct ns_slope_accessor_total_in_stabilized_1x {
 	}
 }; 
 struct ns_slope_accessor_total_in_stabilized_2x {
-	static inline const ns_s64_bit & total_intensity(const unsigned long i, const ns_analyzed_image_time_path::ns_element_list & list) {
+	static inline const ns_64_bit & total_intensity(const unsigned long i, const ns_analyzed_image_time_path::ns_element_list & list) {
 		return list[i].measurements.total_intensity_within_stabilized_denoised;
 	}
 	static inline ns_s64_bit & slope(const unsigned long i, ns_analyzed_image_time_path::ns_element_list & list) {
@@ -4947,7 +4947,7 @@ struct ns_slope_accessor_total_in_stabilized_2x {
 	}
 }; 
 struct ns_slope_accessor_total_in_stabilized_4x {
-	static inline const ns_s64_bit & total_intensity(const unsigned long i, const ns_analyzed_image_time_path::ns_element_list & list) {
+	static inline const ns_64_bit & total_intensity(const unsigned long i, const ns_analyzed_image_time_path::ns_element_list & list) {
 		return list[i].measurements.total_intensity_within_stabilized_denoised;
 	}
 	static inline ns_s64_bit & slope(const unsigned long i, ns_analyzed_image_time_path::ns_element_list & list) {
@@ -4955,7 +4955,7 @@ struct ns_slope_accessor_total_in_stabilized_4x {
 	}
 };
 struct ns_slope_accessor_total_outside_stabilized_1x {
-	static inline const ns_s64_bit& total_intensity(const unsigned long i, const ns_analyzed_image_time_path::ns_element_list& list) {
+	static inline const ns_64_bit& total_intensity(const unsigned long i, const ns_analyzed_image_time_path::ns_element_list& list) {
 		return list[i].measurements.total_intensity_outside_stabilized_denoised;
 	}
 	static inline ns_s64_bit& slope(const unsigned long i, ns_analyzed_image_time_path::ns_element_list& list) {
@@ -4963,7 +4963,7 @@ struct ns_slope_accessor_total_outside_stabilized_1x {
 	}
 };
 struct ns_slope_accessor_total_outside_stabilized_2x {
-	static inline const ns_s64_bit& total_intensity(const unsigned long i, const ns_analyzed_image_time_path::ns_element_list& list) {
+	static inline const ns_64_bit& total_intensity(const unsigned long i, const ns_analyzed_image_time_path::ns_element_list& list) {
 		return list[i].measurements.total_intensity_outside_stabilized_denoised;
 	}
 	static inline ns_s64_bit& slope(const unsigned long i, ns_analyzed_image_time_path::ns_element_list& list) {
@@ -4971,7 +4971,7 @@ struct ns_slope_accessor_total_outside_stabilized_2x {
 	}
 };
 struct ns_slope_accessor_total_outside_stabilized_4x {
-	static inline const ns_s64_bit& total_intensity(const unsigned long i, const ns_analyzed_image_time_path::ns_element_list& list) {
+	static inline const ns_64_bit& total_intensity(const unsigned long i, const ns_analyzed_image_time_path::ns_element_list& list) {
 		return list[i].measurements.total_intensity_outside_stabilized_denoised;
 	}
 	static inline ns_s64_bit& slope(const unsigned long i, ns_analyzed_image_time_path::ns_element_list& list) {

@@ -776,43 +776,43 @@ private:
 		gmm_var[3];
 };
 struct ns_intensity_accessor_1x {
-	const double & operator()(const ns_analyzed_image_time_path_element_measurements & e) const {
+	const ns_s64_bit & operator()(const ns_analyzed_image_time_path_element_measurements & e) const {
 		return e.change_in_total_stabilized_intensity_1x;
 	}	
 }; 
 struct ns_intensity_emission_accessor_1x {
-	const double& operator()(const ns_hmm_emission & e) const {
+	const ns_s64_bit& operator()(const ns_hmm_emission & e) const {
 		return e.measurement.change_in_total_stabilized_intensity_1x;
 	}
 }; 
 struct ns_intensity_accessor_2x {
-	const double& operator()(const ns_analyzed_image_time_path_element_measurements & e) const {
+	const ns_s64_bit& operator()(const ns_analyzed_image_time_path_element_measurements & e) const {
 		return e.change_in_total_stabilized_intensity_2x;
 	}
 };
 struct ns_intensity_emission_accessor_2x {
-	const double& operator()(const ns_hmm_emission & e) const {
+	const ns_s64_bit& operator()(const ns_hmm_emission & e) const {
 		return e.measurement.change_in_total_stabilized_intensity_2x;
 	}
 };
 struct ns_intensity_accessor_4x {
-	const double& operator()(const ns_analyzed_image_time_path_element_measurements & e) const {
+	const ns_s64_bit& operator()(const ns_analyzed_image_time_path_element_measurements & e) const {
 		return e.change_in_total_stabilized_intensity_4x;
 	}
 };
 struct ns_intensity_emission_accessor_4x {
-	const double& operator()(const ns_hmm_emission & e) const {
+	const ns_s64_bit& operator()(const ns_hmm_emission & e) const {
 		return e.measurement.change_in_total_stabilized_intensity_4x;
 	}
 };
 
 struct ns_stabilized_region_vs_outside_intensity_emission_comparitor {
-	const double& operator()(const ns_hmm_emission& e) const {
+	const ns_s64_bit operator()(const ns_hmm_emission& e) const {
 		return e.measurement.change_in_total_outside_stabilized_intensity_2x - e.measurement.change_in_total_stabilized_intensity_2x;
 	}
 };
 struct ns_stabilized_region_vs_outside_intensity_comparitor{
-	const double& operator()(const ns_analyzed_image_time_path_element_measurements& e) const {
+	const ns_s64_bit operator()(const ns_analyzed_image_time_path_element_measurements& e) const {
 		return e.change_in_total_outside_stabilized_intensity_2x-e.change_in_total_stabilized_intensity_2x;
 	}
 };
@@ -832,32 +832,32 @@ struct ns_movement_emission_accessor {
 };
 
 struct ns_outside_intensity_accessor_1x {
-	const double& operator()(const ns_analyzed_image_time_path_element_measurements& e) const {
+	const ns_s64_bit& operator()(const ns_analyzed_image_time_path_element_measurements& e) const {
 		return e.change_in_total_outside_stabilized_intensity_1x;
 	}
 };
 struct ns_outside_intensity_emission_accessor_1x {
-	const double& operator()(const ns_hmm_emission& e) const {
+	const ns_s64_bit& operator()(const ns_hmm_emission& e) const {
 		return e.measurement.change_in_total_outside_stabilized_intensity_1x;
 	}
 };
 struct ns_outside_intensity_accessor_2x {
-	const double& operator()(const ns_analyzed_image_time_path_element_measurements& e) const {
+	const ns_s64_bit& operator()(const ns_analyzed_image_time_path_element_measurements& e) const {
 		return e.change_in_total_outside_stabilized_intensity_2x;
 	}
 };
 struct ns_outside_intensity_emission_accessor_2x {
-	const double& operator()(const ns_hmm_emission& e) const {
+	const ns_s64_bit& operator()(const ns_hmm_emission& e) const {
 		return e.measurement.change_in_total_outside_stabilized_intensity_2x;
 	}
 };
 struct ns_outside_intensity_accessor_4x {
-	const double& operator()(const ns_analyzed_image_time_path_element_measurements& e) const {
+	const ns_s64_bit& operator()(const ns_analyzed_image_time_path_element_measurements& e) const {
 		return e.change_in_total_outside_stabilized_intensity_4x;
 	}
 };
 struct ns_outside_intensity_emission_accessor_4x {
-	const double& operator()(const ns_hmm_emission& e) const {
+	const ns_s64_bit& operator()(const ns_hmm_emission& e) const {
 		return e.measurement.change_in_total_outside_stabilized_intensity_4x;
 	}
 };

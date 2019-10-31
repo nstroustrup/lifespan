@@ -40,6 +40,7 @@ public:
 	void setVariance(int i,double *val)	{ for(int j=0;j<m_dimNum;j++) m_vars[i][j]=val[j]; }
 
 	double GetProbability(const double* sample) const;
+	double Get_1D_Probability(int dim,const double* sample) const;
 
 	/*	SampleFile: <size><dim><data>...*/
     void Init(const char* sampleFileName);

@@ -673,16 +673,16 @@ bool operator<(const ns_gmm_sorter & a, const ns_gmm_sorter & b) {
 }
 
 template<class accessor_t>
-class ns_emission_probabiliy_gausian_sub_model {
+class ns_emission_probabiliy_gausian_1D_model {
 public:
-	ns_emission_probabiliy_gausian_sub_model(): gmm(1, 3) {}
+	ns_emission_probabiliy_gausian_1D_model(): gmm(1, 3) {}
 	template<class data_accessor_t>
 	void build_from_data(const std::vector<ns_hmm_emission> & observations) {
 		data_accessor_t data_accessor;
 		
 		double * data = new double[observations.size()];
 		for (unsigned long i = 0; i < observations.size(); i++) {
-			const auto v = data_accessor(observations[i]);
+			const auto v = data_accessor(observations[i].measurement);
 			data[i] = v;
 		}
 
@@ -775,104 +775,81 @@ private:
 		gmm_means[3],
 		gmm_var[3];
 };
-struct ns_intensity_accessor_1x {
-	const ns_s64_bit & operator()(const ns_analyzed_image_time_path_element_measurements & e) const {
-		return e.change_in_total_stabilized_intensity_1x;
-	}	
-}; 
-struct ns_intensity_emission_accessor_1x {
-	const ns_s64_bit& operator()(const ns_hmm_emission & e) const {
-		return e.measurement.change_in_total_stabilized_intensity_1x;
+
+struct ns_measurement_accessor {
+	virtual const double operator()(const ns_analyzed_image_time_path_element_measurements& e) const = 0;
+	const double operator()(const ns_hmm_emission& e) const{
+		return (*this)(e.measurement);
 	}
-}; 
-struct ns_intensity_accessor_2x {
-	const ns_s64_bit& operator()(const ns_analyzed_image_time_path_element_measurements & e) const {
-		return e.change_in_total_stabilized_intensity_2x;
-	}
-};
-struct ns_intensity_emission_accessor_2x {
-	const ns_s64_bit& operator()(const ns_hmm_emission & e) const {
-		return e.measurement.change_in_total_stabilized_intensity_2x;
-	}
-};
-struct ns_intensity_accessor_4x {
-	const ns_s64_bit& operator()(const ns_analyzed_image_time_path_element_measurements & e) const {
-		return e.change_in_total_stabilized_intensity_4x;
-	}
-};
-struct ns_intensity_emission_accessor_4x {
-	const ns_s64_bit& operator()(const ns_hmm_emission & e) const {
-		return e.measurement.change_in_total_stabilized_intensity_4x;
-	}
+	const double get_from_emission(const ns_hmm_emission& e) const {return (*this)(e.measurement);}
 };
 
-struct ns_stabilized_region_vs_outside_intensity_emission_comparitor {
-	const ns_s64_bit operator()(const ns_hmm_emission& e) const {
-		return e.measurement.change_in_total_outside_stabilized_intensity_2x - e.measurement.change_in_total_stabilized_intensity_2x;
+struct ns_intensity_accessor_1x : public ns_measurement_accessor {
+	const double operator()(const ns_analyzed_image_time_path_element_measurements & e) const {
+		return e.change_in_total_stabilized_intensity_1x;
 	}
-};
-struct ns_stabilized_region_vs_outside_intensity_comparitor{
-	const ns_s64_bit operator()(const ns_analyzed_image_time_path_element_measurements& e) const {
-		return e.change_in_total_outside_stabilized_intensity_2x-e.change_in_total_stabilized_intensity_2x;
+	const double get_from_emission(const ns_hmm_emission& e) const {return (*this)(e.measurement);}
+}; 
+struct ns_intensity_accessor_2x : public ns_measurement_accessor {
+	const double operator()(const ns_analyzed_image_time_path_element_measurements & e) const {
+		return e.change_in_total_stabilized_intensity_2x;
 	}
+	const double get_from_emission(const ns_hmm_emission& e) const { return (*this)(e.measurement); }
 };
-struct ns_movement_accessor {
-	double operator()(const ns_analyzed_image_time_path_element_measurements & e) const {
+struct ns_intensity_accessor_4x : public ns_measurement_accessor {
+	const double operator()(const ns_analyzed_image_time_path_element_measurements & e) const {
+		return e.change_in_total_stabilized_intensity_4x;
+	}
+	const double get_from_emission(const ns_hmm_emission& e) const { return (*this)(e.measurement); }
+};
+
+struct ns_movement_accessor : public ns_measurement_accessor {
+	const double operator()(const ns_analyzed_image_time_path_element_measurements & e) const {
 		const double d = e.death_time_posture_analysis_measure_v2_cropped()+1;
 		if (d <= 0) return -DBL_MAX;
 		return log(d);
 	}
+	const double get_from_emission(const ns_hmm_emission& e) const { return (*this)(e.measurement); }
 };
-struct ns_movement_emission_accessor {
-	double operator()(const ns_hmm_emission & e) const {
-		const double d = e.measurement.death_time_posture_analysis_measure_v2_cropped()+1;
-		if (d <= 0) return -DBL_MAX;
-		else return log(d);
-	}
-};
-
-struct ns_outside_intensity_accessor_1x {
-	const ns_s64_bit& operator()(const ns_analyzed_image_time_path_element_measurements& e) const {
+struct ns_outside_intensity_accessor_1x : public ns_measurement_accessor {
+	const double operator()(const ns_analyzed_image_time_path_element_measurements& e) const {
 		return e.change_in_total_outside_stabilized_intensity_1x;
 	}
+	const double get_from_emission(const ns_hmm_emission& e) const { return (*this)(e.measurement); }
 };
-struct ns_outside_intensity_emission_accessor_1x {
-	const ns_s64_bit& operator()(const ns_hmm_emission& e) const {
-		return e.measurement.change_in_total_outside_stabilized_intensity_1x;
-	}
-};
-struct ns_outside_intensity_accessor_2x {
-	const ns_s64_bit& operator()(const ns_analyzed_image_time_path_element_measurements& e) const {
+struct ns_outside_intensity_accessor_2x : public ns_measurement_accessor {
+	const double operator()(const ns_analyzed_image_time_path_element_measurements& e) const {
 		return e.change_in_total_outside_stabilized_intensity_2x;
 	}
+	const double get_from_emission(const ns_hmm_emission& e) const { return (*this)(e.measurement); }
 };
-struct ns_outside_intensity_emission_accessor_2x {
-	const ns_s64_bit& operator()(const ns_hmm_emission& e) const {
-		return e.measurement.change_in_total_outside_stabilized_intensity_2x;
-	}
-};
-struct ns_outside_intensity_accessor_4x {
-	const ns_s64_bit& operator()(const ns_analyzed_image_time_path_element_measurements& e) const {
+struct ns_outside_intensity_accessor_4x : public ns_measurement_accessor {
+	const double operator()(const ns_analyzed_image_time_path_element_measurements& e) const {
 		return e.change_in_total_outside_stabilized_intensity_4x;
 	}
+	const double get_from_emission(const ns_hmm_emission& e) const { return (*this)(e.measurement); }
 };
-struct ns_outside_intensity_emission_accessor_4x {
-	const ns_s64_bit& operator()(const ns_hmm_emission& e) const {
-		return e.measurement.change_in_total_outside_stabilized_intensity_4x;
+
+struct ns_stabilized_region_vs_outside_intensity_comparitor : public ns_measurement_accessor {
+	const double operator()(const ns_analyzed_image_time_path_element_measurements& e) const {
+		return e.change_in_total_outside_stabilized_intensity_2x - e.change_in_total_stabilized_intensity_2x;
 	}
+	const double get_from_emission(const ns_hmm_emission& e) const { return (*this)(e.measurement); }
 };
-class ns_emission_probabiliy_model{
+
+
+class ns_emission_probabiliy_independent_gaussian_model{
 public:
 
 	void build_from_data(const std::vector<ns_hmm_emission> & observations) {
-		movement.build_from_data<ns_movement_emission_accessor>(observations);
-		intensity_1x.build_from_data< ns_intensity_emission_accessor_1x>(observations);
-		intensity_2x.build_from_data< ns_intensity_emission_accessor_2x>(observations);
-		intensity_4x.build_from_data< ns_intensity_emission_accessor_4x>(observations);
-		outside_intensity_1x.build_from_data< ns_outside_intensity_emission_accessor_1x>(observations);
-		outside_intensity_2x.build_from_data< ns_outside_intensity_emission_accessor_2x>(observations);
-		outside_intensity_4x.build_from_data< ns_outside_intensity_emission_accessor_4x>(observations);
-		stabilized_outside_comparison.build_from_data<ns_stabilized_region_vs_outside_intensity_emission_comparitor>(observations);
+		movement.build_from_data<ns_movement_accessor>(observations);
+		intensity_1x.build_from_data< ns_intensity_accessor_1x>(observations);
+		intensity_2x.build_from_data< ns_intensity_accessor_2x>(observations);
+		intensity_4x.build_from_data< ns_intensity_accessor_4x>(observations);
+		outside_intensity_1x.build_from_data< ns_outside_intensity_accessor_1x>(observations);
+		outside_intensity_2x.build_from_data< ns_outside_intensity_accessor_2x>(observations);
+		outside_intensity_4x.build_from_data< ns_outside_intensity_accessor_4x>(observations);
+		stabilized_outside_comparison.build_from_data<ns_stabilized_region_vs_outside_intensity_comparitor>(observations);
 	}
 	//the pdf values are proportional to the probability of observing a range of values within a small dt of an observation.
 	//so as long as we are always comparing observations at the same t, we can multiply these together.
@@ -940,7 +917,7 @@ public:
 	}
 	static void write_header(std::ostream & o)  {
 		o << "Permissions,Movement State,Variable,";
-		ns_emission_probabiliy_gausian_sub_model<ns_movement_accessor>::write_header(o);
+		ns_emission_probabiliy_gausian_1D_model<ns_movement_accessor>::write_header(o);
 	}
 	void write(const ns_hmm_movement_state state,int extra_data,std::ostream & o) const {
 		o << extra_data << "," << ns_hmm_movement_state_to_string(state) << ",m,";
@@ -1008,22 +985,203 @@ public:
 				break;
 		}
 	}
-	ns_emission_probabiliy_gausian_sub_model<ns_movement_accessor> movement;
 
-	ns_emission_probabiliy_gausian_sub_model<ns_intensity_accessor_1x> intensity_1x;
-	ns_emission_probabiliy_gausian_sub_model<ns_intensity_accessor_2x> intensity_2x;
-	ns_emission_probabiliy_gausian_sub_model<ns_intensity_accessor_4x> intensity_4x;
+	ns_emission_probabiliy_gausian_1D_model<ns_movement_accessor> movement;
 
-	ns_emission_probabiliy_gausian_sub_model<ns_outside_intensity_accessor_1x> outside_intensity_1x;
-	ns_emission_probabiliy_gausian_sub_model<ns_outside_intensity_accessor_2x> outside_intensity_2x;
-	ns_emission_probabiliy_gausian_sub_model<ns_outside_intensity_accessor_4x> outside_intensity_4x;
+	ns_emission_probabiliy_gausian_1D_model<ns_intensity_accessor_1x> intensity_1x;
+	ns_emission_probabiliy_gausian_1D_model<ns_intensity_accessor_2x> intensity_2x;
+	ns_emission_probabiliy_gausian_1D_model<ns_intensity_accessor_4x> intensity_4x;
 
-	ns_emission_probabiliy_gausian_sub_model<ns_stabilized_region_vs_outside_intensity_comparitor> stabilized_outside_comparison;
+	ns_emission_probabiliy_gausian_1D_model<ns_outside_intensity_accessor_1x> outside_intensity_1x;
+	ns_emission_probabiliy_gausian_1D_model<ns_outside_intensity_accessor_2x> outside_intensity_2x;
+	ns_emission_probabiliy_gausian_1D_model<ns_outside_intensity_accessor_4x> outside_intensity_4x;
 
-
-
-
+	ns_emission_probabiliy_gausian_1D_model<ns_stabilized_region_vs_outside_intensity_comparitor> stabilized_outside_comparison;
 };
+
+struct ns_covarying_gaussian_dimension {
+	ns_covarying_gaussian_dimension(ns_measurement_accessor* m, const std::string & n):measurement_accessor(m),name(n) {}
+	ns_measurement_accessor* measurement_accessor;
+	std::string name;
+};
+
+class ns_emission_probabiliy_gaussian_diagonal_covariance_model {
+public:
+
+	GMM gmm;
+	std::vector< ns_covarying_gaussian_dimension> dimensions;
+	enum { number_of_dimensions = 7, number_of_gaussians = 40 };
+	mutable double observation_buffer[number_of_dimensions];
+	ns_emission_probabiliy_gaussian_diagonal_covariance_model() :gmm(number_of_dimensions, number_of_gaussians) {
+		dimensions.push_back(ns_covarying_gaussian_dimension(new ns_movement_accessor, "m"));
+		dimensions.push_back(ns_covarying_gaussian_dimension(new ns_intensity_accessor_1x, "i1"));
+		dimensions.push_back(ns_covarying_gaussian_dimension(new ns_intensity_accessor_2x, "i2"));
+		dimensions.push_back(ns_covarying_gaussian_dimension(new ns_intensity_accessor_4x, "i4"));
+		dimensions.push_back(ns_covarying_gaussian_dimension(new ns_outside_intensity_accessor_1x, "o1"));
+		dimensions.push_back(ns_covarying_gaussian_dimension(new ns_outside_intensity_accessor_2x, "o2"));
+		dimensions.push_back(ns_covarying_gaussian_dimension(new ns_outside_intensity_accessor_4x, "o4"));
+		//dimensions.push_back(ns_covarying_gaussian_dimension(new ns_stabilized_region_vs_outside_intensity_comparitor, "c"));
+		if (dimensions.size() != number_of_dimensions)
+			throw ns_ex("number_of_dimensions is not set correctly");
+	}
+	void build_from_data(const std::vector<ns_hmm_emission>& observations) {
+
+
+		if (observations.size() < number_of_gaussians) {
+			//calculate means
+			double means[number_of_dimensions];
+			for (unsigned int d = 0; d < number_of_dimensions; d++)
+				means[d] = 0;
+			for (unsigned int i = 0; i < observations.size(); i++)
+				for (unsigned int d = 0; d < number_of_dimensions; d++)
+					means[d] += (*dimensions[d].measurement_accessor)(observations[i]);
+			for (unsigned int d = 0; d < number_of_dimensions; d++)
+				means[d] /= observations.size();
+
+			for (unsigned int i = 0; i < number_of_gaussians; i++) {
+				gmm.setPrior(i, i == 0);	//only use 1 gaussian
+				gmm.setMean(i, means);
+				gmm.setVariance(i, means);
+			}
+			return;
+		}
+		double* data = new double[number_of_dimensions * observations.size()];
+		for (unsigned long i = 0; i < observations.size(); i++) {
+			for (unsigned int d = 0; d < number_of_dimensions; d++)
+				data[number_of_dimensions * i + d] = (*dimensions[d].measurement_accessor)(observations[i]);
+		}
+		gmm.SetMaxIterNum(1e6);
+		gmm.SetEndError(1e-5);
+		gmm.Train(data, observations.size());
+
+		double sum_of_weights = 0;
+		for (unsigned int i = 0; i < number_of_gaussians; i++)
+			sum_of_weights += gmm.Prior(i);
+
+		if (abs(sum_of_weights - 1) > 0.01)
+			throw ns_ex("GMM problem");
+	}
+	//the pdf values are proportional to the probability of observing a range of values within a small dt of an observation.
+	//so as long as we are always comparing observations at the same t, we can multiply these together.
+	double point_emission_log_probability(const ns_analyzed_image_time_path_element_measurements& e) const {
+		for (unsigned int d = 0; d < number_of_dimensions; d++)
+			observation_buffer[d] = (*dimensions[d].measurement_accessor)(e);
+		return log(gmm.GetProbability(observation_buffer));
+	}
+	void log_sub_probabilities(const ns_analyzed_image_time_path_element_measurements& m, std::vector<double>& measurements, std::vector<double>& probabilities) const {
+		measurements.resize(number_of_dimensions);
+		probabilities.resize(number_of_dimensions);
+		for (unsigned int d = 0; d < number_of_dimensions; d++)
+			observation_buffer[d] = measurements[d] = (*dimensions[d].measurement_accessor)(m);
+
+		for (unsigned int d = 0; d < number_of_dimensions; d++)
+			probabilities[d] = gmm.Get_1D_Probability(d,observation_buffer);
+
+
+	}
+	void sub_probability_names(std::vector<std::string>& names) const {
+		names.resize(number_of_dimensions);
+		for (unsigned int d = 0; d < number_of_dimensions; d++)
+			names[d] = dimensions[d].name;
+	}
+	unsigned long number_of_sub_probabilities() const {
+		return number_of_dimensions;
+	}
+	static void write_header(std::ostream& o) {
+		o << "Permissions,Movement State,Number of Dimensions ,Number of Gaussians";
+		for (unsigned int i = 0; i < number_of_dimensions; i++) {
+			o << ",Weight " << i << ", Mean " << i << ", Var " << i;
+		}
+
+		ns_emission_probabiliy_gausian_1D_model<ns_movement_accessor>::write_header(o);
+	}
+	void write(const ns_hmm_movement_state state, int extra_data, std::ostream& o) const {
+		for (unsigned int d = 0; d < number_of_dimensions; d++) {
+			o << extra_data << "," << ns_hmm_movement_state_to_string(state) << "," << number_of_dimensions << "," << number_of_gaussians;
+
+			for (unsigned int g = 0; g < number_of_gaussians; g++)
+				o << "," << gmm.Prior(g) << "," << gmm.Mean(g)[d] << "," << gmm.Variance(g)[d];
+			if (d + 1 != number_of_dimensions)
+				o << "\n";
+		}
+	}
+	void read_dimension(const unsigned int dim, double* weights, double* means, double* vars, std::istream& in) {
+		//we place the mean in dimension dim for gaussian g at
+		//number_of_dimensions*g + dim
+
+		ns_get_double get_double;
+		double tmp;
+		for (unsigned int g = 0; g < number_of_gaussians; g++) {
+			get_double(in, weights[number_of_dimensions * g + dim]);
+			if (in.fail()) throw ns_ex("ns_emission_probabiliy_model():read():invalid format");
+			get_double(in, means[number_of_dimensions * g + dim]);
+			if (in.fail()) throw ns_ex("ns_emission_probabiliy_model():read():invalid format");
+			get_double(in, vars[number_of_dimensions * g + dim]);
+			if (in.fail()) throw ns_ex("ns_emission_probabiliy_model():read():invalid format");
+		}
+	}
+	void read(std::istream& i, ns_hmm_movement_state& state, int& extra_data) {
+
+		ns_get_string get_string;
+		ns_get_int get_int;
+		std::string tmp;
+		std::string dimension_name;
+		int file_number_of_dimensions, file_number_of_gaussians;
+		int r = 0;
+		std::map<std::string, int> dimension_name_mapping;
+		for (unsigned int i = 0; i < number_of_dimensions; i++) {
+			dimension_name_mapping[dimensions[i].name] = i;
+		}
+		double weights[number_of_gaussians];
+		double means[number_of_gaussians * number_of_dimensions];  // the means for gaussian i start at i*number_of_gaussians
+		double vars[number_of_gaussians * number_of_dimensions];
+
+		while (!i.fail()) {
+			get_string(i, tmp);
+			if (i.fail()) {
+				if (r == 0) {
+					state = ns_hmm_unknown_state;
+					extra_data = 0;
+					return;
+				}
+				else
+					throw ns_ex("ns_emission_probabiliy_model::read()::Bad model file");
+			}
+			extra_data = atoi(tmp.c_str());
+			get_string(i, tmp);
+			ns_hmm_movement_state state_temp = ns_hmm_movement_state_from_string(tmp);	//all information for each state should be written to files in contiguous lines
+			if (r != 0 && state_temp != state)
+				throw ns_ex("ns_emission_probabiliy_model::read()::Mixed up order of emission probability model!");
+			state = state_temp;
+
+			get_int(i, file_number_of_dimensions);
+			get_int(i, file_number_of_gaussians);
+			if (file_number_of_gaussians != number_of_gaussians)
+				throw ns_ex("Model gaussian number mismatch");
+			if (file_number_of_dimensions != number_of_dimensions)
+				throw ns_ex("Model dimension number mismatch");
+
+			get_string(i, dimension_name);
+			if (i.fail())
+				throw ns_ex("ns_emission_probabiliy_model::read()::Bad model file");
+
+			auto p = dimension_name_mapping.find(dimension_name);
+			if (p == dimension_name_mapping.end())
+				throw ns_ex("Unknown measurement type: ") << dimension_name;
+			read_dimension(p->second, weights, means, vars, i);
+			r++;
+			if (r == number_of_dimensions)
+				break;
+		}
+
+		for (unsigned int g = 0; g < number_of_gaussians; g++) {
+			gmm.setPrior(g, weights[g]);
+			gmm.setMean(g, &means[number_of_dimensions * g]);
+			gmm.setVariance(g, &vars[number_of_dimensions * g]);
+		}
+	}
+};
+
 
 
 void ns_emperical_posture_quantification_value_estimator::provide_measurements_and_log_sub_probabilities(const ns_hmm_movement_state & state, const ns_analyzed_image_time_path_element_measurements & e, std::vector<double> & measurement, std::vector<double> & sub_probabilitiy) const {
@@ -1131,14 +1289,14 @@ ns_emperical_posture_quantification_value_estimator::ns_emperical_posture_quanti
 	normalization_stats = a.normalization_stats;
 	observed_values = a.observed_values;
 	for (auto p = a.emission_probability_models.begin(); p != a.emission_probability_models.end(); p++)
-		emission_probability_models.insert(emission_probability_models.begin(), std::map<ns_hmm_movement_state, ns_emission_probabiliy_model *>::value_type(p->first, new ns_emission_probabiliy_model(*p->second)));
+		emission_probability_models.insert(emission_probability_models.begin(), std::map<ns_hmm_movement_state, ns_emission_probabiliy_gaussian_diagonal_covariance_model*>::value_type(p->first, new ns_emission_probabiliy_gaussian_diagonal_covariance_model(*p->second)));
 
 }
 ns_emperical_posture_quantification_value_estimator& ns_emperical_posture_quantification_value_estimator::operator=(const ns_emperical_posture_quantification_value_estimator& a) {
 	normalization_stats = a.normalization_stats;
 	observed_values = a.observed_values;
 	for (auto p = a.emission_probability_models.begin(); p != a.emission_probability_models.end(); p++)
-		emission_probability_models.insert(emission_probability_models.begin(), std::map<ns_hmm_movement_state, ns_emission_probabiliy_model *>::value_type(p->first, new ns_emission_probabiliy_model(*p->second)));
+		emission_probability_models.insert(emission_probability_models.begin(), std::map<ns_hmm_movement_state, ns_emission_probabiliy_gaussian_diagonal_covariance_model*>::value_type(p->first, new ns_emission_probabiliy_gaussian_diagonal_covariance_model(*p->second)));
 	return *this;
 }
 
@@ -1152,7 +1310,7 @@ void ns_emperical_posture_quantification_value_estimator::read(std::istream & i)
 	getline(i, tmp, '\n');
 	ns_get_string get_string;
 	while (true) {
-		ns_emission_probabiliy_model * model = new ns_emission_probabiliy_model;
+		ns_emission_probabiliy_gaussian_diagonal_covariance_model * model = new ns_emission_probabiliy_gaussian_diagonal_covariance_model;
 		try {
 			ns_hmm_movement_state state;
 			int data;
@@ -1169,7 +1327,7 @@ void ns_emperical_posture_quantification_value_estimator::read(std::istream & i)
 			auto p2 = emission_probability_models.find(state);
 			if (p2 == emission_probability_models.end())
 				p2 = emission_probability_models.insert(emission_probability_models.end(),
-					std::map < ns_hmm_movement_state, ns_emission_probabiliy_model *>::value_type(state, model));
+					std::map < ns_hmm_movement_state, ns_emission_probabiliy_gaussian_diagonal_covariance_model*>::value_type(state, model));
 		}
 		catch (...) {
 			delete model;
@@ -1178,7 +1336,7 @@ void ns_emperical_posture_quantification_value_estimator::read(std::istream & i)
 	}
 }
 void ns_emperical_posture_quantification_value_estimator::write(std::ostream & o)const {
-	ns_emission_probabiliy_model::write_header(o);
+	ns_emission_probabiliy_gaussian_diagonal_covariance_model::write_header(o);
 	o << "\n";
 	for (auto p = emission_probability_models.begin(); p != emission_probability_models.end(); p++) {
 		p->second->write(p->first, (int)states_permitted_int,o);
@@ -1267,8 +1425,8 @@ void ns_emperical_posture_quantification_value_estimator::build_estimator_from_o
 		auto p2 = emission_probability_models.find(p->first);
 		if (p2 == emission_probability_models.end())
 			p2 = emission_probability_models.insert(emission_probability_models.end(),
-				std::map < ns_hmm_movement_state, ns_emission_probabiliy_model *>::value_type(p->first, 0));
-		p2->second = new ns_emission_probabiliy_model;
+				std::map < ns_hmm_movement_state, ns_emission_probabiliy_gaussian_diagonal_covariance_model*>::value_type(p->first, 0));
+		p2->second = new ns_emission_probabiliy_gaussian_diagonal_covariance_model;
 		p2->second->build_from_data(p->second);
 		state_counts[(int)p->first] = p->second.size();
 	}

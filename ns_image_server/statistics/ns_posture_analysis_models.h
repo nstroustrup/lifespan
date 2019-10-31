@@ -24,7 +24,7 @@ struct ns_hmm_emission_normalization_stats {
 	ns_analyzed_image_time_path_element_measurements path_mean, path_variance;
 	ns_death_time_annotation source;
 };
-class ns_emission_probabiliy_model;
+class ns_emission_probabiliy_gaussian_diagonal_covariance_model;
 
 class ns_emperical_posture_quantification_value_estimator{
 public:
@@ -65,7 +65,7 @@ public:
 	}
 private:
 	void write_visualization(std::ostream & o,const std::string & experiment_name="") const;
-	std::map<ns_hmm_movement_state, ns_emission_probabiliy_model *> emission_probability_models;
+	std::map<ns_hmm_movement_state, ns_emission_probabiliy_gaussian_diagonal_covariance_model *> emission_probability_models;
 	ns_states_permitted states_permitted_int;
 };
 

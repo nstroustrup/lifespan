@@ -11,13 +11,18 @@
 #include <random>
 
 struct ns_hmm_test_subject {
-	ns_hmm_test_subject() {}
-	ns_hmm_test_subject(const ns_64_bit& r, const ns_64_bit& g) :region_id(r), group_id(g) {}
-	ns_64_bit region_id, group_id;
+	ns_hmm_test_subject():region_name(0) {}
+	ns_hmm_test_subject(const std::string * r, const ns_64_bit & rid,const ns_64_bit& g) :region_name(r), region_info_id(rid), group_id(g) {}
+	const std::string* region_name;
+	ns_64_bit region_info_id;
+	ns_64_bit group_id;
 };
+std::string ns_to_string(const ns_hmm_test_subject& sub) {
+	return *sub.region_name + " " + ns_to_string(sub.group_id);
+}
 bool operator<(const ns_hmm_test_subject& l, const ns_hmm_test_subject& r) {
-	if (l.region_id != r.region_id)
-		return l.region_id < r.region_id;
+	if (l.region_info_id != r.region_info_id)
+		return l.region_info_id < r.region_info_id;
 	return l.group_id < r.group_id;
 }
 class  ns_cross_validation_replicate {
@@ -29,14 +34,15 @@ public:
 	std::string replicate_description;
 	bool generate_detailed_path_info;
 	unsigned long replicate_id;
+	std::vector<std::string> replicate_training_groups, replicate_testing_groups, replicate_skipped_groups;
 	bool model_building_completed;
 	ns_emperical_posture_quantification_value_estimator::ns_states_permitted states_permitted;
-	void test_model(const ns_64_bit& region_id, const ns_death_time_annotation_compiler& by_hand_annotations, const ns_time_series_denoising_parameters& time_series_denoising_parameters, ns_time_path_image_movement_analyzer<ns_wasteful_overallocation_resizer>& time_path_image_analyzer, ns_time_path_solution& time_path_solution, ns_sql& sql,
+	void test_model(const ns_64_bit & region_id, const ns_death_time_annotation_compiler& by_hand_annotations, const ns_time_series_denoising_parameters& time_series_denoising_parameters, ns_time_path_image_movement_analyzer<ns_wasteful_overallocation_resizer>& time_path_image_analyzer, ns_time_path_solution& time_path_solution, ns_sql& sql,
 		ns_hmm_movement_analysis_optimizatiom_stats& output_stats, bool generate_detailed_path_info) {
 
 		bool found_valid_individual(false);
 		for (auto p = test_set.begin(); p != test_set.end(); p++) {
-			if (p->region_id == region_id) {
+			if (p->region_info_id != region_id) {
 				found_valid_individual = true;
 				break;
 			}
@@ -65,7 +71,7 @@ public:
 			}
 			std::set<ns_stationary_path_id> individuals_to_test;
 			for (auto p = test_set.begin(); p != test_set.end(); p++) {
-				if (p->region_id == region_id)
+				if (p->region_info_id == region_id)
 					individuals_to_test.emplace(ns_stationary_path_id(p->group_id, 0, 0));
 			}
 			for (std::set<ns_stationary_path_id>::iterator pp = individuals_to_test.begin(); pp != individuals_to_test.end(); pp++)
@@ -91,34 +97,44 @@ public:
 };
 
 struct ns_plate_replicate_generator {
-	typedef ns_64_bit index_type;
-	static index_type get_index_for_observation(const ns_hmm_emission& e) {
-		return e.region_id;
-	}
-	static int minimum_subgroup_size() { return 10; }
+	typedef std::string index_type;
+	typedef std::size_t subgroup_index_type;
+	static index_type get_index_for_observation(const ns_hmm_emission& e) { return *e.region_name; }
+	static int minimum_population_size() { return 10; }	//don't use plates with fewer than 10 individuals.
+	static subgroup_index_type get_index_for_subgroup(const ns_hmm_emission& e) { return 0; }
+	static int minimum_number_of_subgroups() { return 0; }	//no subgroup requirements
 }; 
 struct ns_genotype_replicate_generator {
 	typedef std::string index_type;
+	typedef std::size_t subgroup_index_type;
 	static index_type get_index_for_observation(const ns_hmm_emission& e) {
 		if (e.genotype == 0)
 			return "";
 		return *e.genotype;
 	}
-	static int minimum_subgroup_size() { return 10; }
+	static int minimum_population_size() { return 25; }	//don't use genotypes with fewer than 25 individuals.
+	static subgroup_index_type get_index_for_subgroup(const ns_hmm_emission& e) { return 0; }
+	static int minimum_number_of_subgroups() { return 0; }	//no subgroup requirements
 };
 struct ns_device_replicate_generator {
-	typedef ns_64_bit index_type;
+	typedef std::string index_type;
+	typedef std::string subgroup_index_type;
 	static index_type get_index_for_observation(const ns_hmm_emission& e) {
-		return e.device_id;
+		return *e.device_name;
 	}
-	static int minimum_subgroup_size() { return 20; }
+	static int minimum_population_size() { return 20; }
+	static subgroup_index_type get_index_for_subgroup(const ns_hmm_emission& e) { return *e.region_name; }
+	static int minimum_number_of_subgroups() { return 2; }	//don't use devices with fewer than two plates. (this leads to overfitting on specific plates)
 };
 struct ns_individual_replicate_generator {
 	typedef ns_hmm_test_subject index_type;
+	typedef std::size_t subgroup_index_type;
 	static index_type get_index_for_observation(const ns_hmm_emission& e) {
-		return ns_hmm_test_subject(e.region_id, e.path_id.group_id);
+		return ns_hmm_test_subject(e.region_name, e.region_id, e.path_id.group_id);
 	}
-	static int minimum_subgroup_size() { return 1; }
+	static int minimum_population_size() { return 1; }
+	static subgroup_index_type get_index_for_subgroup(const ns_hmm_emission& e) { return 0; }
+	static int minimum_number_of_subgroups() { return 0; }	//no subgroup requirements
 };
 
 struct ns_cross_validation_sub_result {
@@ -145,7 +161,7 @@ public:
 		return build_independent_replicates<ns_individual_replicate_generator>(k_fold_validation, all_observations);
 	}
 	bool build_genotype_cross_validation_set(int k_fold_validation, const ns_emperical_posture_quantification_value_estimator& all_observations) {
-		return build_independent_replicates<ns_individual_replicate_generator>(k_fold_validation, all_observations);
+		return build_independent_replicates<ns_genotype_replicate_generator>(k_fold_validation, all_observations);
 	}
 	void build_all_vs_all_set(const ns_emperical_posture_quantification_value_estimator& all_observations) {
 		replicates.resize(1);
@@ -155,7 +171,7 @@ public:
 			//go through each observation
 			for (auto observation = observation_list->second.begin(); observation != observation_list->second.end(); observation++) {
 				replicates[0].training_set.observed_values[observation_list->first].push_back(*observation);
-				replicates[0].test_set.emplace(ns_hmm_test_subject(observation->region_id, observation->path_id.group_id));
+				replicates[0].test_set.emplace(ns_hmm_test_subject(observation->region_name,observation->region_id, observation->path_id.group_id));
 			}
 		}
 	}
@@ -213,7 +229,7 @@ public:
 		ns_emperical_posture_quantification_value_estimator observations = all_observations;
 		std::map < ns_64_bit, std::string> genotype_table;
 		for (auto p = genotype_lookup.begin(); p != genotype_lookup.end(); ++p)
-			genotype_table[p->first] = p->second.device_regression_match_description();
+			genotype_table[p->first] = p->second.plate_type_summary("-", true);
 
 		for (auto p = observations.observed_values.begin(); p != observations.observed_values.end(); ++p)
 			for (auto q = p->second.begin(); q != p->second.end(); ++q) {
@@ -235,16 +251,28 @@ private:
 
 		//first we make a list of the individuals located on each device,  so we can exclude devices that are too small.
 		std::map<typename ns_replicate_generator::index_type, std::set<ns_hmm_test_subject> > individuals_on_each_device;
+		std::map<typename ns_replicate_generator::index_type, std::set<typename ns_replicate_generator::subgroup_index_type> > subgroups_per_device;	//we keep track of how many plates there are on each device
 		for (auto observation_list = all_observations.observed_values.begin(); observation_list != all_observations.observed_values.end(); observation_list++) {
 			for (auto observation = observation_list->second.begin(); observation != observation_list->second.end(); observation++) {
-				individuals_on_each_device[ns_replicate_generator::get_index_for_observation(*observation)].emplace(ns_hmm_test_subject(observation->region_id, observation->path_id.group_id));
+				individuals_on_each_device[ns_replicate_generator::get_index_for_observation(*observation)].emplace(ns_hmm_test_subject(observation->region_name,observation->region_id, observation->path_id.group_id));
+				subgroups_per_device[ns_replicate_generator::get_index_for_observation(*observation)].emplace(ns_replicate_generator::get_index_for_subgroup(*observation));
 			}
 		}
 
 		for (auto p = individuals_on_each_device.begin(); p != individuals_on_each_device.end();) {
-			if (p->second.size() < ns_replicate_generator::minimum_subgroup_size())
+
+			//remove devices with too few individuals
+			if (p->second.size() < ns_replicate_generator::minimum_population_size()) {
 				p = individuals_on_each_device.erase(p);
-			else p++;
+				continue;
+			}
+			//remove devices with too few plates
+			auto q = subgroups_per_device.find(p->first);
+			if (q->second.size() < ns_replicate_generator::minimum_number_of_subgroups()) {
+				p = individuals_on_each_device.erase(p);
+				continue;
+			}
+			p++;
 		}
 
 		if (individuals_on_each_device.size() < 2) //if there are fewer than two devices, we cannot do any cross validation
@@ -282,7 +310,7 @@ private:
 			for (unsigned int i = 0; i < number_of_worms_in_replicate.size(); i++)
 				if (number_of_worms_in_replicate[i] < min_replicate_size)
 					min_replicate_size = number_of_worms_in_replicate[i];
-			if (min_replicate_size > ns_replicate_generator::minimum_subgroup_size()) {
+			if (min_replicate_size > ns_replicate_generator::minimum_population_size()) {
 				found_enough_worms_in_each_replicate = true;
 				break;
 			}
@@ -291,7 +319,6 @@ private:
 
 		if (!found_enough_worms_in_each_replicate)
 			return false;
-
 		//each replicate gets set_size devices in its training set.  All devices not in the training set get added to the test set.
 		//to set this up, we first make a mapping for each device to the replicate id in which it in is the training set.
 		replicates.resize(number_of_replicates);
@@ -312,9 +339,21 @@ private:
 				for (unsigned int i = 0; i < replicates.size(); i++) {
 					if (rep_id->second == i)
 						replicates[i].training_set.observed_values[observation_list->first].push_back(*observation);
-					else replicates[i].test_set.emplace(ns_hmm_test_subject(observation->region_id, observation->path_id.group_id));
+					else replicates[i].test_set.emplace(ns_hmm_test_subject(observation->region_name,observation->region_id, observation->path_id.group_id));
 				}
 			}
+		}
+		for (unsigned int i = 0; i < replicates.size(); i++) {
+			replicates[i].replicate_id = i;
+			for (unsigned int d = 0; d < devices_to_use.size(); d++) {
+				auto rep_id = replicate_id_lookup_for_training.find(devices_to_use[d]);
+				if (rep_id == replicate_id_lookup_for_training.end())
+					replicates[i].replicate_skipped_groups.push_back(ns_to_string(devices_to_use[d]));
+				else if (rep_id->second == i)
+					replicates[i].replicate_training_groups.push_back(ns_to_string(devices_to_use[d]));
+				else replicates[i].replicate_testing_groups.push_back(ns_to_string(devices_to_use[d]));
+			}
+
 		}
 		return true;
 	}
@@ -322,6 +361,9 @@ private:
 struct ns_hmm_cross_validation_manager {
 	std::map<std::string, ns_hmm_cross_validation_set > validation_runs_sorted_by_validation_type;
 
+	bool all_vs_all_exists() const {
+		return validation_runs_sorted_by_validation_type.find("all")!= validation_runs_sorted_by_validation_type.end();
+	}
 	const ns_hmm_cross_validation_set& all_vs_all() const {
 		const auto p = validation_runs_sorted_by_validation_type.find("all");
 		if (p == validation_runs_sorted_by_validation_type.end())
@@ -331,7 +373,7 @@ struct ns_hmm_cross_validation_manager {
 	
 	void generate_cross_validations_to_test(int k_fold_validation, const ns_emperical_posture_quantification_value_estimator& all_observations, bool try_different_states) {
 		validation_runs_sorted_by_validation_type.clear();
-		{
+		if (1){
 			ns_hmm_cross_validation_set& set = validation_runs_sorted_by_validation_type["all"];
 			set.build_all_vs_all_set(all_observations);
 			for (unsigned int i = 0; i < set.replicates.size(); i++)
@@ -390,6 +432,7 @@ void ns_run_hmm_cross_validation(std::string & results_text, ns_image_server_res
 	for (unsigned int i = 0; i < movement_results.samples.size(); i++) {
 		if (!sub.device_name.empty() && movement_results.samples[i].device_name() != sub.device_name)
 			continue;
+
 		for (unsigned int j = 0; j < movement_results.samples[i].regions.size(); j++) {
 			//get some metadata needed to specifiy cross-validation replicate sets
 			const std::string plate_type_summary(movement_results.samples[i].regions[j]->metadata.plate_type_summary("-", true));
@@ -422,7 +465,7 @@ void ns_run_hmm_cross_validation(std::string & results_text, ns_image_server_res
 		estimators_compiled++;
 		different_validation_approaches_for_each_genotype[p->first].generate_cross_validations_to_test(k_fold_validation, p->second, test_different_state_restrictions_on_viterbi_algorithm);
 	}
-	{
+	if (observations_sorted_by_genotype.size() > 1){
 		//cross validate across genotypes
 		auto all_genotypes = observations_sorted_by_genotype.find("all");
 		if (all_genotypes != observations_sorted_by_genotype.end())
@@ -439,7 +482,7 @@ void ns_run_hmm_cross_validation(std::string & results_text, ns_image_server_res
 		results_text += " built separately for groups:\n";
 
 		for (auto p = different_validation_approaches_for_each_genotype.begin(); p != different_validation_approaches_for_each_genotype.end(); p++)
-			results_text += metadata_cache_by_name[p->first].device_regression_match_description() + "\n";
+			results_text += metadata_cache_by_name[p->first].plate_type_summary("-", true) + "\n";
 		results_text += "All data was collated and analyzed at " + ns_format_time_string_for_human(ns_current_time()) + "\n\n";
 	}
 	std::cout << "\nBuilding HMM Models...\n";
@@ -453,10 +496,10 @@ void ns_run_hmm_cross_validation(std::string & results_text, ns_image_server_res
 		else if (p->first == "all_with_strict_event_ordering")
 			model_building_and_testing_info[p->first] = "== HMM model built from all animal types using a restricted state ordering scheme ==\n";
 		else {
-			const std::string plate_type_long = metadata_cache_by_name[p->first].device_regression_match_description();
+			const std::string plate_type_long = metadata_cache_by_name[p->first].plate_type_summary("-", true);
 			model_building_and_testing_info[p->first] = "== HMM model for group \"" + plate_type_long + "\" ==\n";
 		}
-		bool output_all_states = p->first == "all";
+		//bool output_all_states = p->first == "all";
 		for (auto q = p->second.validation_runs_sorted_by_validation_type.begin(); q != p->second.validation_runs_sorted_by_validation_type.end(); q++) {
 			for (auto r = q->second.replicates.begin(); r != q->second.replicates.end();) {
 				try {
@@ -473,11 +516,14 @@ void ns_run_hmm_cross_validation(std::string & results_text, ns_image_server_res
 			}
 		}
 
-		ns_image_server_results_file ps(image_server.results_storage.optimized_posture_analysis_parameter_set(sub, std::string("hmm=") + p->first, sql));
-		model_filenames[p->first] = ps.output_filename();
-		ns_acquire_for_scope<ns_ostream> both_parameter_set(ps.output());
-		p->second.all_vs_all().replicates[0].training_set.write(both_parameter_set()());
-		both_parameter_set.release();
+		if (p->second.all_vs_all_exists()) {
+			ns_image_server_results_file ps(image_server.results_storage.optimized_posture_analysis_parameter_set(sub, std::string("hmm=") + p->first, sql));
+			model_filenames[p->first] = ps.output_filename();
+			ns_acquire_for_scope<ns_ostream> both_parameter_set(ps.output());
+			p->second.all_vs_all().replicates[0].training_set.write(both_parameter_set()());
+			both_parameter_set.release();
+		}
+		else model_filenames[p->first] = "(Not Written)";
 	}
 	std::cout << "\nTesting HMM models on current experiment...\n";
 	num_built = 0;
@@ -501,12 +547,17 @@ void ns_run_hmm_cross_validation(std::string & results_text, ns_image_server_res
 			if (sub.region_id != 0 && sub.region_id != movement_results.samples[i].regions[j]->metadata.region_id)
 				continue;
 			if (!movement_results.samples[i].regions[j]->contains_a_by_hand_death_time_annotation)
+				continue; 
+			const std::string plate_type_summary(movement_results.samples[i].regions[j]->metadata.plate_type_summary("-", true));
+			//if a genotype was excluded from all observations, do not test plates of its type.
+			if (different_validation_approaches_for_each_genotype.find(plate_type_summary) == different_validation_approaches_for_each_genotype.end()) {
+				std::cerr << "SKIPPING " << plate_type_summary << "\n";
 				continue;
-
+			}
 			std::cout << ns_to_string_short((100.0 * num_built) / region_count, 2) << "%...";
 			num_built++;
 			const ns_time_series_denoising_parameters time_series_denoising_parameters(time_series_denoising_parameters_cache[movement_results.samples[i].regions[j]->metadata.region_id]);
-			const std::string plate_type_summary(movement_results.samples[i].regions[j]->metadata.plate_type_summary("-", true));
+			
 			for (auto p = different_validation_approaches_for_each_genotype.begin(); p != different_validation_approaches_for_each_genotype.end(); p++) {
 
 				if (p->first == "all" || p->first == "all_with_strict_event_ordering" || p->first == plate_type_summary) {
@@ -535,6 +586,7 @@ void ns_run_hmm_cross_validation(std::string & results_text, ns_image_server_res
 	for (auto p = different_validation_approaches_for_each_genotype.begin(); p != different_validation_approaches_for_each_genotype.end(); p++) {
 		std::cout << ns_to_string_short((100.0 * num_built) / different_validation_approaches_for_each_genotype.size(), 2) << "%...";
 		num_built++;
+
 		//start at 1 to skip the all vs all.
 		for (auto validation_run = p->second.validation_runs_sorted_by_validation_type.begin(); validation_run != p->second.validation_runs_sorted_by_validation_type.end(); ++validation_run) {
 			ns_cross_validation_results results = validation_run->second.calculate_error();
@@ -545,7 +597,7 @@ void ns_run_hmm_cross_validation(std::string & results_text, ns_image_server_res
 			if (results.movement.mean_N > 0)
 				model_building_and_testing_info[p->first] += "[Movement cessation]:   mean error: " + ns_to_string_short(results.movement.mean_err, 2) + "+-" + ns_to_string_short(results.movement.var_err, 2) + " days across " + ns_to_string((int)results.movement.mean_N) + " animals.\n";
 			if (results.expansion.mean_N > 0)
-				model_building_and_testing_info[p->first] += "[Death time expansion]: mean error: " + ns_to_string_short(results.expansion.mean_err, 2) + " + -" + ns_to_string_short(results.expansion.var_err, 2) + " days across " + ns_to_string((int)results.expansion.mean_N) + " animals.\n";
+				model_building_and_testing_info[p->first] += "[Death time expansion]: mean error: " + ns_to_string_short(results.expansion.mean_err, 2) + " +-" + ns_to_string_short(results.expansion.var_err, 2) + " days across " + ns_to_string((int)results.expansion.mean_N) + " animals.\n";
 			if (results.movement.mean_N < 50 || results.expansion.mean_N < 50)
 				model_building_and_testing_info[p->first] += "Warning: These results will not be meaningful until more worms are annotated by hand.\n";
 			else model_building_and_testing_info[p->first] += "The model file was written to \"" + model_filenames[p->first] + "\"\n";
@@ -554,22 +606,39 @@ void ns_run_hmm_cross_validation(std::string & results_text, ns_image_server_res
 		//output performance statistics
 		ns_acquire_for_scope<ns_ostream>  performance_stats_output(image_server.results_storage.time_path_image_analysis_quantification(sub, std::string("hmm_performance=") + p->first, true, sql).output());
 		std::vector<std::string > measurement_names;
-		if (!p->second.all_vs_all().replicates[0].results.animals.empty())
-			measurement_names = p->second.all_vs_all().replicates[0].results.animals[0].state_info_variable_names;
-		ns_hmm_movement_analysis_optimizatiom_stats::write_error_header(performance_stats_output()(), measurement_names);
-		for (auto cross_validation_set = p->second.validation_runs_sorted_by_validation_type.begin(); cross_validation_set != p->second.validation_runs_sorted_by_validation_type.end(); ++cross_validation_set) {
-			for (unsigned int r = 0; r < cross_validation_set->second.replicates.size(); r++) {
-				cross_validation_set->second.replicates[r].results.write_error_data(performance_stats_output()(), p->first, cross_validation_set->first, cross_validation_set->second.replicates[r].replicate_id, metadata_cache);
+		for (auto r = p->second.validation_runs_sorted_by_validation_type.begin(); r != p->second.validation_runs_sorted_by_validation_type.end(); ++r) {
+			if (!r->second.replicates[0].results.animals.empty()) {
+				measurement_names = r->second.replicates[0].results.animals[0].state_info_variable_names;
+				break;
+			}
+		}
+		if (!measurement_names.empty()) {
+			ns_hmm_movement_analysis_optimizatiom_stats::write_error_header(performance_stats_output()(), measurement_names);
+			for (auto cross_validation_set = p->second.validation_runs_sorted_by_validation_type.begin(); cross_validation_set != p->second.validation_runs_sorted_by_validation_type.end(); ++cross_validation_set) {
+				for (unsigned int r = 0; r < cross_validation_set->second.replicates.size(); r++) {
+					cross_validation_set->second.replicates[r].results.write_error_data(performance_stats_output()(), p->first, cross_validation_set->first, cross_validation_set->second.replicates[r].replicate_id, metadata_cache);
+				}
 			}
 		}
 		performance_stats_output.release();
-		//output per-path statistics
+
+
+		ns_acquire_for_scope<ns_ostream>  replicate_info_output(image_server.results_storage.time_path_image_analysis_quantification(sub, std::string("hmm_replicate_info=") + p->first, true, sql).output());
+		replicate_info_output()() << "Cross Validation Strategy,Replicate ID,Set Type,Set Member\n";
 		unsigned int tmp = 0;
 		for (auto cross_validation_set = p->second.validation_runs_sorted_by_validation_type.begin(); cross_validation_set != p->second.validation_runs_sorted_by_validation_type.end(); ++cross_validation_set) {
 
 			for (auto q = cross_validation_set->second.replicates.begin(); q != cross_validation_set->second.replicates.end(); q++) {
+				
+				for (unsigned int k = 0; k < q->replicate_training_groups.size(); k++)
+					replicate_info_output()() << cross_validation_set->first << "," << q->replicate_id << ",training," << q->replicate_training_groups[k] << "\n";
+				for (unsigned int k = 0; k < q->replicate_testing_groups.size(); k++)
+					replicate_info_output()()  << cross_validation_set->first << "," << q->replicate_id << ",testing," << q->replicate_testing_groups[k] << "\n";
+				for (unsigned int k = 0; k < q->replicate_skipped_groups.size(); k++)
+					replicate_info_output()() << cross_validation_set->first << "," << q->replicate_id << ",training," << q->replicate_skipped_groups[k] << "\n";
 				if (!q->generate_detailed_path_info || q->results.animals.empty())
 					continue;
+				//output per-path statistics
 				std::string suffix;
 				if (tmp > 0)
 					suffix = "=" + ns_to_string(tmp);
@@ -585,6 +654,7 @@ void ns_run_hmm_cross_validation(std::string & results_text, ns_image_server_res
 				path_stats_output.release();
 			}
 		}
+		replicate_info_output.release();
 	}
 
 	for (auto p = model_building_and_testing_info.begin(); p != model_building_and_testing_info.end(); p++)

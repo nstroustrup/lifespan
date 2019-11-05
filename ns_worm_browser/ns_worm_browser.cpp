@@ -1896,6 +1896,16 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 			device_name = data_selector.current_sample().device;
 	}
 
+	ns_region_metadata strain_filter;
+	bool filter_by_strain = false;
+	if (detail_level == ns_build_worm_markov_posture_model_from_by_hand_annotations &&
+		subject != ns_plate && 
+		data_selector.strain_selected()) {
+		filter_by_strain = true;
+		strain_filter = data_selector.current_strain();
+		test_strict_ordering = false;
+	}
+
 	ns_image_server_results_subject sub;
 	sub.experiment_id = experiment_id;
 	if (plate_id != 0)
@@ -1928,6 +1938,7 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 	//We do that here.  Later, we will then use this set to build an HMM model.
 
 	//hmm_observation_storage_and_model_generators are calculated for each type of plate in the experiment.
+	std::set<std::string> plate_name_cache;
 	std::map < std::string, ns_emperical_posture_quantification_value_estimator> observations_sorted_by_genotype;
 	std::map<std::string, unsigned long> number_of_individuals_per_genotype;
 	std::map<std::string, unsigned long> device_id_lookup;
@@ -2033,6 +2044,9 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 						continue;
 					if (by_hand_annotations.annotations.regions.begin()->second.locations.empty())
 						continue;
+					if (filter_by_strain && movement_results.samples[i].regions[j]->metadata.device_regression_match_description() !=
+						strain_filter.device_regression_match_description())
+						continue;
 					bool found_hand_movement_annotation(false);
 					for (unsigned int i = 0; i < by_hand_annotations.annotations.regions.begin()->second.locations.size() && !found_hand_movement_annotation; i++) {
 						for (unsigned int j = 0; j < by_hand_annotations.annotations.regions.begin()->second.locations[i].annotations.size(); j++) {
@@ -2111,7 +2125,7 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 				else if (detail_level == ns_build_worm_markov_posture_model_from_by_hand_annotations) {
 
 				
-					unsigned long internal_device_id = 0;
+					/*unsigned long internal_device_id = 0;
 					const auto d = device_id_lookup.find(movement_results.samples[i].regions[j]->metadata.device);
 					if (d == device_id_lookup.end()) {
 						device_id_lookup[movement_results.samples[i].regions[j]->metadata.device] = max_device_id;
@@ -2120,7 +2134,7 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 						max_device_id++;
 					}
 					else internal_device_id = d->second;
-
+					*/
 
 					bool added_data(false);
 					for (unsigned int g = 0; g < movement_results.samples[i].regions[j]->time_path_image_analyzer->size(); g++) {
@@ -2140,23 +2154,27 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 							a.region_info_id = movement_results.samples[i].regions[j]->metadata.region_id;
 							ns_analyzed_image_time_path* path = &movement_results.samples[i].regions[j]->time_path_image_analyzer->group(g).paths[p];
 
-							unsigned long internal_device_id = device_id_lookup[movement_results.samples[i].regions[j]->metadata.device];
+							//unsigned long internal_device_id = device_id_lookup[movement_results.samples[i].regions[j]->metadata.device];
 							//add the observation to each group it belongs to--the "all observations" group and its genotype-specific group.
 							const std::string plate_type_summary(movement_results.samples[i].regions[j]->metadata.plate_type_summary("-", true));
-							observations_sorted_by_genotype["all"].add_observation(NS_CURRENT_POSTURE_MODEL_VERSION, a, path, internal_device_id);
-							if (test_strict_ordering)
-							observations_sorted_by_genotype["all_with_strict_event_ordering"].add_observation(NS_CURRENT_POSTURE_MODEL_VERSION, a, path, internal_device_id);
-							observations_sorted_by_genotype[plate_type_summary].add_observation(NS_CURRENT_POSTURE_MODEL_VERSION, a, path, internal_device_id);
-							auto c1 = number_of_individuals_per_genotype.find("all");
-							if (c1 == number_of_individuals_per_genotype.end()) 
-								number_of_individuals_per_genotype["all"] = 1;
-							else c1->second++; 
+							auto plate_name = plate_name_cache.emplace(movement_results.samples[i].regions[j]->metadata.plate_name()).first;
+							if (subject != ns_plate && !filter_by_strain) {
+								observations_sorted_by_genotype["all"].add_observation(NS_CURRENT_POSTURE_MODEL_VERSION, a, path, &(*plate_name),&movement_results.samples[i].regions[j]->metadata.device);
+								auto c1 = number_of_individuals_per_genotype.find("all");
+								if (c1 == number_of_individuals_per_genotype.end())
+									number_of_individuals_per_genotype["all"] = 1;
+								else c1->second++;
+							}
+					
 							if (test_strict_ordering){
-								c1 = number_of_individuals_per_genotype.find("all_with_strict_event_ordering");
+								observations_sorted_by_genotype["all_with_strict_event_ordering"].add_observation(NS_CURRENT_POSTURE_MODEL_VERSION, a, path, &(*plate_name), &movement_results.samples[i].regions[j]->metadata.device);
+								auto c1 = number_of_individuals_per_genotype.find("all_with_strict_event_ordering");
 								if (c1 == number_of_individuals_per_genotype.end()) 
 									number_of_individuals_per_genotype["all_with_strict_event_ordering"] = 1;
 								else c1->second++;
 							}
+							observations_sorted_by_genotype[plate_type_summary].add_observation(NS_CURRENT_POSTURE_MODEL_VERSION, a, path, &(*plate_name), &movement_results.samples[i].regions[j]->metadata.device);
+
 							auto c2 = number_of_individuals_per_genotype.find(plate_type_summary);
 							if (c2 == number_of_individuals_per_genotype.end())
 								number_of_individuals_per_genotype[plate_type_summary] = 1;

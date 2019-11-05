@@ -6626,6 +6626,10 @@ void ns_analyzed_image_time_path_element_measurements::zero(){
 	change_in_total_stabilized_intensity_2x = 0;
 	change_in_total_stabilized_intensity_4x = 0;
 
+	change_in_total_outside_stabilized_intensity_1x = 0;
+	change_in_total_outside_stabilized_intensity_2x = 0;
+	change_in_total_outside_stabilized_intensity_4x = 0;
+
 	movement_score = 0;
 	denoised_movement_score = 0; 
 	spatial_averaged_movement_sum_cropped = 0;
@@ -6653,6 +6657,10 @@ void ns_analyzed_image_time_path_element_measurements::square() {
 	change_in_total_stabilized_intensity_1x = change_in_total_stabilized_intensity_1x*change_in_total_stabilized_intensity_1x;
 	change_in_total_stabilized_intensity_2x = change_in_total_stabilized_intensity_2x * change_in_total_stabilized_intensity_2x;
 	change_in_total_stabilized_intensity_4x = change_in_total_stabilized_intensity_4x * change_in_total_stabilized_intensity_4x;
+
+	change_in_total_outside_stabilized_intensity_1x = change_in_total_outside_stabilized_intensity_1x * change_in_total_outside_stabilized_intensity_1x;
+	change_in_total_outside_stabilized_intensity_2x = change_in_total_outside_stabilized_intensity_2x * change_in_total_outside_stabilized_intensity_2x;
+	change_in_total_outside_stabilized_intensity_4x = change_in_total_outside_stabilized_intensity_4x * change_in_total_outside_stabilized_intensity_4x;
 
 	movement_score = movement_score*movement_score;
 	denoised_movement_score = denoised_movement_score*denoised_movement_score;
@@ -6683,6 +6691,10 @@ void ns_analyzed_image_time_path_element_measurements::square_root() {
 	change_in_total_stabilized_intensity_1x = sqrt(change_in_total_stabilized_intensity_1x);
 	change_in_total_stabilized_intensity_2x = sqrt(change_in_total_stabilized_intensity_2x);
 	change_in_total_stabilized_intensity_4x = sqrt(change_in_total_stabilized_intensity_4x);
+	
+	change_in_total_outside_stabilized_intensity_1x = sqrt(change_in_total_outside_stabilized_intensity_1x);
+	change_in_total_outside_stabilized_intensity_2x = sqrt(change_in_total_outside_stabilized_intensity_2x);
+	change_in_total_outside_stabilized_intensity_4x = sqrt(change_in_total_outside_stabilized_intensity_4x);
 
 	movement_score = sqrt(movement_score);
 	denoised_movement_score = sqrt(denoised_movement_score);
@@ -6717,6 +6729,10 @@ ns_analyzed_image_time_path_element_measurements operator+(const ns_analyzed_ima
 	ret.change_in_total_stabilized_intensity_2x = a.change_in_total_stabilized_intensity_2x + b.change_in_total_stabilized_intensity_2x;
 	ret.change_in_total_stabilized_intensity_4x = a.change_in_total_stabilized_intensity_4x + b.change_in_total_stabilized_intensity_4x;
 
+	ret.change_in_total_outside_stabilized_intensity_1x = a.change_in_total_outside_stabilized_intensity_1x + b.change_in_total_outside_stabilized_intensity_1x;
+	ret.change_in_total_outside_stabilized_intensity_2x = a.change_in_total_outside_stabilized_intensity_2x + b.change_in_total_outside_stabilized_intensity_2x;
+	ret.change_in_total_outside_stabilized_intensity_4x = a.change_in_total_outside_stabilized_intensity_4x + b.change_in_total_outside_stabilized_intensity_4x;
+
 	ret.movement_score = a.movement_score+b.movement_score;
 	ret.denoised_movement_score = a.denoised_movement_score+b.denoised_movement_score;
 	ret.spatial_averaged_movement_sum_cropped = a.spatial_averaged_movement_sum_cropped+b.spatial_averaged_movement_sum_cropped;
@@ -6749,6 +6765,10 @@ ns_analyzed_image_time_path_element_measurements operator-(const ns_analyzed_ima
 	ret.change_in_total_stabilized_intensity_2x = a.change_in_total_stabilized_intensity_2x - b.change_in_total_stabilized_intensity_2x;
 	ret.change_in_total_stabilized_intensity_4x = a.change_in_total_stabilized_intensity_4x - b.change_in_total_stabilized_intensity_4x;
 
+	ret.change_in_total_outside_stabilized_intensity_1x = a.change_in_total_outside_stabilized_intensity_1x - b.change_in_total_outside_stabilized_intensity_1x;
+	ret.change_in_total_outside_stabilized_intensity_2x = a.change_in_total_outside_stabilized_intensity_2x - b.change_in_total_outside_stabilized_intensity_2x;
+	ret.change_in_total_outside_stabilized_intensity_4x = a.change_in_total_outside_stabilized_intensity_4x - b.change_in_total_outside_stabilized_intensity_4x;
+
 	ret.movement_score = a.movement_score - b.movement_score;
 	ret.denoised_movement_score = a.denoised_movement_score - b.denoised_movement_score;
 	ret.spatial_averaged_movement_sum_cropped = a.spatial_averaged_movement_sum_cropped - b.spatial_averaged_movement_sum_cropped;
@@ -6780,6 +6800,11 @@ ns_analyzed_image_time_path_element_measurements operator/(const ns_analyzed_ima
 	ret.change_in_total_stabilized_intensity_1x = a.change_in_total_stabilized_intensity_1x / d;
 	ret.change_in_total_stabilized_intensity_2x = a.change_in_total_stabilized_intensity_2x / d;
 	ret.change_in_total_stabilized_intensity_4x = a.change_in_total_stabilized_intensity_4x / d;
+
+	ret.change_in_total_outside_stabilized_intensity_1x = a.change_in_total_outside_stabilized_intensity_1x / d;
+	ret.change_in_total_outside_stabilized_intensity_2x = a.change_in_total_outside_stabilized_intensity_2x / d;
+	ret.change_in_total_outside_stabilized_intensity_4x = a.change_in_total_outside_stabilized_intensity_4x / d;
+
 	ret.movement_score = a.movement_score / d;
 	ret.denoised_movement_score = a.denoised_movement_score / d;
 	ret.spatial_averaged_movement_sum_cropped = a.spatial_averaged_movement_sum_cropped / d;

@@ -2151,7 +2151,7 @@ public:
 	}
 private:
 	bool should_be_active() const {
-		return worm_learner.current_behavior_mode() == ns_worm_learner::ns_annotate_storyboard_experiment;
+		return true;
 	}
 };
 

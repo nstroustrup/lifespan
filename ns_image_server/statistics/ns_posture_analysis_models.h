@@ -67,12 +67,14 @@ public:
 			s.emplace(p->first);
 	}
 	std::string software_version_when_built;
+	friend bool operator==(const ns_emperical_posture_quantification_value_estimator & a, const ns_emperical_posture_quantification_value_estimator & b);
 private:
 	void write_visualization(std::ostream & o,const std::string & experiment_name="") const;
 	std::map<ns_hmm_movement_state, ns_emission_probabiliy_gaussian_diagonal_covariance_model *> emission_probability_models;
 	ns_states_permitted states_permitted_int;
 	std::set<std::string> volatile_string_storage;
 };
+bool operator==(const ns_emperical_posture_quantification_value_estimator & a, const ns_emperical_posture_quantification_value_estimator & b);
 
 struct ns_threshold_movement_posture_analyzer_parameters{
 	double stationary_cutoff,

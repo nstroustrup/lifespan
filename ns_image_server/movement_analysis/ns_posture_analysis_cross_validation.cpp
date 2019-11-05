@@ -522,6 +522,15 @@ void ns_run_hmm_cross_validation(std::string & results_text, ns_image_server_res
 			ns_acquire_for_scope<ns_ostream> both_parameter_set(ps.output());
 			p->second.all_vs_all().replicates[0].training_set.write(both_parameter_set()());
 			both_parameter_set.release();
+			//test file I/O
+			ns_acquire_for_scope<ns_istream> both_parameter_set2(ps.input());
+			ns_emperical_posture_quantification_value_estimator dummy;
+			dummy.read(both_parameter_set2()());
+			if (!(p->second.all_vs_all().replicates[0].training_set == dummy))
+				throw ns_ex("HMM Model File I/O error!");
+
+			both_parameter_set2.release();
+
 		}
 		else model_filenames[p->first] = "(Not Written)";
 	}
@@ -535,7 +544,12 @@ void ns_run_hmm_cross_validation(std::string & results_text, ns_image_server_res
 			if (sub.region_id != 0 && sub.region_id != movement_results.samples[i].regions[j]->metadata.region_id)
 				continue;
 			if (!movement_results.samples[i].regions[j]->contains_a_by_hand_death_time_annotation)
+				continue; 
+
+			const std::string plate_type_summary(movement_results.samples[i].regions[j]->metadata.plate_type_summary("-", true));
+			if (different_validation_approaches_for_each_genotype.find(plate_type_summary) == different_validation_approaches_for_each_genotype.end())
 				continue;
+
 			region_count++;
 		}
 	}
@@ -550,10 +564,9 @@ void ns_run_hmm_cross_validation(std::string & results_text, ns_image_server_res
 				continue; 
 			const std::string plate_type_summary(movement_results.samples[i].regions[j]->metadata.plate_type_summary("-", true));
 			//if a genotype was excluded from all observations, do not test plates of its type.
-			if (different_validation_approaches_for_each_genotype.find(plate_type_summary) == different_validation_approaches_for_each_genotype.end()) {
-				std::cerr << "SKIPPING " << plate_type_summary << "\n";
+			if (different_validation_approaches_for_each_genotype.find(plate_type_summary) == different_validation_approaches_for_each_genotype.end())	
 				continue;
-			}
+
 			std::cout << ns_to_string_short((100.0 * num_built) / region_count, 2) << "%...";
 			num_built++;
 			const ns_time_series_denoising_parameters time_series_denoising_parameters(time_series_denoising_parameters_cache[movement_results.samples[i].regions[j]->metadata.region_id]);

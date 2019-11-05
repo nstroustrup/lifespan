@@ -676,6 +676,41 @@ bool operator<(const ns_gmm_sorter & a, const ns_gmm_sorter & b) {
 	return a.weight < b.weight;
 }
 
+bool operator==(const GMM & a, const GMM & b) {
+	if (a.GetDimNum() != b.GetDimNum()) {
+		std::cerr << "GMM dimensions do not match\n";
+		return false;
+	}
+	if (a.GetMixNum() != b.GetMixNum()) {
+		std::cerr << "GMM gaussian counts do not match\n";
+		return false;
+	}
+	for (int i = 0; i < a.GetMixNum(); i++) {
+		if (a.Prior(i) != b.Prior(i)) {
+			std::cerr << "Prior " << i << " doesn't match\n";
+			return false;
+		}
+		const double *am = a.Mean(i),
+			*bm = b.Mean(i);
+		for (int j = 0; j < a.GetDimNum(); j++) {
+			if (am[j] != bm[j]) {
+				std::cerr << "Mean " << i << ", " << j << " doesn't match\n";
+				return false;
+			}
+		}
+		am = a.Variance(i);
+		bm = b.Variance(i);
+		for (int j = 0; j < a.GetDimNum(); j++) {
+			if (am[j] != bm[j]) {
+				std::cerr << "Variance " << i << ", " << j << " doesn't match\n";
+				return false;
+			}
+		}
+	}
+	return true;
+}
+
+
 template<class accessor_t>
 class ns_emission_probabiliy_gausian_1D_model {
 public:
@@ -772,6 +807,10 @@ public:
 
 		}
 	}
+
+	bool equal(const ns_emission_probabiliy_gausian_1D_model<typename accessor_t> & t) const {
+		return this->gmm == t.gmm;
+	}
 private:
 
 	GMM gmm;
@@ -779,6 +818,8 @@ private:
 		gmm_means[3],
 		gmm_var[3];
 };
+
+
 
 struct ns_measurement_accessor {
 	virtual const double operator()(const ns_analyzed_image_time_path_element_measurements& e) const = 0;
@@ -1011,6 +1052,45 @@ public:
 	ns_emission_probabiliy_gausian_1D_model<ns_stabilized_region_vs_outside_intensity_comparitor> stabilized_outside_comparison;
 };
 
+
+bool operator==(const ns_emission_probabiliy_independent_gaussian_model & a, const ns_emission_probabiliy_independent_gaussian_model & b) {
+	if (!a.movement.equal(b.movement)) {
+		std::cerr << "Movement not equal\n";
+		return false;
+	}
+	if (!a.intensity_1x.equal(b.intensity_1x)) {
+		std::cerr << "intensity_1x not equal\n";
+		return false;
+	}
+	if (!a.intensity_2x.equal(b.intensity_2x)) {
+		std::cerr << "intensity_2x not equal\n";
+		return false;
+	}
+	if (!a.intensity_4x.equal(b.intensity_4x)) {
+		std::cerr << "intensity_4x not equal\n";
+		return false;
+	}
+	if (!a.outside_intensity_1x.equal(b.outside_intensity_1x)) {
+		std::cerr << "outside_intensity_1x not equal\n";
+		return false;
+	}
+	if (!a.outside_intensity_2x.equal(b.outside_intensity_2x)) {
+		std::cerr << "outside_intensity_2x not equal\n";
+		return false;
+	}
+	if (!a.outside_intensity_2x.equal(b.outside_intensity_2x)) {
+		std::cerr << "outside_intensity_2x not equal\n";
+		return false;
+	}
+	if (!a.outside_intensity_4x.equal(b.outside_intensity_4x)) {
+		std::cerr << "outside_intensity_4x not equal\n";
+		return false;
+	}
+	return true;
+}
+
+
+
 struct ns_covarying_gaussian_dimension {
 	ns_measurement_accessor* measurement_accessor;
 	std::string name;
@@ -1022,6 +1102,10 @@ struct ns_covarying_gaussian_dimension {
 	ns_covarying_gaussian_dimension(ns_covarying_gaussian_dimension&& c) { measurement_accessor = c.measurement_accessor; c.measurement_accessor = 0; name = c.name; }
 	~ns_covarying_gaussian_dimension() {ns_safe_delete(measurement_accessor);}
 };
+bool operator==(const ns_covarying_gaussian_dimension & a, const ns_covarying_gaussian_dimension & b) {
+	return a.name == b.name;
+}
+
 
 class ns_emission_probabiliy_gaussian_diagonal_covariance_model {
 public:
@@ -1224,6 +1308,40 @@ unsigned long ns_emission_probabiliy_gaussian_diagonal_covariance_model::trainin
 double* ns_emission_probabiliy_gaussian_diagonal_covariance_model::training_data_buffer = 0;
 ns_lock ns_emission_probabiliy_gaussian_diagonal_covariance_model::training_data_buffer_lock("tbl");
 
+bool operator==(const ns_emission_probabiliy_gaussian_diagonal_covariance_model & a, const ns_emission_probabiliy_gaussian_diagonal_covariance_model & b) {
+	if (!(a.gmm == b.gmm)) {
+		std::cerr << "GMMS aren't equal\n";
+		return false;
+	}
+	if (a.dimensions.size() != b.dimensions.size()) {
+		std::cerr << "Dimension numbers don't match\n";
+		return false;
+	}
+	for (unsigned int i = 0; i < a.dimensions.size(); i++)
+		if (!(a.dimensions[i] == b.dimensions[i])) {
+			std::cerr << "Dimension " << i << " isn't equal\n";
+			return false;
+		}
+	return true;
+}
+
+bool operator==(const ns_emperical_posture_quantification_value_estimator & a, const ns_emperical_posture_quantification_value_estimator & b) {
+	if (a.emission_probability_models.size() != b.emission_probability_models.size()) {
+		std::cerr << "Wrong number of models\n";
+		return false;
+	}
+	for (auto p = a.emission_probability_models.begin(); p != a.emission_probability_models.end(); ++p) {
+		auto q = b.emission_probability_models.find(p->first);
+		if (q == b.emission_probability_models.end()) {
+			std::cerr << "Missing state\n";
+			return false;
+		}
+		if ((p->second == q->second))
+			return false;
+	}
+	return true;
+
+}
 void ns_emperical_posture_quantification_value_estimator::provide_measurements_and_log_sub_probabilities(const ns_hmm_movement_state & state, const ns_analyzed_image_time_path_element_measurements & e, std::vector<double> & measurement, std::vector<double> & sub_probabilitiy) const {
 	bool undefined_state(false);
 	auto p = emission_probability_models.find(state);

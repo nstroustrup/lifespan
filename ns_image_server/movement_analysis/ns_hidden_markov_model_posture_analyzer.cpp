@@ -1462,6 +1462,7 @@ void ns_emperical_posture_quantification_value_estimator::read_observation_data(
 
 void ns_emperical_posture_quantification_value_estimator::build_estimator_from_observations(std::string & output,const ns_states_permitted & states_permitted_) {
 	states_permitted_int = states_permitted_;
+	software_version_when_built = NS_HMM_VERSION;
 	//if the user hasn't explicitly labeled moving weakly post expansion,
 	//use the moving weakly pre expansion as a proxy.
 	if (states_permitted_ != ns_no_expansion_while_alive && states_permitted_ != no_expansion_while_alive_nor_contraction) {

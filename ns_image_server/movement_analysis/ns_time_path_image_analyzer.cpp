@@ -3891,8 +3891,8 @@ void ns_analyzed_image_time_path::convert_movement_solution_to_state_intervals(c
 		post_expansion_contraction_interval.skipped = true;
 	else {
 		post_expansion_contraction_interval.skipped = false;
-		if (solution.expanding.start_index == solution.expanding.end_index)
-			cout << "Blank expansion interval!\n";
+		if (solution.post_expansion_contracting.start_index == solution.post_expansion_contracting.end_index)
+			cout << "Blank post-expansion interval!\n";
 		post_expansion_contraction_interval.entrance_interval.period_end_index = solution.post_expansion_contracting.start_index;
 		post_expansion_contraction_interval.entrance_interval.period_start_index = ns_find_last_valid_observation_index(solution.post_expansion_contracting.start_index, elements);
 		if (post_expansion_contraction_interval.entrance_interval.period_start_index == -1) post_expansion_contraction_interval.entrance_interval = frame_before_first;

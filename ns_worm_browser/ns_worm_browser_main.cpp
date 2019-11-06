@@ -3634,11 +3634,12 @@ void idle_main_window_update_callback(void * force_redraw) {
     cerr << "Unknown idle error\n";
       }
 }
+void ns_hide_worm_window() {
+	hide_worm_window = true;
+}
+
 void ns_hide_stats_window() {
 	hide_stats_window = true;
-}
-void ns_hide_worm_window(){
-	hide_worm_window = true;
 }
 
 void idle_worm_window_update_callback(void * force_redraw){

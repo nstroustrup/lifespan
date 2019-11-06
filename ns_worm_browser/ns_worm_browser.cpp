@@ -7326,6 +7326,7 @@ void ns_worm_learner::stop_death_time_annotation() {
 	set_behavior_mode(ns_worm_learner::ns_draw_boxes);
 	ns_fl_unlock(__FILE__, __LINE__);
 	ns_hide_worm_window();
+	ns_hide_stats_window();
 	display_splash_image();
 	ns_update_main_information_bar("");
 	ns_update_worm_information_bar("");

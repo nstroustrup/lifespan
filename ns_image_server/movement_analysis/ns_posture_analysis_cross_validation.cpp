@@ -620,6 +620,8 @@ void ns_run_hmm_cross_validation(std::string & results_text, ns_image_server_res
 		ns_acquire_for_scope<ns_ostream>  performance_stats_output(image_server.results_storage.time_path_image_analysis_quantification(sub, std::string("hmm_performance=") + p->first, true, sql).output());
 		std::vector<std::string > measurement_names;
 		for (auto r = p->second.validation_runs_sorted_by_validation_type.begin(); r != p->second.validation_runs_sorted_by_validation_type.end(); ++r) {
+			if (r->second.replicates.empty())
+				continue;
 			if (!r->second.replicates[0].results.animals.empty()) {
 				measurement_names = r->second.replicates[0].results.animals[0].state_info_variable_names;
 				break;

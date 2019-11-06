@@ -8,6 +8,7 @@
 #define NS_HMM_VERSION "2.4"
 
 typedef ns_emission_probabiliy_gaussian_diagonal_covariance_model ns_emission_probability_model_to_use;
+//typedef ns_emission_probabiliy_independent_gaussian_model ns_emission_probability_model_to_use;
 
 double inline ns_catch_infinity(const double & d){
 	return (d==-std::numeric_limits<double>::infinity())?-20:d;
@@ -675,7 +676,9 @@ struct ns_gmm_sorter{
 bool operator<(const ns_gmm_sorter & a, const ns_gmm_sorter & b) {
 	return a.weight < b.weight;
 }
-
+inline bool ns_double_equal(const double& a, const double& b) {
+	return a==b || fabs(a / b - 1) < .0001;
+}
 bool operator==(const GMM & a, const GMM & b) {
 	if (a.GetDimNum() != b.GetDimNum()) {
 		std::cerr << "GMM dimensions do not match\n";
@@ -686,14 +689,15 @@ bool operator==(const GMM & a, const GMM & b) {
 		return false;
 	}
 	for (int i = 0; i < a.GetMixNum(); i++) {
-		if (a.Prior(i) != b.Prior(i)) {
+		if (!ns_double_equal(a.Prior(i),b.Prior(i))) {
 			std::cerr << "Prior " << i << " doesn't match\n";
+			double q = fabs(a.Prior(i) / b.Prior(i) - 1);
 			return false;
 		}
 		const double *am = a.Mean(i),
 			*bm = b.Mean(i);
 		for (int j = 0; j < a.GetDimNum(); j++) {
-			if (am[j] != bm[j]) {
+			if (!ns_double_equal(am[j],bm[j])) {
 				std::cerr << "Mean " << i << ", " << j << " doesn't match\n";
 				return false;
 			}
@@ -701,7 +705,7 @@ bool operator==(const GMM & a, const GMM & b) {
 		am = a.Variance(i);
 		bm = b.Variance(i);
 		for (int j = 0; j < a.GetDimNum(); j++) {
-			if (am[j] != bm[j]) {
+			if (!ns_double_equal(am[j],bm[j])) {
 				std::cerr << "Variance " << i << ", " << j << " doesn't match\n";
 				return false;
 			}
@@ -715,30 +719,39 @@ template<class accessor_t>
 class ns_emission_probabiliy_gausian_1D_model {
 public:
 	enum { number_of_gaussians=3 };
-	ns_emission_probabiliy_gausian_1D_model(): gmm(1, 3) {}
+	ns_emission_probabiliy_gausian_1D_model() : gmm(1, number_of_gaussians), specified(false) {}
+	bool specified;
 	template<class data_accessor_t>
-	void build_from_data(const std::vector<ns_hmm_emission> & observations) {
+	void build_from_data(const std::vector<ns_hmm_emission>& observations) {
+		specified = true;
 		data_accessor_t data_accessor;
-		
-		double * data = new double[observations.size()];
+
+		double* data = new double[observations.size()];
 		for (unsigned long i = 0; i < observations.size(); i++) {
 			const auto v = data_accessor(observations[i].measurement);
 			data[i] = v;
 		}
 
 		if (observations.size() < number_of_gaussians) {
-			for (unsigned int i = 0; i < number_of_gaussians; i++)
-				gmm_weights[i] = (i==0)?1:0;
 			for (unsigned int i = 0; i < number_of_gaussians; i++) {
+				gmm_weights[i] = (i == 0) ? 1 : 0;
 				gmm_means[i] = 0;
 				gmm_var[i] = 1;
 			}
+
+
 			for (unsigned int i = 0; i < observations.size(); i++)
 				gmm_means[0] += data[i];
 			gmm_means[0] /= observations.size();
-			
+
+			for (unsigned int i = 0; i < observations.size(); i++){
+				gmm.setPrior(i, gmm_weights[i]);
+				gmm.setMean(i, &gmm_means[i]);
+				gmm.setVariance(i, &gmm_var[i]);
+			}
 			return;
 		}
+	
 		
 	
 		gmm.SetMaxIterNum(1e6);
@@ -751,46 +764,51 @@ public:
 		for (unsigned int i = 0; i < number_of_gaussians; i++)
 			sorted[i] = ns_gmm_sorter(gmm.Prior(i), *gmm.Mean(i), *gmm.Variance(i));
 		std::sort(sorted.begin(), sorted.end());
-
 		for (unsigned int i = 0; i < number_of_gaussians; i++) {
 			gmm_weights[i] = sorted[i].weight;
 			gmm_means[i] = sorted[i].mean;
 			gmm_var[i] = sorted[i].var;
 			sum_of_weights += gmm_weights[i];
+
+			gmm.setPrior(i, gmm_weights[i]);
+			gmm.setMean(i, &gmm_means[i]);
+			gmm.setVariance(i, &gmm_var[i]);
 		}
 
 		if (abs(sum_of_weights - 1) > 0.01)
 			throw ns_ex("GMM problem");
 	}
-	void flip_model_sign() {
-		for (unsigned int i = 0; i < number_of_gaussians; i++)
-			gmm_means[i] = -gmm_means[i];
-	}
 	//Note that we do not calculate the /probability/ of observing the value.
 	//we calculate the value of the /probability density function/ at a certain t
 	//which is bounded between 0 and infinity!
 	double point_emission_pdf(const ns_analyzed_image_time_path_element_measurements & e) const {
+		if (!specified)
+			throw ns_ex("Accessing unspecified accessor!");
 		accessor_t accessor;
 		const double val = accessor(e);
 		const double b = gmm.GetProbability(&val);
 		return b;
 	}
 	static void write_header(std::ostream & o)  {
-		o << "P(0)";
+		o << "Specified";
 		for (unsigned int i = 0; i < number_of_gaussians; i++) {
 			o << ",Weight " << i << ", Mean " << i << ", Var " << i;
 		}
 
 	}
-	void write(std::ostream & o) const {		
-		o << 0 ;	//unused parameter
+	void write(std::ostream & o) const {
+		o.precision(30);
+		o << (specified ? "1" : "0");
+
 		for (unsigned int i = 0; i < number_of_gaussians; i++)
-			o << "," << gmm_weights[i] << "," << gmm_means[i] << "," << gmm_var[i];
+			o << "," << log(gmm_weights[i]) << "," << gmm_means[i] << "," << gmm_var[i];
 	}
 	void read(std::istream & in) {
+		ns_get_string get_string;
+		std::string tmp;
+		get_string(in, tmp);
+		specified = (tmp == "1");
 		ns_get_double get_double;
-		double tmp;
-		get_double(in, tmp);
 		if (in.fail()) throw ns_ex("ns_emission_probabiliy_model():read():invalid format");
 		for (unsigned int i = 0; i < number_of_gaussians; i++) {
 			get_double(in, gmm_weights[i]);
@@ -801,6 +819,10 @@ public:
 			if (in.fail()) throw ns_ex("ns_emission_probabiliy_model():read():invalid format");
 		}
 		for (unsigned int i = 0; i < number_of_gaussians; i++) {
+			if (!isfinite(gmm_weights[i]))
+				gmm_weights[i] = 0;
+			else gmm_weights[i] = exp(gmm_weights[i]);
+
 			gmm.setPrior(i,gmm_weights[i]);
 			gmm.setMean(i, &gmm_means[i]);
 			gmm.setVariance(i, &gmm_var[i]);
@@ -808,7 +830,13 @@ public:
 		}
 	}
 
-	bool equal(const ns_emission_probabiliy_gausian_1D_model<typename accessor_t> & t) const {
+	bool equal(const ns_emission_probabiliy_gausian_1D_model<typename accessor_t>& t) const {
+		if (specified != t.specified) {
+			std::cerr << "specification mismatch\n";
+			return false;
+		}
+		if (!specified)
+			return true;
 		return this->gmm == t.gmm;
 	}
 private:
@@ -969,43 +997,51 @@ public:
 		return 8;
 	}
 	static void write_header(std::ostream & o)  {
-		o << "Version,Permissions,Movement State,Variable,";
+		o << "Version,Permissions,Movement State,Dimension,";
 		ns_emission_probabiliy_gausian_1D_model<ns_movement_accessor>::write_header(o);
 	}
 	void write(const ns_hmm_movement_state state, const std::string& version,int extra_data,std::ostream & o) const {
 		o << version << "," << extra_data << "," << ns_hmm_movement_state_to_string(state) << ",m,";
 		movement.write(o);
-		o << "\n" << extra_data << "," << ns_hmm_movement_state_to_string(state) << ",i1,";
+		o << "\n" << version << "," << extra_data << "," << ns_hmm_movement_state_to_string(state) << ",i1,";
 		intensity_1x.write(o);
-		o << "\n" << extra_data << "," << ns_hmm_movement_state_to_string(state) << ",i2,";
+		o << "\n" << version << "," << extra_data << "," << ns_hmm_movement_state_to_string(state) << ",i2,";
 		intensity_2x.write(o);
-		o << "\n" << extra_data << "," << ns_hmm_movement_state_to_string(state) << ",i4,";
+		o << "\n" << version << "," << extra_data << "," << ns_hmm_movement_state_to_string(state) << ",i4,";
 		intensity_4x.write(o);
-		o << "\n" << extra_data << "," << ns_hmm_movement_state_to_string(state) << ",o1,";
+		o << "\n" << version << "," << extra_data << "," << ns_hmm_movement_state_to_string(state) << ",o1,";
 		outside_intensity_1x.write(o);
-		o << "\n" << extra_data << "," << ns_hmm_movement_state_to_string(state) << ",o2,";
+		o << "\n" << version << "," << extra_data << "," << ns_hmm_movement_state_to_string(state) << ",o2,";
 		outside_intensity_2x.write(o);
-		o << "\n" << extra_data << "," << ns_hmm_movement_state_to_string(state) << ",o4,";
+		o << "\n" << version << "," << extra_data << "," << ns_hmm_movement_state_to_string(state) << ",o4,";
 		outside_intensity_4x.write(o);
-		o << "\n" << extra_data << "," << ns_hmm_movement_state_to_string(state) << ",d,";
+		o << "\n" << version << "," << extra_data << "," << ns_hmm_movement_state_to_string(state) << ",d,";
 		stabilized_outside_comparison.write(o);
 	}
-	void read(std::istream & i,ns_hmm_movement_state & state, int & extra_data) {
+	bool read(std::istream & i,ns_hmm_movement_state & state, std::string & software_version, int & extra_data) {
 
 		ns_get_string get_string;
+		std::string software_version_line;
 		std::string tmp;
 		int r = 0;
+		state = ns_hmm_unknown_state;
+		extra_data = 0;
+		software_version = "";
+		if (i.fail())
+			return false;
 		while (!i.fail()) {
-			get_string(i, tmp);
+			get_string(i, software_version_line);
 			if (i.fail()) {
-				if (r == 0) {
-					state = ns_hmm_unknown_state;
-					extra_data = 0;
-					return;
-				}
+				if (r == 0)
+					return false;
 				else
 					throw ns_ex("ns_emission_probabiliy_model::read()::Bad model file");
 			}
+			if (software_version == "")
+				software_version = software_version_line;
+			else if (software_version_line != software_version)
+				throw ns_ex("HMM software version mismatch in file!");
+			get_string(i, tmp);
 			extra_data = atoi(tmp.c_str());
 			get_string(i, tmp);
 			ns_hmm_movement_state state_temp = ns_hmm_movement_state_from_string(tmp);
@@ -1016,7 +1052,6 @@ public:
 			get_string(i, tmp);
 			if (i.fail())
 				throw ns_ex("ns_emission_probabiliy_model::read()::Bad model file");
-			//std::cerr << "movement/intensity:" << tmp << " ";
 			if (tmp == "m")
 				movement.read(i);
 			else if (tmp == "i1")
@@ -1034,9 +1069,10 @@ public:
 			else if (tmp == "d")
 				stabilized_outside_comparison.read(i);
 			r++;
-			if (r == 4)
+			if (r == number_of_sub_probabilities())
 				break;
 		}
+		return true;
 	}
 
 	ns_emission_probabiliy_gausian_1D_model<ns_movement_accessor> movement;
@@ -1210,16 +1246,17 @@ public:
 		}
 	}
 	void write(const ns_hmm_movement_state state, const std::string& version, int extra_data, std::ostream& o) const {
+		o.precision(30);
 		for (unsigned int d = 0; d < number_of_dimensions; d++) {
 			o << version << "," << extra_data << "," << ns_hmm_movement_state_to_string(state) << "," << number_of_dimensions << "," << number_of_gaussians << "," << dimensions[d].name;
 
 			for (unsigned int g = 0; g < number_of_gaussians; g++)
-				o << "," << gmm.Prior(g) << "," << gmm.Mean(g)[d] << "," << gmm.Variance(g)[d];
+				o << "," << log(gmm.Prior(g)) << "," << gmm.Mean(g)[d] << "," << gmm.Variance(g)[d];
 			if (d + 1 != number_of_dimensions)
 				o << "\n";
 		}
 	}
-	void read_dimension(const unsigned int dim, std::vector<double> weights, std::vector<double> & means, std::vector<double> & vars, std::istream& in) {
+	void read_dimension(const unsigned int dim, std::vector<double> & weights, std::vector<double> & means, std::vector<double> & vars, std::istream& in) {
 		//we place the mean in dimension dim for gaussian g at
 		//number_of_dimensions*g + dim
 
@@ -1297,7 +1334,10 @@ public:
 		}
 
 		for (unsigned int g = 0; g < number_of_gaussians; g++) {
-			gmm.setPrior(g, weights[g]);
+			if (!isfinite(weights[g]))
+				gmm.setPrior(g, 0);
+			else
+				gmm.setPrior(g, exp(weights[g]));
 			gmm.setMean(g, &means[number_of_dimensions * g]);
 			gmm.setVariance(g, &vars[number_of_dimensions * g]);
 		}
@@ -1330,13 +1370,17 @@ bool operator==(const ns_emperical_posture_quantification_value_estimator & a, c
 		std::cerr << "Wrong number of models\n";
 		return false;
 	}
+	if (a.states_permitted_int != b.states_permitted_int) {
+		std::cerr << "State permission mismatch!";
+		return false;
+	}
 	for (auto p = a.emission_probability_models.begin(); p != a.emission_probability_models.end(); ++p) {
 		auto q = b.emission_probability_models.find(p->first);
 		if (q == b.emission_probability_models.end()) {
 			std::cerr << "Missing state\n";
 			return false;
 		}
-		if ((p->second == q->second))
+		if (!(*p->second == *q->second))
 			return false;
 	}
 	return true;
@@ -1406,7 +1450,7 @@ void ns_emperical_posture_quantification_value_estimator::write_observation_data
 	ns_analyzed_image_time_path_element_measurements::write_header(out);
 	out << "\n";
 	//first write normalization stats
-	
+	out.precision(30);
 	for (std::map<ns_hmm_movement_state, std::vector<ns_hmm_emission> >::const_iterator p = observed_values.begin(); p != observed_values.end(); p++) {
 		for (unsigned int i = 0; i < p->second.size(); i++) {
 			out << *(p->second[i].device_name) << ","

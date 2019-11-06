@@ -394,7 +394,7 @@ void ns_hmm_solver::build_movement_state_solution_from_movement_transitions(cons
 	for (unsigned int i = 0; i < movement_transitions.size(); i++) {
 		//look for movement transitions
 		if (m == ns_movement_fast && (movement_transitions[i].first != ns_hmm_missing && movement_transitions[i].first != ns_hmm_moving_vigorously)) {
-			if (i != 0 && movement_transitions[i-1].first != ns_hmm_missing) {
+			if (i != 0 && movement_transitions[i-1].first != ns_hmm_missing) { //if we had a period of fast movement, mark it as not being skipped.
 				movement_state_solution.moving.skipped = false;
 				movement_state_solution.moving.end_index = path_indices[movement_transitions[i].second];
 			}
@@ -427,8 +427,7 @@ void ns_hmm_solver::build_movement_state_solution_from_movement_transitions(cons
 				movement_state_solution.expanding.skipped = movement_state_solution.expanding.start_index == movement_state_solution.expanding.end_index;
 				expanding_state = 1;
 			}
-			else if (movement_transitions[i].first == ns_hmm_moving_weakly_post_expansion ||
-				movement_transitions[i].first == ns_hmm_contracting_post_expansion) {
+			else if (movement_transitions[i].first == ns_hmm_moving_weakly_post_expansion) {
 				//std::cerr << "Encountered an invalid post expansion state.";
 				ns_ex ex("Encountered an invalid post expansion state:");
 				for (unsigned int j = 0; j < movement_transitions.size(); j++) {
@@ -457,8 +456,8 @@ void ns_hmm_solver::build_movement_state_solution_from_movement_transitions(cons
 		switch (contracting_state) {
 		case 0:
 			if (movement_transitions[i].first == ns_hmm_contracting_post_expansion) {
-				if (expanding_state == 0)
-					throw ns_ex("Encountered a contracting animal that had not first expanded.");
+				//if (expanding_state == 0)
+				//	throw ns_ex("Encountered a contracting animal that had not first expanded.");
 				movement_state_solution.post_expansion_contracting.skipped = false;
 				movement_state_solution.post_expansion_contracting.start_index = path_indices[movement_transitions[i].second];
 				movement_state_solution.post_expansion_contracting.end_index = *path_indices.rbegin();
@@ -476,8 +475,8 @@ void ns_hmm_solver::build_movement_state_solution_from_movement_transitions(cons
 
 			}
 			break;
-		case 2: if (movement_transitions[i].first == ns_hmm_contracting_post_expansion)
-			throw ns_ex("Re-entry into contraction state.");
+		case 2: if (movement_transitions[i].first != ns_hmm_not_moving_dead)
+			throw ns_ex("Failure to die after contraction");
 		}
 	}
 
@@ -521,7 +520,7 @@ void ns_hmm_solver::build_state_transition_matrix(const ns_emperical_posture_qua
 	m[ns_hmm_missing][ns_hmm_not_moving_dead] = penalized_transition;	//we penalize any path that skips death time expansion
 	if (allow_weakly) m[ns_hmm_moving_vigorously][ns_hmm_moving_weakly] = 1;
 	if (all_expansion_while_alive) m[ns_hmm_moving_vigorously][ns_hmm_moving_weakly_expanding] = 1;
-
+	m[ns_hmm_moving_vigorously][ns_hmm_moving_weakly] = 1;
 	if (allow_expansion) {
 		m[ns_hmm_moving_vigorously][ns_hmm_not_moving_alive] = 1;
 		m[ns_hmm_moving_vigorously][ns_hmm_not_moving_expanding] = 1;
@@ -529,29 +528,38 @@ void ns_hmm_solver::build_state_transition_matrix(const ns_emperical_posture_qua
 	m[ns_hmm_moving_vigorously][ns_hmm_not_moving_dead] = penalized_transition;
 
 	if (all_expansion_while_alive) m[ns_hmm_moving_weakly][ns_hmm_moving_weakly_expanding] = 1;
-	if (allow_expansion && allow_weakly) {
-		m[ns_hmm_moving_weakly][ns_hmm_not_moving_alive] = 1;
-		m[ns_hmm_moving_weakly][ns_hmm_not_moving_expanding] = 1;
+	if (allow_weakly){
+		m[ns_hmm_moving_weakly][ns_hmm_not_moving_dead] = allow_expansion ? penalized_transition : 1;
+		if (allow_expansion) {
+			m[ns_hmm_moving_weakly][ns_hmm_not_moving_alive] = 1;
+			m[ns_hmm_moving_weakly][ns_hmm_not_moving_expanding] = 1;
+		}
+		if (allow_contraction)
+			m[ns_hmm_moving_weakly][ns_hmm_contracting_post_expansion] = 1;
+
+
 	}
 	if (allow_weakly)
-	m[ns_hmm_moving_weakly][ns_hmm_not_moving_dead] = allow_expansion? penalized_transition : 1;
 
 	if (all_expansion_while_alive) {
 		m[ns_hmm_moving_weakly_expanding][ns_hmm_moving_weakly_post_expansion] = 1;
 		m[ns_hmm_moving_weakly_expanding][ns_hmm_not_moving_expanding] = 1;
-		if (allow_contraction)
-		m[ns_hmm_moving_weakly_expanding][ns_hmm_contracting_post_expansion] = 1;
+		if (allow_contraction) {
+			m[ns_hmm_moving_weakly_expanding][ns_hmm_contracting_post_expansion] = 1;
+			m[ns_hmm_moving_weakly_post_expansion][ns_hmm_contracting_post_expansion] = 1;
+		}
 		m[ns_hmm_moving_weakly_expanding][ns_hmm_not_moving_dead] = 1;
-
+		
 		m[ns_hmm_moving_weakly_post_expansion][ns_hmm_not_moving_dead] = 1;
 	}
 
 	if (allow_expansion) {
 		m[ns_hmm_not_moving_expanding][ns_hmm_not_moving_dead] = 1;
 		m[ns_hmm_not_moving_expanding][ns_hmm_contracting_post_expansion] = 1;
-		m[ns_hmm_not_moving_expanding][ns_hmm_not_moving_dead] = 1;
-		if (allow_contraction)
-		m[ns_hmm_contracting_post_expansion][ns_hmm_not_moving_dead] = 1;
+		if (allow_contraction) {
+			m[ns_hmm_contracting_post_expansion][ns_hmm_not_moving_dead] = 1;
+			m[ns_hmm_not_moving_alive][ns_hmm_contracting_post_expansion] = 1;
+		}
 		m[ns_hmm_not_moving_alive][ns_hmm_not_moving_expanding] = 1;
 		m[ns_hmm_not_moving_alive][ns_hmm_not_moving_dead] = penalized_transition;
 	}
@@ -1148,13 +1156,13 @@ public:
 
 	GMM gmm;
 	std::vector< ns_covarying_gaussian_dimension> dimensions;
-	enum { number_of_dimensions = 4, number_of_gaussians = 4 };
+	enum { number_of_dimensions = 2, number_of_gaussians = 4 };
 	mutable double observation_buffer[number_of_dimensions];
 	ns_emission_probabiliy_gaussian_diagonal_covariance_model() :gmm(number_of_dimensions, number_of_gaussians){
 		dimensions.reserve(number_of_dimensions);
 		dimensions.push_back(ns_covarying_gaussian_dimension(new ns_movement_accessor, "m"));
-		dimensions.push_back(ns_covarying_gaussian_dimension(new ns_intensity_accessor_1x, "i1"));
-		dimensions.push_back(ns_covarying_gaussian_dimension(new ns_intensity_accessor_2x, "i2"));
+		//dimensions.push_back(ns_covarying_gaussian_dimension(new ns_intensity_accessor_1x, "i1"));
+		//dimensions.push_back(ns_covarying_gaussian_dimension(new ns_intensity_accessor_2x, "i2"));
 		dimensions.push_back(ns_covarying_gaussian_dimension(new ns_intensity_accessor_4x, "i4"));
 		//dimensions.push_back(ns_covarying_gaussian_dimension(new ns_outside_intensity_accessor_1x, "o1"));
 		//dimensions.push_back(ns_covarying_gaussian_dimension(new ns_outside_intensity_accessor_2x, "o2"));

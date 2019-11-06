@@ -819,7 +819,7 @@ public:
 			if (in.fail()) throw ns_ex("ns_emission_probabiliy_model():read():invalid format");
 		}
 		for (unsigned int i = 0; i < number_of_gaussians; i++) {
-			if (!isfinite(gmm_weights[i]))
+		  if (!std::isfinite(gmm_weights[i]))
 				gmm_weights[i] = 0;
 			else gmm_weights[i] = exp(gmm_weights[i]);
 
@@ -829,8 +829,8 @@ public:
 
 		}
 	}
-
-	bool equal(const ns_emission_probabiliy_gausian_1D_model<typename accessor_t>& t) const {
+       
+	bool equal(const ns_emission_probabiliy_gausian_1D_model<accessor_t>& t) const {
 		if (specified != t.specified) {
 			std::cerr << "specification mismatch\n";
 			return false;
@@ -1334,7 +1334,7 @@ public:
 		}
 
 		for (unsigned int g = 0; g < number_of_gaussians; g++) {
-			if (!isfinite(weights[g]))
+		  if (!std::isfinite(weights[g]))
 				gmm.setPrior(g, 0);
 			else
 				gmm.setPrior(g, exp(weights[g]));

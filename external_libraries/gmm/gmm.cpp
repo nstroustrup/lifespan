@@ -120,6 +120,20 @@ double GMM::GetProbability(const double* sample) const
 	}
 	return p;
 }
+double GMM::Get_1D_Probability(int dim, const double* sample) const {
+
+	double p = 0;
+	for (int j = 0; j < m_mixNum; j++){
+
+		double p2 = 1;
+		p2 *= 1 / sqrt(2 * 3.14159 * m_vars[j][dim]);
+		p2 *= exp(-0.5 * (sample[dim] - m_means[j][dim]) * (sample[dim] - m_means[j][dim]) / m_vars[j][dim]);
+		
+		p += m_priors[j] * p2;
+	}
+	return p;
+
+}
 
 double GMM::GetProbability(const double* x, int j) const
 {

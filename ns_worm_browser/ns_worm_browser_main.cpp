@@ -2151,7 +2151,7 @@ public:
 	}
 private:
 	bool should_be_active() const {
-		return worm_learner.current_behavior_mode() == ns_worm_learner::ns_annotate_storyboard_experiment;
+		return true;
 	}
 };
 
@@ -3634,11 +3634,12 @@ void idle_main_window_update_callback(void * force_redraw) {
     cerr << "Unknown idle error\n";
       }
 }
+void ns_hide_worm_window() {
+	hide_worm_window = true;
+}
+
 void ns_hide_stats_window() {
 	hide_stats_window = true;
-}
-void ns_hide_worm_window(){
-	hide_worm_window = true;
 }
 
 void idle_worm_window_update_callback(void * force_redraw){
@@ -3912,32 +3913,34 @@ void ns_run_startup_routines() {
 		//example code that runns a movement analysis job for a specific region
 		if (0) {
 			ns_processing_job job;
-			const unsigned long region_id(2211);
+			const unsigned long region_id(56253);
 			job.region_id = region_id;
 			job.maintenance_task = ns_maintenance_rebuild_movement_from_stored_image_quantification;
-			analyze_worm_movement_across_frames(job, &image_server, sql(), true);
-			ns_image_server_results_subject subject;
-			subject.region_id = region_id;
+			analyze_worm_movement_across_frames(job, &image_server, sql(), true,50);
+			if (0) {
+				ns_image_server_results_subject subject;
+				subject.region_id = region_id;
 
-			ns_image_server_results_file results(image_server.results_storage.machine_death_times(subject, ns_image_server_results_storage::ns_censoring_and_movement_transitions, "time_path_image_analysis", sql(), true));
-			ns_acquire_for_scope<ns_istream> tp_i(results.input());
-			if (tp_i.is_null())
-				cout << "Could not load results file.";
-			ns_death_time_annotation_set set;
-			set.read(ns_death_time_annotation_set::ns_censoring_and_movement_transitions, tp_i()(), true);
-			tp_i.release();
-			ns_death_time_annotation_compiler survival_curve_compiler;
-			survival_curve_compiler.add(set);
-			ns_hand_annotation_loader by_hand_annotations;
-			by_hand_annotations.load_region_annotations(ns_death_time_annotation_set::ns_censoring_and_movement_transitions, region_id, sql());
-			survival_curve_compiler.add(by_hand_annotations.annotations, ns_death_time_annotation_compiler::ns_do_not_create_regions);
-			ns_lifespan_experiment_set survival_curves;
-			survival_curve_compiler.generate_survival_curve_set(survival_curves, ns_death_time_annotation::ns_only_machine_annotations, false, false);
-			cout << survival_curves.curves.size();
-			survival_curves.generate_survival_statistics();
-			std::ofstream tmp("tmp2.csv");
-			survival_curves.output_JMP_file(ns_death_time_annotation::ns_only_machine_annotations, ns_lifespan_experiment_set::ns_output_single_event_times, ns_lifespan_experiment_set::ns_days, tmp, ns_lifespan_experiment_set::ns_simple);
-			tmp.close();
+				ns_image_server_results_file results(image_server.results_storage.machine_death_times(subject, ns_image_server_results_storage::ns_censoring_and_movement_transitions, "time_path_image_analysis", sql(), true));
+				ns_acquire_for_scope<ns_istream> tp_i(results.input());
+				if (tp_i.is_null())
+					cout << "Could not load results file.";
+				ns_death_time_annotation_set set;
+				set.read(ns_death_time_annotation_set::ns_censoring_and_movement_transitions, tp_i()(), true);
+				tp_i.release();
+				ns_death_time_annotation_compiler survival_curve_compiler;
+				survival_curve_compiler.add(set);
+				ns_hand_annotation_loader by_hand_annotations;
+				by_hand_annotations.load_region_annotations(ns_death_time_annotation_set::ns_censoring_and_movement_transitions, region_id, sql());
+				survival_curve_compiler.add(by_hand_annotations.annotations, ns_death_time_annotation_compiler::ns_do_not_create_regions);
+				ns_lifespan_experiment_set survival_curves;
+				survival_curve_compiler.generate_survival_curve_set(survival_curves, ns_death_time_annotation::ns_only_machine_annotations, false, false);
+				cout << survival_curves.curves.size();
+				survival_curves.generate_survival_statistics();
+				std::ofstream tmp("tmp2.csv");
+				survival_curves.output_JMP_file(ns_death_time_annotation::ns_only_machine_annotations, ns_lifespan_experiment_set::ns_output_single_event_times, ns_lifespan_experiment_set::ns_days, tmp, ns_lifespan_experiment_set::ns_simple);
+				tmp.close();
+			}
 		}
 		try {
 			image_server.update_posture_analysis_model_registry(sql(), false);

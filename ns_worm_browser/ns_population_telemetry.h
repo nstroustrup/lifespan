@@ -37,7 +37,7 @@ public:
 	typedef enum { ns_none, ns_survival, ns_movement_vs_posture, ns_number_of_graph_types } ns_graph_contents;
 	typedef enum { ns_group_by_device, ns_group_by_strain, ns_aggregate_all, ns_group_by_death_type, ns_survival_grouping_num} ns_survival_grouping;
 	typedef enum { ns_plot_death_times_absolute, ns_plot_death_times_residual,ns_movement_plot_num } ns_movement_plot_type;
-	typedef enum { ns_plot_movement_death,ns_plot_expansion_death, ns_death_plot_num } ns_death_plot_type;
+	typedef enum { ns_plot_expansion_death, ns_plot_movement_death,ns_death_plot_num } ns_death_plot_type;
 	typedef enum { ns_plot_death_types, ns_by_hand_machine,ns_best_guess_vs_best_guess,ns_regression_type_num } ns_regression_type;
 	static std::string survival_grouping_name(const ns_survival_grouping& g) {
 		switch (g) {
@@ -498,9 +498,8 @@ public:
 							continue;
 						}
 						plotted_zero = true;
-						max_t_i = i;
 					}
-					else max_t_i = i;
+					max_t_i = i;
 					survival_curves[0].vals.y[i + time_offset] = survival_data->probability_of_surviving_up_to_interval[i];
 				}
 				if (max_t_i < time_axis.size()) {
@@ -544,7 +543,8 @@ public:
 							}
 							plotted_zero = true;
 						}
-						else max_t_i = i;
+						if (max_t_i < i)
+							max_t_i = i;
 						survival_curves[j].vals.y[i + time_offset] = survival_data[j]->probability_of_surviving_up_to_interval[i];
 					}
 				}
@@ -586,9 +586,9 @@ public:
 								continue;
 							}
 							plotted_zero = true;
-							max_t_i = i;
 						}
-						else max_t_i = i;
+						if (max_t_i < i)
+							max_t_i = i;
 						survival_curves[survival_curve_id].vals.y[i+ time_offset] = survival_data->probability_of_surviving_up_to_interval[i];
 					}
 
@@ -634,9 +634,9 @@ public:
 								continue;
 							}
 							plotted_zero = true;
-							max_t_i = i;
 						}
-						else max_t_i = i;
+						if (max_t_i < i)
+							max_t_i = i;
 						survival_curves[survival_curve_id].vals.y[i + time_offset] = survival_data->probability_of_surviving_up_to_interval[i];
 					}
 					survival_curves[survival_curve_id].color = ns_rainbow<ns_color_8>(survival_curve_id / (float)all_devices.size());
@@ -705,6 +705,8 @@ public:
 				if (filter_by_strain && r->second.metadata.device_regression_match_description() != data_to_process.device_regression_match_description())
 					continue; 
 				for (ns_death_time_annotation_compiler_region::ns_location_list::const_iterator l = r->second.locations.begin(); l != r->second.locations.end(); l++) {
+					ns_multiple_worm_cluster_death_annotation_handler multiple_worm_handler;
+					//if (l->properties.number_of_worms()>1)
 					ns_dying_animal_description_set_const set;
 					l->generate_dying_animal_description_const(true, set);
 
@@ -717,7 +719,7 @@ public:
 					for (unsigned int i = 0; i < set.descriptions.size(); i++) {
 						if (regression_plot == ns_plot_death_types) {
 							movement_vs_posture_x_axis_label = "Movement Cessation Time (days)";
-							movement_vs_posture_y_axis_label = "Death-Associated Expansion (days)";
+							movement_vs_posture_y_axis_label = "Death-Associated Expansion Time (days)";
 							movement_vs_posture_note = "(Only individuals with both types of deaths are shown)";
 							if (set.descriptions[i].by_hand.death_associated_expansion_start != 0)
 								pair_to_plot[0].second = set.descriptions[i].by_hand.death_associated_expansion_start;

@@ -460,7 +460,7 @@ public:
 	void release_images(ns_time_path_image_movement_analysis_memory_pool<allocator_T> & pool);
 
 	unsigned long number_of_elements_not_processed_correctly() const;
-	void denoise_movement_series_and_calculate_intensity_slopes(const unsigned long change_time_in_seconds,const ns_time_series_denoising_parameters &);
+	void denoise_movement_series_and_calculate_intensity_slopes(const unsigned long change_time_in_seconds,const ns_time_series_denoising_parameters &, std::vector<ns_64_bit > &tmp1, std::vector<ns_64_bit >& tmp2);
 
 	void find_first_labeled_stationary_timepoint() {
 		first_stationary_timepoint_ = 0;

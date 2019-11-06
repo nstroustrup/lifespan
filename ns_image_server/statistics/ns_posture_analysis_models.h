@@ -10,21 +10,24 @@
 
 class ns_analyzed_image_time_path;
 struct ns_hmm_emission {
-	ns_hmm_emission() :genotype(0) {}
+	ns_hmm_emission() :genotype(0),region_name(0),device_name(0) {}
 	ns_analyzed_image_time_path_element_measurements measurement;
 	ns_stationary_path_id path_id;
 	ns_64_bit region_id;
-	unsigned long device_id;
+	const std::string* region_name;
+	const std::string * device_name;
 
 	/*NOT USED IN TRAINING...only for debugging and data visualization*/
 	unsigned long emission_time; 
-	std::string* genotype;
+	const std::string* genotype;
 };
 struct ns_hmm_emission_normalization_stats {
 	ns_analyzed_image_time_path_element_measurements path_mean, path_variance;
 	ns_death_time_annotation source;
+	const std::string* region_name, * device_name;
 };
-class ns_emission_probabiliy_model;
+class ns_emission_probabiliy_gaussian_diagonal_covariance_model;
+class ns_emission_probabiliy_independent_gaussian_model;
 
 class ns_emperical_posture_quantification_value_estimator{
 public:
@@ -33,10 +36,10 @@ public:
 	static ns_states_permitted state_permissions_from_string(const std::string & s);
 	~ns_emperical_posture_quantification_value_estimator();
 	friend class ns_time_path_movement_markov_solver;
-	bool add_observation(const std::string &software_version, const ns_death_time_annotation & properties, const ns_analyzed_image_time_path * path, const unsigned long device_id );
+	bool add_observation(const std::string &software_version, const ns_death_time_annotation & properties, const ns_analyzed_image_time_path * path, const std::string* plate_name, const std::string * device_name );
 	void build_estimator_from_observations(std::string & output, const ns_states_permitted & states_permitted);
 
-	void probability_for_each_state(const ns_analyzed_image_time_path_element_measurements & e,std::vector<double> & p) const;
+	void log_probability_for_each_state(const ns_analyzed_image_time_path_element_measurements & e,std::vector<double> & p) const;
 	void read_observation_data(std::istream & in);
 	void write_observation_data(std::ostream & out,const std::string & experiment_name = "") const;
 	
@@ -51,7 +54,7 @@ public:
 	void output_debug_info(const ns_analyzed_image_time_path_element_measurements & e, std::ostream & o) const;
 	bool state_specified_by_model(const ns_hmm_movement_state s) const;
 	//useful for debugging
-	void provide_measurements_and_sub_probabilities(const ns_hmm_movement_state & state, const ns_analyzed_image_time_path_element_measurements & e, std::vector<double> & measurement, std::vector<double> & sub_probabilitiy ) const;
+	void provide_measurements_and_log_sub_probabilities(const ns_hmm_movement_state & state, const ns_analyzed_image_time_path_element_measurements & e, std::vector<double> & measurement, std::vector<double> & sub_probabilitiy ) const;
 	void provide_sub_probability_names(std::vector<std::string> & names) const;
 	unsigned long number_of_sub_probabilities() const;
 	bool state_defined(const ns_hmm_movement_state & m) const;
@@ -63,11 +66,15 @@ public:
 		for (auto p = emission_probability_models.begin(); p != emission_probability_models.end(); p++)
 			s.emplace(p->first);
 	}
+	std::string software_version_when_built;
+	friend bool operator==(const ns_emperical_posture_quantification_value_estimator & a, const ns_emperical_posture_quantification_value_estimator & b);
 private:
 	void write_visualization(std::ostream & o,const std::string & experiment_name="") const;
-	std::map<ns_hmm_movement_state, ns_emission_probabiliy_model *> emission_probability_models;
+	std::map<ns_hmm_movement_state, ns_emission_probabiliy_gaussian_diagonal_covariance_model*> emission_probability_models;
 	ns_states_permitted states_permitted_int;
+	std::set<std::string> volatile_string_storage;
 };
+bool operator==(const ns_emperical_posture_quantification_value_estimator & a, const ns_emperical_posture_quantification_value_estimator & b);
 
 struct ns_threshold_movement_posture_analyzer_parameters{
 	double stationary_cutoff,
@@ -103,7 +110,17 @@ struct ns_posture_analysis_model{
 		case ns_hidden_markov: return "hmm";
 		case ns_threshold_and_hmm: return "thr_hm";
 		case ns_unknown: return "?";
-		default:throw ns_ex("ns_posture_analysis_model::method_to_string()::Uknown method.");
+		default:throw ns_ex("ns_posture_analysis_model::method_to_string()::Unknown method.");
+		}
+	}
+	std::string software_version_when_built() const{
+		switch (posture_analysis_method) {
+		case ns_not_specified: return "N/A";
+		case ns_threshold: return threshold_parameters.version_flag;
+		case ns_hidden_markov:
+		case ns_threshold_and_hmm:  return hmm_posture_estimator.software_version_when_built;
+		case ns_unknown: return "?";
+		default:throw ns_ex("ns_posture_analysis_model::method_to_string()::Unknown method.");
 		}
 	}
 	ns_emperical_posture_quantification_value_estimator hmm_posture_estimator;

@@ -13,6 +13,7 @@
 #include "ns_animal_telemetry.h"
 #include "ns_annotation_handling_for_visualization.h"
 void ns_hide_worm_window();
+void ns_hide_stats_window();
 
 //must have worm browser storyboard lock before calling!
 void ns_specify_worm_details(const ns_64_bit region_info_id, const ns_stationary_path_id& worm, const ns_death_time_annotation& sticky_properties, std::vector<ns_death_time_annotation>& event_times, double external_rescale_factor);

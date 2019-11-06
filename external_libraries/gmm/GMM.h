@@ -23,10 +23,10 @@ public:
 	void SetMaxIterNum(int i)	{ m_maxIterNum = i; }
 	void SetEndError(double f)	{ m_endError = f; }
 
-	int GetDimNum()			{ return m_dimNum; }
-	int GetMixNum()			{ return m_mixNum; }
-	int GetMaxIterNum()		{ return m_maxIterNum; }
-	double GetEndError()	{ return m_endError; }
+	int GetDimNum() const			{ return m_dimNum; }
+	int GetMixNum() const			{ return m_mixNum; }
+	int GetMaxIterNum() const		{ return m_maxIterNum; }
+	double GetEndError() const	{ return m_endError; }
 
 	double& Prior(int i)	{ return m_priors[i]; }
 	double* Mean(int i)		{ return m_means[i]; }
@@ -40,6 +40,7 @@ public:
 	void setVariance(int i,double *val)	{ for(int j=0;j<m_dimNum;j++) m_vars[i][j]=val[j]; }
 
 	double GetProbability(const double* sample) const;
+	double Get_1D_Probability(int dim,const double* sample) const;
 
 	/*	SampleFile: <size><dim><data>...*/
     void Init(const char* sampleFileName);

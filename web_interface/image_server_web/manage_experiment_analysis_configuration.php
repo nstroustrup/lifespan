@@ -60,6 +60,13 @@ if (ns_param_spec($_POST,'detail_level')){
      $external_detail_spec = TRUE;
  }
 
+
+
+if (ns_param_spec($query_string,'reset_model_registry')){
+   $query = "DELETE from analysis_model_registry WHERE analysis_step='posture'";
+   $sql->send_query($query);
+   header("Location: manage_experiment_analysis_configuration.php?$query_parameters\n\n");
+}
 if (ns_param_spec($_POST,'set_as_default'))
    $set_as_default = $_POST['set_as_default']=="yes";
 else $set_as_default = FALSE;
@@ -629,7 +636,7 @@ output_editable_field("conversion_16_bit_upper_bound",$conversion_16_bit_upper_b
  all future experiments</font><?php } ?></td><td bgcolor="<?php echo $table_colors[0][0] ?>" colspan=1>
 					  <div align="right"><input name="set_posture_models" type="submit" value="Set Posture Analysis Models" <?php if ($number_of_regions == 0) echo "disabled";?>>  <?php if ($number_of_regions == 0) echo "<br><font size=\"-2\">These options cannot be set before plate region mask is submitted.</font>"?>
 	</div>
-	</td></tr>
+	</td></tr><tr><td colspan="2" bgcolor=" <?php echo $table_colors[0][0]?>"> <font size="-2">To add a new model, place the file the model directory and<br>re-run the worm browser or analysis server. To clear this list: click <a href="manage_experiment_analysis_configuration.php?experiment_id=<?php echo $experiment_id?>&reset_model_registry=1">[click here]</a></font></td><tr>
 	</table>
 	</td></tr>
 	</table>

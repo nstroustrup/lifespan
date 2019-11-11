@@ -394,7 +394,8 @@ public:
 	void get_storyboard(const ns_experiment_storyboard_spec & spec, ns_storyboard_cache::const_handle_t & handle, ns_sql & sql);
 	void clean_up_storyboard_cache(bool remove_all, ns_sql & sql);
 
-	void update_posture_analysis_model_registry(ns_sql& sql,bool force);
+	void update_posture_analysis_model_registry(ns_sql& sql,bool force); 
+	void update_worm_detection_model_registry(ns_sql& sql, bool force);
 	ns_time_path_solver_parameters get_position_analysis_model(const std::string & model_name,bool create_default_if_does_not_exist=false,const ns_64_bit region_info_id_for_default=0, ns_sql * sql_for_default=0) const;
 	#endif
 	///Clear all SVM machine learning models from the model cache so they are

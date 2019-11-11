@@ -3944,6 +3944,7 @@ void ns_run_startup_routines() {
 		}
 		try {
 			image_server.update_posture_analysis_model_registry(sql(), false);
+			image_server.update_worm_detection_model_registry(sql(), false);
 		}
 		catch (ns_ex& ex) {
 			image_server_const.register_server_event(ex, &sql());

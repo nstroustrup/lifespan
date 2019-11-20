@@ -1964,7 +1964,7 @@ bool ns_update_db_using_experimental_data_from_file(const std::string new_databa
 
 
 	for (unsigned int i = 0; i < files.size(); i++){
-		if (ns_dir::extract_extension(files[i]) != "gz")
+		if (ns_dir::extract_extension(files[i]) != "csv.gz")
 			continue;
 		std::string source(output_directory + DIR_CHAR_STR + files[i]);
 		std::string table_name = ns_dir::extract_filename(source);

@@ -200,6 +200,9 @@ $ns_posture_analysis_model_type = array(""=>"Not Specified",
 "hmm"=>"Hidden Markov",
 "thr_hm"=>"Blended Hidden Markov",
 "?"=>"Unknown Model Type");
+
+$ns_worm_detection_model_type = array(""=>"SVM");
+
 class ns_processing_job{
 
 	public $id,

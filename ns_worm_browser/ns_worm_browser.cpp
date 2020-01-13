@@ -1838,7 +1838,7 @@ void ns_worm_learner::output_movement_analysis_optimization_data(const ns_optimi
 	ns_sql & sql(get_sql_connection());
 
 	ns_64_bit experiment_id = data_selector.current_experiment_id();
-	ns_64_bit plate_id;
+	ns_64_bit plate_id = 0;
 	std::string device_name;
 	if (subject == ns_plate || subject == ns_device) {
 		ns_experiment_region_chooser_region selected_region;

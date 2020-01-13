@@ -987,9 +987,13 @@ void ns_identify_best_threshold_parameteters(std::string& results_text, const ns
 					//include existing model file
 					std::vector<double> thresh;
 					std::vector<unsigned long>hold_t;
-					thresh.push_back(posture_analysis_model_handle().model_specification.threshold_parameters.stationary_cutoff);
-					hold_t.push_back(posture_analysis_model_handle().model_specification.threshold_parameters.permanance_time_required_in_seconds);
-					time_path_image_analyzer.write_posture_analysis_optimization_data(time_path_image_analyzer.posture_model_version_used, thresh, hold_t, metadata, posture_analysis_optimization_output()(), p->second.current_parameter_results, &(p_all->second.current_parameter_results));
+					if (log(posture_analysis_model_handle().model_specification.threshold_parameters.stationary_cutoff) > 20)
+						std::cerr << "Invalid model file spec";
+					else {
+						thresh.push_back(posture_analysis_model_handle().model_specification.threshold_parameters.stationary_cutoff);
+						hold_t.push_back(posture_analysis_model_handle().model_specification.threshold_parameters.permanance_time_required_in_seconds);
+						time_path_image_analyzer.write_posture_analysis_optimization_data(time_path_image_analyzer.posture_model_version_used, thresh, hold_t, metadata, posture_analysis_optimization_output()(), p->second.current_parameter_results, &(p_all->second.current_parameter_results));
+					}
 				}
 				if (run_expansion) {
 					std::map<std::string, ns_parameter_set_optimization_record>::iterator p = best_expansion_parameter_sets.find(strain_name);

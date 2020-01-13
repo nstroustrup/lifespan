@@ -1831,10 +1831,15 @@ void ns_time_path_image_movement_analyzer<allocator_T>::calculate_optimzation_st
 				ns_hmm_movement_analysis_optimizatiom_stats_event_annotation * result = &(s.animals.rbegin()->measurements[st]);
 
 				result->by_hand_identified = !by_hand_result.fully_unbounded() && groups[g].paths[p].by_hand_annotation_event_explicitness[st] != ns_death_time_annotation::ns_explicitly_not_observed;
-
+				
 				if (result->by_hand_identified)
 					result->by_hand = by_hand_result;
-
+				if (result->by_hand_identified && result->by_hand.best_estimate_event_time_for_possible_partially_unbounded_interval() == 0) {
+					std::cerr << "The worm browser generated a spurious storyboard annotation that has been ignored.\n";
+					//These enter the pipeline in
+					//ns_analyzed_image_time_path::add_by_hand_annotations()
+					result->by_hand_identified = false;
+				}
 				result->machine_identified = !machine_skipped;
 				if (result->machine_identified)
 					result->machine = machine_result;
@@ -2540,7 +2545,10 @@ std::vector< std::vector < unsigned long > > static_messy_death_time_matrix;
 				results_2->death_total_mean_square_error_in_hours[i][j] += err_sq;
 				results_2->counts[i][j] ++;
 			}
-
+			if (log(thresholds[i]) > 20) {
+				cerr << "Invalid Threshold\n";
+				continue;
+			}
 			o << m.experiment_name << "," << m.device << "," << m.plate_name() << "," << m.plate_type_summary() 
 				<< "," << id.group_id << "," << id.path_id << ","
 				<< (censoring_and_flag_details.is_excluded()?"1":"0") << ","
@@ -3024,11 +3032,13 @@ void ns_time_path_image_movement_analyzer<allocator_T>::write_posture_analysis_o
 	srand(0);
 	for (unsigned int i = 0; i < groups.size(); i++){
 		for (unsigned int j = 0; j < groups[i].paths.size(); j++){	
-			if (ns_skip_low_density_paths && groups[i].paths[j].is_low_density_path() || groups[i].paths[j].excluded() || !groups[i].paths[j].by_hand_data_specified())
+			if (ns_skip_low_density_paths && groups[i].paths[j].is_low_density_path() || groups[i].paths[j].excluded() || !groups[i].paths[j].by_hand_data_specified() ||
+				groups[i].paths[j].censoring_and_flag_details.number_of_worms_at_location_marked_by_hand > 1)
+				//we do not test multi-worm clusters because there is an ambiguity in which of the multiple by hand death times should match up to the machine death time
 					continue;
 			if (groups[i].paths[j].censoring_and_flag_details.flag.specified() && ( groups[i].paths[j].censoring_and_flag_details.flag.event_should_be_excluded() || 
 				groups[i].paths[j].censoring_and_flag_details.flag.label_short == "2ND_WORM_ERR" ||
-				groups[i].paths[j].censoring_and_flag_details.flag.label_short == "STILL_ALIVE"))
+				groups[i].paths[j].censoring_and_flag_details.flag.label_short == "STILL_ALIVE" ))
 				continue;
 			groups[i].paths[j].write_posture_analysis_optimization_data(software_version,generate_stationary_path_id(i,j),thresholds,hold_times,m,denoising_parameters_used,o, results,results_2);
 		}
@@ -4661,8 +4671,14 @@ void ns_analyzed_image_time_path::add_by_hand_annotations(const ns_death_time_an
 			e.type != ns_death_associated_post_expansion_contraction_stop &&
 			e.type != ns_death_associated_post_expansion_contraction_start)
 			continue;
+		//if (e.time.best_estimate_event_time_for_possible_partially_unbounded_interval() == 0)	
+			//worm browser occassionaly generates spurious translation cessation events.
+			//XXX We suppress them here
+			//continue;
 
 			by_hand_annotation_event_times[(int)e.type] = e.time;
+			//if (e.time.best_estimate_event_time_for_possible_partially_unbounded_interval() == 0)
+			//	throw ns_ex("ns_analyzed_image_time_path::add_by_hand_annotations()::Adding zeroed event time!");
 			by_hand_annotation_event_explicitness[(int)e.type] = e.event_explicitness;
 	}
 }

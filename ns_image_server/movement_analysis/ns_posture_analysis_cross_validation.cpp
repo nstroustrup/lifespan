@@ -27,7 +27,7 @@ bool operator<(const ns_hmm_test_subject& l, const ns_hmm_test_subject& r) {
 }
 class  ns_cross_validation_replicate {
 public:
-	ns_cross_validation_replicate() : generate_detailed_path_info(false), states_permitted(ns_emperical_posture_quantification_value_estimator::ns_all_states) {}
+  ns_cross_validation_replicate() : generate_detailed_path_info(false), states_permitted(ns_emperical_posture_quantification_value_estimator::ns_all_states),replicate_id(0) {}
 	std::set<ns_hmm_test_subject> test_set;
 	ns_emperical_posture_quantification_value_estimator training_set;
 	ns_hmm_movement_analysis_optimizatiom_stats results;
@@ -987,9 +987,13 @@ void ns_identify_best_threshold_parameteters(std::string& results_text, const ns
 					//include existing model file
 					std::vector<double> thresh;
 					std::vector<unsigned long>hold_t;
-					thresh.push_back(posture_analysis_model_handle().model_specification.threshold_parameters.stationary_cutoff);
-					hold_t.push_back(posture_analysis_model_handle().model_specification.threshold_parameters.permanance_time_required_in_seconds);
-					time_path_image_analyzer.write_posture_analysis_optimization_data(time_path_image_analyzer.posture_model_version_used, thresh, hold_t, metadata, posture_analysis_optimization_output()(), p->second.current_parameter_results, &(p_all->second.current_parameter_results));
+					if (log(posture_analysis_model_handle().model_specification.threshold_parameters.stationary_cutoff) > 20)
+						std::cerr << "Invalid model file spec";
+					else {
+						thresh.push_back(posture_analysis_model_handle().model_specification.threshold_parameters.stationary_cutoff);
+						hold_t.push_back(posture_analysis_model_handle().model_specification.threshold_parameters.permanance_time_required_in_seconds);
+						time_path_image_analyzer.write_posture_analysis_optimization_data(time_path_image_analyzer.posture_model_version_used, thresh, hold_t, metadata, posture_analysis_optimization_output()(), p->second.current_parameter_results, &(p_all->second.current_parameter_results));
+					}
 				}
 				if (run_expansion) {
 					std::map<std::string, ns_parameter_set_optimization_record>::iterator p = best_expansion_parameter_sets.find(strain_name);

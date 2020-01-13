@@ -1688,8 +1688,8 @@ void ns_emperical_posture_quantification_value_estimator::build_estimator_from_o
 		contracting_data->second->intensity_2x.flip_model_sign();
 		contracting_data->second->intensity_4x.flip_model_sign();
 	}*/
-
-	ns_hmm_movement_state required_states[2] = { ns_hmm_missing, ns_hmm_not_moving_dead };
+	const int num_required_states = 2;
+	ns_hmm_movement_state required_states[num_required_states] = { ns_hmm_missing, ns_hmm_not_moving_dead };
 	ns_ex ex;
 	//output+= "By hand annotation entries per HMM state:\n";
 	//for (unsigned int i = 0; i < state_counts.size(); i++) 
@@ -1697,7 +1697,7 @@ void ns_emperical_posture_quantification_value_estimator::build_estimator_from_o
 	for (unsigned int i = 0; i < state_counts.size(); i++) {
 		if (state_counts[i] < 100) {
 
-			for (unsigned int j = 0; j < 3; j++) {
+			for (unsigned int j = 0; j < num_required_states; j++) {
 				if (required_states[j] == i) {
 					if (!ex.text().empty())
 						ex << "\n";

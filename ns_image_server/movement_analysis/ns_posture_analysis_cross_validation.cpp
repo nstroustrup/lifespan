@@ -27,7 +27,7 @@ bool operator<(const ns_hmm_test_subject& l, const ns_hmm_test_subject& r) {
 }
 class  ns_cross_validation_replicate {
 public:
-	ns_cross_validation_replicate() : generate_detailed_path_info(false), states_permitted(ns_emperical_posture_quantification_value_estimator::ns_all_states) {}
+  ns_cross_validation_replicate() : generate_detailed_path_info(false), states_permitted(ns_emperical_posture_quantification_value_estimator::ns_all_states),replicate_id(0) {}
 	std::set<ns_hmm_test_subject> test_set;
 	ns_emperical_posture_quantification_value_estimator training_set;
 	ns_hmm_movement_analysis_optimizatiom_stats results;

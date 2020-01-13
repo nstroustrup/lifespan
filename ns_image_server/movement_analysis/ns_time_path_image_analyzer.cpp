@@ -6631,6 +6631,7 @@ void ns_analyzed_image_time_path_element_measurements::zero(){
 	total_region_area = 0;
 	total_intensity_within_region = 0;
 	total_intensity_within_stabilized = 0;
+	total_intensity_within_stabilized_denoised = 0;
 	total_intensity_within_foreground = 0;
 	total_intensity_in_previous_frame_scaled_to_current_frames_histogram = 0;
 	total_alternate_worm_area = 0;
@@ -6663,6 +6664,7 @@ void ns_analyzed_image_time_path_element_measurements::square() {
 	total_region_area = total_region_area*total_region_area;
 	total_intensity_within_region = total_intensity_within_region*total_intensity_within_region;
 	total_intensity_within_stabilized = total_intensity_within_stabilized*total_intensity_within_stabilized;
+	total_intensity_within_stabilized_denoised = total_intensity_within_stabilized_denoised*total_intensity_within_stabilized_denoised;
 	total_intensity_within_foreground = total_intensity_within_foreground*total_intensity_within_foreground;
 	total_intensity_in_previous_frame_scaled_to_current_frames_histogram = total_intensity_in_previous_frame_scaled_to_current_frames_histogram*total_intensity_in_previous_frame_scaled_to_current_frames_histogram;
 	total_alternate_worm_area = total_alternate_worm_area*total_alternate_worm_area;
@@ -6697,6 +6699,7 @@ void ns_analyzed_image_time_path_element_measurements::square_root() {
 	total_region_area = sqrt(total_region_area);
 	total_intensity_within_region = sqrt(total_intensity_within_region);
 	total_intensity_within_stabilized = sqrt(total_intensity_within_stabilized);
+	total_intensity_within_stabilized_denoised = sqrt(total_intensity_within_stabilized_denoised);
 	total_intensity_within_foreground = sqrt(total_intensity_within_foreground);
 	total_intensity_in_previous_frame_scaled_to_current_frames_histogram = sqrt(total_intensity_in_previous_frame_scaled_to_current_frames_histogram);
 	total_alternate_worm_area = sqrt(total_alternate_worm_area);
@@ -6734,6 +6737,7 @@ ns_analyzed_image_time_path_element_measurements operator+(const ns_analyzed_ima
 	ret.total_region_area = a.total_region_area+b.total_region_area;
 	ret.total_intensity_within_region = a.total_intensity_within_region+b.total_intensity_within_region;
 	ret.total_intensity_within_stabilized = a.total_intensity_within_stabilized+b.total_intensity_within_stabilized;
+	ret.total_intensity_within_stabilized_denoised = a.total_intensity_within_stabilized_denoised+b.total_intensity_within_stabilized_denoised;
 	ret.total_intensity_within_foreground = a.total_intensity_within_foreground+b.total_intensity_within_foreground;
 	ret.total_intensity_in_previous_frame_scaled_to_current_frames_histogram = a.total_intensity_in_previous_frame_scaled_to_current_frames_histogram+b.total_intensity_in_previous_frame_scaled_to_current_frames_histogram;
 	ret.total_alternate_worm_area = a.total_alternate_worm_area+b.total_alternate_worm_area;
@@ -6770,6 +6774,7 @@ ns_analyzed_image_time_path_element_measurements operator-(const ns_analyzed_ima
 	ret.total_region_area = a.total_region_area - b.total_region_area;
 	ret.total_intensity_within_region = a.total_intensity_within_region - b.total_intensity_within_region;
 	ret.total_intensity_within_stabilized = a.total_intensity_within_stabilized - b.total_intensity_within_stabilized;
+	ret.total_intensity_within_stabilized_denoised = a.total_intensity_within_stabilized_denoised-b.total_intensity_within_stabilized_denoised;
 	ret.total_intensity_within_foreground = a.total_intensity_within_foreground - b.total_intensity_within_foreground;
 	ret.total_intensity_in_previous_frame_scaled_to_current_frames_histogram = a.total_intensity_in_previous_frame_scaled_to_current_frames_histogram - b.total_intensity_in_previous_frame_scaled_to_current_frames_histogram;
 	ret.total_alternate_worm_area = a.total_alternate_worm_area - b.total_alternate_worm_area;
@@ -6807,6 +6812,7 @@ ns_analyzed_image_time_path_element_measurements operator/(const ns_analyzed_ima
 	ret.total_region_area = a.total_region_area / d;
 	ret.total_intensity_within_region = a.total_intensity_within_region / d;
 	ret.total_intensity_within_stabilized = a.total_intensity_within_stabilized / d;
+	ret.total_intensity_within_stabilized_denoised = a.total_intensity_within_stabilized /d;
 	ret.total_intensity_within_foreground = a.total_intensity_within_foreground / d;
 	ret.total_intensity_in_previous_frame_scaled_to_current_frames_histogram = a.total_intensity_in_previous_frame_scaled_to_current_frames_histogram / d;
 	ret.total_alternate_worm_area = a.total_alternate_worm_area / d;

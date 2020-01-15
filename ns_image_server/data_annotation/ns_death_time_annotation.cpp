@@ -2287,11 +2287,18 @@ bool ns_multiple_worm_cluster_death_annotation_handler::generate_correct_annotat
 		ns_death_time_annotation death(*event_data.death_annotation);
 
 		//we use this as debugging info in output file
-		if (event_data.last_fast_movement_annotation != 0)
-			death.volatile_duration_of_time_not_fast_moving =
-			death.time.best_estimate_event_time_for_possible_partially_unbounded_interval() -
-			event_data.last_fast_movement_annotation->time.best_estimate_event_time_for_possible_partially_unbounded_interval();
+		if (event_data.last_fast_movement_annotation != 0) {
+			//use the death-associated expansion time if possible.
+			//if not use the movement cessation time.
+			ns_death_time_annotation_time_interval death_time;
+			if (event_data.death_associated_expansion_start != 0 && !event_data.death_associated_expansion_start->time.fully_unbounded())
+				death_time = event_data.death_associated_expansion_start->time;
+			else death_time = death.time;
 
+			death.volatile_duration_of_time_not_fast_moving =
+				death_time.best_estimate_event_time_for_possible_partially_unbounded_interval() -
+				event_data.last_fast_movement_annotation->time.best_estimate_event_time_for_possible_partially_unbounded_interval();
+		}
 		properties.transfer_sticky_properties(death);
 		int machine_worm_count = d.machine.death_annotation != 0;
 		int by_hand_worm_count = d.by_hand.death_annotation != 0;

@@ -1820,7 +1820,7 @@ public:
 	void update_menus() {
 		ns_menu_item_spec spec(select_spec, "Regression Plot");
 
-		for (unsigned int i = 0; i < (int)ns_population_telemetry::ns_death_plot_num; i++) {
+		for (unsigned int i = 0; i < (int)ns_population_telemetry::ns_movement_plot_num; i++) {
 			ns_population_telemetry::ns_movement_plot_type g = (ns_population_telemetry::ns_movement_plot_type)i;
 			spec.options.push_back("Plot/Plot " + ns_population_telemetry::movement_plot_name(g));
 		}

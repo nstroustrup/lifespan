@@ -978,7 +978,7 @@ void ns_worm_movement_summary_series::from_death_time_annotations(
 		for (unsigned int j = 0; j < description_set.descriptions.size(); j++) {
 			bool use_machine_state_annotations(
 				by_hand_strategy == ns_death_time_annotation::ns_only_machine_annotations ||
-				description_set.descriptions[j].by_hand.death_annotation == 0);
+				description_set.descriptions[j].by_hand.best_guess_death_annotation == 0);
 
 			//only use one machine death annotation (the remainder will be by-hand annotations)
 			if (use_machine_state_annotations && j > 0)
@@ -1040,12 +1040,12 @@ void ns_worm_movement_summary_series::from_death_time_annotations(
 					found_start_posture = true;
 				}
 
-				if (d.by_hand.death_annotation != 0) {
-					start_death = d.by_hand.death_annotation->time;
+				if (d.by_hand.best_guess_death_annotation != 0) {
+					start_death = d.by_hand.best_guess_death_annotation->time;
 					found_start_death = true;
 				}
-				else if (d.machine.death_annotation != 0) {
-					start_death = d.machine.death_annotation->time;
+				else if (d.machine.best_guess_death_annotation != 0) {
+					start_death = d.machine.best_guess_death_annotation->time;
 					found_start_death = true;
 				}
 				if (!found_start_death) {
@@ -1092,31 +1092,31 @@ void ns_worm_movement_summary_series::from_death_time_annotations(
 		bool need_to_process_multiple_worms(description_set.descriptions.size() > 1);
 		if (!need_to_process_multiple_worms) {
 			ns_dying_animal_description_base<const ns_death_time_annotation> d(description_set.descriptions[0]);
-			if (d.machine.death_annotation == 0 || d.machine.death_annotation->annotation_source != ns_death_time_annotation::ns_lifespan_machine ||
-				d.machine.death_annotation->time.period_end_was_not_observed) {
+			if (d.machine.best_guess_death_annotation == 0 || d.machine.best_guess_death_annotation->annotation_source != ns_death_time_annotation::ns_lifespan_machine ||
+				d.machine.best_guess_death_annotation->time.period_end_was_not_observed) {
 				continue;
 			}
 
-			need_to_process_multiple_worms = (d.by_hand.death_annotation != 0) && (d.by_hand.death_annotation->number_of_worms() > 1);
+			need_to_process_multiple_worms = (d.by_hand.best_guess_death_annotation != 0) && (d.by_hand.best_guess_death_annotation->number_of_worms() > 1);
 			if (!need_to_process_multiple_worms) {
 
 				ns_dying_animal_description_group<const ns_death_time_annotation> annotation_to_use;
 
-				if (by_hand_strategy == ns_death_time_annotation::ns_machine_annotations_if_no_by_hand && d.by_hand.death_annotation != 0)
+				if (by_hand_strategy == ns_death_time_annotation::ns_machine_annotations_if_no_by_hand && d.by_hand.best_guess_death_annotation != 0)
 					annotation_to_use = d.by_hand;
 				else 
 					annotation_to_use = d.machine;
 				{
 					ns_multiple_worm_description clump;
 					q->properties.transfer_sticky_properties(clump.properties);
-					clump.time_of_death_machine = annotation_to_use.death_annotation->time.period_end;
+					clump.time_of_death_machine = annotation_to_use.best_guess_death_annotation->time.period_end;
 					if (annotation_to_use.last_fast_movement_annotation != 0)
 						clump.time_of_nucleation = annotation_to_use.last_fast_movement_annotation->time.period_end;
 					multiple_worm_clump_details.push_back(clump);
 				}
 				const unsigned long number_of_animals(timepoint_type.number_of_worms(ns_worm_movement_measurement_summary_timepoint_type::ns_all));
 				if (number_of_animals <= 1) {
-					ns_death_time_annotation a(*annotation_to_use.death_annotation);
+					ns_death_time_annotation a(*annotation_to_use.best_guess_death_annotation);
 					q->properties.transfer_sticky_properties(a);
 					ns_worm_movement_measurement_summary_timepoint_type t(a);
 					ns_worm_movement_measurement_summary_timepoint_data & timepoint(all_timepoints[a.time.period_end].measurements[t]);
@@ -1127,7 +1127,7 @@ void ns_worm_movement_summary_series::from_death_time_annotations(
 
 		if (need_to_process_multiple_worms){
 			ns_death_time_annotation_set set;
-			ns_multiple_worm_cluster_death_annotation_handler::generate_correct_annotations_for_multiple_worm_cluster(censoring_strategy, q->properties, description_set, set, by_hand_strategy);
+			ns_multiple_worm_cluster_death_annotation_handler::generate_correct_annotations_for_multiple_worm_cluster(censoring_strategy, q->properties, description_set, ns_metadata_worm_properties::ns_best_guess_death,set, by_hand_strategy);
 			for (unsigned int i = 0; i < set.size(); i++) {
 				ns_worm_movement_measurement_summary_timepoint_type t(set[i]);
 				ns_worm_movement_measurement_summary & timepoint(all_timepoints[set[i].time.period_end]);

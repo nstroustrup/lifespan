@@ -786,9 +786,9 @@ bool ns_experiment_storyboard::load_events_from_annotation_compiler(const ns_loa
 
 			case ns_movement_cessation:
 
-				if (dd.machine.death_annotation != 0) {
-					if (!dd.machine.death_annotation->is_censored()) {
-						event_to_place_on_storyboard = *dd.machine.death_annotation;
+				if (dd.machine.movement_based_death_annotation != 0) {
+					if (!dd.machine.movement_based_death_annotation->is_censored()) {
+						event_to_place_on_storyboard = *dd.machine.movement_based_death_annotation;
 						state_to_search = ns_stationary_worm_observed;
 						found_storyboard_event = true;
 						break;
@@ -1585,8 +1585,8 @@ bool ns_experiment_storyboard::create_storyboard_metadata_from_machine_annotatio
 					if (descriptions.descriptions.empty())
 						throw ns_ex("Encountered an empty descriptions set!");
 
-						if (descriptions.descriptions[0].machine.death_annotation != 0)
-							death_times.push_back(descriptions.descriptions[0].machine.death_annotation->time.period_end);
+						if (descriptions.descriptions[0].machine.movement_based_death_annotation != 0)
+							death_times.push_back(descriptions.descriptions[0].machine.movement_based_death_annotation->time.period_end);
 				}
 			}
 			std::sort(death_times.begin(), death_times.end());

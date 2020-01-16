@@ -19,7 +19,7 @@ struct ns_lifespan_curve_cache_entry_data {
 	unsigned long latest_movement_rebuild_timestamp;
 	unsigned long latest_by_hand_annotation_timestamp;
 
-	ns_survival_data_with_censoring movement_survival, death_associated_expansion_survival;
+	ns_survival_data_with_censoring best_guess_survival,movement_survival, death_associated_expansion_survival;
 	std::vector<unsigned long> risk_timeseries_time;
 	ns_region_metadata metadata;
 

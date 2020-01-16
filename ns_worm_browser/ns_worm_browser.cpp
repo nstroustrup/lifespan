@@ -1237,7 +1237,7 @@ void ns_handle_pair(const ns_random_picker_type::return_type & d1, const ns_rand
 	ns_death_time_annotation_compiler_multiworm_simulation & worms){
 	
 	const ns_random_picker_type::return_type * mmax, * mmin;
-	if (d1.first.machine.death_annotation->time.period_end > d2.first.machine.death_annotation->time.period_end){
+	if (d1.first.machine.movement_based_death_annotation->time.period_end > d2.first.machine.movement_based_death_annotation->time.period_end){
 		mmax = &d1;
 		mmin = &d2;
 	}
@@ -1247,8 +1247,8 @@ void ns_handle_pair(const ns_random_picker_type::return_type & d1, const ns_rand
 	}
 
 	if (mmin->first.machine.stationary_worm_dissapearance->time.period_end < mmax->first.machine.last_fast_movement_annotation->time.period_end){
-		ns_death_time_annotation a(*mmin->first.machine.death_annotation),
-									b(*mmax->first.machine.death_annotation);
+		ns_death_time_annotation a(*mmin->first.machine.movement_based_death_annotation),
+									b(*mmax->first.machine.movement_based_death_annotation);
 		a.loglikelihood = b.loglikelihood = rround; 
 
 		worms.maximums.add(a,mmin->second);
@@ -1260,19 +1260,19 @@ void ns_handle_pair(const ns_random_picker_type::return_type & d1, const ns_rand
 		return;
 	}
 				
-	unsigned long mean_death_time(d1.first.machine.death_annotation->time.period_end/2.0 + d2.first.machine.death_annotation->time.period_end/2.0);
+	unsigned long mean_death_time(d1.first.machine.movement_based_death_annotation->time.period_end/2.0 + d2.first.machine.movement_based_death_annotation->time.period_end/2.0);
 	bool cropped_by_wait(false);
 	if (use_waiting_time_cropping){
-		if (mmin->first.machine.death_annotation->time.period_end + wait_time <
+		if (mmin->first.machine.movement_based_death_annotation->time.period_end + wait_time <
 			mmax->first.machine.last_fast_movement_annotation->time.period_end){
 			cropped_by_wait = true;
 			mmax = mmin;
-			mean_death_time = mmin->first.machine.death_annotation->time.period_end;
+			mean_death_time = mmin->first.machine.movement_based_death_annotation->time.period_end;
 		}
 	}
-	ns_death_time_annotation mmin_a(*mmin->first.machine.death_annotation),
-								mmax_a(*mmax->first.machine.death_annotation),
-								mmean_a(*d1.first.machine.death_annotation);
+	ns_death_time_annotation mmin_a(*mmin->first.machine.movement_based_death_annotation),
+								mmax_a(*mmax->first.machine.movement_based_death_annotation),
+								mmean_a(*d1.first.machine.movement_based_death_annotation);
 
 	mmean_a.time.period_end = mmean_a.time.period_end = mean_death_time;
 				
@@ -1341,16 +1341,16 @@ void ns_worm_learner::simulate_multiple_worm_clumps(const bool use_waiting_time_
 							continue;
 						ns_dying_animal_description_set description_set;
 						q->generate_dying_animal_description(false, description_set);
-						if (description_set.descriptions.empty() || description_set.descriptions[0].machine.death_annotation == 0 || description_set.descriptions[0].machine.last_fast_movement_annotation == 0 || description_set.descriptions[0].machine.last_slow_movement_annotation == 0)
+						if (description_set.descriptions.empty() || description_set.descriptions[0].machine.movement_based_death_annotation == 0 || description_set.descriptions[0].machine.last_fast_movement_annotation == 0 || description_set.descriptions[0].machine.last_slow_movement_annotation == 0)
 							continue;
 						ns_dying_animal_description_base<ns_death_time_annotation> d(description_set.descriptions[0]);
-						if (d.machine.last_fast_movement_annotation->time.period_end == d.machine.death_annotation->time.period_start)
+						if (d.machine.last_fast_movement_annotation->time.period_end == d.machine.movement_based_death_annotation->time.period_start)
 							continue;
 						if (d.machine.stationary_worm_dissapearance == 0 ){
-							q->annotations.add(*d.machine.death_annotation);
+							q->annotations.add(*d.machine.movement_based_death_annotation);
 							q->annotations.events.rbegin()->type = ns_stationary_worm_disappearance;
 							q->annotations.events.rbegin()->time.period_end = q->annotations.events.rbegin()->time.period_start
-								= d.machine.death_annotation->time.period_end + death_dissapearance_time; 
+								= d.machine.movement_based_death_annotation->time.period_end + death_dissapearance_time;
 
 							ns_dying_animal_description_set description_set_2;
 							q->generate_dying_animal_description(false,description_set_2);
@@ -1358,27 +1358,27 @@ void ns_worm_learner::simulate_multiple_worm_clumps(const bool use_waiting_time_
 								continue;
 							d = description_set_2.descriptions[0];
 						}
-						else if (d.machine.stationary_worm_dissapearance->time.period_end > d.machine.death_annotation->time.period_end + death_dissapearance_time){
+						else if (d.machine.stationary_worm_dissapearance->time.period_end > d.machine.movement_based_death_annotation->time.period_end + death_dissapearance_time){
 							d.machine.stationary_worm_dissapearance->time.period_end = d.machine.stationary_worm_dissapearance->time.period_start 
-								= d.machine.death_annotation->time.period_end + death_dissapearance_time; 
+								= d.machine.movement_based_death_annotation->time.period_end + death_dissapearance_time;
 						
 						}
-						q->properties.transfer_sticky_properties(*d.machine.death_annotation);
+						q->properties.transfer_sticky_properties(*d.machine.movement_based_death_annotation);
 						q->properties.transfer_sticky_properties(*d.machine.last_fast_movement_annotation);
 						q->properties.transfer_sticky_properties(*d.machine.last_slow_movement_annotation);
 						q->properties.transfer_sticky_properties(*d.machine.stationary_worm_dissapearance);
-						if (d.machine.death_annotation->number_of_worms() < 2){
-							single_worms.add(*d.machine.death_annotation,movement_results.samples[i].regions[j]->metadata);
+						if (d.machine.movement_based_death_annotation->number_of_worms() < 2){
+							single_worms.add(*d.machine.movement_based_death_annotation,movement_results.samples[i].regions[j]->metadata);
 							picker.add(d,movement_results.samples[i].regions[j]->metadata, region_count_id);
 						}
-						else if (d.machine.death_annotation->number_of_worms_at_location_marked_by_hand == 2){
-							two_worms.add(*d.machine.death_annotation,movement_results.samples[i].regions[j]->metadata);
+						else if (d.machine.movement_based_death_annotation->number_of_worms_at_location_marked_by_hand == 2){
+							two_worms.add(*d.machine.movement_based_death_annotation,movement_results.samples[i].regions[j]->metadata);
 						}
-						else if (d.machine.death_annotation->number_of_worms_at_location_marked_by_hand == 3){
-							three_worms.add(*d.machine.death_annotation,movement_results.samples[i].regions[j]->metadata);
+						else if (d.machine.movement_based_death_annotation->number_of_worms_at_location_marked_by_hand == 3){
+							three_worms.add(*d.machine.movement_based_death_annotation,movement_results.samples[i].regions[j]->metadata);
 						}
 						else 
-							four_plus_worms.add(*d.machine.death_annotation,movement_results.samples[i].regions[j]->metadata);
+							four_plus_worms.add(*d.machine.movement_based_death_annotation,movement_results.samples[i].regions[j]->metadata);
 					}
 					region_count_id++;
 				}
@@ -1443,7 +1443,7 @@ void ns_worm_learner::simulate_multiple_worm_clumps(const bool use_waiting_time_
 				const ns_random_picker_type::return_type d1(p->second.get_random_event_without_replacement()),
 														   d2(p->second.get_random_event_without_replacement());
 				
-				ns_death_time_annotation a(*d1.first.machine.death_annotation);
+				ns_death_time_annotation a(*d1.first.machine.movement_based_death_annotation);
 				//encoding to allow extraction of this information from compiler later
 				a.number_of_worms_at_location_marked_by_hand = a.number_of_worms_at_location_marked_by_machine = 1;
 				a.loglikelihood = r/3;
@@ -1549,15 +1549,15 @@ void ns_worm_learner::simulate_multiple_worm_clumps(const bool use_waiting_time_
 				const ns_random_picker_type::return_type  d1(p->second.get_random_event_without_replacement()),
 														   d2(p->second.get_random_event_without_replacement()),
 														   d3(p->second.get_random_event_without_replacement());
-				ns_death_time_annotation a(*d1.first.machine.death_annotation),
-										 b(*d2.first.machine.death_annotation),
-										 c(*d3.first.machine.death_annotation);
+				ns_death_time_annotation a(*d1.first.machine.movement_based_death_annotation),
+										 b(*d2.first.machine.movement_based_death_annotation),
+										 c(*d3.first.machine.movement_based_death_annotation);
 
 				//encoding to allow extraction of this information from compiler later
 				
 
 				const ns_random_picker_type::return_type * mmax, * mmin, *mmiddle;
-				if (d1.first.machine.death_annotation->time.period_end> d2.first.machine.death_annotation->time.period_end){
+				if (d1.first.machine.movement_based_death_annotation->time.period_end> d2.first.machine.movement_based_death_annotation->time.period_end){
 					mmax = &d1;
 					mmiddle = &d2;
 				}
@@ -1565,8 +1565,8 @@ void ns_worm_learner::simulate_multiple_worm_clumps(const bool use_waiting_time_
 					mmax = &d2;
 					mmiddle = &d1;
 				}
-				if (mmax->first.machine.death_annotation->time.period_end > d3.first.machine.death_annotation->time.period_end){
-					if (mmiddle->first.machine.death_annotation->time.period_end > d3.first.machine.death_annotation->time.period_end){
+				if (mmax->first.machine.movement_based_death_annotation->time.period_end > d3.first.machine.movement_based_death_annotation->time.period_end){
+					if (mmiddle->first.machine.movement_based_death_annotation->time.period_end > d3.first.machine.movement_based_death_annotation->time.period_end){
 						mmin = &d3;
 					}
 					else{
@@ -1580,7 +1580,7 @@ void ns_worm_learner::simulate_multiple_worm_clumps(const bool use_waiting_time_
 					mmax = &d3;
 				}
 				if (mmin->first.machine.stationary_worm_dissapearance->time.period_end < mmiddle->first.machine.last_fast_movement_annotation->time.period_end){
-					ns_death_time_annotation a(*mmin->first.machine.death_annotation);
+					ns_death_time_annotation a(*mmin->first.machine.movement_based_death_annotation);
 					a.number_of_worms_at_location_marked_by_machine = 1;
 					a.loglikelihood = r; 
 					simulated_triple_worms.maximums.add(a,mmin->second);
@@ -1590,7 +1590,7 @@ void ns_worm_learner::simulate_multiple_worm_clumps(const bool use_waiting_time_
 					continue;
 				}
 				if (mmiddle->first.machine.stationary_worm_dissapearance->time.period_end < mmax->first.machine.last_fast_movement_annotation->time.period_end){
-					ns_death_time_annotation a(*mmax->first.machine.death_annotation);
+					ns_death_time_annotation a(*mmax->first.machine.movement_based_death_annotation);
 					a.number_of_worms_at_location_marked_by_machine = 1;
 					a.loglikelihood = r; 
 					simulated_triple_worms.maximums.add(a,mmax->second);
@@ -1600,32 +1600,32 @@ void ns_worm_learner::simulate_multiple_worm_clumps(const bool use_waiting_time_
 					continue;
 				}
 				
-				unsigned long mean_death_time = (unsigned long)(d1.first.machine.death_annotation->time.period_end/3.0
-																				+d2.first.machine.death_annotation->time.period_end/3.0
-																				+d3.first.machine.death_annotation->time.period_end/3.0);				
+				unsigned long mean_death_time = (unsigned long)(d1.first.machine.movement_based_death_annotation->time.period_end/3.0
+																				+d2.first.machine.movement_based_death_annotation->time.period_end/3.0
+																				+d3.first.machine.movement_based_death_annotation->time.period_end/3.0);
 				int cropped_by_wait;
 				if (use_waiting_time_cropping){
-					if (mmin->first.machine.death_annotation->time.period_end + wait_time <
+					if (mmin->first.machine.movement_based_death_annotation->time.period_end + wait_time <
 						mmiddle->first.machine.last_fast_movement_annotation->time.period_end){
 						cropped_by_wait = 0;
 						mmax = mmin;
 						mmiddle = mmin;
-						mean_death_time = mmin->first.machine.death_annotation->time.period_end;
+						mean_death_time = mmin->first.machine.movement_based_death_annotation->time.period_end;
 					}
-					else if (mmiddle->first.machine.death_annotation->time.period_end + wait_time <
+					else if (mmiddle->first.machine.movement_based_death_annotation->time.period_end + wait_time <
 						mmax->first.machine.last_fast_movement_annotation->time.period_end){
 						cropped_by_wait = 1;
 						mmin = mmiddle;
 						mmax = mmiddle;
-						mean_death_time = mmiddle->first.machine.death_annotation->time.period_end;
+						mean_death_time = mmiddle->first.machine.movement_based_death_annotation->time.period_end;
 					}
 					else cropped_by_wait = 2;
 				}
 				else cropped_by_wait = 2;
 
-				ns_death_time_annotation mmax_a(*mmax->first.machine.death_annotation),
-					mmin_a(*mmin->first.machine.death_annotation),
-					mmean_a(*d1.first.machine.death_annotation);
+				ns_death_time_annotation mmax_a(*mmax->first.machine.movement_based_death_annotation),
+					mmin_a(*mmin->first.machine.movement_based_death_annotation),
+					mmean_a(*d1.first.machine.movement_based_death_annotation);
 
 				mmax_a.number_of_worms_at_location_marked_by_machine = mmax_a.number_of_worms_at_location_marked_by_hand = 3;
 				mmin_a.number_of_worms_at_location_marked_by_machine = mmin_a.number_of_worms_at_location_marked_by_hand  = 3;

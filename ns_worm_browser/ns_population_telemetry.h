@@ -37,8 +37,9 @@ public:
 	typedef enum { ns_none, ns_survival, ns_movement_vs_posture, ns_number_of_graph_types } ns_graph_contents;
 	typedef enum { ns_group_by_device, ns_group_by_strain, ns_aggregate_all, ns_group_by_death_type, ns_survival_grouping_num} ns_survival_grouping;
 	typedef enum { ns_plot_death_times_absolute, ns_plot_death_times_residual,ns_movement_plot_num } ns_movement_plot_type;
-	typedef enum { ns_plot_expansion_death, ns_plot_movement_death,ns_death_plot_num } ns_death_plot_type;
+	typedef enum { ns_plot_best_guess, ns_plot_expansion_death, ns_plot_movement_death,ns_death_plot_num } ns_death_plot_type;
 	typedef enum { ns_plot_death_types, ns_by_hand_machine,ns_best_guess_vs_best_guess,ns_regression_type_num } ns_regression_type;
+	
 	static std::string survival_grouping_name(const ns_survival_grouping& g) {
 		switch (g) {
 		case ns_group_by_strain:
@@ -54,10 +55,23 @@ public:
 	}
 	static std::string death_plot_name(const ns_death_plot_type& g) {
 		switch (g) {
+		case ns_plot_best_guess:
+			return "Best Guess";
 		case ns_plot_movement_death:
 			return "Movement";
 		case ns_plot_expansion_death:
 			return "Expansion";
+		default: throw ns_ex("Unknown death type");
+		}
+	}
+	static ns_color_8 death_type_color(const ns_death_plot_type& g) {
+		switch (g) {
+		case ns_plot_best_guess:
+			return ns_color_8(0, 0, 0);
+		case ns_plot_movement_death:
+			return ns_color_8(255, 0, 0);
+		case ns_plot_expansion_death:
+			return ns_color_8(0, 0, 255);
 		default: throw ns_ex("Unknown death type");
 		}
 	}
@@ -420,7 +434,7 @@ public:
 		survival_curves.resize(0);
 		ns_lifespan_experiment_set set;
 		compiler.generate_survival_curve_set(set, ns_death_time_annotation::ns_machine_annotations_if_no_by_hand, true, false);
-		ns_survival_data_with_censoring movement_survival,death_associated_expansion_survival;
+		ns_survival_data_with_censoring best_guess_survival,movement_based_survival,death_associated_expansion_survival;
 
 
 		const bool strain_override_specified = stats_subset_strain_to_display.device_regression_match_description() != "";
@@ -448,7 +462,7 @@ public:
 			region_to_view = subject_region;
 
 
-		set.generate_aggregate_risk_timeseries(data_to_process, filter_by_strain, "",region_to_view, movement_survival, death_associated_expansion_survival, time_axis,false);
+		set.generate_aggregate_risk_timeseries(data_to_process, filter_by_strain, "",region_to_view, best_guess_survival,movement_based_survival, death_associated_expansion_survival, time_axis,false);
 		unsigned long time_offset = 0;
 		//the category into which each data from each region is placed. 
 		//indexed by region_id
@@ -474,8 +488,19 @@ public:
 			else time_offset = 0;
 			if (survival_grouping == ns_aggregate_all || strain_override_specified && survival_grouping == ns_group_by_strain) {
 				//set up survival curve
-				const bool plot_movement(death_plot == ns_plot_movement_death);
-				ns_survival_data_with_censoring_timeseries* survival_data = (plot_movement) ? &movement_survival.data : &death_associated_expansion_survival.data;
+				//const bool plot_movement(death_plot == ns_plot_movement_death);
+
+				ns_survival_data_with_censoring_timeseries* survival_data;
+				switch (death_plot) {
+				case ns_plot_movement_death:
+					survival_data = &movement_based_survival.data; break;
+				case ns_plot_expansion_death:
+					survival_data = &death_associated_expansion_survival.data; break;
+				case ns_plot_best_guess:
+					survival_data = &best_guess_survival.data; break;
+				default: throw ns_ex("Unknown death time type requested");
+				}
+
 				unsigned long max_t_i(0);
 				survival_curve_title = movement_vs_posture_title = "All Individuals";
 				survival_curves.resize(1);
@@ -483,7 +508,7 @@ public:
 					survival_curves[0].name = data_to_process.device_regression_match_description();
 				else survival_curves[0].name = "All animal types";
 				survival_curve_note = "";
-				survival_curves[0].color = plot_movement ? ns_color_8(255, 0, 0) : ns_color_8(0, 0, 255);
+				survival_curves[0].color = death_type_color(death_plot);
 
 				//load survival data truncating at the last zero found in each group.
 				survival_curves[0].vals.type = ns_graph_object::ns_graph_dependant_variable;
@@ -520,7 +545,8 @@ public:
 				else group_label = "All animal types";
 				unsigned long max_t_i(0);
 
-				survival_curves.resize(2);
+				const int number_of_survival_curve_types(3);
+				survival_curves.resize(number_of_survival_curve_types);
 				survival_curves[0].name = "Movement Cessation";
 				survival_curves[0].color = ns_color_8(255, 0, 0);
 				survival_curves[1].name = "Death-Associated Expansion";
@@ -528,8 +554,8 @@ public:
 				
 
 				//load survival data truncating at the last zero found in each group.
-				ns_survival_data_with_censoring_timeseries* survival_data[2] = { &movement_survival.data, &death_associated_expansion_survival.data };
-				for (unsigned int j = 0; j < survival_curves.size(); j++) {
+				ns_survival_data_with_censoring_timeseries* survival_data[number_of_survival_curve_types] = { &best_guess_survival.data,&movement_based_survival.data, &death_associated_expansion_survival.data };
+				for (unsigned int j = 0; j < number_of_survival_curve_types; j++) {
 					survival_curves[j].vals.type = ns_graph_object::ns_graph_dependant_variable;
 					survival_curves[j].vals.y.resize(survival_data[j]->probability_of_surviving_up_to_interval.size() + time_offset);
 					if (time_offset > 0)
@@ -567,12 +593,21 @@ public:
 
 				for (auto p = compiler.regions.begin(); p != compiler.regions.end(); p++)
 					data_categories[p->first] = ns_survival_plot_data_grouping(p->first, p->second.metadata.device_regression_match_description(), survival_curves[0].color);
-				ns_survival_data_with_censoring movement_survival_sub, death_associated_expansion_survival_sub;
+				ns_survival_data_with_censoring best_guess_survival_sub,movement_survival_sub, death_associated_expansion_survival_sub;
 				unsigned long survival_curve_id = 0;
 				unsigned long max_t_i(0);
 				for (auto p = all_strains.begin(); p != all_strains.end(); p++) {
-					set.generate_aggregate_risk_timeseries(p->second.first, true, "", region_to_view, movement_survival_sub, death_associated_expansion_survival_sub, time_axis, true);
-					ns_survival_data_with_censoring_timeseries* survival_data = (death_plot == ns_plot_movement_death) ? &movement_survival_sub.data : &death_associated_expansion_survival_sub.data;
+					set.generate_aggregate_risk_timeseries(p->second.first, true, "", region_to_view,best_guess_survival_sub, movement_survival_sub, death_associated_expansion_survival_sub, time_axis, true);
+					ns_survival_data_with_censoring_timeseries* survival_data;
+					switch (death_plot) {
+					case ns_plot_movement_death:
+						survival_data = &movement_survival_sub.data; break;
+					case ns_plot_expansion_death:
+						survival_data = &death_associated_expansion_survival_sub.data; break;
+					case ns_plot_best_guess:
+						survival_data = &best_guess_survival_sub.data; break;
+					default: throw ns_ex("Unknown death time type requested");
+					}
 
 					survival_curves[survival_curve_id].vals.type = ns_graph_object::ns_graph_dependant_variable;
 					survival_curves[survival_curve_id].vals.y.resize(survival_data->probability_of_surviving_up_to_interval.size() + time_offset);
@@ -615,12 +650,21 @@ public:
 				for (auto p = set.curves.begin(); p != set.curves.end(); p++)
 					all_devices.emplace(std::pair<std::string, ns_survival_plot_data_grouping>(p->metadata.device, ns_survival_plot_data_grouping()));
 				survival_curves.resize(all_devices.size());
-				ns_survival_data_with_censoring movement_survival_sub, death_associated_expansion_survival_sub;
+				ns_survival_data_with_censoring best_guess_survival_sub,movement_survival_sub, death_associated_expansion_survival_sub;
 				unsigned long survival_curve_id = 0;
 				unsigned long max_t_i(0);
 				for (auto p = all_devices.begin(); p != all_devices.end(); p++) {
-					set.generate_aggregate_risk_timeseries(data_to_process, filter_by_strain, p->first, region_to_view, movement_survival_sub, death_associated_expansion_survival_sub, time_axis, true);
-					ns_survival_data_with_censoring_timeseries* survival_data = (death_plot == ns_plot_movement_death) ? &movement_survival_sub.data : &death_associated_expansion_survival_sub.data;
+					set.generate_aggregate_risk_timeseries(data_to_process, filter_by_strain, p->first, region_to_view, best_guess_survival_sub, movement_survival_sub, death_associated_expansion_survival_sub, time_axis, true);
+					ns_survival_data_with_censoring_timeseries* survival_data;
+					switch (death_plot) {
+					case ns_plot_movement_death:
+						survival_data = &movement_survival_sub.data; break;
+					case ns_plot_expansion_death:
+						survival_data = &death_associated_expansion_survival_sub.data; break;
+					case ns_plot_best_guess:
+						survival_data = &best_guess_survival_sub.data; break;
+					default: throw ns_ex("Unknown death time type requested");
+					}
 
 					survival_curves[survival_curve_id].vals.type = ns_graph_object::ns_graph_dependant_variable;
 					survival_curves[survival_curve_id].vals.y.resize(survival_data->probability_of_surviving_up_to_interval.size() + time_offset);
@@ -724,17 +768,17 @@ public:
 							if (set.descriptions[i].by_hand.death_associated_expansion_start != 0)
 								pair_to_plot[0].second = set.descriptions[i].by_hand.death_associated_expansion_start;
 							else pair_to_plot[0].second = set.descriptions[i].machine.death_associated_expansion_start;
-							if (set.descriptions[i].by_hand.death_annotation != 0)
-								pair_to_plot[0].first = set.descriptions[i].by_hand.death_annotation;
-							else pair_to_plot[0].first = set.descriptions[i].machine.death_annotation;
+							if (set.descriptions[i].by_hand.movement_based_death_annotation != 0)
+								pair_to_plot[0].first = set.descriptions[i].by_hand.movement_based_death_annotation;
+							else pair_to_plot[0].first = set.descriptions[i].machine.movement_based_death_annotation;
 						}
 						else if (regression_plot == ns_by_hand_machine) {
 
 							movement_vs_posture_x_axis_label = "By Hand Event Time (days)";
 							movement_vs_posture_y_axis_label = "Machine Event Time (days)";
 							if (death_plot == ns_plot_movement_death) {
-								pair_to_plot[0].first = set.descriptions[i].by_hand.death_annotation;
-								pair_to_plot[0].second = set.descriptions[i].machine.death_annotation;
+								pair_to_plot[0].first = set.descriptions[i].by_hand.movement_based_death_annotation;
+								pair_to_plot[0].second = set.descriptions[i].machine.movement_based_death_annotation;
 							}
 							else {
 								pair_to_plot[0].first = set.descriptions[i].by_hand.death_associated_expansion_start;
@@ -748,13 +792,13 @@ public:
 							movement_vs_posture_y_axis_label = "Event Time (days)";
 
 							if (death_plot == ns_plot_movement_death) {
-								if (set.descriptions[i].by_hand.death_annotation != 0) {
-									pair_to_plot[0].first = set.descriptions[i].by_hand.death_annotation;
-									pair_to_plot[0].second = set.descriptions[i].by_hand.death_annotation;
+								if (set.descriptions[i].by_hand.movement_based_death_annotation != 0) {
+									pair_to_plot[0].first = set.descriptions[i].by_hand.movement_based_death_annotation;
+									pair_to_plot[0].second = set.descriptions[i].by_hand.movement_based_death_annotation;
 								}
 								else {
-									pair_to_plot[0].first = set.descriptions[i].machine.death_annotation;
-									pair_to_plot[0].second = set.descriptions[i].machine.death_annotation;
+									pair_to_plot[0].first = set.descriptions[i].machine.movement_based_death_annotation;
+									pair_to_plot[0].second = set.descriptions[i].machine.movement_based_death_annotation;
 								}
 							}
 							else {

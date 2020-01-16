@@ -66,22 +66,56 @@ public:
 //and, if so, adds the event to its annotations[]
 template<class T>
 struct ns_dying_animal_description_group{
-	ns_dying_animal_description_group():death_annotation(0),last_slow_movement_annotation(0),last_fast_movement_annotation(0),
+	ns_dying_animal_description_group():movement_based_death_annotation(0), best_guess_death_annotation(0),last_slow_movement_annotation(0),last_fast_movement_annotation(0),
 									death_associated_expansion_start(0), death_associated_expansion_stop(0), 
 									death_associated_post_expansion_contraction_start(0), death_associated_post_expansion_contraction_stop(0),
-		stationary_worm_dissapearance(0){}
-	T *death_annotation,
-								*last_slow_movement_annotation,
-								*last_fast_movement_annotation,
-								*death_associated_expansion_start,
-								*death_associated_expansion_stop,
-								*death_associated_post_expansion_contraction_start,
-								*death_associated_post_expansion_contraction_stop,
-								*stationary_worm_dissapearance;
+									stationary_worm_dissapearance(0){}
+
+	T	*movement_based_death_annotation,
+		*best_guess_death_annotation,
+		*last_slow_movement_annotation,
+		*last_fast_movement_annotation,
+		*death_associated_expansion_start,
+		*death_associated_expansion_stop,
+		*death_associated_post_expansion_contraction_start,
+		*death_associated_post_expansion_contraction_stop,
+		*stationary_worm_dissapearance;
+
+	//this is the definition of the best guess death annotation
+	void calculate_best_guess_death_annotation() {
+		if (death_associated_expansion_start != 0)
+			best_guess_death_annotation = death_associated_expansion_start;
+		else best_guess_death_annotation = movement_based_death_annotation;
+	}
+
 	std::vector<T *> slow_moving_state_annotations,
 				   posture_changing_state_annotations,
 				   stationary_animal_state_annotations,
 				   movement_censored_state_annotations;
+	T *& get_event(const ns_metadata_worm_properties::ns_survival_event_type& death_event_to_use) {
+		switch (death_event_to_use) {
+		case ns_metadata_worm_properties::ns_long_distance_movement_cessation: return last_fast_movement_annotation;
+		case ns_metadata_worm_properties::ns_local_movement_cessation: return last_slow_movement_annotation;
+		case ns_metadata_worm_properties::ns_movement_based_death: return movement_based_death_annotation;
+		case ns_metadata_worm_properties::ns_death_associated_expansion: return death_associated_expansion_start;
+		case ns_metadata_worm_properties::ns_best_guess_death: return best_guess_death_annotation;
+		case ns_metadata_worm_properties::ns_typeless_censoring_events:
+		default:
+			throw ns_ex("ns_dying_animal_description_group()::get_event()::Unsupported event type request!");
+		}
+	}
+	const T* get_event(const ns_metadata_worm_properties::ns_survival_event_type& death_event_to_use) const {
+		switch (death_event_to_use) {
+		case ns_metadata_worm_properties::ns_long_distance_movement_cessation: return last_fast_movement_annotation;
+		case ns_metadata_worm_properties::ns_local_movement_cessation: return last_slow_movement_annotation;
+		case ns_metadata_worm_properties::ns_movement_based_death: return movement_based_death_annotation;
+		case ns_metadata_worm_properties::ns_death_associated_expansion: return death_associated_expansion_start;
+		case ns_metadata_worm_properties::ns_best_guess_death: return best_guess_death_annotation;
+		case ns_metadata_worm_properties::ns_typeless_censoring_events:
+		default:
+			throw ns_ex("ns_dying_animal_description_group()::get_event()::Unsupported event type request!");
+		}
+	}
 };
 
 //single locations can be annotated to hold multiple worms.  So we need a container corresponding to each location that holds annotations for each worm in the multiple worm clusters.
@@ -199,17 +233,20 @@ public:
 
 class ns_multiple_worm_cluster_death_annotation_handler{
 public:
+	typedef enum {ns_best_guess_death,ns_};
 	//we need the properties to make sure generated annotations have correct excluded, flag, etc information
 	static bool generate_correct_annotations_for_multiple_worm_cluster(
 				const ns_death_time_annotation::ns_multiworm_censoring_strategy & censoring_strategy,
 				const ns_death_time_annotation & properties,
-				const ns_dying_animal_description_set_const & d, 
+				const ns_dying_animal_description_set_const & d,
+				const ns_metadata_worm_properties::ns_survival_event_type & death_event_to_use,
 				ns_death_time_annotation_set & set,
 				const ns_death_time_annotation::ns_by_hand_annotation_integration_strategy & death_times_to_use);
 	
 	static bool generate_correct_annotations_for_multiple_worm_cluster(
 				const ns_death_time_annotation & properties,
 				const ns_dying_animal_description_set_const & d,
+				const ns_metadata_worm_properties::ns_survival_event_type& death_event_to_use,
 				ns_death_time_annotation_set & set,
 				const ns_death_time_annotation::ns_by_hand_annotation_integration_strategy & death_times_to_use);
 };

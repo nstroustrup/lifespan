@@ -1058,7 +1058,7 @@ void ns_lifespan_experiment_set::output_JMP_file(const ns_death_time_annotation:
 
 	for (unsigned int event_t = 0; event_t < (int)ns_metadata_worm_properties::ns_number_of_event_types; event_t++){
 		
-		if ((detail != ns_multiple_events) &&  event_type[event_t] != ns_metadata_worm_properties::ns_best_guess_death&& event_type[event_t] != ns_metadata_worm_properties::ns_typeless_censoring_events)
+		if ((detail != ns_multiple_events) &&  event_type[event_t] != ns_metadata_worm_properties::ns_movement_based_death && event_type[event_t] != ns_metadata_worm_properties::ns_typeless_censoring_events)
 			continue;
 
 		/*//we make a list of all censoring strategies included in the data set.

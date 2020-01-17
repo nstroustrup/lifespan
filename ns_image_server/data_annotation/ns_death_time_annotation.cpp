@@ -2571,6 +2571,10 @@ void ns_add_normal_death_to_set(const ns_annotation_generation_type & requested_
 			//we use this as debugging info in output file
 			if (a[3] != 0 && a[0] != 0) {
 				b.volatile_time_at_death_associated_expansion_start = a[3]->time;
+				/*if (a[3]->time == a[0]->time)
+					cerr << ".";
+				else
+					cerr << "!";*/
 				if (a[3]->time.period_start == a[3]->time.period_end && (!a[3]->time.period_end_was_not_observed || !a[3]->time.period_end_was_not_observed)) {
 					if (a[3]->annotation_source != ns_death_time_annotation::ns_storyboard)
 						cout << "Encountered an undefined expansion start time for animal " << b.stationary_path_id.group_id << " in region " << a[3]->region_info_id << "!\n";

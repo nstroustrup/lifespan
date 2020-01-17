@@ -3754,7 +3754,7 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 			if ((metadata.by_hand_annotation_timestamp > metadata.movement_rebuild_timestamp) && metadata.movement_rebuild_timestamp != 0)
 				regions_needing_censoring_recalculation.push_back(metadata.region_id);
 		}
-
+	
 
 	if (!ns_warn_user_about_out_of_date_analyses(0, experiment_id, sql))
 		return;

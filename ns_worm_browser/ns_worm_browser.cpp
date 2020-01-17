@@ -18,6 +18,7 @@
 #include "ns_analyze_movement_over_time.h"
 #include "ns_posture_analysis_cross_validation.h"
 #include <set>
+#include "ns_thread_pool.h"
 using namespace std;
 
 template class ns_time_path_image_movement_analyzer< ns_wasteful_overallocation_resizer>;
@@ -3664,6 +3665,54 @@ void ns_worm_learner::generate_single_frame_posture_image_pixel_data(const bool 
 	}
 
 }
+struct ns_immediately_recalc_censoring_job_common_data{
+	ns_immediately_recalc_censoring_job_common_data() :problem_lock("lock") {}
+	std::vector<ns_ex> problems;
+	ns_lock problem_lock;
+};
+struct ns_immediately_recalc_censoring_job_persistant_data {
+	ns_immediately_recalc_censoring_job_persistant_data():sql(0){}
+	ns_sql * sql;
+	~ns_immediately_recalc_censoring_job_persistant_data() {
+		ns_safe_delete(sql);
+	}
+};
+
+struct ns_immediately_recalc_censoring_job {
+	ns_immediately_recalc_censoring_job() {}
+	ns_immediately_recalc_censoring_job(const ns_64_bit & _region_id, ns_immediately_recalc_censoring_job_common_data * c):region_id(_region_id),common_data(c) {}
+	ns_64_bit region_id;
+	ns_immediately_recalc_censoring_job_common_data* common_data;
+
+	void operator()(ns_immediately_recalc_censoring_job_persistant_data& p) {
+		
+		if (p.sql == 0)
+			p.sql = image_server.new_sql_connection(__FILE__, __LINE__);
+		std::string region_name;
+		region_name = "Region id ";
+		region_name += ns_to_string(region_id);
+		try {
+			*p.sql << "SELECT s.name, r.name FROM capture_samples as s, sample_region_image_info as r WHERE r.id = " << region_id << " AND s.id = r.sample_id";
+			ns_sql_result res;
+			p.sql->get_rows(res);
+			if (res.size() != 0)
+				region_name = res[0][0] + "_" + res[0][1];
+			cout << "Processing " << region_name << "...\n";
+			//image_server.add_subtext_to_current_event(ns_to_string((int)(i * 100.0 / regions_needing_censoring_recalculation.size())) + "%...", &sql);
+			ns_processing_job job;
+			job.region_id = region_id;
+			job.maintenance_task = ns_maintenance_recalculate_censoring;
+			analyze_worm_movement_across_frames(job, &image_server, *p.sql, false);
+		}
+		catch (ns_ex & ex) {
+			*p.sql << "SELECT s.name, r.name FROM capture_samples as s, sample_region_image_info as r WHERE r.id = " << region_id << " AND s.id = r.sample_id";
+			image_server.add_subtext_to_current_event("Region " + region_name + ": " + ex.text(), p.sql);
+			ns_acquire_lock_for_scope lock(common_data->problem_lock, __FILE__, __LINE__);
+			common_data->problems.push_back("Region " + region_name + ": " + ex.text());
+			lock.release();
+		}
+	}
+};
 
 void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_hand_censoring,const ns_region_visualization & vis,const  ns_movement_data_source_type::type & type){
 //const bool scatter_proportion_plot, const bool use_interpolated_data){
@@ -3702,7 +3751,7 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 		for (unsigned int j = 0; j < movement_results.samples[i].regions.size(); j++) {
 			const ns_region_metadata & metadata(movement_results.samples[i].regions[j]->metadata);
 			total_number_of_regions++;
-			if (metadata.by_hand_annotation_timestamp > metadata.movement_rebuild_timestamp && metadata.movement_rebuild_timestamp != 0)
+			if ((metadata.by_hand_annotation_timestamp > metadata.movement_rebuild_timestamp) && metadata.movement_rebuild_timestamp != 0)
 				regions_needing_censoring_recalculation.push_back(metadata.region_id);
 		}
 
@@ -3724,8 +3773,7 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 		switch (dialog.result) {
 		case 1: {
 			image_server.register_server_event(ns_image_server_event("Recalculating censoring"), &sql);
-			ns_image_processing_pipeline p(1024);
-			std::vector<ns_ex> problems;
+			/*
 			for (unsigned int i = 0; i < regions_needing_censoring_recalculation.size(); i++) {
 				try {
 					image_server.add_subtext_to_current_event(ns_to_string((int)(i * 100.0 / regions_needing_censoring_recalculation.size())) + "%...", &sql);
@@ -3746,16 +3794,32 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 					problems.push_back("Region " + name + ": " + ex.text());
 				}
 			}
-			
-			if (problems.size() > 0) {
+			*/
+			ns_thread_pool< ns_immediately_recalc_censoring_job,
+				ns_immediately_recalc_censoring_job_persistant_data> thread_pool;
+			thread_pool.set_number_of_threads(image_server_const.maximum_number_of_processing_threads());
+			thread_pool.prepare_pool_to_run();
+			ns_immediately_recalc_censoring_job_common_data data;
+			for (unsigned int i = 0; i < regions_needing_censoring_recalculation.size(); i++) 
+				thread_pool.add_job_while_pool_is_not_running(ns_immediately_recalc_censoring_job(regions_needing_censoring_recalculation[i], &data));
+			thread_pool.run_pool();
+
+			thread_pool.wait_for_all_threads_to_become_idle();
+			ns_immediately_recalc_censoring_job tmp;
+			ns_ex tmp2;
+			while (thread_pool.get_next_error(tmp, tmp2) > 0) 
+				data.problems.push_back(tmp2);
+			thread_pool.shutdown();
+
+			if (data.problems.size() > 0) {
 				ns_text_dialog td;
 				td.grid_text.push_back("The following issues were encountered: ");
 				td.grid_text.push_back("(You likely will need to re-analyze movement, either from the stored solution or from stored images.)");
-				for (unsigned int i = 0; i < problems.size(); i++)
-					td.grid_text.push_back(problems[i].text());
+				for (unsigned int i = 0; i < data.problems.size(); i++)
+					td.grid_text.push_back(data.problems[i].text());
 				td.title = "Re-calculate censoring immediately";
 				ns_run_in_main_thread_wait_for_close<ns_text_dialog> dd(&td);
-				if (problems.size() * 4 > total_number_of_regions)
+				if (data.problems.size() * 4 > total_number_of_regions)
 					throw ns_ex("Too many errors.  Canceling data export.");
 			}
 			break;

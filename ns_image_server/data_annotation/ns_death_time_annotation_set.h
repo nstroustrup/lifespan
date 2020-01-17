@@ -233,7 +233,6 @@ public:
 
 class ns_multiple_worm_cluster_death_annotation_handler{
 public:
-	typedef enum {ns_best_guess_death,ns_};
 	//we need the properties to make sure generated annotations have correct excluded, flag, etc information
 	static bool generate_correct_annotations_for_multiple_worm_cluster(
 				const ns_death_time_annotation::ns_multiworm_censoring_strategy & censoring_strategy,

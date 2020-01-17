@@ -1995,7 +1995,7 @@ void ns_survival_data::generate_risk_timeseries(const ns_movement_event & event_
 	for (unsigned int j = 0; j < timepoints.size(); j++){	
 
 		//special case here if event_type is set to ns_additional_worm_entry, indicating we should choose the best guess death time
-		const ns_survival_timepoint_event const* e(ns_correct_event(event_type,timepoints[j]));
+		const ns_survival_timepoint_event * e(ns_correct_event(event_type,timepoints[j]));
 
 		for (unsigned int k = 0; k < e->events.size(); k++){
 			if (!e->events[k].properties.is_excluded() &&

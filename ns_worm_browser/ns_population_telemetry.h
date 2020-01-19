@@ -159,7 +159,7 @@ private:
 	unsigned long time_at_which_animals_were_age_zero;
 	std::vector<double> temp1, temp2;
 
-	typedef std::pair< ns_survival_grouping, ns_death_plot_type> ns_telemetry_cache_index;
+	typedef std::tuple< ns_survival_grouping, ns_death_plot_type, ns_64_bit, std::string> ns_telemetry_cache_index;
 	typedef std::map<ns_telemetry_cache_index, ns_survival_telemetry_cache> ns_telemetry_cache;
 	ns_telemetry_cache telemetry_cache;
 
@@ -472,9 +472,10 @@ public:
 		//the category into which each data from each region is placed. 
 		//indexed by region_id
 		std::map<ns_64_bit, ns_survival_plot_data_grouping> data_categories;
-		ns_telemetry_cache::iterator p = telemetry_cache.find(ns_telemetry_cache::key_type(ns_aggregate_all, death_plot));
+		const ns_telemetry_cache::key_type aggregate_key(ns_aggregate_all, death_plot, region_to_view, metadata.device_regression_match_description());
+		ns_telemetry_cache::iterator p = telemetry_cache.find(aggregate_key);
 		if (p == telemetry_cache.end()) {
-			p = telemetry_cache.insert(ns_telemetry_cache::value_type(ns_telemetry_cache::key_type(ns_aggregate_all, death_plot), ns_survival_telemetry_cache())).first;
+			p = telemetry_cache.insert(ns_telemetry_cache::value_type(aggregate_key, ns_survival_telemetry_cache())).first;
 			p->second.s.resize(1);
 			set.generate_aggregate_risk_timeseries(data_to_process, filter_by_strain, "", region_to_view, p->second.s[0].best_guess_survival, p->second.s[0].movement_survival, p->second.s[0].death_associated_expansion_survival, p->second.s[0].time_axis, false);
 		}
@@ -499,10 +500,10 @@ public:
 			if (survival_grouping == ns_aggregate_all || strain_override_specified && survival_grouping == ns_group_by_strain) {
 				//set up survival curve
 				//const bool plot_movement(death_plot == ns_plot_movement_death);
-
-				ns_telemetry_cache::iterator p = telemetry_cache.find(ns_telemetry_cache::key_type(survival_grouping, death_plot));
+				const ns_telemetry_cache::key_type key(survival_grouping, death_plot, region_to_view, metadata.device_regression_match_description());
+				ns_telemetry_cache::iterator p = telemetry_cache.find(key);
 				if (p == telemetry_cache.end()) {
-					p = telemetry_cache.insert(ns_telemetry_cache::value_type(ns_telemetry_cache::key_type(survival_grouping, death_plot), ns_survival_telemetry_cache())).first;
+					p = telemetry_cache.insert(ns_telemetry_cache::value_type(key, ns_survival_telemetry_cache())).first;
 					p->second.s.resize(1);
 					set.generate_aggregate_risk_timeseries(data_to_process, filter_by_strain, "", region_to_view, p->second.s[0].best_guess_survival, p->second.s[0].movement_survival, p->second.s[0].death_associated_expansion_survival, p->second.s[0].time_axis, false);
 				}
@@ -554,10 +555,10 @@ public:
 					data_categories[p->first] = ns_survival_plot_data_grouping(p->first, survival_curves[0].name, survival_curves[0].color);
 			}
 			else if (survival_grouping == ns_group_by_death_type) {
-
-				ns_telemetry_cache::iterator p = telemetry_cache.find(ns_telemetry_cache::key_type(survival_grouping, death_plot));
+				const ns_telemetry_cache::key_type key(survival_grouping, death_plot, region_to_view, metadata.device_regression_match_description());
+				ns_telemetry_cache::iterator p = telemetry_cache.find(key);
 				if (p == telemetry_cache.end()) {
-					p = telemetry_cache.insert(ns_telemetry_cache::value_type(ns_telemetry_cache::key_type(survival_grouping, death_plot), ns_survival_telemetry_cache())).first;
+					p = telemetry_cache.insert(ns_telemetry_cache::value_type(key, ns_survival_telemetry_cache())).first;
 					p->second.s.resize(1);
 					set.generate_aggregate_risk_timeseries(data_to_process, filter_by_strain, "", region_to_view, p->second.s[0].best_guess_survival, p->second.s[0].movement_survival, p->second.s[0].death_associated_expansion_survival, p->second.s[0].time_axis, false);
 				}
@@ -622,10 +623,10 @@ public:
 
 				for (auto p = compiler.regions.begin(); p != compiler.regions.end(); p++)
 					data_categories[p->first] = ns_survival_plot_data_grouping(p->first, p->second.metadata.device_regression_match_description(), survival_curves[0].color);
-				//ns_survival_data_with_censoring best_guess_survival_sub,movement_survival_sub, death_associated_expansion_survival_sub;
-				ns_telemetry_cache::iterator tel = telemetry_cache.find(ns_telemetry_cache::key_type(survival_grouping, death_plot));
+				const ns_telemetry_cache::key_type key(survival_grouping, death_plot, region_to_view, metadata.device_regression_match_description());
+				ns_telemetry_cache::iterator tel = telemetry_cache.find(key);
 				if (tel == telemetry_cache.end()) {
-					tel = telemetry_cache.insert(ns_telemetry_cache::value_type(ns_telemetry_cache::key_type(survival_grouping, death_plot), ns_survival_telemetry_cache())).first;
+					tel = telemetry_cache.insert(ns_telemetry_cache::value_type(key, ns_survival_telemetry_cache())).first;
 					tel->second.s.resize(all_strains.size());
 					unsigned int i = 0;
 					for (auto p = all_strains.begin(); p != all_strains.end(); p++) {
@@ -696,9 +697,10 @@ public:
 				for (auto p = set.curves.begin(); p != set.curves.end(); p++)
 					all_devices.emplace(std::pair<std::string, ns_survival_plot_data_grouping>(p->metadata.device, ns_survival_plot_data_grouping()));
 				survival_curves.resize(all_devices.size());
-				ns_telemetry_cache::iterator tel = telemetry_cache.find(ns_telemetry_cache::key_type(survival_grouping, death_plot));
+				const ns_telemetry_cache::key_type key(survival_grouping, death_plot, region_to_view, metadata.device_regression_match_description());
+				ns_telemetry_cache::iterator tel = telemetry_cache.find(key);
 				if (tel == telemetry_cache.end()) {
-					tel = telemetry_cache.insert(ns_telemetry_cache::value_type(ns_telemetry_cache::key_type(survival_grouping, death_plot), ns_survival_telemetry_cache())).first;
+					tel = telemetry_cache.insert(ns_telemetry_cache::value_type(key, ns_survival_telemetry_cache())).first;
 					tel->second.s.resize(all_devices.size());
 					int i = 0;
 					for (auto p = all_devices.begin(); p != all_devices.end(); p++) {

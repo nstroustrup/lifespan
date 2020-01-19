@@ -1717,7 +1717,7 @@ class ns_stats_survival_grouping_menu_organizer : public ns_menu_organizer {
 		ns_set_menu_bar_activity(false);
 		worm_learner.storyboard_annotater.population_telemetry.survival_grouping = ns_population_telemetry::survival_grouping_type(s);
 		::update_stats_menus();
-		worm_learner.storyboard_annotater.recalculate_telemetry();
+		worm_learner.storyboard_annotater.replot_telemetry();
 		//worm_learner.storyboard_annotater.draw_telemetry();
 		report_changes_made_to_screen();
 		ns_set_menu_bar_activity(true);
@@ -1757,7 +1757,7 @@ class ns_death_types_plotting_menu_organizer : public ns_menu_organizer {
 		ns_set_menu_bar_activity(false);
 		worm_learner.storyboard_annotater.population_telemetry.death_plot = ns_population_telemetry::death_plot_type(s);
 		::update_stats_menus();
-		worm_learner.storyboard_annotater.recalculate_telemetry();
+		worm_learner.storyboard_annotater.replot_telemetry();
 		//worm_learner.storyboard_annotater.draw_telemetry();
 		report_changes_made_to_screen();
 		ns_set_menu_bar_activity(true);
@@ -1801,7 +1801,7 @@ class ns_movement_graph_plotting_menu_organizer : public ns_menu_organizer {
 			}
 		}
 		::update_stats_menus();
-		worm_learner.storyboard_annotater.recalculate_telemetry();
+		worm_learner.storyboard_annotater.replot_telemetry();
 		//worm_learner.storyboard_annotater.draw_telemetry();
 		report_changes_made_to_screen();
 		ns_set_menu_bar_activity(true);
@@ -1997,7 +1997,7 @@ public:
 		if (worm_learner.statistics_data_selector.strain_selected())
 			strain = worm_learner.statistics_data_selector.current_strain();
 		worm_learner.storyboard_annotater.population_telemetry.set_subject(region_id, strain);
-		worm_learner.storyboard_annotater.recalculate_telemetry();
+		worm_learner.storyboard_annotater.replot_telemetry();
 		//worm_learner.storyboard_annotater.draw_telemetry();
 		ns_set_menu_bar_activity(true);
 		report_changes_made_to_screen();
@@ -2183,7 +2183,7 @@ public:
 		if (worm_learner.statistics_data_selector.strain_selected())
 			strain = worm_learner.statistics_data_selector.current_strain();
 		worm_learner.storyboard_annotater.population_telemetry.set_subject(region_id, strain);
-		worm_learner.storyboard_annotater.recalculate_telemetry();
+		worm_learner.storyboard_annotater.replot_telemetry();
 		//worm_learner.storyboard_annotater.draw_telemetry();
 		report_changes_made_to_screen();
 		ns_set_menu_bar_activity(true);
@@ -3192,7 +3192,7 @@ void ns_handle_stats_annotation_button(Fl_Widget* w, void* data) {
 	switch (action) {
 	case ns_image_series_annotater::ns_recalculate:
 		image_server.register_server_event_no_db(ns_image_server_event("Re-calculating survival statistics"));
-		worm_learner.storyboard_annotater.recalculate_telemetry();
+		worm_learner.storyboard_annotater.rebuild_telemetry_with_by_hand_annotations();
 		break;
 	case ns_image_series_annotater::ns_switch_grouping:
 		break;

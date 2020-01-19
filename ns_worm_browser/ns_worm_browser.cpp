@@ -7297,7 +7297,7 @@ bool ns_worm_learner::start_death_time_annotation(const ns_behavior_mode m, cons
 							continue;
 						storyboard_annotater.add_machine_events_for_telemetry(movement_results.samples[i].regions[j]->death_time_annotation_set, movement_results.samples[i].regions[j]->metadata);
 					}
-				storyboard_annotater.recalculate_telemetry();
+				storyboard_annotater.rebuild_telemetry_with_by_hand_annotations();
 				draw_stats_window_image();
 
 				if (image_server.verbose_debug_output())

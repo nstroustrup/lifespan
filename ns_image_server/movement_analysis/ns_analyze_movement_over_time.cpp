@@ -248,7 +248,7 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 		if (log_output) {
 			image_server->register_server_event(ns_image_server_event("Analyzing stored animal posture quantification."), &sql);
 			if (specific_worm != -1)
-				image_server->add_subtext_to_current_event(std::string("Running in debug mode to focus on a specific worm with id ") + ns_to_string(specific_worm) + "\n", &sql);
+				image_server->add_subtext_to_current_event(std::string("Running movement analysis in debug mode to focus on a specific worm with id ") + ns_to_string(specific_worm) + "\n", &sql);
 		}
 		time_path_image_analyzer.load_image_quantification_and_rerun_death_time_detection(job.region_id, time_path_solution, time_series_denoising_parameters, &death_time_estimator(), sql, specific_worm);
 		//if the user is asking to debug a specific region and worm, we can generate extra debug information
@@ -269,7 +269,8 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 						metadata.load_from_db(job.region_id, "", sql);
 					}
 					time_path_image_analyzer.add_by_hand_annotations(by_hand_region_annotations.annotations);
-					time_path_image_analyzer.calculate_optimzation_stats_for_current_hmm_estimator(*optional_debug_results, &posture_analysis_model_handle().model_specification.hmm_posture_estimator, individuals, true);
+					if (!time_path_image_analyzer.calculate_optimzation_stats_for_current_hmm_estimator(*optional_debug_results, &posture_analysis_model_handle().model_specification.hmm_posture_estimator, individuals, true))
+						throw ns_ex("Could not produce HMM optimization data because no by hand annotations have been made for the individual specified.");
 				}
 			}
 			return;

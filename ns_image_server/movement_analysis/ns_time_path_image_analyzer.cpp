@@ -1772,7 +1772,8 @@ bool operator!=(const ns_analyzed_image_specification& a, const ns_analyzed_imag
 
 
 template<class allocator_T>
-void ns_time_path_image_movement_analyzer<allocator_T>::calculate_optimzation_stats_for_current_hmm_estimator(ns_hmm_movement_analysis_optimizatiom_stats & s, const ns_emperical_posture_quantification_value_estimator * e, std::set<ns_stationary_path_id> & paths_to_test, bool generate_path_info) {
+bool ns_time_path_image_movement_analyzer<allocator_T>::calculate_optimzation_stats_for_current_hmm_estimator(ns_hmm_movement_analysis_optimizatiom_stats & s, const ns_emperical_posture_quantification_value_estimator * e, std::set<ns_stationary_path_id> & paths_to_test, bool generate_path_info) {
+	bool found_worm(false);
 	for (unsigned long g = 0; g < groups.size(); g++)
 		for (unsigned long p = 0; p < groups[g].paths.size(); p++) {
 			if (ns_skip_low_density_paths && groups[g].paths[p].is_low_density_path() || !groups[g].paths[p].by_hand_data_specified() ||
@@ -1789,7 +1790,7 @@ void ns_time_path_image_movement_analyzer<allocator_T>::calculate_optimzation_st
 
 			if (!paths_to_test.empty() && paths_to_test.find(this->generate_stationary_path_id(g, p)) == paths_to_test.end())
 				continue;
-		
+			found_worm = true;
 			ns_time_path_posture_movement_solution by_hand_posture_movement_solution(groups[g].paths[p].reconstruct_movement_state_solution_from_annotations(groups[g].paths[p].movement_analysis_result.first_valid_element_id.period_start_index, groups[g].paths[p].movement_analysis_result.last_valid_element_id.period_end_index, groups[g].paths[p].by_hand_annotation_event_times));
 			//if (by_hand_posture_movement_solution.moving.skipped) {
 				//cout << "Encountered a by hand annotation in which the animal never slowed: " << g << "\n";
@@ -1847,6 +1848,7 @@ void ns_time_path_image_movement_analyzer<allocator_T>::calculate_optimzation_st
 			}
 
 		}
+	return found_worm;
 }
 template<class allocator_T>
 void ns_time_path_image_movement_analyzer<allocator_T>::reanalyze_with_different_movement_estimator(const ns_time_series_denoising_parameters &, const ns_analyzed_image_time_path_death_time_estimator * e) {

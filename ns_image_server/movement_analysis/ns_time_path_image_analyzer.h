@@ -851,7 +851,7 @@ public:
 	template<class T2>friend class ns_worm_morphology_data_integrator;
 	std::string posture_model_version_used;
 
-	void calculate_optimzation_stats_for_current_hmm_estimator(ns_hmm_movement_analysis_optimizatiom_stats & s, const ns_emperical_posture_quantification_value_estimator * e, std::set<ns_stationary_path_id> & paths_to_test, bool generate_path_info);
+	bool calculate_optimzation_stats_for_current_hmm_estimator(ns_hmm_movement_analysis_optimizatiom_stats & s, const ns_emperical_posture_quantification_value_estimator * e, std::set<ns_stationary_path_id> & paths_to_test, bool generate_path_info);
 private:
 
 	unsigned long _number_of_invalid_images_encountered;

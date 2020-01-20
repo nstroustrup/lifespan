@@ -82,10 +82,44 @@ struct ns_dying_animal_description_group{
 		*stationary_worm_dissapearance;
 
 	//this is the definition of the best guess death annotation
+	//use the expansion time unless the animal continues to move after expansion
+	//in which case we use the movement cessation time.
+	static ns_death_time_annotation_time_interval * calculate_best_guess_death_annotation(ns_death_time_annotation_time_interval* movement, ns_death_time_annotation_time_interval * expansion) {
+		if (expansion != 0 && !expansion->fully_unbounded() &&
+			(movement == 0 || movement->fully_unbounded() ||
+				expansion->best_estimate_event_time_for_possible_partially_unbounded_interval()
+				>= movement->best_estimate_event_time_for_possible_partially_unbounded_interval()))
+			return expansion;
+		else return movement;
+
+	}
+	static ns_death_time_annotation* calculate_best_guess_death_annotation(ns_death_time_annotation* movement, ns_death_time_annotation* expansion) {
+		if (expansion != 0 && !expansion->time.fully_unbounded() &&
+			(movement == 0 || movement->time.fully_unbounded() ||
+				expansion->time.best_estimate_event_time_for_possible_partially_unbounded_interval()
+				>= movement->time.best_estimate_event_time_for_possible_partially_unbounded_interval()))
+			return expansion;
+		else return movement;
+	}
+	static const ns_death_time_annotation_time_interval* calculate_best_guess_death_annotation(const ns_death_time_annotation_time_interval* movement, const ns_death_time_annotation_time_interval* expansion) {
+		if (expansion != 0 && !expansion->fully_unbounded() &&
+			(movement == 0 || movement->fully_unbounded() ||
+				expansion->best_estimate_event_time_for_possible_partially_unbounded_interval()
+				>= movement->best_estimate_event_time_for_possible_partially_unbounded_interval()))
+			return expansion;
+		else return movement;
+
+	}
+	static const ns_death_time_annotation* calculate_best_guess_death_annotation(const ns_death_time_annotation* movement, const ns_death_time_annotation* expansion) {
+		if (expansion != 0 && !expansion->time.fully_unbounded() &&
+			(movement == 0 || movement->time.fully_unbounded() ||
+				expansion->time.best_estimate_event_time_for_possible_partially_unbounded_interval()
+				>= movement->time.best_estimate_event_time_for_possible_partially_unbounded_interval()))
+			return expansion;
+		else return movement;
+	}
 	void calculate_best_guess_death_annotation() {
-		if (death_associated_expansion_start != 0)
-			best_guess_death_annotation = death_associated_expansion_start;
-		else best_guess_death_annotation = movement_based_death_annotation;
+		best_guess_death_annotation = calculate_best_guess_death_annotation(movement_based_death_annotation, death_associated_expansion_start);
 	}
 
 	std::vector<T *> slow_moving_state_annotations,

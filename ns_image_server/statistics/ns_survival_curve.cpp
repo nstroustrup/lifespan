@@ -10,6 +10,7 @@
 #include "ns_jmp_file.h"
 #include "ns_xml.h"
 #include <limits>
+#include "ns_death_time_annotation_set.h"
 using namespace std;
 
 
@@ -604,13 +605,13 @@ void ns_lifespan_experiment_set::out_detailed_JMP_header(const ns_time_handing_b
 	ns_region_metadata::out_JMP_plate_identity_header(o);
 	o << ",Event Frequency,";
 	if (time_handling_behavior == ns_output_single_event_times){
-		o<< "Age at Death (" << time_units << ") Raw,";
+		o<< "Age at Death (" << time_units << "),";
 	//	 "Age at Death (" << time_units << ") Additive Regression Model Residuals,"
 		// "Age at Death (" << time_units << ") Multiplicative Regression Model Residuals,";
 	}
 	else{
-		o<< "Age at Death (" << time_units << ") Raw Start ,"
-		<< "Age at Death (" << time_units << ") Raw End ,";
+		o<< "Age at Death (" << time_units << ") Start ,"
+		<< "Age at Death (" << time_units << ") End ,";
 		// "Age at Death (" << time_units << ") Additive Regression Model Residuals Start,"
 		// "Age at Death (" << time_units << ") Additive Regression Model Residuals End,"
 		// "Age at Death (" << time_units << ") Multiplicative Regression Model Residuals Start,"
@@ -815,8 +816,8 @@ void ns_lifespan_experiment_set::out_simple_JMP_header(const ns_time_handing_beh
 	if (time_handling_behavior == ns_output_single_event_times){
 		o <<
 			"Age at Death (" << time_units << "),"
-			"Time of Final  Movement (" << time_units << "),"
-			"Time of Death-Associated Expansion (" << time_units << "),"
+			"Age at Final  Movement (" << time_units << "),"
+			"Age at Death-Associated Expansion (" << time_units << "),"
 			"Duration between Expansion and Final Movement (" << time_units << "),"
 			"Duration Not Fast Moving (" << time_units << "),"
 			"Longest Gap in Measurement (" << time_units << "),";
@@ -825,10 +826,10 @@ void ns_lifespan_experiment_set::out_simple_JMP_header(const ns_time_handing_beh
 		o <<
 			"Age at Death (" << time_units << ") Start,"
 			"Age at Death (" << time_units << ") End,"
-			"Time of Final  Movement(" << time_units << ") Start,"
-			"Time of Final  Movement(" << time_units << ") End,"
-			"Time of Death-Associated Expansion (" << time_units << ") Start,"
-			"Time of Death-Associated Expansion (" << time_units << ") End,"
+			"Age at Final Movement(" << time_units << ") Start,"
+			"Age at Final Movement(" << time_units << ") End,"
+			"Age at Death-Associated Expansion (" << time_units << ") Start,"
+			"Age at Death-Associated Expansion (" << time_units << ") End,"
 			"Duration between Expansion and Final Movement (" << time_units << ")"
 			"Duration Not Fast Moving (" << time_units << "),"
 			"Longest Gap in Measurement (" << time_units << "),";
@@ -918,20 +919,14 @@ void ns_lifespan_experiment_set::out_simple_JMP_event_data(const ns_time_handing
 		o << a.stationary_path_id.group_id << ",";
 		bool already_zeroed = false;
 		//#1 for the "Death Time", use the death-associated expansion time if possible, and movement cessation otherwise.
-		if (!a.volatile_time_at_death_associated_expansion_start.fully_unbounded()) {
-			if (a.volatile_time_at_death_associated_expansion_start.best_estimate_event_time_for_possible_partially_unbounded_interval() < metadata.time_at_which_animals_had_zero_age)
-				{if (!already_zeroed) { already_zeroed = true; cout << "Skipping zero-ed death time! This suggests an incorrectly set time-at-which-animals-had-zero-age or a software bug.\n"; }}
-			else
-			ns_output_JMP_time_interval(time_handling_behavior, a.volatile_time_at_death_associated_expansion_start - metadata.time_at_which_animals_had_zero_age,
-				time_scaling_factor, o);
-		}
-		else {
-			if (a.time.best_estimate_event_time_for_possible_partially_unbounded_interval() < metadata.time_at_which_animals_had_zero_age)
+		ns_death_time_annotation_time_interval * best_guess = ns_dying_animal_description_group<ns_death_time_annotation_time_interval>::calculate_best_guess_death_annotation(&a.time, &a.volatile_time_at_death_associated_expansion_start);
+		
+		if (best_guess->best_estimate_event_time_for_possible_partially_unbounded_interval() < metadata.time_at_which_animals_had_zero_age)
 			{if (!already_zeroed) { already_zeroed = true; cout << "Skipping zero-ed death time! This suggests an incorrectly set time-at-which-animals-had-zero-age or a software bug.\n"; }}
-			else
-			ns_output_JMP_time_interval(time_handling_behavior, a.time - metadata.time_at_which_animals_had_zero_age,
-				time_scaling_factor, o);
-		}
+		else
+		ns_output_JMP_time_interval(time_handling_behavior, *best_guess - metadata.time_at_which_animals_had_zero_age,
+			time_scaling_factor, o);
+		
 		o << ",";
 		//#2 output movement cessation time (this is the only death time available in the old threshold algorithm)
 		if (a.time.best_estimate_event_time_for_possible_partially_unbounded_interval() < metadata.time_at_which_animals_had_zero_age)

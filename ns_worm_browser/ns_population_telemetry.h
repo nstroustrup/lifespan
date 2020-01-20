@@ -64,7 +64,7 @@ public:
 	static std::string death_plot_name(const ns_death_plot_type& g) {
 		switch (g) {
 		case ns_plot_best_guess:
-			return "Best Guess";
+			return "Best Estimate";
 		case ns_plot_movement_death:
 			return "Movement";
 		case ns_plot_expansion_death:
@@ -553,7 +553,7 @@ public:
 
 				const int number_of_survival_curve_types(3);
 				survival_curves.resize(number_of_survival_curve_types);
-				survival_curves[0].name = "Best Guess";
+				survival_curves[0].name = "Best Estimate";
 				survival_curves[0].color = ns_color_8(0, 255, 0);
 				survival_curves[1].name = "Movement Cessation";
 				survival_curves[1].color = ns_color_8(255, 0, 0);

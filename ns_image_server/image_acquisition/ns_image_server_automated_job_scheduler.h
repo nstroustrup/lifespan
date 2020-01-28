@@ -8,7 +8,7 @@ public:
 	static void scan_for_tasks(ns_sql & sql,bool ignore_timers_and_run_now);
 	static void register_static_mask_completion(const ns_64_bit region_id, ns_sql & sql);
 	static void handle_when_completed_priority_jobs(ns_sql & sql);
-	static void identify_experiments_needing_captured_image_protection(ns_sql & sql,const ns_64_bit specific_sample_id=0);
+	static bool identify_experiments_needing_captured_image_protection(ns_sql & sql,const ns_64_bit specific_sample_id=0);
 private:	
 	static void calculate_capture_schedule_boundaries(ns_sql & sql);
 	static void identify_regions_needing_static_mask(ns_sql & sql);

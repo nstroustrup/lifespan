@@ -3705,7 +3705,11 @@ struct ns_immediately_recalc_censoring_job {
 			analyze_worm_movement_across_frames(job, &image_server, *p.sql, false);
 		}
 		catch (ns_ex & ex) {
-			*p.sql << "SELECT s.name, r.name FROM capture_samples as s, sample_region_image_info as r WHERE r.id = " << region_id << " AND s.id = r.sample_id";
+			*p.sql << "SELECT s.name, r.name FROM capture_samples as s, sample_region_image_info as r WHERE r.id = " << region_id << " AND s.id = r.sample_id"; 
+			ns_sql_result res;
+			p.sql->get_rows(res); 
+			if (res.size() != 0)
+				region_name = res[0][0] + "_" + res[0][1];
 			image_server.add_subtext_to_current_event("Region " + region_name + ": " + ex.text(), p.sql);
 			ns_acquire_lock_for_scope lock(common_data->problem_lock, __FILE__, __LINE__);
 			common_data->problems.push_back("Region " + region_name + ": " + ex.text());

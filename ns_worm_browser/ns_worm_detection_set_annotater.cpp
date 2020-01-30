@@ -187,20 +187,19 @@ void ns_worm_detection_set_annotater::register_click(const ns_vector_2i& image_p
 		}
 		else {
 			ns_cycle_detected_flag(current_objects[selected_object]->hand_annotation_data);
-			saved_ = false;
+			regions_modified_but_not_saved.insert(111); ///xxx todo!
 		}
 		break;
 	case ns_annotate_extra_worm:
 	case ns_cycle_flags:
 		if (!found_object) break;
 		ns_cycle_detected_flag(current_objects[selected_object]->hand_annotation_data);
-		saved_ = false;
+		regions_modified_but_not_saved.insert(111); ///xxx todo!
 		break;
 
 	default: throw ns_ex("ns_death_time_posture_annotater::Unknown click type");
 	}
 	
-	saved_ = false;
 
 	draw_metadata(&all_objects[current_timepoint_id], *current_image.im, external_rescale_factor);
 	request_refresh();
@@ -284,7 +283,7 @@ void ns_worm_detection_set_annotater::redraw_all(const double&  external_rescale
 }
 
 
-void ns_worm_detection_set_annotater::save_annotations(const ns_death_time_annotation_set& extra_annotations) const {
+void ns_worm_detection_set_annotater::save_annotations(const ns_death_time_annotation_set& extra_annotations, std::set<ns_64_bit>& regions_altered) const {
 
 	ns_load_image(path + DIR_CHAR_STR + filename, loading_temp);
 	for (unsigned int i = 0; i < all_objects.size(); i++) {
@@ -300,5 +299,6 @@ void ns_worm_detection_set_annotater::save_annotations(const ns_death_time_annot
 	//fname_mod += ".tif";
 	ns_save_image(path + DIR_CHAR_STR + filename, loading_temp);
 	ns_update_worm_information_bar("Annotations saved at " + ns_format_time_string_for_human(ns_current_time()));
-	saved_ = true;
+	regions_altered.clear();
+	regions_modified_but_not_saved.clear();
 };

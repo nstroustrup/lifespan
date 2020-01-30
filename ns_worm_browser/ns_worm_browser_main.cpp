@@ -3241,7 +3241,7 @@ void update_stats_menus() {
 }
 
 void ns_update_main_information_bar(const std::string & status){
-	cerr << status;
+	cerr << status << "\n";
 	main_window->update_information_bar(status);
 }
 void ns_update_worm_information_bar(const std::string & status) {

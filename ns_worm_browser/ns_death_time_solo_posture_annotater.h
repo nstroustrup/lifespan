@@ -635,7 +635,6 @@ private:
 
 	ns_worm_learner* worm_learner;
 
-	mutable bool saved_;
 
 public:
 
@@ -695,16 +694,16 @@ public:
 	inline unsigned long number_of_timepoints() { return timepoints.size(); }
 
 	void set_resize_factor(const unsigned long resize_factor_) { resize_factor = resize_factor_; }
-	bool data_saved()const { return saved_; }
+	bool data_needs_saving()const { throw ns_ex("All saving should be done via ns_death_time_posture_annotater!"); }
 	ns_death_time_solo_posture_annotater() :ns_image_series_annotater(default_resize_factor, ns_death_time_posture_annotater_timepoint::ns_bottom_border_height),
-		saved_(true), graph_contents(ns_animal_telemetry::ns_movement_intensity), worm_image_offset_due_to_telemetry_graph_spacing(0, 0), current_visualization_type(ns_death_time_solo_posture_annotater_timepoint::ns_image),
+		 graph_contents(ns_animal_telemetry::ns_movement_intensity), worm_image_offset_due_to_telemetry_graph_spacing(0, 0), current_visualization_type(ns_death_time_solo_posture_annotater_timepoint::ns_image),
 		region_loaded(false), telemetry_zoom_factor(1), current_region_id(0) {	}
 	bool region_loaded;
 	typedef enum { ns_time_aligned_images, ns_death_aligned_images } ns_alignment_type;
 
 	bool load_annotations() {
 		//	for (u
-		saved_ = true;
+		
 		//	saved_ = !fix_censored_events_with_no_time_specified();
 		return true;
 	}
@@ -713,13 +712,9 @@ public:
 		data_cache.add_annotations_to_set(set, sql(), orphaned_events);
 	}
 
-	void save_annotations(const ns_death_time_annotation_set& set) const {
-		throw ns_ex("This shouldn't run");
-		data_cache.save_annotations(set);
-
-		ns_update_worm_information_bar(string("Annotations saved at ") + ns_format_time_string_for_human(ns_current_time()));
-		ns_update_main_information_bar(string("Annotations saved at ") + ns_format_time_string_for_human(ns_current_time()));
-		saved_ = true;
+	void save_annotations(const ns_death_time_annotation_set& set, std::set<ns_64_bit> & regions_modified_but_not_saved) const {
+		throw ns_ex("All saving should be done via ns_experiment_storyboard_annotater!");
+		//data_cache.save_annotations(set);
 	};
 	bool current_region_path_data_loaded(ns_death_time_posture_solo_annotater_data_cache_storage::handle_t& handle) {
 		if (current_region_id == 0)
@@ -1028,30 +1023,29 @@ public:
 			e.event_annotation.transfer_sticky_properties(properties_for_all_animals);
 			//current_by_hand_timing_data->animals[current_animal_id].sticky_propertes.annotation_source = ns_death_time_annotation::ns_posture_image;
 			properties_for_all_animals.stationary_path_id = worm;
-			this->saved_ = true;
+			bool saved = true;
 			for (unsigned int j = 0; j < handle().data->by_hand_timing_data[worm.group_id].animals.size(); j++) {
 				if (ns_fix_annotation(handle().data->by_hand_timing_data[worm.group_id].animals[j].fast_movement_cessation, *current_worm))
-					saved_ = false;
+					saved = false;
 				if (ns_fix_annotation(handle().data->by_hand_timing_data[worm.group_id].animals[j].translation_cessation, *current_worm))
-					saved_ = false;
+					saved = false;
 				if (ns_fix_annotation(handle().data->by_hand_timing_data[worm.group_id].animals[j].movement_cessation, *current_worm))
-					saved_ = false;
+					saved = false;
 				if (ns_fix_annotation(handle().data->by_hand_timing_data[worm.group_id].animals[j].death_associated_expansion_stop, *current_worm))
-					saved_ = false;
+					saved = false;
 				if (ns_fix_annotation(handle().data->by_hand_timing_data[worm.group_id].animals[j].death_associated_expansion_start, *current_worm))
-					saved_ = false;
+					saved = false;
 				if (ns_fix_annotation(handle().data->by_hand_timing_data[worm.group_id].animals[j].death_associated_post_expansion_contraction_stop, *current_worm))
-					saved_ = false;
+					saved = false;
 				if (ns_fix_annotation(handle().data->by_hand_timing_data[worm.group_id].animals[j].death_associated_post_expansion_contraction_start, *current_worm))
-					saved_ = false;
+					saved = false;
 			}
 
 			if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Done setting by hand annotations"));
-			if (!saved_) {
+			if (!saved) {
 
 				if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Updating events to storyboard"));
 				update_events_to_storyboard(external_rescale_factor, handle);
-				saved_ = true;
 			}
 			//initialize worm timing data
 			unsigned long number_of_valid_elements;
@@ -1164,7 +1158,6 @@ public:
 
 		telemetry_zoom_factor = 1;
 		clear_base();
-		saved_ = false;
 		timepoints.resize(0);
 		telemetry.clear();
 		//	data_cache.clear();

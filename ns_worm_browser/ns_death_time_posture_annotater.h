@@ -208,12 +208,12 @@ private:
 	mutable ns_image_server_results_file annotation_file;
 	enum {default_resize_factor=2,max_buffer_size = 6};
 
-	mutable bool saved_;
+	mutable std::set<ns_64_bit> regions_modified_but_not_saved;
 public:
 
 	void set_resize_factor(const unsigned long resize_factor_){resize_factor = resize_factor_;}
-	bool data_saved()const{return saved_;}
- ns_death_time_posture_annotater():ns_image_series_annotater(default_resize_factor, ns_death_time_posture_annotater_timepoint::ns_bottom_border_height),annotation_file("","",""),saved_(true){}
+	bool data_needs_saving()const{return !regions_modified_but_not_saved.empty();}
+ ns_death_time_posture_annotater():ns_image_series_annotater(default_resize_factor, ns_death_time_posture_annotater_timepoint::ns_bottom_border_height),annotation_file("","",""){}
 	typedef enum {ns_time_aligned_images,ns_death_aligned_images} ns_alignment_type;
 
 	std::string image_label(const unsigned long frame_id){
@@ -265,7 +265,7 @@ public:
 		saved_ = !fix_censored_events_with_no_time_specified();
 		return true;*/
 	}
-	void save_annotations(const ns_death_time_annotation_set & extra_annotations) const{
+	void save_annotations(const ns_death_time_annotation_set & extra_annotations, std::set<ns_64_bit>& regions_modified) const{
 		ns_death_time_annotation_set set;
 		unsigned long current_time(ns_current_time());
 		
@@ -279,7 +279,7 @@ public:
 		out.release();
 		ns_update_main_information_bar(ns_to_string(set.events.size()) + " events saved at " + ns_format_time_string_for_human(ns_current_time()));
 		ns_update_worm_information_bar(ns_to_string(set.events.size()) + " events saved at " + ns_format_time_string_for_human(ns_current_time()));
-		saved_=true;
+		regions_modified = std::move(regions_modified_but_not_saved);
 	};
 
 	void clear() {
@@ -287,7 +287,7 @@ public:
 		orphaned_events.clear();
 		timepoints.clear();
 		timing_data.clear();
-		saved_ = false;
+		regions_modified_but_not_saved.clear();
 
 	}
 	void load_region(const unsigned long region_info_id_,const ns_alignment_type alignment_type_,ns_worm_learner * worm_learner_, double external_rescale_factor){

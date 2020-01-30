@@ -6249,7 +6249,6 @@ void ns_worm_learner::save_death_time_annotations(ns_sql & sql){
 		++p;
 		for (; p != regions_altered.end(); ++p)
 			sql << " || id = " << *p;
-		cout << sql.query();
 		sql.send_query();
 	}
 	else {

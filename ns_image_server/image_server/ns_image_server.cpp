@@ -388,7 +388,7 @@ void ns_image_server_automated_job_scheduler::handle_when_completed_priority_job
 		}
 	}
 }
-void ns_image_server_automated_job_scheduler::identify_experiments_needing_captured_image_protection(ns_sql & sql,const ns_64_bit specific_sample_id){
+bool ns_image_server_automated_job_scheduler::identify_experiments_needing_captured_image_protection(ns_sql & sql,const ns_64_bit specific_sample_id){
 	const long number_of_images_to_protect(5);
 	std::vector<ns_64_bit> sample_ids;
 	ns_sql_result samples;
@@ -407,7 +407,7 @@ void ns_image_server_automated_job_scheduler::identify_experiments_needing_captu
 		if (samples.size() == 0)
 			throw ns_ex("Could not find sample ") << specific_sample_id << " in the db";
 	}
-
+	bool made_a_change = false;
 	for (unsigned int i = 0; i < sample_ids.size(); i++){
 		const ns_64_bit sample_id(sample_ids[i]);
 		sql << "SELECT id, never_delete_image FROM captured_images WHERE image_id != 0 AND problem = 0 "
@@ -421,6 +421,7 @@ void ns_image_server_automated_job_scheduler::identify_experiments_needing_captu
 			if (images[j][1] == "1") continue;
 			sql << "UPDATE captured_images SET never_delete_image = 1 WHERE id = " << images[j][0];
 			sql.send_query();
+			made_a_change = true;
 		}
 		if (images.size() == number_of_images_to_protect){
 
@@ -430,6 +431,7 @@ void ns_image_server_automated_job_scheduler::identify_experiments_needing_captu
 			image_server.register_server_event(ns_image_server_event("The first frames of sample ") << samples[i][2] << "::" << samples[i][1] << " are now protected.",&sql);
 		}
 	}
+	return made_a_change;
 }
 
 
@@ -3120,7 +3122,10 @@ void ns_image_server::clear_old_server_events(ns_sql & sql){
 void ns_image_server::add_subtext_to_current_event(const char * str, ns_image_server_sql * sql,bool suppress_display,const ns_64_bit impersonate_using_internal_thread_id) const {
 	if (sql != 0) {
 		std::map<ns_64_bit, ns_thread_output_state>::iterator current_thread_state = get_current_thread_state_info(impersonate_using_internal_thread_id);
-
+		if (sql->query().size() > 0) {
+			cerr << "Warning! add_subtext_to_current_event() was passed an sql object with a command left in its query buffer: " << sql->query().size() << "\n";
+			sql->clear_query();
+		}
 		*sql << "UPDATE " << sql->table_prefix() << "host_event_log SET sub_text = CONCAT(sub_text,'" << sql->escape_string(str) << "') WHERE id = " << current_thread_state->second.last_event_sql_id;
 		sql->send_query();
 	}
@@ -3212,11 +3217,11 @@ void ns_image_server::register_server_event_no_db(const ns_image_server_event & 
 	lock.release();
 }
 
-ns_64_bit ns_image_server::register_server_event(const ns_ex & ex, ns_image_server_sql * sql)const{
+ns_64_bit ns_image_server::register_server_event(const ns_ex & ex, ns_image_server_sql * sql, const bool no_display)const{
 	ns_image_server_event s_event(ex.text());
 	if (ex.type() == ns_sql_fatal) s_event << ns_ts_sql_error;
 	else s_event << ns_ts_error;
-	return register_server_event(s_event,sql);
+	return register_server_event(s_event,sql,no_display);
 
 }
 void ns_image_server::set_main_thread_internal_id() {

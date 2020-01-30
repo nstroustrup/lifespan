@@ -1081,80 +1081,81 @@ void ns_time_path_image_movement_analyzer<allocator_T>::process_raw_images(const
 
 		//now we have calculated all the movement images
 		//and we have all the stabilized region data stored as well
+		if (number_of_paths_to_consider > 0) {
+			image_server_const.add_subtext_to_current_event("\n", (write_status_to_db ? (&sql) : 0));
+			image_server_const.add_subtext_to_current_event(ns_image_server_event("Stabilizing regions of focus..."), (write_status_to_db ? (&sql) : 0));
 
-		image_server_const.add_subtext_to_current_event("\n", (write_status_to_db ? (&sql) : 0));
-		image_server_const.add_subtext_to_current_event(ns_image_server_event("Stabilizing regions of focus..."), (write_status_to_db ? (&sql) : 0));
+			thread_pool.set_number_of_threads(image_server_const.maximum_number_of_processing_threads());
+			thread_pool.prepare_pool_to_run();
 
-		thread_pool.set_number_of_threads(image_server_const.maximum_number_of_processing_threads());
-		thread_pool.prepare_pool_to_run();
+			//we just need to do a few final calculations and then copy everything to long term storage
+			for (unsigned int i = 0; i < groups.size(); i++) {
+				for (unsigned int j = 0; j < groups[i].paths.size(); j++) {
 
-		//we just need to do a few final calculations and then copy everything to long term storage
-		for (unsigned int i = 0; i < groups.size(); i++) {
-			for (unsigned int j = 0; j < groups[i].paths.size(); j++) {
-
-				thread_pool.add_job_while_pool_is_not_running(
-					ns_time_path_image_movement_analyzer_thread_pool_job<allocator_T>(i, j,
-						&ns_time_path_image_movement_analyzer<allocator_T>::finish_up_and_write_to_long_term_storage,
-						this, &shared_state));
-			}
-		}
-
-		thread_pool.run_pool();
-
-		//output progres information
-		if (write_status_to_db) {
-			int last_p(0);
-			while (true) {
-				const int n = thread_pool.number_of_jobs_pending();
-				const int p = (100 * (groups.size() - n)) / groups.size();
-				if (p-last_p >= 5) {
-					ns_acquire_lock_for_scope lock(shared_state.sql_lock, __FILE__, __LINE__);
-					image_server_const.add_subtext_to_current_event(ns_to_string(p) + "%...", (write_status_to_db ? (&sql) : 0));
-					lock.release();
-					last_p = p;
+					thread_pool.add_job_while_pool_is_not_running(
+						ns_time_path_image_movement_analyzer_thread_pool_job<allocator_T>(i, j,
+							&ns_time_path_image_movement_analyzer<allocator_T>::finish_up_and_write_to_long_term_storage,
+							this, &shared_state));
 				}
-				if (n == 0)
-					break;
 			}
-			ns_thread::sleep(3);
-		}
 
-		thread_pool.wait_for_all_threads_to_become_idle();
-		ns_throw_pool_errors<allocator_T> throw_errors;
-		throw_errors(thread_pool, sql);
-		thread_pool.shutdown();
+			thread_pool.run_pool();
 
-		//OK! Now we have /everything/ finished with the images.
-		//calculate some final stats and then we're done.
-		normalize_movement_scores_over_all_paths(e->software_version_number(),times_series_denoising_parameters,sql);
-		//xxx this could be paraellelized if it was worth it.
-		for (unsigned int i = 0; i < groups.size(); i++){
-			for (unsigned int j = 0; j < groups[i].paths.size(); j++){
-						if (ns_skip_low_density_paths && groups[i].paths[j].is_low_density_path())
-								continue;
-				//THIS IS WHERE QUANTIFICATION IS ANALYZED AND DEATH TIMES ARE IDENTIFIED AND ANNOTATIONS ARE GENERATED
-				groups[i].paths[j].analyze_movement(e,ns_stationary_path_id(i,j,analysis_id),last_timepoint_in_analysis_);
-				groups[i].paths[j].calculate_movement_quantification_summary(groups[i].paths[j].movement_analysis_result);
+			//output progres information
+			if (groups.size() > 0 && write_status_to_db) {
+				int last_p(0);
+				while (true) {
+					const int n = thread_pool.number_of_jobs_pending();
+					const int p = (100 * (groups.size() - n)) / groups.size();
+					if (p - last_p >= 5) {
+						ns_acquire_lock_for_scope lock(shared_state.sql_lock, __FILE__, __LINE__);
+						image_server_const.add_subtext_to_current_event(ns_to_string(p) + "%...", (write_status_to_db ? (&sql) : 0));
+						lock.release();
+						last_p = p;
+					}
+					if (n == 0)
+						break;
+				}
+				ns_thread::sleep(3);
 			}
-		}
 
-		//ofstream oo("c:\\out.csv");
-		unsigned long total_groups(0);
-		unsigned long total_skipped(0);
-		for (unsigned int i = 0; i < groups.size(); i++){
-			for (unsigned int j = 0; j < groups[i].paths.size(); j++){
-			//	for (unsigned int k = 0; k < groups[i].paths[j].elements.size(); k++)
-			//		oo << i << "," << j << "," << k << "," << (groups[i].paths[j].elements[k].element_was_processed?1:0) << "\n";
-				const unsigned long c(groups[i].paths[j].number_of_elements_not_processed_correctly());
-				//if (c > 0){
-				//}
-				total_groups+=(c>0)?1:0;
-				total_skipped+=c;
+			thread_pool.wait_for_all_threads_to_become_idle();
+			ns_throw_pool_errors<allocator_T> throw_errors;
+			throw_errors(thread_pool, sql);
+			thread_pool.shutdown();
+
+			//OK! Now we have /everything/ finished with the images.
+			//calculate some final stats and then we're done.
+			normalize_movement_scores_over_all_paths(e->software_version_number(),times_series_denoising_parameters,sql);
+			//xxx this could be paraellelized if it was worth it.
+			for (unsigned int i = 0; i < groups.size(); i++){
+				for (unsigned int j = 0; j < groups[i].paths.size(); j++){
+							if (ns_skip_low_density_paths && groups[i].paths[j].is_low_density_path())
+									continue;
+					//THIS IS WHERE QUANTIFICATION IS ANALYZED AND DEATH TIMES ARE IDENTIFIED AND ANNOTATIONS ARE GENERATED
+					groups[i].paths[j].analyze_movement(e,ns_stationary_path_id(i,j,analysis_id),last_timepoint_in_analysis_);
+					groups[i].paths[j].calculate_movement_quantification_summary(groups[i].paths[j].movement_analysis_result);
+				}
 			}
-		}
 
-		if (total_skipped > 0){
-			throw ns_ex("") << total_skipped << " frames were missed among " << total_groups << " out of a total of " << groups.size() << " path groups.";
+			//ofstream oo("c:\\out.csv");
+			unsigned long total_groups(0);
+			unsigned long total_skipped(0);
+			for (unsigned int i = 0; i < groups.size(); i++){
+				for (unsigned int j = 0; j < groups[i].paths.size(); j++){
+				//	for (unsigned int k = 0; k < groups[i].paths[j].elements.size(); k++)
+				//		oo << i << "," << j << "," << k << "," << (groups[i].paths[j].elements[k].element_was_processed?1:0) << "\n";
+					const unsigned long c(groups[i].paths[j].number_of_elements_not_processed_correctly());
+					//if (c > 0){
+					//}
+					total_groups+=(c>0)?1:0;
+					total_skipped+=c;
+				}
+			}
+
+			if (total_skipped > 0){
+				throw ns_ex("") << total_skipped << " frames were missed among " << total_groups << " out of a total of " << groups.size() << " path groups.";
+			}
 		}
 		generate_movement_description_series();
 

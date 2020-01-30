@@ -213,6 +213,7 @@ void ns_machine_analysis_data_loader::load_just_survival(ns_lifespan_experiment_
 }
 void ns_machine_analysis_data_loader::load(const ns_death_time_annotation_set::ns_annotation_type_to_load & annotation_types_to_load,const ns_64_bit region_id, ns_64_bit sample_id, ns_64_bit experiment_id_a, ns_sql & sql,
 				const bool load_excluded_regions, const ns_machine_analysis_region_data::ns_loading_details & details){
+	samples.resize(0);
 	set_up_spec_to_load(region_id,sample_id,experiment_id_a,sql,load_excluded_regions);
 
 	ns_region_metadata metadata;
@@ -286,6 +287,7 @@ void ns_machine_analysis_data_loader::set_up_spec_to_load(const ns_64_bit & regi
 			sql << " AND id = " << sample_id;
 		ns_sql_result samp;
 		sql.get_rows(samp);
+		samples.resize(0);
 		samples.resize(samp.size());
 		for (unsigned int i = 0; i < samp.size(); i++)
 			samples[i].set_id(ns_atoi64(samp[i][0].c_str()));

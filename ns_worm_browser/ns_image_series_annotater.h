@@ -218,7 +218,7 @@ public:
 		current_image.loaded = false;
 		image_buffer_access_lock.release();
 	}
-	virtual void save_annotations(const ns_death_time_annotation_set & extra_annotations)const=0 ;
+	virtual void save_annotations(const ns_death_time_annotation_set & extra_annotations, std::set<ns_64_bit> & regions_modified)const=0 ;
 
 	bool jump_to_position(unsigned long new_timepoint_id,ns_handle_error_handler error_handler, double external_rescale_factor, bool asynch = false) {
 		ns_acquire_lock_for_scope lock(image_buffer_access_lock, __FILE__, __LINE__);
@@ -394,7 +394,7 @@ public:
 	typedef enum {ns_cycle_state, ns_cycle_state_alt_key_held,ns_censor,ns_annotate_extra_worm, ns_censor_all,ns_load_worm_details, ns_cycle_flags,ns_output_images,ns_increase_contrast,ns_decrease_contrast,ns_time_zoom_in,ns_time_zoom_out} ns_click_request;
 	virtual void register_click(const ns_vector_2i & image_position,const ns_click_request & action, double external_rescale_factor)=0;
 
-	virtual bool data_saved() const=0;
+	virtual bool data_needs_saving() const=0;
 	
 	void request_refresh(){refresh_requested_ = true;}
 	bool refresh_requested(){return refresh_requested_;}

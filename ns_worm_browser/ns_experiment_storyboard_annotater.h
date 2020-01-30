@@ -459,7 +459,7 @@ private:
 
 	enum {default_resize_factor=2,max_buffer_size = 6};
 
-	mutable bool saved_;
+	mutable std::set<ns_64_bit> regions_modified_but_not_saved;
 	ns_region_metadata strain_to_display;
 	ns_censor_masking censor_masking;
 	typedef std::map<ns_64_bit,bool> ns_event_display_spec_list;
@@ -505,8 +505,8 @@ public:
 	void set_resize_factor(const unsigned long resize_factor_){
 		resize_factor = resize_factor_;
 	}
-	bool data_saved()const{return saved_;}
-	ns_experiment_storyboard_annotater(const unsigned long res):ns_image_series_annotater(res,0), draw_group_ids(0),saved_(true),precache_sql_connection(0),run_precaching(false), precaching_lock("pcl"){}
+	bool data_needs_saving()const{return !regions_modified_but_not_saved.empty();}
+	ns_experiment_storyboard_annotater(const unsigned long res):ns_image_series_annotater(res,0), draw_group_ids(0),precache_sql_connection(0),run_precaching(false), precaching_lock("pcl"){}
 	~ns_experiment_storyboard_annotater() {
 		run_precaching = false;
 		precaching_lock.wait_to_acquire(__FILE__, __LINE__);
@@ -525,13 +525,14 @@ public:
 		//annotations are loaded automatically when storyboard is loaded.
 		return true;
 	}
-	void save_annotations(const ns_death_time_annotation_set & extra_annotations) const{
+	void save_annotations(const ns_death_time_annotation_set & extra_annotations, std::set<ns_64_bit> & regions_modified) const{
 		ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
 		storyboard.save_by_hand_annotations(sql(),extra_annotations);
 		sql.release();
 		ns_update_main_information_bar("Annotations saved at " + ns_format_time_string_for_human(ns_current_time()));
 		ns_update_worm_information_bar("Annotations saved at " + ns_format_time_string_for_human(ns_current_time()));
-		saved_=true;
+		regions_modified = std::move(regions_modified_but_not_saved);
+		regions_modified_but_not_saved.clear();
 	};
 	void redraw_current_metadata(double external_resize_factor){
 		draw_metadata(&divisions[current_timepoint_id],*current_image.im, external_resize_factor);
@@ -542,15 +543,15 @@ public:
 	void specifiy_worm_details(const ns_64_bit region_id,const ns_stationary_path_id & worm, const ns_death_time_annotation & sticky_properties, std::vector<ns_death_time_annotation> & movement_event_times){
 		if (!worm.specified())
 			throw ns_ex("ns_experiment_storyboard_annotater::specifiy_worm_details()::Requesting specification with unspecified path id");
-		
-		int found_count(0);
+		int found_count(0); 
 		//search all divisions
 		for (unsigned long j = 0; j < divisions.size(); j++){ 
 			for (unsigned long i = 0; i < divisions[j].division->events.size(); i++){
 				if (divisions[j].division->events[i].event_annotation.region_info_id == region_id &&
 					divisions[j].division->events[i].event_annotation.stationary_path_id == worm){
-				divisions[j].division->events[i].specify_by_hand_annotations(sticky_properties,movement_event_times);
-				found_count++;
+					regions_modified_but_not_saved.insert(divisions[j].division->events[i].event_annotation.region_info_id);
+					divisions[j].division->events[i].specify_by_hand_annotations(sticky_properties,movement_event_times);
+					found_count++;
 				}
 			}
 		}
@@ -574,7 +575,7 @@ public:
 	}
 	void clear() {
 		clear_base();
-		saved_ = false;
+		regions_modified_but_not_saved.clear();
 		divisions.resize(0);
 		storyboard.clear();
 		strain_to_display.clear();

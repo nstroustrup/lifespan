@@ -3705,7 +3705,11 @@ struct ns_immediately_recalc_censoring_job {
 			analyze_worm_movement_across_frames(job, &image_server, *p.sql, false);
 		}
 		catch (ns_ex & ex) {
-			*p.sql << "SELECT s.name, r.name FROM capture_samples as s, sample_region_image_info as r WHERE r.id = " << region_id << " AND s.id = r.sample_id";
+			*p.sql << "SELECT s.name, r.name FROM capture_samples as s, sample_region_image_info as r WHERE r.id = " << region_id << " AND s.id = r.sample_id"; 
+			ns_sql_result res;
+			p.sql->get_rows(res); 
+			if (res.size() != 0)
+				region_name = res[0][0] + "_" + res[0][1];
 			image_server.add_subtext_to_current_event("Region " + region_name + ": " + ex.text(), p.sql);
 			ns_acquire_lock_for_scope lock(common_data->problem_lock, __FILE__, __LINE__);
 			common_data->problems.push_back("Region " + region_name + ": " + ex.text());
@@ -6199,7 +6203,7 @@ bool ns_worm_learner::register_main_window_key_press(int key, const bool shift_k
 bool ns_worm_learner::prompt_to_save_death_time_annotations(){
 	if (current_annotater == 0)
 		throw ns_ex("No Annotater Specified!");
-	if (current_annotater->data_saved()){
+	if (!current_annotater->data_needs_saving()){
 		std::cout << "No Save Required.\n";
 		return true;
 	}
@@ -6231,12 +6235,20 @@ void ns_worm_learner::save_death_time_annotations(ns_sql & sql){
 			death_time_solo_annotater.add_annotations_to_set(set,orphans);
 			//discard orphans
 	}*/
-	current_annotater->save_annotations(set);
-	std::set<ns_64_bit> region_ids;
-	
+	std::set<ns_64_bit> regions_altered;
+	current_annotater->save_annotations(set, regions_altered);
 	if (behavior_mode == ns_worm_learner::ns_annotate_storyboard_experiment) {
-		sql << "UPDATE sample_region_image_info as r, capture_samples as s SET "
-			<< "r.latest_by_hand_annotation_timestamp = UNIX_TIMESTAMP(NOW()) WHERE r.sample_id = s.id AND s.experiment_id = " << data_selector.current_experiment_id();
+		if (regions_altered.empty()) {
+			cerr << "No regions were altered.\n";
+			return;
+		}
+		
+		std::set<ns_64_bit>::const_iterator p = regions_altered.begin();
+		sql << "UPDATE sample_region_image_info SET "
+			<< "latest_by_hand_annotation_timestamp = UNIX_TIMESTAMP(NOW()) WHERE id = " << *p;
+		++p;
+		for (; p != regions_altered.end(); ++p)
+			sql << " || id = " << *p;
 		sql.send_query();
 	}
 	else {
@@ -7209,7 +7221,7 @@ void ns_experiment_storyboard_annotater::load_from_storyboard(const ns_region_me
 	}
 
 	draw_metadata(&divisions[current_timepoint_id], *current_image.im,external_rescale_factor);
-	this->saved_ = true;
+
 	request_refresh();
 	lock.release();
 }
@@ -8620,6 +8632,7 @@ void ns_experiment_storyboard_annotater::register_statistics_click(const ns_vect
 void ns_experiment_storyboard_annotater::register_click(const ns_vector_2i & image_position, const ns_click_request & action, double external_rescale_factor) {
 	if (divisions[current_timepoint_id].division->events.size() == 0)
 		return;
+
 	ns_acquire_lock_for_scope lock(image_buffer_access_lock, __FILE__, __LINE__);
 	if (action == ns_censor_all) {
 		bool new_state = false;
@@ -8635,6 +8648,7 @@ void ns_experiment_storyboard_annotater::register_click(const ns_vector_2i & ima
 			if (divisions[current_timepoint_id].division->events[i].event_annotation.flag.specified())
 				continue;
 			divisions[current_timepoint_id].division->events[i].event_annotation.excluded = new_state ? ns_death_time_annotation::ns_by_hand_excluded : ns_death_time_annotation::ns_not_excluded;
+			regions_modified_but_not_saved.insert(divisions[current_timepoint_id].division->events[i].event_annotation.region_info_id);
 		}
 
 		for (unsigned int i = 0; i < divisions.size(); i++) {
@@ -8645,8 +8659,10 @@ void ns_experiment_storyboard_annotater::register_click(const ns_vector_2i & ima
 					if (divisions[current_timepoint_id].division->events[k].event_annotation.flag.specified())
 						continue;
 					if (divisions[i].division->events[j].event_annotation.stationary_path_id == divisions[current_timepoint_id].division->events[k].event_annotation.stationary_path_id &&
-						divisions[i].division->events[j].event_annotation.region_info_id == divisions[current_timepoint_id].division->events[k].event_annotation.region_info_id)
+						divisions[i].division->events[j].event_annotation.region_info_id == divisions[current_timepoint_id].division->events[k].event_annotation.region_info_id) {
 						divisions[i].division->events[j].event_annotation.excluded = new_state ? ns_death_time_annotation::ns_by_hand_excluded : ns_death_time_annotation::ns_not_excluded;
+						regions_modified_but_not_saved.insert(divisions[i].division->events[j].event_annotation.region_info_id);
+					}
 				}
 			}
 		}
@@ -8666,13 +8682,16 @@ void ns_experiment_storyboard_annotater::register_click(const ns_vector_2i & ima
 			return;
 		}
 		std::vector<ns_experiment_storyboard_timepoint_element *> worms(1, worm);
+		regions_modified_but_not_saved.insert(worm->event_annotation.region_info_id);
 		for (unsigned int i = 0; i < divisions.size(); i++) {
 			if (i == current_timepoint_id)
 				continue;
 			for (unsigned int j = 0; j < divisions[i].division->events.size(); j++) {
 				if (divisions[i].division->events[j].event_annotation.stationary_path_id == worm->event_annotation.stationary_path_id &&
-					divisions[i].division->events[j].event_annotation.region_info_id == worm->event_annotation.region_info_id)
+					divisions[i].division->events[j].event_annotation.region_info_id == worm->event_annotation.region_info_id) {
 					worms.push_back(&divisions[i].division->events[j]);
+					regions_modified_but_not_saved.insert(divisions[i].division->events[j].event_annotation.region_info_id);
+				}
 			}
 		}
 		//	if (worms.size() > 1)
@@ -8710,7 +8729,6 @@ void ns_experiment_storyboard_annotater::register_click(const ns_vector_2i & ima
 			}
 		}
 	}
-	saved_ = false;
 	draw_metadata(&divisions[current_timepoint_id], *current_image.im, external_rescale_factor);
 	request_refresh();
 

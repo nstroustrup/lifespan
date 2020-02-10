@@ -12,7 +12,7 @@
 #include "ns_experiment_storyboard.h"
 #include "ns_analyze_movement_over_time.h"
 #include "ns_hand_annotation_loader.h"
-#define IDLE_THROTTLE_FPS 90
+#define IDLE_THROTTLE_FPS 40
 #define SCALE_FONTS_WITH_WINDOW_SIZE 0
 
 bool output_debug_messages = false;
@@ -1410,6 +1410,7 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 		get_menu_handler()->update_experiment_choice(*get_menu_bar());
 		try {
 			image_server.update_posture_analysis_model_registry(worm_learner.get_sql_connection(), false);
+			image_server.update_worm_detection_model_registry(worm_learner.get_sql_connection(), false);
 		}
 		catch (ns_ex& ex) {
 			image_server.register_server_event(ex, &worm_learner.get_sql_connection());

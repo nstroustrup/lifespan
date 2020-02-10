@@ -3807,7 +3807,7 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 			for (unsigned int i = 0; i < regions_needing_censoring_recalculation.size(); i++) 
 				thread_pool.add_job_while_pool_is_not_running(ns_immediately_recalc_censoring_job(regions_needing_censoring_recalculation[i], &data));
 			thread_pool.run_pool();
-
+			Fl::awake();
 			thread_pool.wait_for_all_threads_to_become_idle();
 			ns_immediately_recalc_censoring_job tmp;
 			ns_ex tmp2;

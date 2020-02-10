@@ -12,7 +12,7 @@
 #include "ns_experiment_storyboard.h"
 #include "ns_analyze_movement_over_time.h"
 #include "ns_hand_annotation_loader.h"
-#define IDLE_THROTTLE_FPS 90
+#define IDLE_THROTTLE_FPS 40
 #define SCALE_FONTS_WITH_WINDOW_SIZE 0
 
 bool output_debug_messages = false;

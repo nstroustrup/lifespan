@@ -46,7 +46,7 @@ public:
 	typedef enum { ns_group_by_device, ns_group_by_strain, ns_aggregate_all, ns_group_by_death_type, ns_survival_grouping_num} ns_survival_grouping;
 	typedef enum { ns_plot_death_times_absolute, ns_plot_death_times_residual,ns_movement_plot_num } ns_movement_plot_type;
 	typedef enum { ns_plot_best_guess, ns_plot_expansion_death, ns_plot_movement_death,ns_death_plot_num } ns_death_plot_type;
-	typedef enum { ns_plot_death_types, ns_by_hand_machine,ns_best_guess_vs_best_guess,ns_regression_type_num } ns_regression_type;
+	typedef enum { ns_best_guess_vs_best_guess,ns_plot_death_types, ns_by_hand_machine,ns_regression_type_num } ns_regression_type;
 	
 	static std::string survival_grouping_name(const ns_survival_grouping& g) {
 		switch (g) {
@@ -332,6 +332,8 @@ public:
 		last_graph_contents = ns_none;
 		last_start_time = 0;
 		last_stop_time = 0;
+		subject_region = 0;
+		stats_subset_strain_to_display.clear();
 	}
 	unsigned long get_graph_time_from_graph_position(const float x) { //x is in relative time
 		//xxx not done
@@ -840,10 +842,11 @@ public:
 							}
 
 						}
-						else if (regression_plot = ns_best_guess_vs_best_guess) {
+						else if (regression_plot == ns_best_guess_vs_best_guess) {
 
 							movement_vs_posture_x_axis_label = "Event Time (days)";
 							movement_vs_posture_y_axis_label = "Event Time (days)";
+
 
 							if (death_plot == ns_plot_movement_death) {
 								if (set.descriptions[i].by_hand.movement_based_death_annotation != 0) {
@@ -855,7 +858,7 @@ public:
 									pair_to_plot[0].second = set.descriptions[i].machine.movement_based_death_annotation;
 								}
 							}
-							else {
+							else if (death_plot == ns_plot_expansion_death) {
 								if (set.descriptions[i].by_hand.death_associated_expansion_start != 0) {
 									pair_to_plot[0].first = set.descriptions[i].by_hand.death_associated_expansion_start;
 									pair_to_plot[0].second = set.descriptions[i].by_hand.death_associated_expansion_start;
@@ -867,6 +870,21 @@ public:
 									}
 								}
 							}
+							else if (death_plot == ns_plot_best_guess) {
+								const ns_death_time_annotation* movement,
+									* death_associated_expansion;
+								if (set.descriptions[i].by_hand.movement_based_death_annotation != 0)
+									movement = set.descriptions[i].by_hand.movement_based_death_annotation;
+								else
+									movement = set.descriptions[i].machine.movement_based_death_annotation;
+
+								if (set.descriptions[i].by_hand.death_associated_expansion_start != 0)
+									death_associated_expansion = set.descriptions[i].by_hand.death_associated_expansion_start;
+								else
+									death_associated_expansion = set.descriptions[i].machine.death_associated_expansion_start;
+								pair_to_plot[0].first = pair_to_plot[0].second = ns_dying_animal_description_group<ns_death_time_annotation_time_interval>::calculate_best_guess_death_annotation(movement, death_associated_expansion);
+							}
+							else throw ns_ex("Unknown death plot type!");
 						}
 					}
 

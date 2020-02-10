@@ -3615,7 +3615,6 @@ void ns_image_server::update_worm_detection_model_registry(ns_sql& sql, bool for
 
 	std::string model_directory = image_server.long_term_storage_directory + DIR_CHAR_STR + image_server.worm_detection_model_directory() + DIR_CHAR_STR;
 
-	cout << "Updating Worm Detection Model Registry\n";
 
 	std::map<std::string, ns_worm_detection_model_registry_info> model_files_on_disk;
 	unsigned long latest_change_in_directory = 0;

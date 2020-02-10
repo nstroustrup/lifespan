@@ -1410,6 +1410,7 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 		get_menu_handler()->update_experiment_choice(*get_menu_bar());
 		try {
 			image_server.update_posture_analysis_model_registry(worm_learner.get_sql_connection(), false);
+			image_server.update_worm_detection_model_registry(worm_learner.get_sql_connection(), false);
 		}
 		catch (ns_ex& ex) {
 			image_server.register_server_event(ex, &worm_learner.get_sql_connection());

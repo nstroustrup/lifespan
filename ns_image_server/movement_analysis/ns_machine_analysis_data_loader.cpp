@@ -5,6 +5,7 @@
 #include <iostream>
 #include "ns_hand_annotation_loader.h"
 #include "ns_hidden_markov_model_posture_analyzer.h"
+#ifdef ZOO23
 bool ns_machine_analysis_region_data::load_from_db(const ns_death_time_annotation_set::ns_annotation_type_to_load & annotation_type_to_load,const ns_loading_details & details,const ns_64_bit region_id,ns_sql & sql){
 	death_time_annotation_set.clear();
 	metadata.region_id = region_id;
@@ -86,7 +87,7 @@ bool ns_machine_analysis_region_data::recalculate_from_saved_movement_quantifica
 	const ns_time_series_denoising_parameters time_series_denoising_parameters(ns_time_series_denoising_parameters::load_from_db(region_id,sql));
 	ns_time_path_solver solver;
 	solver.load(region_id,sql);
-	solver.solve(solver_parameters,time_path_solution,&sql);
+	solver.solve(solver_parameters,time_path_solution);
 	time_path_solution.save_to_db(region_id,sql);
 	//time_path_solution.load_from_db(region_id,sql);
 
@@ -296,3 +297,4 @@ ns_time_series_denoising_parameters ns_time_series_denoising_parameters::load_fr
 
 	return p;
 }
+#endif

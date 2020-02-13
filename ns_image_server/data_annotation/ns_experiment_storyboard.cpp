@@ -750,8 +750,8 @@ bool ns_experiment_storyboard::load_events_from_annotation_compiler(const ns_loa
 					if (!region_state_events_loaded){
 						region_state_annotations.load(ns_death_time_annotation_set::ns_movement_states,r->second.metadata.region_id,0,0,sql,true,ns_machine_analysis_region_data::ns_exclude_fast_moving_animals);
 
-						for (unsigned long i = 0; i < region_state_annotations.samples.begin()->regions.begin()->death_time_annotation_set.size(); i++){
-							r->second.add(region_state_annotations.samples.begin()->regions.begin()->death_time_annotation_set[i],false);
+						for (unsigned long i = 0; i < (*region_state_annotations.samples.begin()->regions.begin())->death_time_annotation_set.size(); i++){
+						  r->second.add((*region_state_annotations.samples.begin()->regions.begin())->death_time_annotation_set[i],false);
 						}
 						region_state_events_loaded = true;
 					}
@@ -1267,9 +1267,9 @@ bool ns_experiment_storyboard::create_storyboard_metadata_from_machine_annotatio
 		spec.region_id,spec.sample_id,experiment_ids[0],sql,true,ns_machine_analysis_region_data::ns_exclude_fast_moving_animals);
 	for (unsigned int i = 0; i < machine_annotations.samples.size(); i++){
 		for (unsigned int j = 0; j < machine_annotations.samples[i].regions.size(); j++){
-			all_events.add(machine_annotations.samples[i].regions[j].death_time_annotation_set);
-			all_events.specifiy_region_metadata(machine_annotations.samples[i].regions[j].metadata.region_id,
-																	machine_annotations.samples[i].regions[j].metadata);
+			all_events.add(machine_annotations.samples[i].regions[j]->death_time_annotation_set);
+			all_events.specifiy_region_metadata(machine_annotations.samples[i].regions[j]->metadata.region_id,
+																	machine_annotations.samples[i].regions[j]->metadata);
 		}
 
 	}

@@ -2366,14 +2366,14 @@ const ns_death_time_annotation_compiler & ns_lifespan_curve_cache_entry::get_reg
 		machine_loader.load(a,id,0,0,sql);
 		for (unsigned int i = 0; i < machine_loader.samples.size(); i++){
 			for (unsigned int j = 0; j < machine_loader.samples[i].regions.size(); j++){
-				p->second.compiler.add(machine_loader.samples[i].regions[j].death_time_annotation_set,machine_loader.samples[i].regions[j].metadata);
+				p->second.compiler.add(machine_loader.samples[i].regions[j]->death_time_annotation_set,machine_loader.samples[i].regions[j]->metadata);
 				//hand annotations are already loaded
 				ns_hand_annotation_loader hand;
 				hand.load_region_annotations(ns_death_time_annotation_set::ns_censoring_data,
-					machine_loader.samples[i].regions[j].metadata.region_id,
-					machine_loader.samples[i].regions[j].metadata.experiment_id,
-					machine_loader.samples[i].regions[j].metadata.experiment_name,
-					machine_loader.samples[i].regions[j].metadata,
+					machine_loader.samples[i].regions[j]->metadata.region_id,
+					machine_loader.samples[i].regions[j]->metadata.experiment_id,
+					machine_loader.samples[i].regions[j]->metadata.experiment_name,
+					machine_loader.samples[i].regions[j]->metadata,
 					sql);
 		//		cached_risk_timeseries_metadata = machine_loader.samples[i].regions[j].metadata;
 				p->second.compiler.add(hand.annotations);

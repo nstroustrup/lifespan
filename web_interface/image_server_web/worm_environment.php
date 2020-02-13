@@ -21,7 +21,15 @@ $ns_image_server_visited_link_color = $daily_colors[$ccc][3];
 }
 
 
-$website_version = "1.15";
+$website_version = "1.2";
+
+$captured_image_transfer_status = array(
+				"ns_not_finished"=>0,
+				"ns_on_local_server_in_16bit"=>1,
+				"ns_on_local_server_in_8bit"=>2,
+				"ns_transferred_to_long_term_storage"=>5,
+				"ns_transfer_complete"=>3,
+				"ns_fatal_problem"=>4);
 
 define("NS_SPATIAL_NORM", 1);
 define("NS_TEMPORAL_NORM", 2);
@@ -97,9 +105,11 @@ try{
   $query = "SHOW DATABASES";
   $sql->get_row($query,$dbs);
   $database_choices = array();
-  if(!isset($database_blacklist)){
-    $database_blacklist = array();
-  }
+  $database_blacklist = array();
+ if(isset($database_choice_blacklist)){
+    foreach($database_choice_blacklist as $a)
+    $database_blacklist[$a] = 1;
+  }  
   $database_blacklist["mysql"] = 1;
   $database_blacklist["test"] = 1;
   $database_blacklist["information_schema"] = 1;

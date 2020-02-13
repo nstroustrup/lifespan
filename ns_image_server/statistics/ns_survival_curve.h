@@ -104,8 +104,8 @@ struct ns_survival_timepoint_event_count{
 };
 	
 struct ns_metadata_worm_properties{
-	ns_metadata_worm_properties():events(0),properties_override_set(false),control_group(-1){}
-	typedef enum{ns_long_distance_movement_cessation,ns_local_movement_cessation,ns_death,ns_death_associated_expansion, ns_typeless_censoring_events,ns_number_of_event_types} ns_survival_event_type;
+	ns_metadata_worm_properties():events(0),properties_override_set(false),control_group(-1), event_period_end_time(0), event_type(ns_number_of_event_types){}
+	typedef enum{ns_long_distance_movement_cessation,ns_local_movement_cessation,ns_movement_based_death,ns_death_associated_expansion, ns_typeless_censoring_events,ns_best_guess_death,ns_number_of_event_types} ns_survival_event_type;
 	long control_group;
 	unsigned long event_period_end_time;
 	ns_survival_event_type event_type;
@@ -118,7 +118,8 @@ struct ns_metadata_worm_properties{
 			switch(e){
 				case ns_long_distance_movement_cessation: return "Long Distance Movement Cessation";
 				case ns_local_movement_cessation: return "Local Movement Cessation";
-				case ns_death:	return "Death";
+				case ns_movement_based_death:	return "Movement Cessation";
+				case ns_best_guess_death:	return "Best Guess Death Time";
 				case ns_death_associated_expansion:	return "Death-Associated Expansion";
 				case ns_typeless_censoring_events:	return "Censoring Event";
 				default: throw ns_ex("ns_region_metadata::event_type_to_string()::Unknown Event Type");
@@ -161,15 +162,17 @@ struct ns_survival_timepoint_event{
 //ns_survival_timepoint_event operator+(const ns_survival_timepoint_event & a, const ns_survival_timepoint_event & b);
 
 struct ns_survival_timepoint{
-	ns_survival_timepoint():absolute_time(0){}
+	ns_survival_timepoint():absolute_time(0), best_guess_deaths_disambiguated(false){}
 	
 	unsigned long absolute_time;
-	ns_survival_timepoint_event deaths,
+	ns_survival_timepoint_event movement_based_deaths,
 		long_distance_movement_cessations,
 		local_movement_cessations,
 		death_associated_expansions,
+		best_guess_deaths,	//note that immediately after loading, this structure will contain /both/ death movement based and death_associated death times.  This is then sorted out later.
 		typeless_censoring_events;
 	void add(const ns_survival_timepoint & t);
+	bool best_guess_deaths_disambiguated;
 };
 
 bool operator<(const ns_survival_timepoint & a, const ns_survival_timepoint & b);
@@ -283,10 +286,11 @@ struct ns_survival_statistics{
 	}
 };
 struct ns_multi_event_survival_statistics{
-	ns_survival_statistics death,
+	ns_survival_statistics movement_based_death,
 		long_distance_movement_cessation,
 		local_movement_cessations,
-		death_associated_expansion_start;
+		death_associated_expansion_start,
+		best_guess_death;
 };
 struct ns_survival_data_with_censoring_timeseries{
 	void resize(unsigned long i, const double v);
@@ -316,10 +320,11 @@ struct ns_survival_data_with_censoring{
 	}
 };	
 struct ns_multi_event_survival_data_with_censoring{
-	ns_survival_data_with_censoring death,
+	ns_survival_data_with_censoring movement_based_death,
 		long_distance_movement_cessation,
 		local_movement_cessations,
-		death_associated_expansion_start;
+		death_associated_expansion_start,
+		best_guess_death;
 };
 
 class ns_survival_data{
@@ -338,15 +343,19 @@ public:
 	//void calculate_survival();
 	
 	void genenerate_survival_statistics();
+	void detetermine_best_guess_death_times();
 	void convert_absolute_times_to_ages();
 
 	//ns_survival_data_summary produce_summary() const;
 private:
 	void generate_risk_timeseries(){
-		generate_risk_timeseries(ns_movement_cessation,risk_timeseries.death);
+		generate_risk_timeseries(ns_movement_cessation,risk_timeseries.movement_based_death);
 		generate_risk_timeseries(ns_translation_cessation,risk_timeseries.local_movement_cessations);
 		generate_risk_timeseries(ns_fast_movement_cessation,risk_timeseries.long_distance_movement_cessation);
 		generate_risk_timeseries(ns_death_associated_expansion_start, risk_timeseries.death_associated_expansion_start);
+		generate_risk_timeseries(ns_death_associated_expansion_start, risk_timeseries.death_associated_expansion_start);
+		//special case using ns_additional_worm_entry as a special flag to indicate choosing the best guess death time
+		generate_risk_timeseries(ns_additional_worm_entry, risk_timeseries.best_guess_death);
 	}
 	void generate_risk_timeseries(const ns_movement_event & event_type,ns_survival_data_with_censoring & survival) const;
 	
@@ -549,7 +558,7 @@ public:
 
 	typedef enum {ns_do_not_include_control_groups,ns_include_control_groups} ns_control_group_behavior;
 
-	void generate_aggregate_risk_timeseries(const ns_region_metadata & m, bool filter_by_strain, const std::string& specific_device, const ns_64_bit& specific_region_id, ns_survival_data_with_censoring& movement_based_survival, ns_survival_data_with_censoring& death_associated_expansion_survival, std::vector<unsigned long> & t, bool use_external_time) const;
+	void generate_aggregate_risk_timeseries(const ns_region_metadata & m, bool filter_by_strain, const std::string& specific_device, const ns_64_bit& specific_region_id, ns_survival_data_with_censoring& best_guess_survival, ns_survival_data_with_censoring& movement_based_survival, ns_survival_data_with_censoring& death_associated_expansion_survival, std::vector<unsigned long> & t, bool use_external_time) const;
 
 	static void out_detailed_JMP_header(const ns_time_handing_behavior & time_handling_behavior, std::ostream & o, const std::string & time_units,const std::string & terminator="\n");
 	static void out_detailed_JMP_event_data(const ns_time_handing_behavior & time_handling_behavior,std::ostream & o, const ns_lifespan_device_normalization_statistics * regression_stats,const ns_region_metadata & metadata,const ns_metadata_worm_properties & prop,const double time_scaling_factor,const std::string & terminator="\n", const bool output_raw_data_as_regression=false,const bool output_full_censoring_detail=false);

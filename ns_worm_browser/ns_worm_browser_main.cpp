@@ -12,7 +12,7 @@
 #include "ns_experiment_storyboard.h"
 #include "ns_analyze_movement_over_time.h"
 #include "ns_hand_annotation_loader.h"
-#define IDLE_THROTTLE_FPS 90
+#define IDLE_THROTTLE_FPS 40
 #define SCALE_FONTS_WITH_WINDOW_SIZE 0
 
 bool output_debug_messages = false;
@@ -1410,6 +1410,7 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 		get_menu_handler()->update_experiment_choice(*get_menu_bar());
 		try {
 			image_server.update_posture_analysis_model_registry(worm_learner.get_sql_connection(), false);
+			image_server.update_worm_detection_model_registry(worm_learner.get_sql_connection(), false);
 		}
 		catch (ns_ex& ex) {
 			image_server.register_server_event(ex, &worm_learner.get_sql_connection());
@@ -1717,7 +1718,7 @@ class ns_stats_survival_grouping_menu_organizer : public ns_menu_organizer {
 		ns_set_menu_bar_activity(false);
 		worm_learner.storyboard_annotater.population_telemetry.survival_grouping = ns_population_telemetry::survival_grouping_type(s);
 		::update_stats_menus();
-		worm_learner.storyboard_annotater.recalculate_telemetry();
+		worm_learner.storyboard_annotater.replot_telemetry();
 		//worm_learner.storyboard_annotater.draw_telemetry();
 		report_changes_made_to_screen();
 		ns_set_menu_bar_activity(true);
@@ -1757,7 +1758,7 @@ class ns_death_types_plotting_menu_organizer : public ns_menu_organizer {
 		ns_set_menu_bar_activity(false);
 		worm_learner.storyboard_annotater.population_telemetry.death_plot = ns_population_telemetry::death_plot_type(s);
 		::update_stats_menus();
-		worm_learner.storyboard_annotater.recalculate_telemetry();
+		worm_learner.storyboard_annotater.replot_telemetry();
 		//worm_learner.storyboard_annotater.draw_telemetry();
 		report_changes_made_to_screen();
 		ns_set_menu_bar_activity(true);
@@ -1801,7 +1802,7 @@ class ns_movement_graph_plotting_menu_organizer : public ns_menu_organizer {
 			}
 		}
 		::update_stats_menus();
-		worm_learner.storyboard_annotater.recalculate_telemetry();
+		worm_learner.storyboard_annotater.replot_telemetry();
 		//worm_learner.storyboard_annotater.draw_telemetry();
 		report_changes_made_to_screen();
 		ns_set_menu_bar_activity(true);
@@ -1820,7 +1821,7 @@ public:
 	void update_menus() {
 		ns_menu_item_spec spec(select_spec, "Regression Plot");
 
-		for (unsigned int i = 0; i < (int)ns_population_telemetry::ns_death_plot_num; i++) {
+		for (unsigned int i = 0; i < (int)ns_population_telemetry::ns_movement_plot_num; i++) {
 			ns_population_telemetry::ns_movement_plot_type g = (ns_population_telemetry::ns_movement_plot_type)i;
 			spec.options.push_back("Plot/Plot " + ns_population_telemetry::movement_plot_name(g));
 		}
@@ -1997,7 +1998,7 @@ public:
 		if (worm_learner.statistics_data_selector.strain_selected())
 			strain = worm_learner.statistics_data_selector.current_strain();
 		worm_learner.storyboard_annotater.population_telemetry.set_subject(region_id, strain);
-		worm_learner.storyboard_annotater.recalculate_telemetry();
+		worm_learner.storyboard_annotater.replot_telemetry();
 		//worm_learner.storyboard_annotater.draw_telemetry();
 		ns_set_menu_bar_activity(true);
 		report_changes_made_to_screen();
@@ -2183,7 +2184,7 @@ public:
 		if (worm_learner.statistics_data_selector.strain_selected())
 			strain = worm_learner.statistics_data_selector.current_strain();
 		worm_learner.storyboard_annotater.population_telemetry.set_subject(region_id, strain);
-		worm_learner.storyboard_annotater.recalculate_telemetry();
+		worm_learner.storyboard_annotater.replot_telemetry();
 		//worm_learner.storyboard_annotater.draw_telemetry();
 		report_changes_made_to_screen();
 		ns_set_menu_bar_activity(true);
@@ -3192,7 +3193,7 @@ void ns_handle_stats_annotation_button(Fl_Widget* w, void* data) {
 	switch (action) {
 	case ns_image_series_annotater::ns_recalculate:
 		image_server.register_server_event_no_db(ns_image_server_event("Re-calculating survival statistics"));
-		worm_learner.storyboard_annotater.recalculate_telemetry();
+		worm_learner.storyboard_annotater.rebuild_telemetry_with_by_hand_annotations();
 		break;
 	case ns_image_series_annotater::ns_switch_grouping:
 		break;
@@ -3241,7 +3242,7 @@ void update_stats_menus() {
 }
 
 void ns_update_main_information_bar(const std::string & status){
-	cerr << status;
+	cerr << status << "\n";
 	main_window->update_information_bar(status);
 }
 void ns_update_worm_information_bar(const std::string & status) {
@@ -3944,6 +3945,7 @@ void ns_run_startup_routines() {
 		}
 		try {
 			image_server.update_posture_analysis_model_registry(sql(), false);
+			image_server.update_worm_detection_model_registry(sql(), false);
 		}
 		catch (ns_ex& ex) {
 			image_server_const.register_server_event(ex, &sql());

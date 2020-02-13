@@ -5,23 +5,29 @@ require_once('ns_dir.php');
 require_once('ns_experiment.php');
 require_once('ns_processing_job.php');
 
-function output_model_choice($field_name,$model_selected,$model_analysis_method,$disabled,&$sql){
-	global $db_name, $ns_posture_analysis_model_type;
+function output_model_choice($field_name,$model_selected,$selected_model_analysis_method,$analysis_step,$disabled,&$sql){
+	global $db_name, $ns_posture_analysis_model_type,$ns_worm_detection_model_type;
+	$check_analysis_type = false;
+	if ($analysis_step == 'posture'){
+		$model_type_names = $ns_posture_analysis_model_type;
+		$check_analysis_type = true;
+	}
+	else $model_type_names = $ns_worm_detection_model_type;
 	$query = "SELECT * FROM information_schema.tables WHERE table_name = 'analysis_model_registry' AND table_schema = '$db_name'";
 	$sql->get_row($query,$res);
 	if (sizeof($res)==0){
 		echo "No model registry exists. Update your sql db.";
 		return;
 	}
-	$query = "SELECT name, version, analysis_method FROM analysis_model_registry WHERE analysis_step='posture'";
+	$query = "SELECT name, version, analysis_method FROM analysis_model_registry WHERE analysis_step='$analysis_step'";
 	$sql->get_row($query,$res);
 	$model_tree = array();
 	for ($i = 0; $i < sizeof($res); $i++){
-		$model_tree[$ns_posture_analysis_model_type[$res[$i][2]]] = array();
+		$model_tree[$model_type_names[$res[$i][2]]] = array();
 	}
 	$model_tree = array_reverse($model_tree);
 	for ($i = 0; $i < sizeof($res); $i++)
-                array_push($model_tree[$ns_posture_analysis_model_type[$res[$i][2]]],$res[$i]);
+                array_push($model_tree[$model_type_names[$res[$i][2]]],$res[$i]);
         //echo "zzz".$model_analysis_method."zzz";
 	echo "<select name=\"$field_name\"";
 	if ($disabled) echo "disabled";
@@ -29,11 +35,14 @@ function output_model_choice($field_name,$model_selected,$model_analysis_method,
 	foreach($model_tree as $model_type=>&$models){
 		echo "<optgroup label=\"$model_type\">\n";
 		foreach($models as $model){
-			echo '<option value="' . $model[0] . "=".$model[2].'"';
-			if ($model_selected == $model[0] && $model_analysis_method == $model[2])
+		#echo '"'.$model[2].'"' . $model_analysis_method;
+			echo '<option value="' . $model[0] ;
+			if ($check_analysis_type)echo "=".$model[2];
+			echo '"';
+			if ($model_selected == $model[0] && (!$check_analysis_type ||$selected_model_analysis_method == $model[2]))
 				echo " selected";
 			echo '>' . $model[0] ." (" . $model[1] . ")</option>\n";
-		}	
+		}
 		echo "</optgroup>\n";
 	}
 	echo "</select>";
@@ -60,6 +69,13 @@ if (ns_param_spec($_POST,'detail_level')){
      $external_detail_spec = TRUE;
  }
 
+
+
+if (ns_param_spec($query_string,'reset_model_registry')){
+   $query = "DELETE from analysis_model_registry WHERE analysis_step='posture'";
+   $sql->send_query($query);
+   header("Location: manage_experiment_analysis_configuration.php?$query_parameters\n\n");
+}
 if (ns_param_spec($_POST,'set_as_default'))
    $set_as_default = $_POST['set_as_default']=="yes";
 else $set_as_default = FALSE;
@@ -73,7 +89,7 @@ else $set_as_default = FALSE;
    if (array_key_exists('time_series_median',$_POST))
    $denoising_flag = $_POST['time_series_median'];
    else $denoising_flag = 0;
- 
+
 
    $number_of_stationary_images = $_POST['number_of_stationary_images'];
    }
@@ -95,14 +111,14 @@ else $set_as_default = FALSE;
       throw new ns_exception("All 16 bit conversion range values must fall between 0 and 256");
    }
    if ($conversion_16_bit_upper_bound != 0 && ($conversion_16_bit_upper_bound - $conversion_16_bit_lower_bound < 128))
-      throw new ns_exception("The conversion range maps 16 pixels between (256*lower,256*upper) to 8 bit pixels (0,255).  So it is never sensible to set the upper bound below 128, the lower bound above 128, or the upper and lower bounds closer together than 128");   
+      throw new ns_exception("The conversion range maps 16 pixels between (256*lower,256*upper) to 8 bit pixels (0,255).  So it is never sensible to set the upper bound below 128, the lower bound above 128, or the upper and lower bounds closer together than 128");
    $apply_vertical_image_registration = $_POST['apply_vertical_image_registration'] == "apply";
    $maximum_number_of_worms = @$_POST['maximum_number_of_worms'];
    $delete_captured_images = $_POST['delete_captured_images'] == "delete";
    //  die($_POST['delete_captured_images']);
    if (!$no_region_info){
       $query = "UPDATE sample_region_image_info as r, capture_samples as s SET r.maximum_number_of_worms_per_plate=$maximum_number_of_worms, time_series_denoising_flag=$denoising_flag WHERE r.sample_id = s.id AND s.experiment_id = $experiment_id";
-      $sql->send_query($query);   
+      $sql->send_query($query);
    }
       $query = "UPDATE experiments SET delete_captured_images_after_mask=" . ($delete_captured_images?"1":"0") . ", compression_type='$image_compression',mask_time=$mask_date WHERE id = $experiment_id";
 
@@ -116,7 +132,7 @@ else $set_as_default = FALSE;
       $sql->send_query($query);
 
    }
-  
+
    header("Location: manage_experiment_analysis_configuration.php?$query_parameters\n\n");
 
  }
@@ -151,7 +167,7 @@ $conversion_16_bit_upper_bound = $vir[0][2];
  if(sizeof($res) != 0){
    $mask_date = $res[0][0];
    $image_compression = $res[0][1];
-   
+
    $image_compression_ratio = $res[0][2];
 }
  else{
@@ -245,7 +261,7 @@ $strain = $exps[$i][1];
    $is_single_posture_model = false;
    // die("WHA");
  }
- else{   
+ else{
 $is_single_posture_model = true;
    $single_posture_model_name = "";
    foreach ($strain_posture_models as $s => $m){
@@ -274,7 +290,7 @@ $is_single_posture_model = true;
    foreach ($strain_position_models as $s => $m){
      if ($single_position_model_name === ""){
        $single_position_model_name = $m;
-       
+
 
      }
      else if ($single_position_model_name != $m){
@@ -311,7 +327,7 @@ $is_single_posture_model = true;
      $pos = strrpos($model_name,"=");
      $posture_analysis_method = substr($model_name,$pos+1);
      $model_name = substr($model_name,0,$pos);
-    
+
      //die($posture_analysis_method);
      $query = "UPDATE sample_region_image_info as i, capture_samples as s SET posture_analysis_model ='$model_name',posture_analysis_method='$posture_analysis_method' WHERE i.sample_id = s.id AND s.experiment_id = $experiment_id";
      // die($query);
@@ -515,7 +531,7 @@ catch(ns_exception $ex){
 </select></td></tr>
 <?php if ($image_compression != 'lzw'){?>
 <tr><td bgcolor="<?php echo $table_colors[0][0] ?>">Compression ratio</td><td bgcolor="<?php echo $table_colors[0][1] ?>">
-<?php 
+<?php
 output_editable_field("image_compression_ratio",$image_compression_ratio,TRUE,4);?></td></tr>
 <?php } ?>
 <tr><td bgcolor="<?php echo $table_colors[1][0] ?>">16 to 8 bit conversion range</td><td bgcolor="<?php echo $table_colors[1][1] ?>">
@@ -597,7 +613,7 @@ output_editable_field("conversion_16_bit_upper_bound",$conversion_16_bit_upper_b
 							     <?php if ($is_single_posture_model){?>
 
       <tr><td bgcolor="<?php echo $table_colors[0][0] ?>">All Plate Model:</td><TD bgcolor="<?php echo $table_colors[0][1] ?>">
-	<?php  output_model_choice("single_posture_model_name",$single_posture_model_name,$single_posture_model_method,$number_of_regions==0,$sql); ?>
+	<?php  output_model_choice("single_posture_model_name",$single_posture_model_name,$single_posture_model_method,'posture',$number_of_regions==0,$sql); ?>
 	<?php //output_editable_field("single_posture_model_name",$single_posture_model_name,$number_of_regions>0,30);-?>
 							     </td></tr>
 																	   <?php } else{?>
@@ -616,7 +632,7 @@ output_editable_field("conversion_16_bit_upper_bound",$conversion_16_bit_upper_b
 	echo
 	"<tr><td bgcolor=\"".$table_colors[$c][0] . "\">$strain</td>" .
 	"<td bgcolor=\"" . $table_colors[$c][1] . "\">";
-	 output_model_choice("posture_model_" . $region_id,$strain_posture_models[$strain][0],$strain_posture_models[$strain][1],$number_of_regions==0,$sql);
+	 output_model_choice("posture_model_" . $region_id,$strain_posture_models[$strain][0],$strain_posture_models[$strain][1],'posture',$number_of_regions==0,$sql);
 	//output_editable_field("posture_model_" . $region_id ,$strain_posture_models[$strain],$number_of_regions>0,30);
 	echo "</td></tr>\n";
 	$c =!$c;
@@ -629,7 +645,7 @@ output_editable_field("conversion_16_bit_upper_bound",$conversion_16_bit_upper_b
  all future experiments</font><?php } ?></td><td bgcolor="<?php echo $table_colors[0][0] ?>" colspan=1>
 					  <div align="right"><input name="set_posture_models" type="submit" value="Set Posture Analysis Models" <?php if ($number_of_regions == 0) echo "disabled";?>>  <?php if ($number_of_regions == 0) echo "<br><font size=\"-2\">These options cannot be set before plate region mask is submitted.</font>"?>
 	</div>
-	</td></tr>
+	</td></tr><tr><td colspan="2" bgcolor=" <?php echo $table_colors[0][0]?>"> <font size="-2">To add a new model, place the file the model directory and<br>re-run the worm browser or analysis server. To clear this list: click <a href="manage_experiment_analysis_configuration.php?experiment_id=<?php echo $experiment_id?>&reset_model_registry=1">[click here]</a></font></td><tr>
 	</table>
 	</td></tr>
 	</table>
@@ -643,7 +659,10 @@ output_editable_field("conversion_16_bit_upper_bound",$conversion_16_bit_upper_b
 							     </td></tr>
 							     <?php if ($is_single_detection_model){?>
       <tr><td bgcolor="<?php echo $table_colors[0][0] ?>">All Plate Model:</td><TD bgcolor="<?php echo $table_colors[0][1] ?>">
-	<?php output_editable_field("single_detection_model_name",$single_detection_model_name,$number_of_regions>0,30);?>
+
+	<?php
+		output_model_choice("single_detection_model_name",$single_detection_model_name,'','detection',$number_of_regions==0,$sql);
+	#output_editable_field("single_detection_model_name",$single_detection_model_name,$number_of_regions>0,30);?>
 							     </td></tr>
 																							   <?php } else{?>
 
@@ -661,7 +680,8 @@ output_editable_field("conversion_16_bit_upper_bound",$conversion_16_bit_upper_b
 	echo
 	"<tr><td bgcolor=\"".$table_colors[$c][0] . "\">$strain</td>" .
 	"<td bgcolor=\"" . $table_colors[$c][1] . "\">";
-	output_editable_field("detection_modelZ" . $region_id ,$strain_detection_models[$strain],true,30);
+	output_model_choice("detection_modelZ". $region_id ,$strain_detection_models[$strain],'','detection',$number_of_regions==0,$sql);
+	//output_editable_field("detection_modelZ" . $region_id ,$strain_detection_models[$strain],true,30);
 	echo "</td></tr>\n";
 	$c =!$c;
     }
@@ -673,6 +693,7 @@ output_editable_field("conversion_16_bit_upper_bound",$conversion_16_bit_upper_b
 					  <div align="right"><input name="set_detection_models" type="submit" value="Set Worm Detection Models" <?php if ($number_of_regions == 0) echo "disabled";?>> <?php if ($number_of_regions == 0) echo "<br><font size=\"-2\">These options cannot be set before plate region mask is submitted.</font>"?>
 	</div>
 	</td></tr>
+	<tr><td colspan="2" bgcolor=" <?php echo $table_colors[0][0]?>"> <font size="-2">To add a new model, place the file the model directory and<br>re-run the worm browser or analysis server. To clear this list: click <a href="manage_experiment_analysis_configuration.php?experiment_id=<?php echo $experiment_id?>&reset_model_registry=1">[click here]</a></font></td></tr>
 	</table>
 	</td></tr>
 	</table>

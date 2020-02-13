@@ -36,8 +36,7 @@ private:
 
 
 	enum {default_resize_factor=2,max_buffer_size = 6};
-
-	mutable bool saved_;
+	mutable std::set<ns_64_bit> regions_modified_but_not_saved;
 
 	mutable ns_image_standard loading_temp;
 public:
@@ -57,8 +56,8 @@ public:
 	void set_resize_factor(const unsigned long resize_factor_){
 		resize_factor = resize_factor_;
 	}
-	bool data_saved()const{return saved_;}
-	ns_worm_detection_set_annotater(const unsigned long res):ns_image_series_annotater(res,0), saved_(true){}
+	bool data_needs_saving()const{return !regions_modified_but_not_saved.empty();}
+	ns_worm_detection_set_annotater(const unsigned long res):ns_image_series_annotater(res,0){}
 	~ns_worm_detection_set_annotater() {
 	}
 
@@ -70,7 +69,7 @@ public:
 		//annotations are loaded automatically when storyboard is loaded.
 		return true;
 	}
-	void save_annotations(const ns_death_time_annotation_set& extra_annotations) const;
+	void save_annotations(const ns_death_time_annotation_set& extra_annotations, std::set<ns_64_bit>& regions_altered) const;
 	void redraw_current_metadata(double external_resize_factor){
 		draw_metadata(&all_objects[current_timepoint_id],*current_image.im, external_resize_factor);
 	}
@@ -89,7 +88,7 @@ public:
 	
 	void clear() {
 		clear_base();
-		saved_ = false;
+		regions_modified_but_not_saved.clear();
 		all_objects.resize(0);
 		objects.clear();
 	}

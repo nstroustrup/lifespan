@@ -128,8 +128,8 @@ void ns_bulk_experiment_mask_manager::produce_mask_file(const ns_mask_type & mas
 		 sql << "SELECT r.name,r.id,s.id,s.name FROM sample_region_image_info as r, capture_samples as s WHERE r.sample_id = s.id AND s.experiment_id=" << experiment_id << " AND r.censored = 0 AND s.censored=0 ORDER BY s.name ASC, r.name ASC";
 	else sql << "SELECT name,id FROM capture_samples WHERE experiment_id=" << experiment_id << " AND censored = 0 ORDER BY name ASC";
 
-	bool tried_to_protect_jobs = false;
 
+	const int min_number_of_locked_images = 2;
 	ns_sql_result subjects;
 	sql.get_rows(subjects);
 	if (subjects.size() == 0)
@@ -145,39 +145,44 @@ void ns_bulk_experiment_mask_manager::produce_mask_file(const ns_mask_type & mas
 	image_server.image_storage.set_verbosity(ns_image_storage_handler::ns_verbose);
 
 	int counter(0);
+
+	int  tried_to_protect_jobs = 0;
 	for (ns_sql_result::iterator p = subjects.begin(); p != subjects.end();) {
+		ns_64_bit sample_id = output_region_label_mask ? 0 : ns_atoi64((*p)[1].c_str());
 		counter++;
 		if (start_verbosity) cerr << counter << " ";
 		try {
 			//image_id==0  images have already been deleted.
 			if(output_region_label_mask)
-				sql << "SELECT image_id FROM sample_region_images WHERE region_info_id = " << (*p)[1] << " and problem=0 AND censored=0 AND image_id != 0";
+				sql << "SELECT image_id, id FROM sample_region_images WHERE region_info_id = " << (*p)[1] << " and problem=0 AND censored=0 AND image_id != 0";
 			else 
-				sql << "SELECT image_id FROM captured_images WHERE sample_id = " << (*p)[1] << " and currently_being_processed=0 AND problem=0 AND censored=0 AND image_id != 0";
+				sql << "SELECT image_id, id FROM captured_images WHERE sample_id = " << (*p)[1] << " and currently_being_processed=0 AND problem=0 AND censored=0 AND image_id != 0";
 			if (!output_region_label_mask && mask_time == 0)
 				sql << " AND never_delete_image = 1";
 			if (mask_time != 0)
 				sql << " AND capture_time < " << mask_time;
 			sql << " ORDER BY capture_time DESC";
+			std::string query_buffer = sql.query();
 			//NOTE! The mask should be created using the images that are used as the alignment reference
 			//if the user uses a mask from un-aligned samples, we are in trouble.
 			//TODO: this could be solved by explicitly aligning images before generating the mask composit XXX
 			ns_sql_result im_id;
 			sql.get_rows(im_id);
-			if (im_id.size() < 2) {
-				if (!tried_to_protect_jobs) {
+			if (im_id.size() < min_number_of_locked_images) {
+				if (tried_to_protect_jobs ==0 ) {
 					ns_get_automated_job_scheduler_lock_for_scope lock(0, sql,true);
-					ns_image_server_automated_job_scheduler::identify_experiments_needing_captured_image_protection(sql, 0);
+					bool made_a_change = ns_image_server_automated_job_scheduler::identify_experiments_needing_captured_image_protection(sql, sample_id);
 					lock.release(sql);
-					tried_to_protect_jobs = true;
+					if (!made_a_change) tried_to_protect_jobs = 1;
 					continue;
 				}
-				ns_ex ex("Could not find a sufficient number of captured images for ");
+				ns_ex ex("Could not find ");
+				ex << min_number_of_locked_images << " captured images for ";
 				ex << subject_type << " ";
 				ex << (*p)[0] << "(" << (*p)[1] << "). This could be because no images have been acquired, or because no image analysis server has run recently, or because the images have been marked as \"problem\" or as \"Currently under processing\"";
 				if (mask_time != 0)
 					ex << "Note that the experiment has a mask time specified: " << ns_format_time_string_for_human(mask_time);
-				cerr << " Miss! ";
+				//cerr << " Miss! ";
 				throw ex;
 			}
 
@@ -196,27 +201,45 @@ void ns_bulk_experiment_mask_manager::produce_mask_file(const ns_mask_type & mas
 				}
 				catch (ns_ex & ex) {
 					cerr << ex.text() << "\n";
+					ns_64_bit err = image_server.register_server_event(ex, &sql,false);
+					if (output_region_label_mask)
+						sql << "UPDATE sample_region_images";
+					else sql << "UPDATE captured_images";
+					sql << " SET problem = " << err << " WHERE id = " << im_id[i][1];
+					sql.send_query();
 					if (sources.size() == s + 1)
 						sources.pop_back();
 				}
 			}
 			if (!found_valid_image) {
+				if (tried_to_protect_jobs != 2) {
+					ns_get_automated_job_scheduler_lock_for_scope lock(0, sql, true);
+					bool made_a_change = ns_image_server_automated_job_scheduler::identify_experiments_needing_captured_image_protection(sql, sample_id);
+					lock.release(sql);
+					if (!made_a_change) tried_to_protect_jobs = 2;
+					else tried_to_protect_jobs = 0;
+					continue;
+				}
 				throw ns_ex("Could not find any good images for ") << subject_type << " " << (*p)[0] << "(" << (*p)[1] << ").";
 			}
 			if (start_verbosity) cerr << " hit. ";
 			images.resize(s + 1, ns_image_buffered_random_access_input_image<ns_8_bit, ns_image_storage_source<ns_8_bit> >(100));
 			images[s].assign_buffer_source(sources[s].input_stream());
+			tried_to_protect_jobs = 0;
 			p++;
 		}
 		catch (ns_ex & ex) {
 			cerr << "An error occurred in sample " << (*p)[0] << "(" << (*p)[1] << "): " << ex.text() << "\n";
+			tried_to_protect_jobs = 0;
 			p = subjects.erase(p);
 		}
 		catch (std::exception & ex) {
 			cerr << "An error occurred in sample " << (*p)[0] << "(" << (*p)[1] << "): " << ex.what() << "\n";
+			tried_to_protect_jobs = 0;
 			p = subjects.erase(p);
 		}
 		catch (...) {
+			tried_to_protect_jobs = 0;
 			cerr << "An unknown error occurred in sample " << (*p)[0] << "(" << (*p)[1] << ")\n";
 			p = subjects.erase(p);
 		}

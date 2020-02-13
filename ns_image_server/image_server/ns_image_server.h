@@ -53,17 +53,19 @@ struct ns_posture_analysis_model_entry_source {
 	void set_directory(const std::string long_term_storage_directory, const std::string & worm_detection_dir);
 };
 
-class ns_posture_analysis_model_entry : public ns_simple_cache_data<std::string, ns_posture_analysis_model_entry_source,std::string> {
+typedef std::pair<std::string, ns_posture_analysis_model::ns_posture_analysis_method> ns_posture_analysis_model_cache_specification;
+class ns_posture_analysis_model_entry : public ns_simple_cache_data<ns_posture_analysis_model_cache_specification, ns_posture_analysis_model_entry_source, ns_posture_analysis_model_cache_specification> {
 public:
 	ns_posture_analysis_model model_specification;
-	std::string name;
+
+	ns_posture_analysis_model_cache_specification name;
 	template <class a,class b, bool c>
 	friend class ns_simple_cache;
 private:
 	ns_64_bit size_in_memory_in_kbytes() const {	return 0; }
-	void load_from_external_source(const std::string & name, ns_posture_analysis_model_entry_source & external_source);
-	static std::string to_id(const std::string & n) { return n; }
-	const std::string & id() const { return name; }
+	void load_from_external_source(const ns_posture_analysis_model_cache_specification& name, ns_posture_analysis_model_entry_source & external_source);
+	static ns_posture_analysis_model_cache_specification to_id(const ns_posture_analysis_model_cache_specification& n) { return n; }
+	const ns_posture_analysis_model_cache_specification & id() const { return to_id(name); }
 	void clean_up(ns_posture_analysis_model_entry_source & external_source) {}
 };
 #endif
@@ -379,7 +381,7 @@ public:
 
 	void request_database_from_db_and_switch_to_it(ns_sql & sql, bool update_hosts_records_in_db);
 #ifndef NS_ONLY_IMAGE_ACQUISITION
-	typedef ns_simple_cache<ns_posture_analysis_model_entry, std::string, true> ns_posture_analysis_model_cache;
+	typedef ns_simple_cache<ns_posture_analysis_model_entry, ns_posture_analysis_model_cache_specification, true> ns_posture_analysis_model_cache;
 
 	typedef ns_simple_cache<ns_storyboard_cache_entry, std::string, true> ns_storyboard_cache;
 
@@ -394,7 +396,8 @@ public:
 	void get_storyboard(const ns_experiment_storyboard_spec & spec, ns_storyboard_cache::const_handle_t & handle, ns_sql & sql);
 	void clean_up_storyboard_cache(bool remove_all, ns_sql & sql);
 
-	void update_posture_analysis_model_registry(ns_sql& sql,bool force);
+	void update_posture_analysis_model_registry(ns_sql& sql,bool force); 
+	void update_worm_detection_model_registry(ns_sql& sql, bool force);
 	ns_time_path_solver_parameters get_position_analysis_model(const std::string & model_name,bool create_default_if_does_not_exist=false,const ns_64_bit region_info_id_for_default=0, ns_sql * sql_for_default=0) const;
 	#endif
 	///Clear all SVM machine learning models from the model cache so they are
@@ -463,7 +466,7 @@ public:
 
 	///updates the database with the specified server event.
 	ns_64_bit register_server_event(const ns_image_server_event & s_event, ns_image_server_sql * sql,const bool no_display=false)const;
-	ns_64_bit register_server_event(const ns_ex & s_event, ns_image_server_sql * sql)const;
+	ns_64_bit register_server_event(const ns_ex & s_event, ns_image_server_sql * sql, const bool no_display = false)const;
 	void register_server_event_no_db(const ns_image_server_event & s_event,bool no_double_endline=false)const;
 
 	typedef enum{ns_register_in_local_db, ns_register_in_central_db, ns_register_in_central_db_with_fallback} ns_register_type;

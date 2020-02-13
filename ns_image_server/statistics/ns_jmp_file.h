@@ -111,11 +111,14 @@ public:
 			c.number_of_worms_in_by_hand_worm_annotation = 1;
 			c.number_of_worms_in_machine_worm_cluster = 0;
 			c.properties.excluded = ns_death_time_annotation::ns_not_excluded;
-			if (rows[i][censor_column].empty() || rows[i][censor_column]=="0")
-				t.deaths.add(c);
+			if (rows[i][censor_column].empty() || rows[i][censor_column] == "0") {
+				t.movement_based_deaths.add(c);
+				t.best_guess_deaths.add(c);
+			}
 			else {
 				c.properties.excluded = ns_death_time_annotation::ns_censored;
-				t.deaths.add(c);
+				t.movement_based_deaths.add(c);
+				t.best_guess_deaths.add(c);
 			}
 		}
 

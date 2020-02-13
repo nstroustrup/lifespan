@@ -18,6 +18,7 @@
 #include "ns_analyze_movement_over_time.h"
 #include "ns_posture_analysis_cross_validation.h"
 #include <set>
+#include "ns_thread_pool.h"
 using namespace std;
 
 template class ns_time_path_image_movement_analyzer< ns_wasteful_overallocation_resizer>;
@@ -1237,7 +1238,7 @@ void ns_handle_pair(const ns_random_picker_type::return_type & d1, const ns_rand
 	ns_death_time_annotation_compiler_multiworm_simulation & worms){
 	
 	const ns_random_picker_type::return_type * mmax, * mmin;
-	if (d1.first.machine.death_annotation->time.period_end > d2.first.machine.death_annotation->time.period_end){
+	if (d1.first.machine.movement_based_death_annotation->time.period_end > d2.first.machine.movement_based_death_annotation->time.period_end){
 		mmax = &d1;
 		mmin = &d2;
 	}
@@ -1247,8 +1248,8 @@ void ns_handle_pair(const ns_random_picker_type::return_type & d1, const ns_rand
 	}
 
 	if (mmin->first.machine.stationary_worm_dissapearance->time.period_end < mmax->first.machine.last_fast_movement_annotation->time.period_end){
-		ns_death_time_annotation a(*mmin->first.machine.death_annotation),
-									b(*mmax->first.machine.death_annotation);
+		ns_death_time_annotation a(*mmin->first.machine.movement_based_death_annotation),
+									b(*mmax->first.machine.movement_based_death_annotation);
 		a.loglikelihood = b.loglikelihood = rround; 
 
 		worms.maximums.add(a,mmin->second);
@@ -1260,19 +1261,19 @@ void ns_handle_pair(const ns_random_picker_type::return_type & d1, const ns_rand
 		return;
 	}
 				
-	unsigned long mean_death_time(d1.first.machine.death_annotation->time.period_end/2.0 + d2.first.machine.death_annotation->time.period_end/2.0);
+	unsigned long mean_death_time(d1.first.machine.movement_based_death_annotation->time.period_end/2.0 + d2.first.machine.movement_based_death_annotation->time.period_end/2.0);
 	bool cropped_by_wait(false);
 	if (use_waiting_time_cropping){
-		if (mmin->first.machine.death_annotation->time.period_end + wait_time <
+		if (mmin->first.machine.movement_based_death_annotation->time.period_end + wait_time <
 			mmax->first.machine.last_fast_movement_annotation->time.period_end){
 			cropped_by_wait = true;
 			mmax = mmin;
-			mean_death_time = mmin->first.machine.death_annotation->time.period_end;
+			mean_death_time = mmin->first.machine.movement_based_death_annotation->time.period_end;
 		}
 	}
-	ns_death_time_annotation mmin_a(*mmin->first.machine.death_annotation),
-								mmax_a(*mmax->first.machine.death_annotation),
-								mmean_a(*d1.first.machine.death_annotation);
+	ns_death_time_annotation mmin_a(*mmin->first.machine.movement_based_death_annotation),
+								mmax_a(*mmax->first.machine.movement_based_death_annotation),
+								mmean_a(*d1.first.machine.movement_based_death_annotation);
 
 	mmean_a.time.period_end = mmean_a.time.period_end = mean_death_time;
 				
@@ -1341,16 +1342,16 @@ void ns_worm_learner::simulate_multiple_worm_clumps(const bool use_waiting_time_
 							continue;
 						ns_dying_animal_description_set description_set;
 						q->generate_dying_animal_description(false, description_set);
-						if (description_set.descriptions.empty() || description_set.descriptions[0].machine.death_annotation == 0 || description_set.descriptions[0].machine.last_fast_movement_annotation == 0 || description_set.descriptions[0].machine.last_slow_movement_annotation == 0)
+						if (description_set.descriptions.empty() || description_set.descriptions[0].machine.movement_based_death_annotation == 0 || description_set.descriptions[0].machine.last_fast_movement_annotation == 0 || description_set.descriptions[0].machine.last_slow_movement_annotation == 0)
 							continue;
 						ns_dying_animal_description_base<ns_death_time_annotation> d(description_set.descriptions[0]);
-						if (d.machine.last_fast_movement_annotation->time.period_end == d.machine.death_annotation->time.period_start)
+						if (d.machine.last_fast_movement_annotation->time.period_end == d.machine.movement_based_death_annotation->time.period_start)
 							continue;
 						if (d.machine.stationary_worm_dissapearance == 0 ){
-							q->annotations.add(*d.machine.death_annotation);
+							q->annotations.add(*d.machine.movement_based_death_annotation);
 							q->annotations.events.rbegin()->type = ns_stationary_worm_disappearance;
 							q->annotations.events.rbegin()->time.period_end = q->annotations.events.rbegin()->time.period_start
-								= d.machine.death_annotation->time.period_end + death_dissapearance_time; 
+								= d.machine.movement_based_death_annotation->time.period_end + death_dissapearance_time;
 
 							ns_dying_animal_description_set description_set_2;
 							q->generate_dying_animal_description(false,description_set_2);
@@ -1358,27 +1359,27 @@ void ns_worm_learner::simulate_multiple_worm_clumps(const bool use_waiting_time_
 								continue;
 							d = description_set_2.descriptions[0];
 						}
-						else if (d.machine.stationary_worm_dissapearance->time.period_end > d.machine.death_annotation->time.period_end + death_dissapearance_time){
+						else if (d.machine.stationary_worm_dissapearance->time.period_end > d.machine.movement_based_death_annotation->time.period_end + death_dissapearance_time){
 							d.machine.stationary_worm_dissapearance->time.period_end = d.machine.stationary_worm_dissapearance->time.period_start 
-								= d.machine.death_annotation->time.period_end + death_dissapearance_time; 
+								= d.machine.movement_based_death_annotation->time.period_end + death_dissapearance_time;
 						
 						}
-						q->properties.transfer_sticky_properties(*d.machine.death_annotation);
+						q->properties.transfer_sticky_properties(*d.machine.movement_based_death_annotation);
 						q->properties.transfer_sticky_properties(*d.machine.last_fast_movement_annotation);
 						q->properties.transfer_sticky_properties(*d.machine.last_slow_movement_annotation);
 						q->properties.transfer_sticky_properties(*d.machine.stationary_worm_dissapearance);
-						if (d.machine.death_annotation->number_of_worms() < 2){
-							single_worms.add(*d.machine.death_annotation,movement_results.samples[i].regions[j]->metadata);
+						if (d.machine.movement_based_death_annotation->number_of_worms() < 2){
+							single_worms.add(*d.machine.movement_based_death_annotation,movement_results.samples[i].regions[j]->metadata);
 							picker.add(d,movement_results.samples[i].regions[j]->metadata, region_count_id);
 						}
-						else if (d.machine.death_annotation->number_of_worms_at_location_marked_by_hand == 2){
-							two_worms.add(*d.machine.death_annotation,movement_results.samples[i].regions[j]->metadata);
+						else if (d.machine.movement_based_death_annotation->number_of_worms_at_location_marked_by_hand == 2){
+							two_worms.add(*d.machine.movement_based_death_annotation,movement_results.samples[i].regions[j]->metadata);
 						}
-						else if (d.machine.death_annotation->number_of_worms_at_location_marked_by_hand == 3){
-							three_worms.add(*d.machine.death_annotation,movement_results.samples[i].regions[j]->metadata);
+						else if (d.machine.movement_based_death_annotation->number_of_worms_at_location_marked_by_hand == 3){
+							three_worms.add(*d.machine.movement_based_death_annotation,movement_results.samples[i].regions[j]->metadata);
 						}
 						else 
-							four_plus_worms.add(*d.machine.death_annotation,movement_results.samples[i].regions[j]->metadata);
+							four_plus_worms.add(*d.machine.movement_based_death_annotation,movement_results.samples[i].regions[j]->metadata);
 					}
 					region_count_id++;
 				}
@@ -1443,7 +1444,7 @@ void ns_worm_learner::simulate_multiple_worm_clumps(const bool use_waiting_time_
 				const ns_random_picker_type::return_type d1(p->second.get_random_event_without_replacement()),
 														   d2(p->second.get_random_event_without_replacement());
 				
-				ns_death_time_annotation a(*d1.first.machine.death_annotation);
+				ns_death_time_annotation a(*d1.first.machine.movement_based_death_annotation);
 				//encoding to allow extraction of this information from compiler later
 				a.number_of_worms_at_location_marked_by_hand = a.number_of_worms_at_location_marked_by_machine = 1;
 				a.loglikelihood = r/3;
@@ -1549,15 +1550,15 @@ void ns_worm_learner::simulate_multiple_worm_clumps(const bool use_waiting_time_
 				const ns_random_picker_type::return_type  d1(p->second.get_random_event_without_replacement()),
 														   d2(p->second.get_random_event_without_replacement()),
 														   d3(p->second.get_random_event_without_replacement());
-				ns_death_time_annotation a(*d1.first.machine.death_annotation),
-										 b(*d2.first.machine.death_annotation),
-										 c(*d3.first.machine.death_annotation);
+				ns_death_time_annotation a(*d1.first.machine.movement_based_death_annotation),
+										 b(*d2.first.machine.movement_based_death_annotation),
+										 c(*d3.first.machine.movement_based_death_annotation);
 
 				//encoding to allow extraction of this information from compiler later
 				
 
 				const ns_random_picker_type::return_type * mmax, * mmin, *mmiddle;
-				if (d1.first.machine.death_annotation->time.period_end> d2.first.machine.death_annotation->time.period_end){
+				if (d1.first.machine.movement_based_death_annotation->time.period_end> d2.first.machine.movement_based_death_annotation->time.period_end){
 					mmax = &d1;
 					mmiddle = &d2;
 				}
@@ -1565,8 +1566,8 @@ void ns_worm_learner::simulate_multiple_worm_clumps(const bool use_waiting_time_
 					mmax = &d2;
 					mmiddle = &d1;
 				}
-				if (mmax->first.machine.death_annotation->time.period_end > d3.first.machine.death_annotation->time.period_end){
-					if (mmiddle->first.machine.death_annotation->time.period_end > d3.first.machine.death_annotation->time.period_end){
+				if (mmax->first.machine.movement_based_death_annotation->time.period_end > d3.first.machine.movement_based_death_annotation->time.period_end){
+					if (mmiddle->first.machine.movement_based_death_annotation->time.period_end > d3.first.machine.movement_based_death_annotation->time.period_end){
 						mmin = &d3;
 					}
 					else{
@@ -1580,7 +1581,7 @@ void ns_worm_learner::simulate_multiple_worm_clumps(const bool use_waiting_time_
 					mmax = &d3;
 				}
 				if (mmin->first.machine.stationary_worm_dissapearance->time.period_end < mmiddle->first.machine.last_fast_movement_annotation->time.period_end){
-					ns_death_time_annotation a(*mmin->first.machine.death_annotation);
+					ns_death_time_annotation a(*mmin->first.machine.movement_based_death_annotation);
 					a.number_of_worms_at_location_marked_by_machine = 1;
 					a.loglikelihood = r; 
 					simulated_triple_worms.maximums.add(a,mmin->second);
@@ -1590,7 +1591,7 @@ void ns_worm_learner::simulate_multiple_worm_clumps(const bool use_waiting_time_
 					continue;
 				}
 				if (mmiddle->first.machine.stationary_worm_dissapearance->time.period_end < mmax->first.machine.last_fast_movement_annotation->time.period_end){
-					ns_death_time_annotation a(*mmax->first.machine.death_annotation);
+					ns_death_time_annotation a(*mmax->first.machine.movement_based_death_annotation);
 					a.number_of_worms_at_location_marked_by_machine = 1;
 					a.loglikelihood = r; 
 					simulated_triple_worms.maximums.add(a,mmax->second);
@@ -1600,32 +1601,32 @@ void ns_worm_learner::simulate_multiple_worm_clumps(const bool use_waiting_time_
 					continue;
 				}
 				
-				unsigned long mean_death_time = (unsigned long)(d1.first.machine.death_annotation->time.period_end/3.0
-																				+d2.first.machine.death_annotation->time.period_end/3.0
-																				+d3.first.machine.death_annotation->time.period_end/3.0);				
+				unsigned long mean_death_time = (unsigned long)(d1.first.machine.movement_based_death_annotation->time.period_end/3.0
+																				+d2.first.machine.movement_based_death_annotation->time.period_end/3.0
+																				+d3.first.machine.movement_based_death_annotation->time.period_end/3.0);
 				int cropped_by_wait;
 				if (use_waiting_time_cropping){
-					if (mmin->first.machine.death_annotation->time.period_end + wait_time <
+					if (mmin->first.machine.movement_based_death_annotation->time.period_end + wait_time <
 						mmiddle->first.machine.last_fast_movement_annotation->time.period_end){
 						cropped_by_wait = 0;
 						mmax = mmin;
 						mmiddle = mmin;
-						mean_death_time = mmin->first.machine.death_annotation->time.period_end;
+						mean_death_time = mmin->first.machine.movement_based_death_annotation->time.period_end;
 					}
-					else if (mmiddle->first.machine.death_annotation->time.period_end + wait_time <
+					else if (mmiddle->first.machine.movement_based_death_annotation->time.period_end + wait_time <
 						mmax->first.machine.last_fast_movement_annotation->time.period_end){
 						cropped_by_wait = 1;
 						mmin = mmiddle;
 						mmax = mmiddle;
-						mean_death_time = mmiddle->first.machine.death_annotation->time.period_end;
+						mean_death_time = mmiddle->first.machine.movement_based_death_annotation->time.period_end;
 					}
 					else cropped_by_wait = 2;
 				}
 				else cropped_by_wait = 2;
 
-				ns_death_time_annotation mmax_a(*mmax->first.machine.death_annotation),
-					mmin_a(*mmin->first.machine.death_annotation),
-					mmean_a(*d1.first.machine.death_annotation);
+				ns_death_time_annotation mmax_a(*mmax->first.machine.movement_based_death_annotation),
+					mmin_a(*mmin->first.machine.movement_based_death_annotation),
+					mmean_a(*d1.first.machine.movement_based_death_annotation);
 
 				mmax_a.number_of_worms_at_location_marked_by_machine = mmax_a.number_of_worms_at_location_marked_by_hand = 3;
 				mmin_a.number_of_worms_at_location_marked_by_machine = mmin_a.number_of_worms_at_location_marked_by_hand  = 3;
@@ -1838,7 +1839,7 @@ void ns_worm_learner::output_movement_analysis_optimization_data(const ns_optimi
 	ns_sql & sql(get_sql_connection());
 
 	ns_64_bit experiment_id = data_selector.current_experiment_id();
-	ns_64_bit plate_id;
+	ns_64_bit plate_id = 0;
 	std::string device_name;
 	if (subject == ns_plate || subject == ns_device) {
 		ns_experiment_region_chooser_region selected_region;
@@ -3664,6 +3665,58 @@ void ns_worm_learner::generate_single_frame_posture_image_pixel_data(const bool 
 	}
 
 }
+struct ns_immediately_recalc_censoring_job_common_data{
+	ns_immediately_recalc_censoring_job_common_data() :problem_lock("lock") {}
+	std::vector<ns_ex> problems;
+	ns_lock problem_lock;
+};
+struct ns_immediately_recalc_censoring_job_persistant_data {
+	ns_immediately_recalc_censoring_job_persistant_data():sql(0){}
+	ns_sql * sql;
+	~ns_immediately_recalc_censoring_job_persistant_data() {
+		ns_safe_delete(sql);
+	}
+};
+
+struct ns_immediately_recalc_censoring_job {
+	ns_immediately_recalc_censoring_job() {}
+	ns_immediately_recalc_censoring_job(const ns_64_bit & _region_id, ns_immediately_recalc_censoring_job_common_data * c):region_id(_region_id),common_data(c) {}
+	ns_64_bit region_id;
+	ns_immediately_recalc_censoring_job_common_data* common_data;
+
+	void operator()(ns_immediately_recalc_censoring_job_persistant_data& p) {
+		
+		if (p.sql == 0)
+			p.sql = image_server.new_sql_connection(__FILE__, __LINE__);
+		std::string region_name;
+		region_name = "Region id ";
+		region_name += ns_to_string(region_id);
+		try {
+			*p.sql << "SELECT s.name, r.name FROM capture_samples as s, sample_region_image_info as r WHERE r.id = " << region_id << " AND s.id = r.sample_id";
+			ns_sql_result res;
+			p.sql->get_rows(res);
+			if (res.size() != 0)
+				region_name = res[0][0] + "_" + res[0][1];
+			cout << "Processing " << region_name << "...\n";
+			//image_server.add_subtext_to_current_event(ns_to_string((int)(i * 100.0 / regions_needing_censoring_recalculation.size())) + "%...", &sql);
+			ns_processing_job job;
+			job.region_id = region_id;
+			job.maintenance_task = ns_maintenance_recalculate_censoring;
+			analyze_worm_movement_across_frames(job, &image_server, *p.sql, false);
+		}
+		catch (ns_ex & ex) {
+			*p.sql << "SELECT s.name, r.name FROM capture_samples as s, sample_region_image_info as r WHERE r.id = " << region_id << " AND s.id = r.sample_id"; 
+			ns_sql_result res;
+			p.sql->get_rows(res); 
+			if (res.size() != 0)
+				region_name = res[0][0] + "_" + res[0][1];
+			image_server.add_subtext_to_current_event("Region " + region_name + ": " + ex.text(), p.sql);
+			ns_acquire_lock_for_scope lock(common_data->problem_lock, __FILE__, __LINE__);
+			common_data->problems.push_back("Region " + region_name + ": " + ex.text());
+			lock.release();
+		}
+	}
+};
 
 void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_hand_censoring,const ns_region_visualization & vis,const  ns_movement_data_source_type::type & type){
 //const bool scatter_proportion_plot, const bool use_interpolated_data){
@@ -3702,10 +3755,10 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 		for (unsigned int j = 0; j < movement_results.samples[i].regions.size(); j++) {
 			const ns_region_metadata & metadata(movement_results.samples[i].regions[j]->metadata);
 			total_number_of_regions++;
-			if (metadata.by_hand_annotation_timestamp > metadata.movement_rebuild_timestamp && metadata.movement_rebuild_timestamp != 0)
+			if ((metadata.by_hand_annotation_timestamp > metadata.movement_rebuild_timestamp) && metadata.movement_rebuild_timestamp != 0)
 				regions_needing_censoring_recalculation.push_back(metadata.region_id);
 		}
-
+	
 
 	if (!ns_warn_user_about_out_of_date_analyses(0, experiment_id, sql))
 		return;
@@ -3724,8 +3777,7 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 		switch (dialog.result) {
 		case 1: {
 			image_server.register_server_event(ns_image_server_event("Recalculating censoring"), &sql);
-			ns_image_processing_pipeline p(1024);
-			std::vector<ns_ex> problems;
+			/*
 			for (unsigned int i = 0; i < regions_needing_censoring_recalculation.size(); i++) {
 				try {
 					image_server.add_subtext_to_current_event(ns_to_string((int)(i * 100.0 / regions_needing_censoring_recalculation.size())) + "%...", &sql);
@@ -3746,16 +3798,32 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 					problems.push_back("Region " + name + ": " + ex.text());
 				}
 			}
-			
-			if (problems.size() > 0) {
+			*/
+			ns_thread_pool< ns_immediately_recalc_censoring_job,
+				ns_immediately_recalc_censoring_job_persistant_data> thread_pool;
+			thread_pool.set_number_of_threads(image_server_const.maximum_number_of_processing_threads());
+			thread_pool.prepare_pool_to_run();
+			ns_immediately_recalc_censoring_job_common_data data;
+			for (unsigned int i = 0; i < regions_needing_censoring_recalculation.size(); i++) 
+				thread_pool.add_job_while_pool_is_not_running(ns_immediately_recalc_censoring_job(regions_needing_censoring_recalculation[i], &data));
+			thread_pool.run_pool();
+			Fl::awake();
+			thread_pool.wait_for_all_threads_to_become_idle();
+			ns_immediately_recalc_censoring_job tmp;
+			ns_ex tmp2;
+			while (thread_pool.get_next_error(tmp, tmp2) > 0) 
+				data.problems.push_back(tmp2);
+			thread_pool.shutdown();
+
+			if (data.problems.size() > 0) {
 				ns_text_dialog td;
 				td.grid_text.push_back("The following issues were encountered: ");
 				td.grid_text.push_back("(You likely will need to re-analyze movement, either from the stored solution or from stored images.)");
-				for (unsigned int i = 0; i < problems.size(); i++)
-					td.grid_text.push_back(problems[i].text());
+				for (unsigned int i = 0; i < data.problems.size(); i++)
+					td.grid_text.push_back(data.problems[i].text());
 				td.title = "Re-calculate censoring immediately";
 				ns_run_in_main_thread_wait_for_close<ns_text_dialog> dd(&td);
-				if (problems.size() * 4 > total_number_of_regions)
+				if (data.problems.size() * 4 > total_number_of_regions)
 					throw ns_ex("Too many errors.  Canceling data export.");
 			}
 			break;
@@ -6135,7 +6203,7 @@ bool ns_worm_learner::register_main_window_key_press(int key, const bool shift_k
 bool ns_worm_learner::prompt_to_save_death_time_annotations(){
 	if (current_annotater == 0)
 		throw ns_ex("No Annotater Specified!");
-	if (current_annotater->data_saved()){
+	if (!current_annotater->data_needs_saving()){
 		std::cout << "No Save Required.\n";
 		return true;
 	}
@@ -6167,12 +6235,20 @@ void ns_worm_learner::save_death_time_annotations(ns_sql & sql){
 			death_time_solo_annotater.add_annotations_to_set(set,orphans);
 			//discard orphans
 	}*/
-	current_annotater->save_annotations(set);
-	std::set<ns_64_bit> region_ids;
-	
+	std::set<ns_64_bit> regions_altered;
+	current_annotater->save_annotations(set, regions_altered);
 	if (behavior_mode == ns_worm_learner::ns_annotate_storyboard_experiment) {
-		sql << "UPDATE sample_region_image_info as r, capture_samples as s SET "
-			<< "r.latest_by_hand_annotation_timestamp = UNIX_TIMESTAMP(NOW()) WHERE r.sample_id = s.id AND s.experiment_id = " << data_selector.current_experiment_id();
+		if (regions_altered.empty()) {
+			cerr << "No regions were altered.\n";
+			return;
+		}
+		
+		std::set<ns_64_bit>::const_iterator p = regions_altered.begin();
+		sql << "UPDATE sample_region_image_info SET "
+			<< "latest_by_hand_annotation_timestamp = UNIX_TIMESTAMP(NOW()) WHERE id = " << *p;
+		++p;
+		for (; p != regions_altered.end(); ++p)
+			sql << " || id = " << *p;
 		sql.send_query();
 	}
 	else {
@@ -7145,7 +7221,7 @@ void ns_experiment_storyboard_annotater::load_from_storyboard(const ns_region_me
 	}
 
 	draw_metadata(&divisions[current_timepoint_id], *current_image.im,external_rescale_factor);
-	this->saved_ = true;
+
 	request_refresh();
 	lock.release();
 }
@@ -7233,7 +7309,7 @@ bool ns_worm_learner::start_death_time_annotation(const ns_behavior_mode m, cons
 							continue;
 						storyboard_annotater.add_machine_events_for_telemetry(movement_results.samples[i].regions[j]->death_time_annotation_set, movement_results.samples[i].regions[j]->metadata);
 					}
-				storyboard_annotater.recalculate_telemetry();
+				storyboard_annotater.rebuild_telemetry_with_by_hand_annotations();
 				draw_stats_window_image();
 
 				if (image_server.verbose_debug_output())
@@ -8556,6 +8632,7 @@ void ns_experiment_storyboard_annotater::register_statistics_click(const ns_vect
 void ns_experiment_storyboard_annotater::register_click(const ns_vector_2i & image_position, const ns_click_request & action, double external_rescale_factor) {
 	if (divisions[current_timepoint_id].division->events.size() == 0)
 		return;
+
 	ns_acquire_lock_for_scope lock(image_buffer_access_lock, __FILE__, __LINE__);
 	if (action == ns_censor_all) {
 		bool new_state = false;
@@ -8571,6 +8648,7 @@ void ns_experiment_storyboard_annotater::register_click(const ns_vector_2i & ima
 			if (divisions[current_timepoint_id].division->events[i].event_annotation.flag.specified())
 				continue;
 			divisions[current_timepoint_id].division->events[i].event_annotation.excluded = new_state ? ns_death_time_annotation::ns_by_hand_excluded : ns_death_time_annotation::ns_not_excluded;
+			regions_modified_but_not_saved.insert(divisions[current_timepoint_id].division->events[i].event_annotation.region_info_id);
 		}
 
 		for (unsigned int i = 0; i < divisions.size(); i++) {
@@ -8581,8 +8659,10 @@ void ns_experiment_storyboard_annotater::register_click(const ns_vector_2i & ima
 					if (divisions[current_timepoint_id].division->events[k].event_annotation.flag.specified())
 						continue;
 					if (divisions[i].division->events[j].event_annotation.stationary_path_id == divisions[current_timepoint_id].division->events[k].event_annotation.stationary_path_id &&
-						divisions[i].division->events[j].event_annotation.region_info_id == divisions[current_timepoint_id].division->events[k].event_annotation.region_info_id)
+						divisions[i].division->events[j].event_annotation.region_info_id == divisions[current_timepoint_id].division->events[k].event_annotation.region_info_id) {
 						divisions[i].division->events[j].event_annotation.excluded = new_state ? ns_death_time_annotation::ns_by_hand_excluded : ns_death_time_annotation::ns_not_excluded;
+						regions_modified_but_not_saved.insert(divisions[i].division->events[j].event_annotation.region_info_id);
+					}
 				}
 			}
 		}
@@ -8602,13 +8682,16 @@ void ns_experiment_storyboard_annotater::register_click(const ns_vector_2i & ima
 			return;
 		}
 		std::vector<ns_experiment_storyboard_timepoint_element *> worms(1, worm);
+		regions_modified_but_not_saved.insert(worm->event_annotation.region_info_id);
 		for (unsigned int i = 0; i < divisions.size(); i++) {
 			if (i == current_timepoint_id)
 				continue;
 			for (unsigned int j = 0; j < divisions[i].division->events.size(); j++) {
 				if (divisions[i].division->events[j].event_annotation.stationary_path_id == worm->event_annotation.stationary_path_id &&
-					divisions[i].division->events[j].event_annotation.region_info_id == worm->event_annotation.region_info_id)
+					divisions[i].division->events[j].event_annotation.region_info_id == worm->event_annotation.region_info_id) {
 					worms.push_back(&divisions[i].division->events[j]);
+					regions_modified_but_not_saved.insert(divisions[i].division->events[j].event_annotation.region_info_id);
+				}
 			}
 		}
 		//	if (worms.size() > 1)
@@ -8646,7 +8729,6 @@ void ns_experiment_storyboard_annotater::register_click(const ns_vector_2i & ima
 			}
 		}
 	}
-	saved_ = false;
 	draw_metadata(&divisions[current_timepoint_id], *current_image.im, external_rescale_factor);
 	request_refresh();
 

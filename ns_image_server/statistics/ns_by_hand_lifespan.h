@@ -208,7 +208,8 @@ class ns_by_hand_lifespan_experiment_specification{
 					for (unsigned int k = 0; k < plates[i].events[j].deaths; k++){
 						c.events.push_back(d);
 					}
-					set.curves[i].timepoints[j].deaths.add(c);
+					set.curves[i].timepoints[j].movement_based_deaths.add(c);
+					set.curves[i].timepoints[j].best_guess_deaths.add(c);
 				}
 	//			plates[i].annotations.push_back(c);
 
@@ -222,7 +223,8 @@ class ns_by_hand_lifespan_experiment_specification{
 					for (unsigned int k = 0; k < plates[i].events[j].censored; k++){
 						c.events.push_back(d);
 					}
-					set.curves[i].timepoints[j].deaths.add(c);
+					set.curves[i].timepoints[j].movement_based_deaths.add(c);
+					set.curves[i].timepoints[j].best_guess_deaths.add(c);
 				}
 	//			plates[i].annotations.push_back(c);
 				

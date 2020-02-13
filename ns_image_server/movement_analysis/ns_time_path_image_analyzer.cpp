@@ -1081,80 +1081,81 @@ void ns_time_path_image_movement_analyzer<allocator_T>::process_raw_images(const
 
 		//now we have calculated all the movement images
 		//and we have all the stabilized region data stored as well
+		if (number_of_paths_to_consider > 0) {
+			image_server_const.add_subtext_to_current_event("\n", (write_status_to_db ? (&sql) : 0));
+			image_server_const.add_subtext_to_current_event(ns_image_server_event("Stabilizing regions of focus..."), (write_status_to_db ? (&sql) : 0));
 
-		image_server_const.add_subtext_to_current_event("\n", (write_status_to_db ? (&sql) : 0));
-		image_server_const.add_subtext_to_current_event(ns_image_server_event("Stabilizing regions of focus..."), (write_status_to_db ? (&sql) : 0));
+			thread_pool.set_number_of_threads(image_server_const.maximum_number_of_processing_threads());
+			thread_pool.prepare_pool_to_run();
 
-		thread_pool.set_number_of_threads(image_server_const.maximum_number_of_processing_threads());
-		thread_pool.prepare_pool_to_run();
+			//we just need to do a few final calculations and then copy everything to long term storage
+			for (unsigned int i = 0; i < groups.size(); i++) {
+				for (unsigned int j = 0; j < groups[i].paths.size(); j++) {
 
-		//we just need to do a few final calculations and then copy everything to long term storage
-		for (unsigned int i = 0; i < groups.size(); i++) {
-			for (unsigned int j = 0; j < groups[i].paths.size(); j++) {
-
-				thread_pool.add_job_while_pool_is_not_running(
-					ns_time_path_image_movement_analyzer_thread_pool_job<allocator_T>(i, j,
-						&ns_time_path_image_movement_analyzer<allocator_T>::finish_up_and_write_to_long_term_storage,
-						this, &shared_state));
-			}
-		}
-
-		thread_pool.run_pool();
-
-		//output progres information
-		if (write_status_to_db) {
-			int last_p(0);
-			while (true) {
-				const int n = thread_pool.number_of_jobs_pending();
-				const int p = (100 * (groups.size() - n)) / groups.size();
-				if (p-last_p >= 5) {
-					ns_acquire_lock_for_scope lock(shared_state.sql_lock, __FILE__, __LINE__);
-					image_server_const.add_subtext_to_current_event(ns_to_string(p) + "%...", (write_status_to_db ? (&sql) : 0));
-					lock.release();
-					last_p = p;
+					thread_pool.add_job_while_pool_is_not_running(
+						ns_time_path_image_movement_analyzer_thread_pool_job<allocator_T>(i, j,
+							&ns_time_path_image_movement_analyzer<allocator_T>::finish_up_and_write_to_long_term_storage,
+							this, &shared_state));
 				}
-				if (n == 0)
-					break;
 			}
-			ns_thread::sleep(3);
-		}
 
-		thread_pool.wait_for_all_threads_to_become_idle();
-		ns_throw_pool_errors<allocator_T> throw_errors;
-		throw_errors(thread_pool, sql);
-		thread_pool.shutdown();
+			thread_pool.run_pool();
 
-		//OK! Now we have /everything/ finished with the images.
-		//calculate some final stats and then we're done.
-		normalize_movement_scores_over_all_paths(e->software_version_number(),times_series_denoising_parameters,sql);
-		//xxx this could be paraellelized if it was worth it.
-		for (unsigned int i = 0; i < groups.size(); i++){
-			for (unsigned int j = 0; j < groups[i].paths.size(); j++){
-						if (ns_skip_low_density_paths && groups[i].paths[j].is_low_density_path())
-								continue;
-				//THIS IS WHERE QUANTIFICATION IS ANALYZED AND DEATH TIMES ARE IDENTIFIED AND ANNOTATIONS ARE GENERATED
-				groups[i].paths[j].analyze_movement(e,ns_stationary_path_id(i,j,analysis_id),last_timepoint_in_analysis_);
-				groups[i].paths[j].calculate_movement_quantification_summary(groups[i].paths[j].movement_analysis_result);
+			//output progres information
+			if (groups.size() > 0 && write_status_to_db) {
+				int last_p(0);
+				while (true) {
+					const int n = thread_pool.number_of_jobs_pending();
+					const int p = (100 * (groups.size() - n)) / groups.size();
+					if (p - last_p >= 5) {
+						ns_acquire_lock_for_scope lock(shared_state.sql_lock, __FILE__, __LINE__);
+						image_server_const.add_subtext_to_current_event(ns_to_string(p) + "%...", (write_status_to_db ? (&sql) : 0));
+						lock.release();
+						last_p = p;
+					}
+					if (n == 0)
+						break;
+				}
+				ns_thread::sleep(3);
 			}
-		}
 
-		//ofstream oo("c:\\out.csv");
-		unsigned long total_groups(0);
-		unsigned long total_skipped(0);
-		for (unsigned int i = 0; i < groups.size(); i++){
-			for (unsigned int j = 0; j < groups[i].paths.size(); j++){
-			//	for (unsigned int k = 0; k < groups[i].paths[j].elements.size(); k++)
-			//		oo << i << "," << j << "," << k << "," << (groups[i].paths[j].elements[k].element_was_processed?1:0) << "\n";
-				const unsigned long c(groups[i].paths[j].number_of_elements_not_processed_correctly());
-				//if (c > 0){
-				//}
-				total_groups+=(c>0)?1:0;
-				total_skipped+=c;
+			thread_pool.wait_for_all_threads_to_become_idle();
+			ns_throw_pool_errors<allocator_T> throw_errors;
+			throw_errors(thread_pool, sql);
+			thread_pool.shutdown();
+
+			//OK! Now we have /everything/ finished with the images.
+			//calculate some final stats and then we're done.
+			normalize_movement_scores_over_all_paths(e->software_version_number(),times_series_denoising_parameters,sql);
+			//xxx this could be paraellelized if it was worth it.
+			for (unsigned int i = 0; i < groups.size(); i++){
+				for (unsigned int j = 0; j < groups[i].paths.size(); j++){
+							if (ns_skip_low_density_paths && groups[i].paths[j].is_low_density_path())
+									continue;
+					//THIS IS WHERE QUANTIFICATION IS ANALYZED AND DEATH TIMES ARE IDENTIFIED AND ANNOTATIONS ARE GENERATED
+					groups[i].paths[j].analyze_movement(e,ns_stationary_path_id(i,j,analysis_id),last_timepoint_in_analysis_);
+					groups[i].paths[j].calculate_movement_quantification_summary(groups[i].paths[j].movement_analysis_result);
+				}
 			}
-		}
 
-		if (total_skipped > 0){
-			throw ns_ex("") << total_skipped << " frames were missed among " << total_groups << " out of a total of " << groups.size() << " path groups.";
+			//ofstream oo("c:\\out.csv");
+			unsigned long total_groups(0);
+			unsigned long total_skipped(0);
+			for (unsigned int i = 0; i < groups.size(); i++){
+				for (unsigned int j = 0; j < groups[i].paths.size(); j++){
+				//	for (unsigned int k = 0; k < groups[i].paths[j].elements.size(); k++)
+				//		oo << i << "," << j << "," << k << "," << (groups[i].paths[j].elements[k].element_was_processed?1:0) << "\n";
+					const unsigned long c(groups[i].paths[j].number_of_elements_not_processed_correctly());
+					//if (c > 0){
+					//}
+					total_groups+=(c>0)?1:0;
+					total_skipped+=c;
+				}
+			}
+
+			if (total_skipped > 0){
+				throw ns_ex("") << total_skipped << " frames were missed among " << total_groups << " out of a total of " << groups.size() << " path groups.";
+			}
 		}
 		generate_movement_description_series();
 
@@ -1772,7 +1773,8 @@ bool operator!=(const ns_analyzed_image_specification& a, const ns_analyzed_imag
 
 
 template<class allocator_T>
-void ns_time_path_image_movement_analyzer<allocator_T>::calculate_optimzation_stats_for_current_hmm_estimator(ns_hmm_movement_analysis_optimizatiom_stats & s, const ns_emperical_posture_quantification_value_estimator * e, std::set<ns_stationary_path_id> & paths_to_test, bool generate_path_info) {
+bool ns_time_path_image_movement_analyzer<allocator_T>::calculate_optimzation_stats_for_current_hmm_estimator(ns_hmm_movement_analysis_optimizatiom_stats & s, const ns_emperical_posture_quantification_value_estimator * e, std::set<ns_stationary_path_id> & paths_to_test, bool generate_path_info) {
+	bool found_worm(false);
 	for (unsigned long g = 0; g < groups.size(); g++)
 		for (unsigned long p = 0; p < groups[g].paths.size(); p++) {
 			if (ns_skip_low_density_paths && groups[g].paths[p].is_low_density_path() || !groups[g].paths[p].by_hand_data_specified() ||
@@ -1789,7 +1791,7 @@ void ns_time_path_image_movement_analyzer<allocator_T>::calculate_optimzation_st
 
 			if (!paths_to_test.empty() && paths_to_test.find(this->generate_stationary_path_id(g, p)) == paths_to_test.end())
 				continue;
-		
+			found_worm = true;
 			ns_time_path_posture_movement_solution by_hand_posture_movement_solution(groups[g].paths[p].reconstruct_movement_state_solution_from_annotations(groups[g].paths[p].movement_analysis_result.first_valid_element_id.period_start_index, groups[g].paths[p].movement_analysis_result.last_valid_element_id.period_end_index, groups[g].paths[p].by_hand_annotation_event_times));
 			//if (by_hand_posture_movement_solution.moving.skipped) {
 				//cout << "Encountered a by hand annotation in which the animal never slowed: " << g << "\n";
@@ -1831,10 +1833,15 @@ void ns_time_path_image_movement_analyzer<allocator_T>::calculate_optimzation_st
 				ns_hmm_movement_analysis_optimizatiom_stats_event_annotation * result = &(s.animals.rbegin()->measurements[st]);
 
 				result->by_hand_identified = !by_hand_result.fully_unbounded() && groups[g].paths[p].by_hand_annotation_event_explicitness[st] != ns_death_time_annotation::ns_explicitly_not_observed;
-
+				
 				if (result->by_hand_identified)
 					result->by_hand = by_hand_result;
-
+				if (result->by_hand_identified && result->by_hand.best_estimate_event_time_for_possible_partially_unbounded_interval() == 0) {
+					std::cerr << "The worm browser generated a spurious storyboard annotation that has been ignored.\n";
+					//These enter the pipeline in
+					//ns_analyzed_image_time_path::add_by_hand_annotations()
+					result->by_hand_identified = false;
+				}
 				result->machine_identified = !machine_skipped;
 				if (result->machine_identified)
 					result->machine = machine_result;
@@ -1842,6 +1849,7 @@ void ns_time_path_image_movement_analyzer<allocator_T>::calculate_optimzation_st
 			}
 
 		}
+	return found_worm;
 }
 template<class allocator_T>
 void ns_time_path_image_movement_analyzer<allocator_T>::reanalyze_with_different_movement_estimator(const ns_time_series_denoising_parameters &, const ns_analyzed_image_time_path_death_time_estimator * e) {
@@ -2540,7 +2548,10 @@ std::vector< std::vector < unsigned long > > static_messy_death_time_matrix;
 				results_2->death_total_mean_square_error_in_hours[i][j] += err_sq;
 				results_2->counts[i][j] ++;
 			}
-
+			if (log(thresholds[i]) > 20) {
+				cerr << "Invalid Threshold\n";
+				continue;
+			}
 			o << m.experiment_name << "," << m.device << "," << m.plate_name() << "," << m.plate_type_summary() 
 				<< "," << id.group_id << "," << id.path_id << ","
 				<< (censoring_and_flag_details.is_excluded()?"1":"0") << ","
@@ -3024,11 +3035,13 @@ void ns_time_path_image_movement_analyzer<allocator_T>::write_posture_analysis_o
 	srand(0);
 	for (unsigned int i = 0; i < groups.size(); i++){
 		for (unsigned int j = 0; j < groups[i].paths.size(); j++){	
-			if (ns_skip_low_density_paths && groups[i].paths[j].is_low_density_path() || groups[i].paths[j].excluded() || !groups[i].paths[j].by_hand_data_specified())
+			if (ns_skip_low_density_paths && groups[i].paths[j].is_low_density_path() || groups[i].paths[j].excluded() || !groups[i].paths[j].by_hand_data_specified() ||
+				groups[i].paths[j].censoring_and_flag_details.number_of_worms_at_location_marked_by_hand > 1)
+				//we do not test multi-worm clusters because there is an ambiguity in which of the multiple by hand death times should match up to the machine death time
 					continue;
 			if (groups[i].paths[j].censoring_and_flag_details.flag.specified() && ( groups[i].paths[j].censoring_and_flag_details.flag.event_should_be_excluded() || 
 				groups[i].paths[j].censoring_and_flag_details.flag.label_short == "2ND_WORM_ERR" ||
-				groups[i].paths[j].censoring_and_flag_details.flag.label_short == "STILL_ALIVE"))
+				groups[i].paths[j].censoring_and_flag_details.flag.label_short == "STILL_ALIVE" ))
 				continue;
 			groups[i].paths[j].write_posture_analysis_optimization_data(software_version,generate_stationary_path_id(i,j),thresholds,hold_times,m,denoising_parameters_used,o, results,results_2);
 		}
@@ -4661,8 +4674,14 @@ void ns_analyzed_image_time_path::add_by_hand_annotations(const ns_death_time_an
 			e.type != ns_death_associated_post_expansion_contraction_stop &&
 			e.type != ns_death_associated_post_expansion_contraction_start)
 			continue;
+		//if (e.time.best_estimate_event_time_for_possible_partially_unbounded_interval() == 0)	
+			//worm browser occassionaly generates spurious translation cessation events.
+			//XXX We suppress them here
+			//continue;
 
 			by_hand_annotation_event_times[(int)e.type] = e.time;
+			//if (e.time.best_estimate_event_time_for_possible_partially_unbounded_interval() == 0)
+			//	throw ns_ex("ns_analyzed_image_time_path::add_by_hand_annotations()::Adding zeroed event time!");
 			by_hand_annotation_event_explicitness[(int)e.type] = e.event_explicitness;
 	}
 }
@@ -6615,6 +6634,7 @@ void ns_analyzed_image_time_path_element_measurements::zero(){
 	total_region_area = 0;
 	total_intensity_within_region = 0;
 	total_intensity_within_stabilized = 0;
+	total_intensity_within_stabilized_denoised = 0;
 	total_intensity_within_foreground = 0;
 	total_intensity_in_previous_frame_scaled_to_current_frames_histogram = 0;
 	total_alternate_worm_area = 0;
@@ -6647,6 +6667,7 @@ void ns_analyzed_image_time_path_element_measurements::square() {
 	total_region_area = total_region_area*total_region_area;
 	total_intensity_within_region = total_intensity_within_region*total_intensity_within_region;
 	total_intensity_within_stabilized = total_intensity_within_stabilized*total_intensity_within_stabilized;
+	total_intensity_within_stabilized_denoised = total_intensity_within_stabilized_denoised*total_intensity_within_stabilized_denoised;
 	total_intensity_within_foreground = total_intensity_within_foreground*total_intensity_within_foreground;
 	total_intensity_in_previous_frame_scaled_to_current_frames_histogram = total_intensity_in_previous_frame_scaled_to_current_frames_histogram*total_intensity_in_previous_frame_scaled_to_current_frames_histogram;
 	total_alternate_worm_area = total_alternate_worm_area*total_alternate_worm_area;
@@ -6681,6 +6702,7 @@ void ns_analyzed_image_time_path_element_measurements::square_root() {
 	total_region_area = sqrt(total_region_area);
 	total_intensity_within_region = sqrt(total_intensity_within_region);
 	total_intensity_within_stabilized = sqrt(total_intensity_within_stabilized);
+	total_intensity_within_stabilized_denoised = sqrt(total_intensity_within_stabilized_denoised);
 	total_intensity_within_foreground = sqrt(total_intensity_within_foreground);
 	total_intensity_in_previous_frame_scaled_to_current_frames_histogram = sqrt(total_intensity_in_previous_frame_scaled_to_current_frames_histogram);
 	total_alternate_worm_area = sqrt(total_alternate_worm_area);
@@ -6718,6 +6740,7 @@ ns_analyzed_image_time_path_element_measurements operator+(const ns_analyzed_ima
 	ret.total_region_area = a.total_region_area+b.total_region_area;
 	ret.total_intensity_within_region = a.total_intensity_within_region+b.total_intensity_within_region;
 	ret.total_intensity_within_stabilized = a.total_intensity_within_stabilized+b.total_intensity_within_stabilized;
+	ret.total_intensity_within_stabilized_denoised = a.total_intensity_within_stabilized_denoised+b.total_intensity_within_stabilized_denoised;
 	ret.total_intensity_within_foreground = a.total_intensity_within_foreground+b.total_intensity_within_foreground;
 	ret.total_intensity_in_previous_frame_scaled_to_current_frames_histogram = a.total_intensity_in_previous_frame_scaled_to_current_frames_histogram+b.total_intensity_in_previous_frame_scaled_to_current_frames_histogram;
 	ret.total_alternate_worm_area = a.total_alternate_worm_area+b.total_alternate_worm_area;
@@ -6754,6 +6777,7 @@ ns_analyzed_image_time_path_element_measurements operator-(const ns_analyzed_ima
 	ret.total_region_area = a.total_region_area - b.total_region_area;
 	ret.total_intensity_within_region = a.total_intensity_within_region - b.total_intensity_within_region;
 	ret.total_intensity_within_stabilized = a.total_intensity_within_stabilized - b.total_intensity_within_stabilized;
+	ret.total_intensity_within_stabilized_denoised = a.total_intensity_within_stabilized_denoised-b.total_intensity_within_stabilized_denoised;
 	ret.total_intensity_within_foreground = a.total_intensity_within_foreground - b.total_intensity_within_foreground;
 	ret.total_intensity_in_previous_frame_scaled_to_current_frames_histogram = a.total_intensity_in_previous_frame_scaled_to_current_frames_histogram - b.total_intensity_in_previous_frame_scaled_to_current_frames_histogram;
 	ret.total_alternate_worm_area = a.total_alternate_worm_area - b.total_alternate_worm_area;
@@ -6791,6 +6815,7 @@ ns_analyzed_image_time_path_element_measurements operator/(const ns_analyzed_ima
 	ret.total_region_area = a.total_region_area / d;
 	ret.total_intensity_within_region = a.total_intensity_within_region / d;
 	ret.total_intensity_within_stabilized = a.total_intensity_within_stabilized / d;
+	ret.total_intensity_within_stabilized_denoised = a.total_intensity_within_stabilized /d;
 	ret.total_intensity_within_foreground = a.total_intensity_within_foreground / d;
 	ret.total_intensity_in_previous_frame_scaled_to_current_frames_histogram = a.total_intensity_in_previous_frame_scaled_to_current_frames_histogram / d;
 	ret.total_alternate_worm_area = a.total_alternate_worm_area / d;

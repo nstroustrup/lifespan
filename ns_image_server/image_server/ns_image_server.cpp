@@ -368,6 +368,7 @@ void ns_image_server_automated_job_scheduler::scan_for_tasks(ns_sql & sql, bool 
 
 	unsigned long start_time(ns_current_time());
 	image_server.update_posture_analysis_model_registry(sql,false);
+	image_server.update_worm_detection_model_registry(sql, false);
 	calculate_capture_schedule_boundaries(sql);
 	identify_experiments_needing_captured_image_protection(sql);
 	handle_when_completed_priority_jobs(sql);
@@ -387,7 +388,7 @@ void ns_image_server_automated_job_scheduler::handle_when_completed_priority_job
 		}
 	}
 }
-void ns_image_server_automated_job_scheduler::identify_experiments_needing_captured_image_protection(ns_sql & sql,const ns_64_bit specific_sample_id){
+bool ns_image_server_automated_job_scheduler::identify_experiments_needing_captured_image_protection(ns_sql & sql,const ns_64_bit specific_sample_id){
 	const long number_of_images_to_protect(5);
 	std::vector<ns_64_bit> sample_ids;
 	ns_sql_result samples;
@@ -406,7 +407,7 @@ void ns_image_server_automated_job_scheduler::identify_experiments_needing_captu
 		if (samples.size() == 0)
 			throw ns_ex("Could not find sample ") << specific_sample_id << " in the db";
 	}
-
+	bool made_a_change = false;
 	for (unsigned int i = 0; i < sample_ids.size(); i++){
 		const ns_64_bit sample_id(sample_ids[i]);
 		sql << "SELECT id, never_delete_image FROM captured_images WHERE image_id != 0 AND problem = 0 "
@@ -420,6 +421,7 @@ void ns_image_server_automated_job_scheduler::identify_experiments_needing_captu
 			if (images[j][1] == "1") continue;
 			sql << "UPDATE captured_images SET never_delete_image = 1 WHERE id = " << images[j][0];
 			sql.send_query();
+			made_a_change = true;
 		}
 		if (images.size() == number_of_images_to_protect){
 
@@ -429,6 +431,7 @@ void ns_image_server_automated_job_scheduler::identify_experiments_needing_captu
 			image_server.register_server_event(ns_image_server_event("The first frames of sample ") << samples[i][2] << "::" << samples[i][1] << " are now protected.",&sql);
 		}
 	}
+	return made_a_change;
 }
 
 
@@ -1963,7 +1966,7 @@ bool ns_update_db_using_experimental_data_from_file(const std::string new_databa
 
 
 	for (unsigned int i = 0; i < files.size(); i++){
-		if (ns_dir::extract_extension(files[i]) != "gz")
+		if (ns_dir::extract_extension(files[i]) != "csv.gz")
 			continue;
 		std::string source(output_directory + DIR_CHAR_STR + files[i]);
 		std::string table_name = ns_dir::extract_filename(source);
@@ -3119,7 +3122,10 @@ void ns_image_server::clear_old_server_events(ns_sql & sql){
 void ns_image_server::add_subtext_to_current_event(const char * str, ns_image_server_sql * sql,bool suppress_display,const ns_64_bit impersonate_using_internal_thread_id) const {
 	if (sql != 0) {
 		std::map<ns_64_bit, ns_thread_output_state>::iterator current_thread_state = get_current_thread_state_info(impersonate_using_internal_thread_id);
-
+		if (sql->query().size() > 0) {
+			cerr << "Warning! add_subtext_to_current_event() was passed an sql object with a command left in its query buffer: " << sql->query().size() << "\n";
+			sql->clear_query();
+		}
 		*sql << "UPDATE " << sql->table_prefix() << "host_event_log SET sub_text = CONCAT(sub_text,'" << sql->escape_string(str) << "') WHERE id = " << current_thread_state->second.last_event_sql_id;
 		sql->send_query();
 	}
@@ -3211,11 +3217,11 @@ void ns_image_server::register_server_event_no_db(const ns_image_server_event & 
 	lock.release();
 }
 
-ns_64_bit ns_image_server::register_server_event(const ns_ex & ex, ns_image_server_sql * sql)const{
+ns_64_bit ns_image_server::register_server_event(const ns_ex & ex, ns_image_server_sql * sql, const bool no_display)const{
 	ns_image_server_event s_event(ex.text());
 	if (ex.type() == ns_sql_fatal) s_event << ns_ts_sql_error;
 	else s_event << ns_ts_error;
-	return register_server_event(s_event,sql);
+	return register_server_event(s_event,sql,no_display);
 
 }
 void ns_image_server::set_main_thread_internal_id() {
@@ -3404,7 +3410,8 @@ void ns_image_server::get_posture_analysis_model_for_region(const ns_64_bit regi
 	source.set_directory(long_term_storage_directory, posture_analysis_model_directory());
 
 	if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("get_posture_analysis_model_for_region::directory set"));
-	posture_analysis_model_cache.get_for_read(res[0][0], it, source);
+	ns_posture_analysis_model_cache_specification pa_spec(res[0][0], ns_posture_analysis_model::method_from_string(res[0][1]));
+	posture_analysis_model_cache.get_for_read(pa_spec, it, source);
 	if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("get_posture_analysis_model_for_region::gotten for read"));
 
 }
@@ -3417,16 +3424,18 @@ void ns_posture_analysis_model_entry_source::set_directory(const std::string lon
 	model_directory += posture_model_dir;
 	model_directory += DIR_CHAR;
 }
-void ns_posture_analysis_model_entry::load_from_external_source(const std::string & name_, ns_posture_analysis_model_entry_source & external_source) {
+void ns_posture_analysis_model_entry::load_from_external_source(const ns_posture_analysis_model_cache_specification & name_, ns_posture_analysis_model_entry_source & external_source) {
 
 	if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("ns_posture_analysis_model_entry::opening"));
 	name = name_;
-	model_specification.name = name_;
-	model_specification.posture_analysis_method = external_source.analysis_method;
+	model_specification.name = name_.first;
+	model_specification.posture_analysis_method = name_.second;
+	if (model_specification.posture_analysis_method != external_source.analysis_method)
+		throw ns_ex("Found a model with the incorrect analysis method specified!  Please rebuild the model registry.");
 	if (model_specification.posture_analysis_method == ns_posture_analysis_model::ns_hidden_markov || model_specification.posture_analysis_method == ns_posture_analysis_model::ns_threshold_and_hmm) {
-		ifstream moving((external_source.model_directory + name + ".csv").c_str());
+		ifstream moving((external_source.model_directory + model_specification.name + ".csv").c_str());
 		if (moving.fail())
-			throw ns_ex("Could not load ") << external_source.model_directory + name + ".csv";
+			throw ns_ex("Could not load ") << external_source.model_directory + model_specification.name + ".csv";
 
 		model_specification.hmm_posture_estimator.read(moving);
 		moving.close();
@@ -3435,11 +3444,11 @@ void ns_posture_analysis_model_entry::load_from_external_source(const std::strin
 	}
 	if (model_specification.posture_analysis_method == ns_posture_analysis_model::ns_threshold || model_specification.posture_analysis_method == ns_posture_analysis_model::ns_threshold_and_hmm) {
 		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("ns_posture_analysis_model_entry::threshold"));
-		ifstream thresh((external_source.model_directory + name + "_threshold.csv").c_str());
+		ifstream thresh((external_source.model_directory + model_specification.name + "_threshold.csv").c_str());
 		if (thresh.fail()) {
 
 			if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("ns_posture_analysis_model_entry::error!"));
-			throw ns_ex("Could not load ") << external_source.model_directory + name + "_threshold.csv";
+			throw ns_ex("Could not load ") << external_source.model_directory + model_specification.name + "_threshold.csv";
 		}
 
 		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("ns_posture_analysis_model_entry::reading"));
@@ -3468,11 +3477,13 @@ struct ns_posture_analysis_model_registry_entry {
 	unsigned long file_time;
 };
 struct ns_model_registry_info {
+	ns_posture_analysis_model_registry_entry model_entry;
 	bool is_a_threshold_file;
 	unsigned long last_modified_time_on_disk, last_modified_time_in_db;
 	std::string filename, model_name;
 	bool needs_to_be_updated_in_registry;
 };
+
 void ns_image_server::update_posture_analysis_model_registry(ns_sql& sql, bool force) {
 
 	ns_posture_analysis_model_entry_source source;
@@ -3548,10 +3559,8 @@ void ns_image_server::update_posture_analysis_model_registry(ns_sql& sql, bool f
 		return;
 
 	//throw away all previous info in the registry and rebuild anew.
-	cout << "Updating Analysis Model Registry\n";
+	cout << "Updating Posture Analysis Model Registry\n";
 	
-	std::vector<ns_posture_analysis_model_registry_entry> models_to_upload;
-	models_to_upload.reserve(model_files_on_disk.size());
 	std::vector< ns_posture_analysis_model::ns_posture_analysis_method> models_to_try;
 	for (unsigned int i = 0; i < model_files_on_disk.size(); i++) {
 		models_to_try.resize(0);
@@ -3563,41 +3572,194 @@ void ns_image_server::update_posture_analysis_model_registry(ns_sql& sql, bool f
 			models_to_try.push_back(ns_posture_analysis_model::ns_hidden_markov);
 		}
 
-		bool loaded_correctly = false;
-		for (int j = 0; j < models_to_try.size(); j++) {
+		for (auto m = models_to_try.begin(); m != models_to_try.end(); ++m) {
 			try {
-				source.analysis_method = models_to_try[j];
+				source.analysis_method = *m;
 				ns_posture_analysis_model_cache::const_handle_t handle;
-				posture_analysis_model_cache.get_for_read(model_files_on_disk[i].model_name, handle, source);
-
-				models_to_upload.push_back(ns_posture_analysis_model_registry_entry(model_files_on_disk[i].model_name, model_files_on_disk[i].filename, source.analysis_method, handle().model_specification.software_version_when_built(), model_files_on_disk[i].last_modified_time_on_disk));
+				posture_analysis_model_cache.get_for_read(ns_posture_analysis_model_cache_specification(model_files_on_disk[i].model_name,*m), handle, source);
+				model_files_on_disk[i].model_entry = ns_posture_analysis_model_registry_entry(model_files_on_disk[i].model_name, model_files_on_disk[i].filename, source.analysis_method, handle().model_specification.software_version_when_built(), model_files_on_disk[i].last_modified_time_on_disk);
 				handle.release();
-				loaded_correctly = true;
 				break;
 			}
 			catch (ns_ex & ex) {
-				cout << ".";
-				//not a valid model of this type.
+				if (*m == ns_posture_analysis_model::ns_threshold_and_hmm)	//some files might not exist so don't automatically add them as missing.
+					continue;
+				cout << "Encountered an un-loadable file in the model directory:" << model_files_on_disk[i].filename << ": " << ex.text() << "\n";
+				model_files_on_disk[i].model_entry = ns_posture_analysis_model_registry_entry(model_files_on_disk[i].model_name, model_files_on_disk[i].filename, ns_posture_analysis_model::ns_unknown, "?", model_files_on_disk[i].last_modified_time_on_disk);
 			}
 		}
-		if (!loaded_correctly) {
-			cout << "Encountered an file with an unrecognizable format in the model directory:" << model_files_on_disk[i].filename << "\n";
-			models_to_upload.push_back(ns_posture_analysis_model_registry_entry(model_files_on_disk[i].model_name, model_files_on_disk[i].filename, ns_posture_analysis_model::ns_unknown, "?", model_files_on_disk[i].last_modified_time_on_disk));
+	}
+	
+	sql.set_autocommit(false);
+	sql.send_query("START TRANSACTION");
+	sql.send_query("LOCK TABLES analysis_model_registry WRITE");
+	sql.send_query("DELETE FROM analysis_model_registry WHERE analysis_step='posture'");
+	for (unsigned int i = 0; i < model_files_on_disk.size(); i++) {
+		sql << "INSERT INTO analysis_model_registry SET name='" << model_files_on_disk[i].model_entry.name << "', analysis_method='" << ns_posture_analysis_model::method_to_string(model_files_on_disk[i].model_entry.method) << "', version='" << model_files_on_disk[i].model_entry.version << "', analysis_step='posture', file_time = " << model_files_on_disk[i].model_entry.file_time << ", filename='" << model_files_on_disk[i].model_entry.filename << "'";
+		sql.send_query();
+	}
+	sql.send_query("COMMIT");
+	sql.send_query("UNLOCK TABLES");
+	
+}
+
+struct ns_worm_detection_model_registry_info {
+	ns_posture_analysis_model_registry_entry model_entry;
+	std::string included_stats_filename, range_filename, pca_spec_filename;
+	unsigned long last_modified_time_on_disk, last_modified_time_in_db;
+	bool needs_to_be_updated_in_registry;
+	bool all_necissary_files_exist;
+};
+
+void ns_image_server::update_worm_detection_model_registry(ns_sql& sql, bool force) {
+
+	std::string model_directory = image_server.long_term_storage_directory + DIR_CHAR_STR + image_server.worm_detection_model_directory() + DIR_CHAR_STR;
+
+
+	std::map<std::string, ns_worm_detection_model_registry_info> model_files_on_disk;
+	unsigned long latest_change_in_directory = 0;
+	{
+		ns_dir dir;
+		std::vector<std::string> files;
+		std::set<std::string> orphan_files;
+		dir.load_masked(model_directory, ".txt", files);
+
+		for (unsigned int i = 0; i < files.size(); i++) {
+
+			const unsigned long tm = ns_dir::get_file_timestamp(model_directory + files[i]);
+			if (tm > latest_change_in_directory)
+				latest_change_in_directory = tm;
+
+			std::string::size_type l = files[i].rfind("_model.txt");
+			if (l == std::string::npos) {
+				orphan_files.emplace(files[i]);
+				continue;
+			}
+			const std::string model_name = files[i].substr(0, l);
+			auto p = model_files_on_disk.emplace(std::pair<std::string, ns_worm_detection_model_registry_info>(model_name, ns_worm_detection_model_registry_info())).first;
+			p->second.model_entry.filename = files[i];
+			p->second.model_entry.name = model_name;
+			p->second.model_entry.version = "1";
+		}
+		for (auto p = model_files_on_disk.begin(); p != model_files_on_disk.end(); ++p) {
+			for (auto o = orphan_files.begin(); o != orphan_files.end(); ) {
+				if (o->find(p->second.model_entry.name) != o->npos) {
+					const std::string suffix = o->substr(p->second.model_entry.name.size());
+					if (suffix == "_range.txt") {
+						p->second.range_filename = *o;
+						o = orphan_files.erase(o);
+					}
+					else if (suffix == "_included_stats.txt") {
+						p->second.included_stats_filename = *o;
+						o = orphan_files.erase(o);
+					}
+					else if (suffix == "_pca_spec.txt") {
+						p->second.pca_spec_filename = *o;
+						o = orphan_files.erase(o);
+					}
+					else ++o;
+				}
+				else ++o;
+			}
+			std::string error;
+			if (p->second.range_filename.empty())
+				error = "Could find range file";
+			if (p->second.included_stats_filename.empty())
+				error = "Could not find included stats file";
+			try {
+				ns_worm_detection_model_cache::const_handle_t it;
+				get_worm_detection_model(p->second.model_entry.name, it);
+				it.release();
+			}
+			catch (ns_ex & ex) {
+				error = ex.text();
+			}
+			if (error.empty())
+				p->second.all_necissary_files_exist = true;
+			else {
+				p->second.all_necissary_files_exist = false;
+				cout << "Could not use model " << p->second.model_entry.name << ": " << error << "\n";
+			}
+
+
+		}
+		
+		//get latest file date for each model
+		for (auto p = model_files_on_disk.begin(); p != model_files_on_disk.end(); ++p) {
+			const std::string* files_to_check[4] = { &p->second.model_entry.filename,&p->second.included_stats_filename,&p->second.pca_spec_filename,&p->second.range_filename };
+			unsigned long latest_change = 0;
+			for (unsigned int i = 0; i < 4; i++) {
+				if (files_to_check[i]->empty())
+					continue;
+				const unsigned long tm = ns_dir::get_file_timestamp(model_directory + *files_to_check[i]);
+				if (tm > latest_change)
+					latest_change = tm;
+			}
+			p->second.model_entry.file_time = latest_change;
+			p->second.last_modified_time_on_disk = latest_change;
 		}
 	}
-	if (models_to_upload.size() > 0) {
-		sql.set_autocommit(false);
-		sql.send_query("START TRANSACTION");
-		sql.send_query("LOCK TABLES analysis_model_registry WRITE");
-		sql.send_query("DELETE FROM analysis_model_registry");
-		for (unsigned int i = 0; i < models_to_upload.size(); i++) {
-			sql << "INSERT INTO analysis_model_registry SET name='" << models_to_upload[i].name << "', analysis_method='" << ns_posture_analysis_model::method_to_string(models_to_upload[i].method) << "', version='" << models_to_upload[i].version << "', analysis_step='posture', file_time = " << models_to_upload[i].file_time << ", filename='" << models_to_upload[i].filename << "'";
-			//cout << sql.query() << "\n";
-			sql.send_query();
+
+	bool need_to_reset_registry = force;
+	bool models_removed_from_disk = false,
+		models_updated_on_disk = false;
+	{
+		//find the db time of all model files.
+		sql << "SELECT MIN(file_time),filename FROM analysis_model_registry WHERE analysis_step='detection' GROUP BY filename";
+		ns_sql_result min_model_timesmodels_in_db;
+		sql.get_rows(min_model_timesmodels_in_db);
+		if (!force) {
+			for (auto p = model_files_on_disk.begin(); p != model_files_on_disk.end(); ++p) {
+				p->second.last_modified_time_in_db = 0;
+				for (unsigned int j = 0; j < min_model_timesmodels_in_db.size(); j++) {
+					if (p->second.model_entry.filename == min_model_timesmodels_in_db[j][1]) {
+						p->second.last_modified_time_in_db = atol(min_model_timesmodels_in_db[j][0].c_str());
+						break;
+					}
+				}
+
+				if (p->second.last_modified_time_in_db < p->second.last_modified_time_on_disk) {
+					models_updated_on_disk = true;
+					p->second.needs_to_be_updated_in_registry = true;
+				}
+				else
+					p->second.needs_to_be_updated_in_registry = false;
+			}
 		}
-		sql.send_query("COMMIT");
-		sql.send_query("UNLOCK TABLES");
+		//see if any model files have been removed from disk
+		for (unsigned int j = 0; j < min_model_timesmodels_in_db.size(); j++) {
+			bool found_on_disk = false;	
+			for (auto p = model_files_on_disk.begin(); p != model_files_on_disk.end(); ++p) {
+				if (p->second.model_entry.filename == min_model_timesmodels_in_db[j][1] &&
+					p->second.all_necissary_files_exist) {
+					found_on_disk = true;
+					break;
+				}
+			}
+			if (!found_on_disk)
+				models_removed_from_disk = true;
+		}
 	}
+
+	if (!models_removed_from_disk && !models_updated_on_disk)
+		return;
+
+	//throw away all previous info in the registry and rebuild anew.
+	cout << "Updating Worm Detection Model Registry\n";
+
+	sql.set_autocommit(false);
+	sql.send_query("START TRANSACTION");
+	sql.send_query("LOCK TABLES analysis_model_registry WRITE");
+	sql.send_query("DELETE FROM analysis_model_registry WHERE analysis_step='detection'"); 
+	for (auto p = model_files_on_disk.begin(); p != model_files_on_disk.end(); ++p){
+		if (!p->second.all_necissary_files_exist)
+			continue;
+		sql << "INSERT INTO analysis_model_registry SET name='" << p->second.model_entry.name << "', analysis_method='" << ns_posture_analysis_model::method_to_string(p->second.model_entry.method) << "', version='" << p->second.model_entry.version << "', analysis_step='detection', file_time = " << p->second.model_entry.file_time << ", filename='" << p->second.model_entry.filename << "'";
+		sql.send_query();
+	}
+	sql.send_query("COMMIT");
+	sql.send_query("UNLOCK TABLES");
+	
 }
 
 ns_time_path_solver_parameters ns_image_server::get_position_analysis_model(const std::string & model_name,bool create_default_if_does_not_exist,const ns_64_bit region_info_id_for_default, ns_sql * sql_for_default) const{

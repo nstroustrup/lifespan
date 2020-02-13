@@ -191,13 +191,13 @@ void ns_time_path_solver::remove_short_and_moving_paths(const ns_time_path_solve
 		}
 		else p++;
 	}
-	ns_global_debug(ns_text_stream_t("ns_time_path_solver::::remove_short_and_moving_paths()::Number of paths after short paths removed: ") << paths.size());
-	ns_global_debug(ns_text_stream_t("ns_time_path_solver::::remove_short_and_moving_paths()::Longest short path removed: ") << debug_max_length);
+	ns_global_debug(ns_text_stream_t("ns_time_path_solver::remove_short_and_moving_paths()::Number of paths after short paths removed: ") << paths.size());
+	ns_global_debug(ns_text_stream_t("ns_time_path_solver::remove_short_and_moving_paths()::Longest short path removed: ") << debug_max_length);
 	
 	std::vector<double> deltas;
 	//remove paths that move too much.
 	for (std::vector<ns_time_path_solver_path>::iterator p = paths.begin(); p != paths.end();){
-		if(p->elements.size() == 1){
+		if(p->elements.size() <= 1){
 			p++;
 			continue;
 		}
@@ -217,7 +217,7 @@ void ns_time_path_solver::remove_short_and_moving_paths(const ns_time_path_solve
 			p = paths.erase(p);
 		else p++;
 	}
-	ns_global_debug(ns_text_stream_t("ns_time_path_solver::::remove_short_and_moving_paths()::Number of paths after moving paths removed: ") << paths.size());
+	ns_global_debug(ns_text_stream_t("ns_time_path_solver::remove_short_and_moving_paths()::Number of paths after moving paths removed: ") << paths.size());
 }
 
 void ns_splinter_path_fragment(const ns_time_path_solver_path & source, const unsigned long begin_i,const unsigned long end_i, ns_time_path_solver_path & destination){
@@ -318,6 +318,10 @@ void ns_time_path_solver::solve(const ns_time_path_solver_parameters &param, ns_
 	ns_global_debug(ns_text_stream_t("ns_time_path_solver::solve()::maximum_fraction_of_points_allowed_to_be_missing_in_path_fragment: ") <<	  param.maximum_fraction_of_points_allowed_to_be_missing_in_path_fragment);
 	ns_global_debug(ns_text_stream_t("ns_time_path_solver::solve()::maximum_fraction_of_median_gap_allowed_in_low_density_paths: ") <<		  param.maximum_fraction_of_median_gap_allowed_in_low_density_paths);
 	
+
+	if (timepoints.size() <= 1)
+		throw ns_ex("Encountered a data set with less than two timepoints!");
+
 	//first we find all paths that are long enough and consistant enough to be real
 	//note we discard lots of stray points here
 	find_stationary_path_fragments(param. maximum_fraction_of_points_allowed_to_be_missing_in_path_fragment,
@@ -399,7 +403,7 @@ void ns_time_path_solver::solve(const ns_time_path_solver_parameters &param, ns_
 		}*/
 		
 	}
-		remove_short_and_moving_paths(param);
+	remove_short_and_moving_paths(param);
 	/*for (unsigned int i = 0; i < paths.size(); i++){
 		for (unsigned int j = 0; j < paths[i].elements.size(); j++)
 			dbg << "4," << i << "," << paths[i].elements[j].t_id <<  "," <<timepoints[paths[i].elements[j].t_id].time << "\n";
@@ -2061,7 +2065,8 @@ void ns_time_path_solver::find_low_density_stationary_paths(const unsigned long 
 	std::vector<ns_time_path_solver_path_builder> open_paths;
 	open_paths.reserve(10);
 	low_density_paths.resize(0);
-
+	if (timepoints.size() <= 1)
+		throw ns_ex("Encountered a data set with less than two timepoints!");
 	for (long i = (long)timepoints.size()-1; i >= 0; i--){
 		const bool start_new_paths(can_search_for_stray_points_at_time(ns_time_element_link(i,0)));
 		

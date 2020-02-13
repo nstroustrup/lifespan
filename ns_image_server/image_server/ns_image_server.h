@@ -65,7 +65,7 @@ private:
 	ns_64_bit size_in_memory_in_kbytes() const {	return 0; }
 	void load_from_external_source(const ns_posture_analysis_model_cache_specification& name, ns_posture_analysis_model_entry_source & external_source);
 	static ns_posture_analysis_model_cache_specification to_id(const ns_posture_analysis_model_cache_specification& n) { return n; }
-	const ns_posture_analysis_model_cache_specification & id() const { return to_id(name); }
+	const ns_posture_analysis_model_cache_specification & id() const { return name; }
 	void clean_up(ns_posture_analysis_model_entry_source & external_source) {}
 };
 #endif

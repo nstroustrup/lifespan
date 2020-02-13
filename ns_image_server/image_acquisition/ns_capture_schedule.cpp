@@ -40,7 +40,7 @@ std::string ns_experiment_capture_specification::submit_schedule_to_db(std::vect
 						q->second.samples[k]->width > 2.5 || q->second.samples[k]->height > 10){
 						string warning;
 						warning+="Sample ";
-						warning+=q->second.samples[i]->sample_name + " has unusual dimensions: " + ns_to_string(q->second.samples[i]->width) + "x" + ns_to_string(q->second.samples[i]->height);
+						warning+=q->second.samples[i]->sample_name + " has unusual dimensions: " + ns_to_string(q->second.samples[k]->width) + "x" + ns_to_string(q->second.samples[k]->height);
 						warnings.push_back(warning);
 						debug += "WARNING: ";
 						debug += warning + ".\n\n";

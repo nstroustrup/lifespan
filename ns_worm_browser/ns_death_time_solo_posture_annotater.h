@@ -168,7 +168,7 @@ public:
 		if (machine_annotations.samples.size() != 0 && machine_annotations.samples.begin()->regions.size() != 0){
 			std::vector<ns_death_time_annotation> _unused_orphaned_events;
 			std::string _unused_error_message;
-			matcher.load_timing_data_from_set(machine_annotations.samples.begin()->regions.begin()->death_time_annotation_set,true,
+			matcher.load_timing_data_from_set((*machine_annotations.samples.begin()->regions.begin())->death_time_annotation_set,true,
 				machine_timing_data,_unused_orphaned_events,_unused_error_message);
 			
 			return true;
@@ -840,10 +840,10 @@ public:
 			if (im == 0)
 				continue;
 			//ns_image_properties prop(im.properties());
-			ns_save_image(gray_directory + DIR_CHAR_STR + filename + "_grayscale_" + pad_zeros(ns_to_string(i+1),num_dig) + ".tif",*im);
+			ns_save_image(gray_directory + DIR_CHAR_STR + filename + "_grayscale_" + ns_to_string(i+1) + ".tif",*im);
 			current_region_data->movement_analyzer.group(properties_for_all_animals.stationary_path_id.group_id).paths[properties_for_all_animals.stationary_path_id.path_id].element(i).generate_movement_visualization(mvt_tmp);
 			//ns_image_properties prop(im.properties()
-			ns_save_image(movement_directory + DIR_CHAR_STR + filename +  "_" + pad_zeros(ns_to_string(i+1),num_dig) + ".tif",mvt_tmp);
+			ns_save_image(movement_directory + DIR_CHAR_STR + filename +  "_" + ns_to_string(i+1) + ".tif",mvt_tmp);
 		}
 		
 		

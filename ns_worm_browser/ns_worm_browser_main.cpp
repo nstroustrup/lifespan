@@ -11,7 +11,7 @@
 #include "ns_high_precision_timer.h"
 #include "ns_experiment_storyboard.h"
 
-#define IDLE_THROTTLE_FPS 20
+#define IDLE_THROTTLE_FPS 1
 #define SCALE_FONTS_WITH_WINDOW_SIZE 0
 
 bool output_debug_messages = false;
@@ -1209,7 +1209,7 @@ public:
 
 	void update_experiment_choice(Fl_Menu_Bar & bar){
 		ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
-		ns_acquire_lock_for_scope lock(menu_bar_processing_lock,__FILE__,__LINE__);
+		//	ns_acquire_lock_for_scope lock(menu_bar_processing_lock,__FILE__,__LINE__);
 		bar.menu(NULL);
 		clear();
 		
@@ -1222,7 +1222,7 @@ public:
 		bar.redraw();
 		
 		::update_region_choice_menu();
-		lock.release();
+		//	lock.release();
 
 	}
 
@@ -2225,9 +2225,9 @@ void ns_show_worm_display_error(){
 
 void ns_handle_menu_bar_activity_request();
 void idle_main_window_update_callback(void *){
-	// double last_time = c_time;
-	// c_time =  GetTime() - init_time;
-	// cerr << "FPS = " << 1.0/(time-last_time) << "\n";
+  // double last_time = c_time;
+  //	 c_time =  GetTime() - init_time;
+  cerr << ".";//FPS = " << 1.0/(time-last_time) << "\n";
 	float menu_d(worm_learner.main_window.display_rescale_factor);
 	if (!SCALE_FONTS_WITH_WINDOW_SIZE)
 			menu_d = 1;
@@ -2805,19 +2805,20 @@ void ns_set_menu_bar_activity_internal(bool activate){
 	Fl::unlock();
 }
 void ns_handle_menu_bar_activity_request(){
-	menu_bar_processing_lock.wait_to_acquire(__FILE__,__LINE__);
+  //	menu_bar_processing_lock.wait_to_acquire(__FILE__,__LINE__);
 	if (set_menu_bar_request == ns_none){
-		menu_bar_processing_lock.release();
+	  //	menu_bar_processing_lock.release();
 		return;
 	}
 	ns_set_menu_bar_activity_internal(set_menu_bar_request==ns_activate);
 	set_menu_bar_request = ns_none;
-	menu_bar_processing_lock.release();
+	//	menu_bar_processing_lock.release();
 }
 void ns_set_menu_bar_activity(bool activate){
-	menu_bar_processing_lock.wait_to_acquire(__FILE__,__LINE__);
+  //menu_bar_processing_lock.wait_to_acquire(__FILE__,__LINE__);
+  activate = true;
 	set_menu_bar_request = activate?ns_activate:ns_deactivate;
-	menu_bar_processing_lock.release();
+	//menu_bar_processing_lock.release();
 }
 
 void ask_if_schedule_should_be_submitted_to_db(bool & write_to_disk, bool & write_to_db){

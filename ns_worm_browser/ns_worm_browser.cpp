@@ -5859,6 +5859,10 @@ void ns_worm_learner::load_file(const std::string & filename){
 		load_file(filename,current_image);
 		current_image_lock.release();
 	}
+	catch (ns_ex & ex) {
+		cout << "Error loading file: " << ex.text() << "\n";
+		current_image_lock.release();
+	}
 	catch(...){
 		current_image_lock.release();
 	}

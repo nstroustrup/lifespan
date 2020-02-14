@@ -225,10 +225,13 @@ public:
 	void convert_bitmaps_into_node_graphs(const float resolution, const std::string & debug_filename){
 	//	unsigned long start_time = ns_current_time();
 		if (resolution <= 1201){
+		  std::string dbg_name;
 			for (unsigned int i = 0; i < objects.size(); i++){
 				objects[i]->calculate_edges();
+				if (!debug_filename.empty())
+				  dbg_name = debug_filename + "_" + ns_to_string(i);
 				objects[i]->node_topology.build_via_delauny_method(objects[i]->edge_coordinates,objects[i]->edge_list,
-																			objects[i]->holes,debug_filename + "_" + ns_to_string(i));
+																			objects[i]->holes,dbg_name);
 			}
 			remove_empty_spines();
 		}

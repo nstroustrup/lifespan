@@ -82,12 +82,12 @@ bool ns_node_topology::build_via_delauny_method(const std::vector<ns_vector_2d> 
 	//segment end points, branch points, or nodes in the middle of a segment
 	classify_nodes();			
 
-
+	cout << "WARNING: ENCOUNTERED A LOW-RESOLUTION IMAGE!\n";
 
 	std::string fn =  debug_output_filename;
 	//fn = "c:/deb" + ns_to_string(pspsp);
 	//pspsp++;
-	if (true || fn.size() != 0){
+	if (fn.size() != 0){
 		ofstream post((fn + "_poc.txt").c_str());
 		if (post.fail())
 			throw ns_ex("ns_node_topology::Could not open file \"") << fn << "\" for debug spine output.";

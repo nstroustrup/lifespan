@@ -217,8 +217,8 @@ void ns_set_default_tiff_parameters(const ns_image_properties & p,const ns_tiff_
 	ns_set_tiff_field(image, TIFFTAG_SAMPLESPERPIXEL, (short)p.components);
 	ns_set_tiff_field(image, TIFFTAG_BITSPERSAMPLE, (short)bits_per_sample);
 	if (p.resolution < 0){
-		ns_set_tiff_field(image, TIFFTAG_XRESOLUTION, 1.0f);
-		ns_set_tiff_field(image, TIFFTAG_YRESOLUTION, 1.0f);
+		ns_set_tiff_field(image, TIFFTAG_XRESOLUTION, 3200.0f);
+		ns_set_tiff_field(image, TIFFTAG_YRESOLUTION, 3200.0f);
 	}
 	else{
 		ns_set_tiff_field(image, TIFFTAG_XRESOLUTION, p.resolution);
@@ -321,10 +321,10 @@ void ns_get_default_tiff_parameters(const unsigned char component_size, ns_image
 	if (res_unit == RESUNIT_CENTIMETER)  //convert resolution to inches if necissary
 			yres /=2.54f;
 
-	if (res_defined)
-		properties.resolution = yres;
-	else
-		properties.resolution = 0;
+	//if (res_defined)
+	//	properties.resolution = yres;
+	//else
+		properties.resolution = 3200;
 
 
 	short photometric=0;

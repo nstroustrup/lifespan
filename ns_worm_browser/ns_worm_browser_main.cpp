@@ -1583,9 +1583,9 @@ public:
 
 		add(ns_menu_item_spec(generate_area_movement,"Data Files/Movement Data/_Generate Movement State Time Series"));
 		//add(ns_menu_item_spec(generate_experiment_summary_movement_image_quantification_analysis_data,"Data/Movement/Generate Summary Time Path Image Analysis Quantification Data"));
-		add(ns_menu_item_spec(generate_experiment_detailed_movement_image_quantification_analysis_data,"Data Files/Movement Data/Generate Posture Analysis Data/Machine Event Times"));
-		add(ns_menu_item_spec(generate_experiment_detailed_w_by_hand_movement_image_quantification_analysis_data,"Data Files/Movement Data/Generate Posture Analysis Data/_By Hand Event Times"));
-		add(ns_menu_item_spec(generate_experiment_abbreviated_movement_image_quantification_analysis_data,"Data Files/Movement Data/Generate Posture Analysis Data/Abbreviated"));
+		add(ns_menu_item_spec(generate_experiment_detailed_movement_image_quantification_analysis_data,"Data Files/Movement Data/Generate Posture Analysis Data/All Individuals"));
+		add(ns_menu_item_spec(generate_experiment_detailed_w_by_hand_movement_image_quantification_analysis_data,"Data Files/Movement Data/Generate Posture Analysis Data/_Only By Hand Annotated Individuals"));
+		add(ns_menu_item_spec(generate_experiment_abbreviated_movement_image_quantification_analysis_data,"Data Files/Movement Data/Generate Posture Analysis Data/By Hand and Abbreviated Format"));
 	
 		ns_menu_item_spec st2(generate_single_frame_posture_image_pixel_data,"Data Files/Movement Data/Generate Single Frame Posture Image Data");
 		st2.options.push_back(ns_menu_item_options("Experiment"));

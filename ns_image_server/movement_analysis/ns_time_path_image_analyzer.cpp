@@ -2783,8 +2783,8 @@ void ns_analyzed_image_time_path::write_detailed_movement_quantification_analysi
 		"Registration Offset X, Registration Offset Y, Registration Offset Magnitude,"
 		"Absolute Time, Age Relative Time,"
 		"Machine-Annotated Movement State,By Hand Annotated Movement State,"
-		"Machine Death Relative Time, Machine Slow Movement Cessation Relative Time, Machine Fast Movement Cessation Relative Time,Machine Death-Associated Expansion Time,Machine Post-mortem Contraction Time,"
-		"By Hand Death Relative Time, By Hand Slow Movement Cessation Relative Time, By Hand Fast Movement Cessation Relative Time,By Hand Death-Associated Expansion Time,By Hand Post-mortem Contraction Time,"
+		"Machine Movement Cessation Relative Time, Machine Slow Movement Cessation Relative Time, Machine Fast Movement Cessation Relative Time,Machine Death-Associated Expansion Time,Machine Post-mortem Contraction Time,"
+		"By Hand Movement Cessation Relative Time, By Hand Slow Movement Cessation Relative Time, By Hand Fast Movement Cessation Relative Time,By Hand Death-Associated Expansion Time,By Hand Post-mortem Contraction Time,"
 		"Event-Aligned time,"
 		"Movement Sum, Movement Score, Denoised Movement Score,"
 		"Spatially Averaged Movement Sum Cropped,"
@@ -2800,9 +2800,12 @@ void ns_analyzed_image_time_path::write_detailed_movement_quantification_analysi
 		"Change in Stabilized Intensity 1x(pix/hour),Change in Stabilized Intensity 2x(pix/hour),Change in Stabilized Intensity 4x(pix/hour),"
 		"Change in Region Intensity (pix/hour),"
 		"Saturated Registration, Machine Error (Days ),"
-		"Death Time,"
-		"Total Foreground Area at Death,"
-		"Total Stablilized Intensity at Death,";
+		"Movement Cessation Time,"
+		"Total Foreground Area at Movement Cessation,"
+		"Total Stablilized Intensity at Movement Cessation,"
+		"Death-Associated Expansion Cessation Time,"
+		"Total Foreground Area at Death-Associated Expansion ,"
+		"Total Stablilized Intensity at Death-Associated Expansion";
 
 	#ifdef NS_CALCULATE_OPTICAL_FLOW
 	ns_optical_flow_quantification::write_header("Scaled Flow Magnitude", o); o << ",";
@@ -2878,7 +2881,12 @@ private:
 	std::vector<unsigned long> offsets;
 	std::vector<double> dt;
 };
-
+struct ns_event_time_to_use {
+	ns_event_time_to_use() :time(0), death_index(0) {}
+	ns_movement_event event_type;
+	unsigned long time;
+	unsigned long death_index;
+};
 void ns_analyzed_image_time_path::write_detailed_movement_quantification_analysis_data(const ns_region_metadata & m, const unsigned long group_id, const unsigned long path_id, std::ostream & o, const bool output_only_elements_with_hand,const bool abbreviated_time_series)const{
 	if (output_only_elements_with_hand && by_hand_annotation_event_times[(int)ns_movement_cessation].period_end_was_not_observed)
 		return;
@@ -2886,37 +2894,42 @@ void ns_analyzed_image_time_path::write_detailed_movement_quantification_analysi
 	//double death_relative_time_to_normalize(0);
 	double time_after_death_to_write_in_abbreviated(24*60*60);
 	unsigned long end_index(0);
-	unsigned long death_index(0);
 	
-	unsigned long death_time(0);
-	if(!movement_analysis_result.state_intervals[(int)ns_movement_stationary].skipped){
-		long least_dt_to_death(LONG_MAX);
-		//double size_at_closest_distance(1);
-		if (by_hand_annotation_event_times[(int)ns_movement_stationary].period_end_was_not_observed) {
-			bool skipped;
-			death_time = machine_event_time(ns_movement_cessation, skipped).best_estimate_event_time_for_possible_partially_unbounded_interval();
-		}
-		else 
-			death_time = by_hand_annotation_event_times[(int)ns_movement_stationary].period_end;
-		
-		const double time_to_match_2(death_time+time_after_death_to_write_in_abbreviated);
+	std::map<ns_movement_state, ns_event_time_to_use > state_times;
+	state_times[ns_movement_stationary].event_type = ns_movement_cessation;
+	state_times[ns_movement_death_associated_expansion].event_type = ns_death_associated_post_expansion_contraction_start;
 
-		for (unsigned long k = 0; k < elements.size(); k++){
-	
-			const double dt(fabs(elements[k].absolute_time- death_time));
-			if (dt < least_dt_to_death){
-				least_dt_to_death = dt;
-				death_index = k;
+	for (auto p = state_times.begin(); p != state_times.end(); ++p) {
+		if (!movement_analysis_result.state_intervals[(int)p->first].skipped) {
+			long least_dt_to_death(LONG_MAX);
+			//double size_at_closest_distance(1);
+			if (by_hand_annotation_event_times[(int)p->first].period_end_was_not_observed) {
+				bool skipped;
+				p->second.time = machine_event_time(p->second.event_type, skipped).best_estimate_event_time_for_possible_partially_unbounded_interval();
 			}
-		}
-		
-		if (abbreviated_time_series){
-			for (end_index = 0; end_index < elements.size(); end_index++){
-				if (elements[end_index].absolute_time >= time_to_match_2)
-					break;
+			else
+				p->second.time = by_hand_annotation_event_times[(int)p->first].period_end;
+
+			const double time_to_match_2(p->second.time + time_after_death_to_write_in_abbreviated);
+
+			for (unsigned long k = 0; k < elements.size(); k++) {
+
+				const double dt(fabs(elements[k].absolute_time - p->second.time));
+				if (dt < least_dt_to_death) {
+					least_dt_to_death = dt;
+					p->second.death_index = k;
+				}
+			}
+
+			if (abbreviated_time_series) {
+				for (end_index = 0; end_index < elements.size(); end_index++) {
+					if (elements[end_index].absolute_time >= time_to_match_2)
+						break;
+				}
 			}
 		}
 	}
+	
 	
 	if (!abbreviated_time_series)
 		end_index = elements.size();
@@ -2995,11 +3008,16 @@ void ns_analyzed_image_time_path::write_detailed_movement_quantification_analysi
 													best_estimate_event_time_for_possible_partially_unbounded_interval(),
 													by_hand_annotation_event_times[(int)ns_movement_cessation]) <<",";
 
-		o << death_time << ",";
 		if (movement_analysis_result.state_intervals[(int)ns_movement_stationary].skipped)
-			o << ",,";
-		else o << elements[death_index].measurements.total_foreground_area << ","
-			<< elements[death_index].measurements.total_stabilized_area << ",";
+			o << ",,,";
+		else o << state_times[ns_movement_stationary].time << ","
+			<<elements[state_times[ns_movement_stationary].death_index].measurements.total_foreground_area << ","
+			<< elements[state_times[ns_movement_stationary].death_index].measurements.total_stabilized_area << ",";
+		if (movement_analysis_result.state_intervals[(int)ns_movement_death_associated_expansion].skipped)
+			o << ",,,";
+		else o << state_times[ns_movement_death_associated_expansion].time << ","
+			<< elements[state_times[ns_movement_death_associated_expansion].death_index].measurements.total_foreground_area << ","
+			<< elements[state_times[ns_movement_death_associated_expansion].death_index].measurements.total_stabilized_area << ",";
 
 	#ifdef NS_CALCULATE_OPTICAL_FLOW
 		elements[k].measurements.scaled_flow_magnitude.write(o); o << ",";

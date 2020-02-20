@@ -3017,7 +3017,7 @@ void ns_analyzed_image_time_path::write_detailed_movement_quantification_analysi
 			o << ",,,";
 		else o << state_times[ns_movement_death_associated_expansion].time << ","
 			<< elements[state_times[ns_movement_death_associated_expansion].death_index].measurements.total_foreground_area << ","
-			<< elements[state_times[ns_movement_death_associated_expansion].death_index].measurements.total_stabilized_area << ",";
+			<< elements[state_times[ns_movement_death_associated_expansion].death_index].measurements.total_stabilized_area;
 
 	#ifdef NS_CALCULATE_OPTICAL_FLOW
 		elements[k].measurements.scaled_flow_magnitude.write(o); o << ",";

@@ -1977,7 +1977,6 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 					a = in()().get();
 				if (in()().fail())
 					continue;
-				header_written = true;
 			}
 			while(true){
 				char a(in()().get());
@@ -1987,6 +1986,7 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 			}
 			if (o_all()().fail())
 				throw ns_ex("Error while writing output");
+			header_written = true;
 			in.release();
 		}
 	}

@@ -155,7 +155,7 @@ struct ns_dying_animal_description_group{
 //single locations can be annotated to hold multiple worms.  So we need a container corresponding to each location that holds annotations for each worm in the multiple worm clusters.
 template<class annotation_t>
 struct ns_dying_animal_description_base {
-	ns_dying_animal_description_base() : final_number_of_worms_by_hand(0), final_number_of_worms_by_machine(0) {}
+	ns_dying_animal_description_base() : final_number_of_worms_by_hand(0), final_number_of_worms_by_machine(0){}
 	typedef ns_dying_animal_description_group<annotation_t> ns_group_type;
 	ns_group_type
 		by_hand,

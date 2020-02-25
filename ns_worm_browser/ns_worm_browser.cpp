@@ -1922,7 +1922,7 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 		throw ns_ex("No longer implemented");
 
 	}
-	else if (detail_level == ns_quantification_detailed || detail_level == ns_quantification_abbreviated_detailed){
+	else if (detail_level == ns_quantification_raw_machine || detail_level == ns_quantification_by_hand_or_machine || detail_level == ns_quantification_abbreviated_by_hand_machine){
 		std::string suffix;
 		if (data_selector.strain_selected()){
 			m = data_selector.current_strain();
@@ -1930,7 +1930,7 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 			suffix += m.plate_type_summary("-",true);
 			
 		}
-		o_all.attach(image_server.results_storage.time_path_image_analysis_quantification(sub,"detailed" + suffix,true,sql,detail_level==ns_quantification_abbreviated_detailed,false).output());
+		o_all.attach(image_server.results_storage.time_path_image_analysis_quantification(sub,"detailed" + suffix,true,sql,detail_level== ns_quantification_abbreviated_by_hand_machine,false).output());
 	
 
 	}
@@ -1948,7 +1948,7 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 
 	//useful data is cached for each region considered
 	unsigned long region_count(0);
-	if (detail_level == ns_quantification_detailed){
+	if (detail_level == ns_quantification_raw_machine){
 		bool header_written(false);
 		//if we're loading detailed information, there is so much data we load it from files created during movement analysis.
 		sql << "SELECT r.id, r.name, s.name FROM sample_region_image_info as r, capture_samples as s WHERE r.sample_id = s.id AND s.experiment_id = " << experiment_id
@@ -1965,7 +1965,7 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 				if (!r_m.matches(ns_region_metadata::ns_strain_and_conditions_1_2_and_3,m))
 					continue;
 			}
-			ns_acquire_for_scope<ns_istream> in(image_server.results_storage.time_path_image_analysis_quantification(sub,"detailed",false,sql,detail_level==ns_quantification_abbreviated_detailed,false).input());
+			ns_acquire_for_scope<ns_istream> in(image_server.results_storage.time_path_image_analysis_quantification(sub,"detailed",false,sql,false,false).input());
 			if (in.is_null()){
 				cerr << "Could not load cached movement quantification analysis for " << res[i][2] << "::" << res[i][1] << "\n";
 				continue;
@@ -1991,9 +1991,10 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 		}
 	}
 	else if (detail_level == ns_quantification_summary ||
-		detail_level == ns_quantification_detailed_with_by_hand ||
+		detail_level == ns_quantification_by_hand ||
+		detail_level == ns_quantification_by_hand_or_machine ||
 		detail_level == ns_build_worm_markov_posture_model_from_by_hand_annotations ||
-		detail_level == ns_quantification_abbreviated_detailed) {
+		detail_level == ns_quantification_abbreviated_by_hand_machine) {
 		cout << "Loading time path image analysis data...\n";
 		//since there is less data here, we calculate it on the fly.
 		bool header_written(false);
@@ -2038,7 +2039,8 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 					movement_results.samples[i].regions[j]->metadata.experiment_name,
 					movement_results.samples[i].regions[j]->metadata,
 					sql);
-				if (detail_level == ns_quantification_detailed_with_by_hand ||
+				if (detail_level == ns_quantification_by_hand ||
+					detail_level == ns_quantification_by_hand_or_machine ||
 					detail_level == ns_build_worm_markov_posture_model_from_by_hand_annotations) {
 					//skip regions without by hand movement annotations
 					if (by_hand_annotations.annotations.regions.empty())
@@ -2095,33 +2097,30 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 
 				movement_results.samples[i].regions[j]->by_hand_annotations = by_hand_annotations.annotations;
 				movement_results.samples[i].regions[j]->time_path_image_analyzer->add_by_hand_annotations(by_hand_annotations.annotations);
-				if (detail_level == ns_quantification_abbreviated_detailed) {
-					if (!header_written) {
-						o_all.attach(image_server.results_storage.time_path_image_analysis_quantification(sub, "detailed", true, sql, true).output());
-						if (movement_results.samples[i].regions[j]->time_path_image_analyzer->size() > 0) {
-							movement_results.samples[i].regions[j]->time_path_image_analyzer->group(0).paths[0].write_detailed_movement_quantification_analysis_header(o_all()());
-							o_all()() << "\n";
-						}
-						header_written = true;
+				if (detail_level != ns_build_worm_markov_posture_model_from_by_hand_annotations && !header_written) {
+					string suffix;
+					switch(detail_level) {
+					case ns_quantification_abbreviated_by_hand_machine: suffix = "machine_by_hand_abbreviated"; break;
+					case ns_quantification_by_hand: suffix = "by_hand_only"; break;
+					case ns_quantification_by_hand_or_machine: suffix = "machine_by_hand"; break;
 					}
 
-					movement_results.samples[i].regions[j]->time_path_image_analyzer->write_detailed_movement_quantification_analysis_data(
-						movement_results.samples[i].regions[j]->metadata, o_all()(), false, -1, true);
+					o_all.attach(image_server.results_storage.time_path_image_analysis_quantification(sub, suffix, true, sql, true).output());
+					if (movement_results.samples[i].regions[j]->time_path_image_analyzer->size() > 0) {
+						movement_results.samples[i].regions[j]->time_path_image_analyzer->group(0).paths[0].write_detailed_movement_quantification_analysis_header(o_all()());
+						o_all()() << "\n";
+					}
+					header_written = true;
 
 				}
-				else if (detail_level == ns_quantification_detailed_with_by_hand) {
-
-					if (!header_written) {
-						o_all.attach(image_server.results_storage.time_path_image_analysis_quantification(sub, "detailed_with_by_hand", true, sql).output());
-						if (movement_results.samples[i].regions[j]->time_path_image_analyzer->size() > 0) {
-							movement_results.samples[i].regions[j]->time_path_image_analyzer->group(0).paths[0].write_detailed_movement_quantification_analysis_header(o_all()());
-							o_all()() << "\n";
-						}
-						header_written = true;
-					}
-
+				if (detail_level == ns_quantification_abbreviated_by_hand_machine) {
 					movement_results.samples[i].regions[j]->time_path_image_analyzer->write_detailed_movement_quantification_analysis_data(
-						movement_results.samples[i].regions[j]->metadata, o_all()(), (detail_level == ns_quantification_detailed_with_by_hand));
+						movement_results.samples[i].regions[j]->metadata, o_all()(), false, -1, true);
+				}
+				else if (detail_level == ns_quantification_by_hand || detail_level == ns_quantification_by_hand_or_machine) {
+					const bool only_output_by_hand = detail_level == ns_quantification_by_hand;
+					movement_results.samples[i].regions[j]->time_path_image_analyzer->write_detailed_movement_quantification_analysis_data(
+						movement_results.samples[i].regions[j]->metadata, o_all()(),only_output_by_hand);
 				}
 				else if (detail_level == ns_build_worm_markov_posture_model_from_by_hand_annotations) {
 
@@ -7313,6 +7312,29 @@ bool ns_worm_learner::start_death_time_annotation(const ns_behavior_mode m, cons
 							continue;
 						storyboard_annotater.add_machine_events_for_telemetry(movement_results.samples[i].regions[j]->death_time_annotation_set, movement_results.samples[i].regions[j]->metadata);
 					}
+
+
+				storyboard_annotater.population_telemetry.clear();
+				ns_image_server::ns_posture_analysis_model_cache::const_handle_t analysis_handle;
+				if (region_id != 0)
+					image_server.get_posture_analysis_model_for_region(region_id, analysis_handle, get_sql_connection());
+				else {
+					ns_sql & sql = get_sql_connection();
+					sql << "SELECT r.id FROM sample_region_image_info as r, capture_samples as s WHERE r.censored = 0 AND r.excluded_from_analysis = 0 AND s.censored = 0 AND s.excluded_from_analysis = 0 AND r.sample_id = s.id AND s.experiment_id = " << subject.experiment_id << " LIMIT 1";
+					ns_sql_result res;
+					sql.get_rows(res);
+					if (res.size() != 0)
+						image_server.get_posture_analysis_model_for_region(ns_atoi64(res[0][0].c_str()), analysis_handle, sql);
+				}
+				if (analysis_handle.is_valid()) {
+					if (analysis_handle().model_specification.posture_analysis_method == ns_posture_analysis_model::ns_threshold)
+						storyboard_annotater.population_telemetry.regression_plot = ns_population_telemetry::ns_death_vs_observation_duration;
+					else storyboard_annotater.population_telemetry.regression_plot = ns_population_telemetry::ns_plot_death_types;
+					analysis_handle.release();
+				}
+				else storyboard_annotater.population_telemetry.regression_plot = ns_population_telemetry::ns_death_vs_observation_duration;
+
+
 				storyboard_annotater.rebuild_telemetry_with_by_hand_annotations();
 				draw_stats_window_image();
 

@@ -6066,16 +6066,17 @@ void ns_worm_learner::touch_stats_window_pixel(const ns_button_press& press) {
 }
 
 bool ns_worm_learner::register_stats_window_key_press(int key, const bool shift_key_held, const bool control_key_held, const bool alt_key_held) {
-	/*if (key == ']') {
-		stats_window.display_rescale_factor += .1;
+	if (key == ']') {
+		stats_window.render_rescale_factor += .1;
 		return true;
 	}
 	else if (key == '[') {
-		stats_window.display_rescale_factor -= .1;
-		if (stats_window.display_rescale_factor <= 0)
-			stats_window.display_rescale_factor = .1;
+		stats_window.render_rescale_factor -= .1;
+		if (stats_window.render_rescale_factor <= 0)
+			stats_window.render_rescale_factor = .1;
 		return true;
 	}
+	/*
 	else if (key == FL_Left || key == 'a') {
 		ns_worm_learner::navigate_solo_worm_annotation(ns_death_time_solo_posture_annotater::ns_back, true);
 		return true;
@@ -6625,8 +6626,8 @@ void ns_worm_learner::draw_stats_window_image() {
 
 	ns_acquire_lock_for_scope lock(stats_window.display_lock, __FILE__, __LINE__);
 
-	ns_vector_2i telemetry_dimensions = storyboard_annotater.telemetry_size(ns_population_telemetry::ns_movement_vs_posture);
-	ns_image_properties properties(telemetry_dimensions.y, telemetry_dimensions.x, 3);
+	ns_vector_2i telemetry_dimensions = storyboard_annotater.telemetry_size(ns_population_telemetry::ns_movement_vs_posture, stats_window.render_rescale_factor);
+	ns_image_properties properties(floor(telemetry_dimensions.y), floor(telemetry_dimensions.x), 3);
 	stats_window.pre_gl_downsample = 1;
 
 	ns_image_properties new_image_size = properties;
@@ -7130,6 +7131,8 @@ void ns_experiment_storyboard_annotater::load_from_storyboard(const ns_region_me
 				strain_to_display.time_at_which_animals_had_zero_age = atol(res[i][2].c_str());
 		}
 		strain_to_display.experiment_id = spec.experiment_id;
+
+		population_telemetry.load_last_measurement_cache(spec.experiment_id, 0, sql());
 	}
 	else if (spec.sample_id != 0) {
 		sql() << "SELECT r.id,  r.excluded_from_analysis+r.censored+s.censored,r.time_at_which_animals_had_zero_age FROM sample_region_image_info as r, capture_samples as s WHERE r.sample_id = s.id AND s.id = " << spec.sample_id;
@@ -7140,6 +7143,7 @@ void ns_experiment_storyboard_annotater::load_from_storyboard(const ns_region_me
 			if (res[i][1] == "0" && strain_to_display.time_at_which_animals_had_zero_age == 0)
 				strain_to_display.time_at_which_animals_had_zero_age = atol(res[i][2].c_str());
 		}
+		throw ns_ex("Not implemented!");
 
 	}
 	else if (spec.region_id != 0) {
@@ -7155,6 +7159,8 @@ void ns_experiment_storyboard_annotater::load_from_storyboard(const ns_region_me
 			strain_to_display.experiment_id = ns_atoi64(res[0][1].c_str());
 		if (res[0][0] == "0" && strain_to_display.time_at_which_animals_had_zero_age == 0)
 			strain_to_display.time_at_which_animals_had_zero_age = atol(res[0][2].c_str());
+
+		population_telemetry.load_last_measurement_cache(0,spec.region_id,  sql());
 	}
 	storyboard_manager.load_metadata_from_db(spec, storyboard, sql());
 	unsigned long number_of_nonempty_divisions(0);

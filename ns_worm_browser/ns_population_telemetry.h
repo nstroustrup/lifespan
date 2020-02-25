@@ -152,6 +152,18 @@ public:
 	void plot_death_time_expansion(bool plot) {
 		plot_death_time_expansion_ = false;
 	}
+
+	bool load_last_measurement_cache(const ns_64_bit& experiment_id, const ns_64_bit& region_id, ns_sql& sql) {
+		last_measurement_cache.clear();
+		if (region_id != 0)
+			sql << "SELECT region_info_id, MAX(capture_time) FROM sample_region_images WHERE region_info_id =" << region_id;
+		else sql << "SELECT r.region_info_id, MAX(r.capture_time) FROM sample_region_images as r, sample_region_image_info as ri, capture_samples as s WHERE r.region_info_id = ri.id AND ri.sample_id = s.id AND s.experiment_id = " << experiment_id << " GROUP BY r.region_info_id";
+		ns_sql_result res;
+		sql.get_rows(res);
+		for (unsigned int i = 0; i < res.size(); i++)
+			last_measurement_cache[ns_atoi64(res[i][0].c_str())] = atol(res[i][1].c_str());
+	}
+
 private:
 
 	bool plot_death_time_expansion_;
@@ -170,6 +182,8 @@ private:
 	double undefined_x_position, undefined_y_position;
 	std::vector<double> temp1, temp2;
 
+	std::map<ns_64_bit, unsigned long> last_measurement_cache; //last measurement made in each region, sorted by region_info_id;
+
 	typedef std::tuple< ns_survival_grouping, ns_death_plot_type, ns_64_bit, std::string> ns_telemetry_cache_index;
 	typedef std::map<ns_telemetry_cache_index, ns_survival_telemetry_cache> ns_telemetry_cache;
 	ns_telemetry_cache telemetry_cache;
@@ -177,6 +191,7 @@ private:
 	std::map<ns_lookup_index, std::vector<ns_worm_lookup_info> > movement_id_lookup;
 
 	unsigned long number_of_valid_elements, first_element;
+
 
 	void draw_base_graph(const ns_graph_contents& graph_contents, const long marker_resize_factor, unsigned long start_time = 0, unsigned long stop_time = UINT_MAX) {
 		survival_image.use_more_memory_to_avoid_reallocations();
@@ -332,6 +347,7 @@ private:
 	}
 	ns_graph_contents last_graph_contents;
 	unsigned long last_start_time, last_stop_time;
+	ns_vector_2i last_graph_size;
 	float last_rescale_factor;
 	ns_64_bit subject_region;
 	ns_region_metadata stats_subset_strain_to_display;
@@ -351,6 +367,7 @@ public:
 		last_stop_time = 0;
 		subject_region = 0;
 		stats_subset_strain_to_display.clear();
+		//last_measurement_cache.clear();
 	}
 	unsigned long get_graph_time_from_graph_position(const float x) { //x is in relative time
 		//xxx not done
@@ -844,7 +861,6 @@ public:
 
 				if (l->properties.is_excluded() || l->properties.is_censored() || l->properties.flag.event_should_be_excluded())
 					continue;
-
 				//each worm can add multiple points to the plot, depending on what the user has asked to display
 				//currently only one point per worm is displayed.
 				ns_plot_pair pair_to_plot;
@@ -882,6 +898,9 @@ public:
 						movement_vs_posture_y_axis_label = "Duration observed (days)";
 
 
+						if (r->first == 22796 && l->properties.stationary_path_id.group_id == 8)
+							cerr << "WHA!";
+
 						if (death_plot == ns_plot_movement_death) {
 							if (set.descriptions[i].by_hand.movement_based_death_annotation != 0) {
 								pair_to_plot.first = set.descriptions[i].by_hand.movement_based_death_annotation;
@@ -915,11 +934,19 @@ public:
 							pair_to_plot.first = ns_dying_animal_description_group<ns_death_time_annotation_time_interval>::calculate_best_guess_death_annotation(movement, death_associated_expansion);
 						}
 						else throw ns_ex("Unknown death plot type!");
-						if (set.descriptions[i].machine.last_fast_movement_annotation != 0 && set.descriptions[i].machine.stationary_worm_dissapearance != 0) {
-							ns_scatter_plot_coordinate p(
-								set.descriptions[i].machine.stationary_worm_dissapearance->time.best_estimate_event_time_for_possible_partially_unbounded_interval() -
-								set.descriptions[i].machine.last_fast_movement_annotation->time.best_estimate_event_time_for_possible_partially_unbounded_interval());
-							pair_to_plot.second = p;
+						if (set.descriptions[i].machine.last_fast_movement_annotation != 0){
+							if (set.descriptions[i].machine.stationary_worm_dissapearance != 0) {
+								pair_to_plot.second = ns_scatter_plot_coordinate(
+									set.descriptions[i].machine.stationary_worm_dissapearance->time.best_estimate_event_time_for_possible_partially_unbounded_interval() -
+									set.descriptions[i].machine.last_fast_movement_annotation->time.best_estimate_event_time_for_possible_partially_unbounded_interval());
+							}
+							else {
+								auto p = last_measurement_cache.find(r->first);
+								if (p != last_measurement_cache.end())
+									pair_to_plot.second = ns_scatter_plot_coordinate(
+										p->second -
+										set.descriptions[i].machine.last_fast_movement_annotation->time.best_estimate_event_time_for_possible_partially_unbounded_interval());
+							}
 						}
 					}
 				}
@@ -1028,7 +1055,7 @@ public:
 	void draw(const ns_graph_contents graph_contents, const ns_vector_2i& position, const ns_vector_2i& graph_size, const ns_vector_2i& buffer_size, const float marker_resize_factor, ns_8_bit* buffer, const unsigned long start_time = 0, const unsigned long stop_time = UINT_MAX) {
 		
 		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Starting to draw telemetry."));
-		if (survival_image.properties().height == 0 || graph_contents != last_graph_contents || last_start_time != start_time || last_stop_time != stop_time || last_rescale_factor != marker_resize_factor) {
+		if (survival_image.properties().height == 0 || graph_contents != last_graph_contents || last_start_time != start_time || last_stop_time != stop_time || last_rescale_factor != marker_resize_factor || !(last_graph_size == graph_size)) {
 			ns_image_properties prop;
 			prop.components = 3;
 			
@@ -1052,6 +1079,7 @@ public:
 				last_start_time = start_time;
 				last_stop_time = stop_time;
 				last_rescale_factor = marker_resize_factor;
+				last_graph_size = graph_size;
 			}
 			catch (...) {
 				survival_image.init(ns_image_properties(0, 0, 3));

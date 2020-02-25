@@ -524,7 +524,7 @@ public:
 class ns_gl_window_data{
 public:
 	ns_gl_window_data(const string & window_name):gl_buffer(0),display_lock(string("ns_lock::display_") + window_name),redraw_requested(false),display_rescale_factor(1.0 / ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor),
-		dynamic_range_rescale_factor(1),worm_image_size(10,10),telemetry_size(10,10), gl_image_size(10,10),image_zoom(1), pre_gl_downsample(1){}
+		dynamic_range_rescale_factor(1), render_rescale_factor(1),worm_image_size(10,10),telemetry_size(10,10), gl_image_size(10,10),image_zoom(1), pre_gl_downsample(1){}
 	ns_vector_2i worm_image_size,
 		telemetry_size,
 		gl_image_size;
@@ -533,7 +533,8 @@ public:
 	ns_8_bit * gl_buffer;
 	ns_image_properties gl_buffer_properties;
 	ns_lock display_lock;
-	float display_rescale_factor;
+	float display_rescale_factor;	//the rendered image is drawn larger to the gl devioce
+	float render_rescale_factor;	//the renderer is requested to draw an image this fold larger.
 	float dynamic_range_rescale_factor;
 
 	bool redraw_requested;

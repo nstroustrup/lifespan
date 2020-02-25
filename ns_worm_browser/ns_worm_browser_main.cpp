@@ -3075,7 +3075,7 @@ private:
 			have_focus = false;
 			break;
 		case FL_KEYDOWN: {
-			/*
+			
 			ns_fl_lock(__FILE__, __LINE__);
 			int c(Fl::event_key());
 			ns_fl_unlock(__FILE__, __LINE__);
@@ -3085,12 +3085,12 @@ private:
 					Fl::event_key(FL_Control_L) || Fl::event_key(FL_Control_R),
 					Fl::event_key(FL_Alt_L) || Fl::event_key(FL_Alt_R)
 				)) {
-					worm_learner.death_time_solo_annotater.request_refresh();
+					worm_learner.storyboard_annotater.draw_telemetry();
 					report_changes_made_to_screen();
 
 					return 1;
 				}
-			}*/
+			}
 			//}
 			break;
 		}

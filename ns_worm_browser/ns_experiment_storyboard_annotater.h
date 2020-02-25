@@ -480,6 +480,7 @@ public:
 	void clear_machine_events_for_telemetry() {
 		machine_events_for_telemetry.clear();
 	}
+	void draw_telemetry();
 	void replot_telemetry() {
 		population_telemetry.update_annotations_and_build_survival(all_events_for_telemetry, strain_to_display);
 		draw_telemetry();
@@ -494,14 +495,16 @@ public:
 		population_telemetry.clear_cache();
 		replot_telemetry();
 	}
-	ns_vector_2i telemetry_size(const ns_population_telemetry::ns_graph_contents& contents) const{
+	ns_vector_2i default_survival_dimensions() const { return ns_vector_2i(700, 400); }
+	ns_vector_2i default_scatter_dimensions() const { return ns_vector_2i(default_survival_dimensions().y, default_survival_dimensions().y); }
+	int default_border_width() const { return 10; }
+	ns_vector_2i telemetry_size(const ns_population_telemetry::ns_graph_contents& contents, double resize_factor) {
 		if (contents == ns_population_telemetry::ns_survival)
-			return ns_vector_2i(720, 400);
+			return ns_vector_2i(default_survival_dimensions().x+2*default_border_width(), default_survival_dimensions().y+2*default_border_width())*resize_factor;
 		else if (contents == ns_population_telemetry::ns_movement_vs_posture)
-			return ns_vector_2i(720 + 480, 400);
+			return ns_vector_2i(default_survival_dimensions().x + 3 * default_border_width() + default_scatter_dimensions().x, default_survival_dimensions().y + 2 * default_border_width()) * resize_factor;
 		else throw ns_ex("Unknown population telemetry contents");
 	}
-	void draw_telemetry();
 	void set_resize_factor(const unsigned long resize_factor_){
 		resize_factor = resize_factor_;
 	}

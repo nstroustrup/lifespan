@@ -2892,62 +2892,71 @@ private:
 	std::vector<double> dt;
 };
 struct ns_event_time_to_use {
-	ns_event_time_to_use() :time(0), death_index(0) {}
+	ns_event_time_to_use() :time(0), event_index(0),before_index(0),after_index(0),found(false) {}
 	ns_movement_event event_type;
 	unsigned long time;
-	unsigned long death_index;
+	unsigned long event_index,before_index, after_index;
+	bool found;
 };
 void ns_analyzed_image_time_path::write_detailed_movement_quantification_analysis_data(const ns_region_metadata & m, const unsigned long group_id, const unsigned long path_id, std::ostream & o, const bool output_only_elements_with_hand,const bool abbreviated_time_series)const{
 	if (output_only_elements_with_hand && by_hand_annotation_event_times[(int)ns_movement_cessation].period_end_was_not_observed)
 		return;
 	//find animal size one day before death
 	//double death_relative_time_to_normalize(0);
-	double time_after_death_to_write_in_abbreviated(24*60*60);
-	unsigned long end_index(0);
+	double time_after_event_time_to_write_in_abbreviated(4*24*60*60);
+	double time_before_event_time_to_write_in_abbreviated(2 * 24*60 * 60);
 	
 	std::map<ns_movement_state, ns_event_time_to_use > state_times;
 	state_times[ns_movement_stationary].event_type = ns_movement_cessation;
-	state_times[ns_movement_death_associated_expansion].event_type = ns_death_associated_post_expansion_contraction_start;
+	state_times[ns_movement_death_associated_expansion].event_type = ns_death_associated_expansion_start;
 
 	for (auto p = state_times.begin(); p != state_times.end(); ++p) {
-		if (!movement_analysis_result.state_intervals[(int)p->first].skipped) {
-			long least_dt_to_death(LONG_MAX);
-			//double size_at_closest_distance(1);
-			if (by_hand_annotation_event_times[(int)p->first].period_end_was_not_observed) {
+		if (movement_analysis_result.state_intervals[(int)p->first].skipped && by_hand_annotation_event_times[(int)p->second.event_type].period_end_was_not_observed)
+			continue;
+		p->second.found = true;
+		long least_dt_to_death(LONG_MAX);
+		if (!by_hand_annotation_event_times[(int)p->second.event_type].period_end_was_not_observed)
+			p->second.time = by_hand_annotation_event_times[(int)p->second.event_type].period_end;
+		else{
 				bool skipped;
 				p->second.time = machine_event_time(p->second.event_type, skipped).best_estimate_event_time_for_possible_partially_unbounded_interval();
-			}
-			else
-				p->second.time = by_hand_annotation_event_times[(int)p->first].period_end;
+		}
 
-			const double time_to_match_2(p->second.time + time_after_death_to_write_in_abbreviated);
 
-			for (unsigned long k = 0; k < elements.size(); k++) {
-
-				const double dt(fabs(elements[k].absolute_time - p->second.time));
-				if (dt < least_dt_to_death) {
-					least_dt_to_death = dt;
-					p->second.death_index = k;
-				}
-			}
-
-			if (abbreviated_time_series) {
-				for (end_index = 0; end_index < elements.size(); end_index++) {
-					if (elements[end_index].absolute_time >= time_to_match_2)
-						break;
-				}
+		for (unsigned long k = 0; k < elements.size(); k++) {
+			const double dt((double)p->second.time - elements[k].absolute_time);
+			if (dt > time_before_event_time_to_write_in_abbreviated)
+				p->second.before_index = k;
+			if (-time_after_event_time_to_write_in_abbreviated < dt)
+				p->second.after_index = k;
+			const double adt(fabs(dt));
+			if (adt < least_dt_to_death) {
+				least_dt_to_death = adt;
+				p->second.event_index = k;
 			}
 		}
 	}
 	
-	
-	if (!abbreviated_time_series)
-		end_index = elements.size();
+	//set up start and end indicies to output to file
+	unsigned long start_index(0),end_index(elements.size());
+	if (abbreviated_time_series) {
+		if (state_times[ns_movement_death_associated_expansion].found)
+			end_index = state_times[ns_movement_death_associated_expansion].after_index;
+		if (state_times[ns_movement_stationary].found && state_times[ns_movement_stationary].after_index > end_index)
+			end_index = state_times[ns_movement_stationary].after_index;
+		
+		if (state_times[ns_movement_stationary].found)
+			start_index = state_times[ns_movement_stationary].before_index;
+		if (state_times[ns_movement_death_associated_expansion].found  && state_times[ns_movement_death_associated_expansion].before_index < start_index)
+			start_index = state_times[ns_movement_death_associated_expansion].before_index;
+
+	}
 
 	ns_time_series_event_aligner event_aligner;
 	event_aligner.calculate_alignment_dts(by_hand_annotation_event_times);
-
-	for (unsigned long k = 1; k < end_index; k++){
+	if (m.device == "duck" && m.sample_name == "duck_b" && m.region_name == "3" && group_id == 20)
+		cerr << "WHA?";
+	for (unsigned long k = start_index; k < end_index; k++){
 		m.out_JMP_plate_identity_data_short(o);
 		o << ",";
 		o << group_id<<","<<path_id<<","
@@ -2978,13 +2987,13 @@ void ns_analyzed_image_time_path::write_detailed_movement_quantification_analysi
 			<< ns_output_interval_difference(elements[k].absolute_time,by_hand_annotation_event_times[(int)ns_movement_cessation]) << ","
 			<< ns_output_interval_difference(elements[k].absolute_time,by_hand_annotation_event_times[(int)ns_translation_cessation]) << ","
 			<< ns_output_interval_difference(elements[k].absolute_time,by_hand_annotation_event_times[(int)ns_fast_movement_cessation]) << ","
-			<< ns_output_interval_difference(elements[k].absolute_time,by_hand_annotation_event_times[(int)ns_movement_death_associated_post_expansion_contraction]) << ","
-			<< ns_output_interval_difference(elements[k].absolute_time, by_hand_annotation_event_times[(int)ns_death_associated_expansion_stop]) << ","
+			<< ns_output_interval_difference(elements[k].absolute_time,by_hand_annotation_event_times[(int)ns_death_associated_expansion_start]) << ","
+			<< ns_output_interval_difference(elements[k].absolute_time, by_hand_annotation_event_times[(int)ns_death_associated_post_expansion_contraction_start]) << ","
 			<< ns_output_best_guess_interval_difference(elements[k].absolute_time, movement_analysis_result.state_intervals[(int)ns_movement_stationary],	by_hand_annotation_event_times[(int)ns_movement_cessation], *this) << ","
 			<< ns_output_best_guess_interval_difference(elements[k].absolute_time, movement_analysis_result.state_intervals[(int)ns_movement_posture],	by_hand_annotation_event_times[(int)ns_translation_cessation], *this) << ","
 			<< ns_output_best_guess_interval_difference(elements[k].absolute_time, movement_analysis_result.state_intervals[(int)ns_movement_slow], by_hand_annotation_event_times[(int)ns_fast_movement_cessation], *this) << ","
-			<< ns_output_best_guess_interval_difference(elements[k].absolute_time, movement_analysis_result.state_intervals[(int)ns_movement_death_associated_expansion],by_hand_annotation_event_times[(int)ns_movement_death_associated_post_expansion_contraction], *this) << ","
-			<< ns_output_best_guess_interval_difference(elements[k].absolute_time, movement_analysis_result.state_intervals[(int)ns_movement_death_associated_post_expansion_contraction],by_hand_annotation_event_times[(int)ns_death_associated_expansion_stop], *this) << ","
+				<< ns_output_best_guess_interval_difference(elements[k].absolute_time, movement_analysis_result.state_intervals[(int)ns_movement_death_associated_expansion], by_hand_annotation_event_times[(int)ns_death_associated_expansion_start], *this) << ","
+			<< ns_output_best_guess_interval_difference(elements[k].absolute_time, movement_analysis_result.state_intervals[(int)ns_movement_death_associated_post_expansion_contraction],by_hand_annotation_event_times[(int)ns_death_associated_post_expansion_contraction_start], *this) << ","
 			<< event_aligner.rel_dt(by_hand_movement_state(elements[k].absolute_time),elements[k].absolute_time) << ",";
 
 		
@@ -3023,16 +3032,16 @@ void ns_analyzed_image_time_path::write_detailed_movement_quantification_analysi
 													best_estimate_event_time_for_possible_partially_unbounded_interval(),
 													by_hand_annotation_event_times[(int)ns_movement_cessation]) <<",";
 
-		if (movement_analysis_result.state_intervals[(int)ns_movement_stationary].skipped)
+		if (!state_times[ns_movement_stationary].found)
 			o << ",,,";
 		else o << state_times[ns_movement_stationary].time << ","
-			<<elements[state_times[ns_movement_stationary].death_index].measurements.total_foreground_area << ","
-			<< elements[state_times[ns_movement_stationary].death_index].measurements.total_stabilized_area << ",";
-		if (movement_analysis_result.state_intervals[(int)ns_movement_death_associated_expansion].skipped)
+			<<elements[state_times[ns_movement_stationary].event_index].measurements.total_foreground_area << ","
+			<< elements[state_times[ns_movement_stationary].event_index].measurements.total_stabilized_area << ",";
+		if (!state_times[ns_movement_death_associated_expansion].found)
 			o << ",,";
 		else o << state_times[ns_movement_death_associated_expansion].time << ","
-			<< elements[state_times[ns_movement_death_associated_expansion].death_index].measurements.total_foreground_area << ","
-			<< elements[state_times[ns_movement_death_associated_expansion].death_index].measurements.total_stabilized_area;
+			<< elements[state_times[ns_movement_death_associated_expansion].event_index].measurements.total_foreground_area << ","
+			<< elements[state_times[ns_movement_death_associated_expansion].event_index].measurements.total_stabilized_area;
 
 	#ifdef NS_CALCULATE_OPTICAL_FLOW
 		elements[k].measurements.scaled_flow_magnitude.write(o); o << ",";

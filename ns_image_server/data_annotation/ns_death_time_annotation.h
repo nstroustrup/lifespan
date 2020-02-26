@@ -92,8 +92,9 @@ struct ns_death_time_annotation_flag{
 		return cached_excluded;
 	}
 	bool specified() const{return !label_short.empty();}
-
+	#ifndef NS_NO_SQL
 	static void get_flags_from_db(ns_image_server_sql * sql);
+	#endif
 	
 	ns_color_8 flag_color() const;
 

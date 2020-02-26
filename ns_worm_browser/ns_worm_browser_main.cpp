@@ -3502,14 +3502,15 @@ void idle_main_window_update_callback(void * force_redraw) {
 		  ns_fl_lock(__FILE__, __LINE__);
 		  if (worm_window == 0 || main_window == 0 || stats_window == 0)
 			  return;
+		  ns_handle_menu_bar_activity_request();
 		  //always call both functions together
+		  if (!main_window->draw_animation || main_window->last_draw_animation){
 		  if (worm_window->visible())
 			  idle_worm_window_update_callback(force_redraw);
 
 		  if (stats_window->visible())
 			  idle_stats_window_update_callback(force_redraw);
-
-		  ns_handle_menu_bar_activity_request();
+		  }
 		  ns_try_to_acquire_lock_for_scope storyboard_lock(worm_learner.storyboard_lock);
 		  if (storyboard_lock.try_to_get(__FILE__, __LINE__)) {
 			  if (worm_learner.current_annotater->refresh_requested()) {

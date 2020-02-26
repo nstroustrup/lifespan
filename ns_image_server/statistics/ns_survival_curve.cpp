@@ -13,7 +13,7 @@
 #include "ns_death_time_annotation_set.h"
 using namespace std;
 
-
+#ifndef NS_NO_SQL
 void ns_genotype_fetcher::load_from_db(ns_image_server_sql * sql, const bool load_all){
 	*sql << "SELECT strain,genotype,id FROM strain_aliases";
 	if (!load_all) *sql << " WHERE used_in_cluster = 1";
@@ -41,6 +41,7 @@ const std::string & ns_genotype_fetcher::genotype_from_strain(const std::string 
 	}
 	return p->second.genotype;
 }
+#endif
 
 void ns_survival_data::convert_absolute_times_to_ages(){
 	for (unsigned int i = 0; i < timepoints.size(); i++)
@@ -141,7 +142,7 @@ std::string * ns_region_metadata::get_field_by_name(const std::string & s){
 }
 
 
-	
+#ifndef NS_NO_SQL
 void ns_region_metadata::load_only_region_info_from_db(const ns_64_bit region_info_id, const std::string &analysis_type_, ns_sql & sql){
 	sql << "SELECT sample_id, name, strain, strain_condition_1,strain_condition_2,strain_condition_3,"
 		   "culturing_temperature,experiment_temperature,food_source, environmental_conditions,"
@@ -203,7 +204,7 @@ void ns_region_metadata::load_from_db(const ns_64_bit region_info_id, const std:
 	load_only_region_info_from_db(region_info_id,analysis_type_,sql);
 	load_only_sample_info_from_db(sample_id,sql);
 }
-
+#endif
 bool operator<(const ns_survival_timepoint & a, const ns_survival_timepoint & b){
 	return a.absolute_time < b.absolute_time;
 }
@@ -976,7 +977,7 @@ void ns_lifespan_experiment_set::out_simple_JMP_event_data(const ns_time_handing
 		o << "\n";
 	}
 }
-
+#ifndef NS_NO_SQL
 void ns_genotype_fetcher::add_information_to_database(const std::vector<ns_genotype_db_info> & info,ns_image_server_sql * sql){
 	load_from_db(sql,true);
 	for (unsigned int i = 0; i < info.size(); i++){
@@ -998,6 +999,7 @@ void ns_genotype_fetcher::add_information_to_database(const std::vector<ns_genot
 	}
 
 }
+#endif
 
 
 void ns_lifespan_experiment_set::output_JMP_file(const ns_death_time_annotation::ns_by_hand_annotation_integration_strategy & by_hand_strategy,const ns_lifespan_experiment_set::ns_time_handing_behavior & time_handling_behavior,const ns_time_units & time_units,std::ostream & o,const ns_output_file_type& detail, const bool output_header) const{
@@ -1432,7 +1434,7 @@ void ns_lifespan_experiment_set::output_matlab_file(std::ostream & out) const{
 		out << "'" << curves[i].metadata.environmental_conditions << "', " << line_span << "\n";
 	out << "};\n\n";
 }
-
+#ifndef NS_NO_SQL
 void ns_lifespan_experiment_set::load_genotypes(ns_sql & sql){
 	ns_genotype_fetcher fetcher;
 	fetcher.load_from_db(&sql);
@@ -1440,6 +1442,7 @@ void ns_lifespan_experiment_set::load_genotypes(ns_sql & sql){
 		curves[i].metadata.genotype = fetcher.genotype_from_strain(curves[i].metadata.strain,&sql);
 	
 }
+#endif
 void ns_lifespan_experiment_set::include_only_events_detected_by_machine(){
 	for (unsigned int i = 0; i < curves.size(); ++i){
 		for (unsigned int j = 0; j < curves[i].timepoints.size(); j++){
@@ -1696,7 +1699,7 @@ void ns_explode_llist(const std::string & s, vector<std::string> & vals){
 		vals.push_back(cur);
 };
 
-
+#ifndef NS_NO_SQL
 void ns_device_temperature_normalization_data::load_data_for_experiment(const unsigned long experiment_id,ns_sql & sql){
 	control_strains.resize(0);
 	sql<< "SELECT control_strain_for_device_regression FROM experiments WHERE id = " << experiment_id;
@@ -1733,6 +1736,7 @@ void ns_device_temperature_normalization_data::load_data_for_experiment(const un
 		}
 	}
 }
+#endif
 void ns_survival_data_quantities::add(const ns_survival_data_quantities & s){
 	count += s.count;
 	number_of_events_involving_multiple_worm_disambiguation += s.number_of_events_involving_multiple_worm_disambiguation;

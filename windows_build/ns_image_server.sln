@@ -1,21 +1,15 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.26730.15
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29326.143
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ns_image_server", "ns_image_server.vcxproj", "{7BFA18F2-2160-438E-93F4-E2E2AB392DE3}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ns_worm_browser", "ns_worm_browser.vcxproj", "{802EC041-C4F2-46EA-890B-1F750D4D308A}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ns_format_by_hand_lifespan_data", "ns_format_by_hand_lifespan_data.vcxproj", "{D544AB93-DB7D-4A01-8AAD-7FC13B22C4E2}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ns_concatenate_files", "ns_concatenate_files.vcxproj", "{F9742903-4F2F-487C-96D6-7DE22B50A383}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ns_image_server_update", "ns_image_server_update.vcxproj", "{83C6E7F6-114B-4CC4-87A0-3063208AF255}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ns_image_server_barcodes", "ns_image_server_barcodes.vcxproj", "{CE96BC79-0218-4C95-B749-C4BBD4810026}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "temperature_probe_parser", "temperature_probe_parser\temperature_probe_parser.vcxproj", "{565E562E-4F4A-46D7-B64F-6FBD0E77D480}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ns_format_by_hand_lifespan_data", "..\ns_format_by_hand_lifespan_data\ns_format_by_hand_lifespan_data.vcxproj", "{244AC5EE-3659-406B-8E6A-296691AD61E9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -51,32 +45,6 @@ Global
 		{802EC041-C4F2-46EA-890B-1F750D4D308A}.Release|Win32.Build.0 = Release|Win32
 		{802EC041-C4F2-46EA-890B-1F750D4D308A}.Release|x64.ActiveCfg = Release|x64
 		{802EC041-C4F2-46EA-890B-1F750D4D308A}.Release|x64.Build.0 = Release|x64
-		{D544AB93-DB7D-4A01-8AAD-7FC13B22C4E2}.Debug|Win32.ActiveCfg = Debug|Win32
-		{D544AB93-DB7D-4A01-8AAD-7FC13B22C4E2}.Debug|Win32.Build.0 = Debug|Win32
-		{D544AB93-DB7D-4A01-8AAD-7FC13B22C4E2}.Debug|x64.ActiveCfg = Debug|Win32
-		{D544AB93-DB7D-4A01-8AAD-7FC13B22C4E2}.Release (IPP DLL)|Win32.ActiveCfg = Release|Win32
-		{D544AB93-DB7D-4A01-8AAD-7FC13B22C4E2}.Release (IPP DLL)|x64.ActiveCfg = Release|Win32
-		{D544AB93-DB7D-4A01-8AAD-7FC13B22C4E2}.Release|Win32.ActiveCfg = Release|Win32
-		{D544AB93-DB7D-4A01-8AAD-7FC13B22C4E2}.Release|Win32.Build.0 = Release|Win32
-		{D544AB93-DB7D-4A01-8AAD-7FC13B22C4E2}.Release|x64.ActiveCfg = Release|Win32
-		{F9742903-4F2F-487C-96D6-7DE22B50A383}.Debug|Win32.ActiveCfg = Debug|Win32
-		{F9742903-4F2F-487C-96D6-7DE22B50A383}.Debug|Win32.Build.0 = Debug|Win32
-		{F9742903-4F2F-487C-96D6-7DE22B50A383}.Debug|x64.ActiveCfg = Debug|Win32
-		{F9742903-4F2F-487C-96D6-7DE22B50A383}.Release (IPP DLL)|Win32.ActiveCfg = Release|Win32
-		{F9742903-4F2F-487C-96D6-7DE22B50A383}.Release (IPP DLL)|x64.ActiveCfg = Release|Win32
-		{F9742903-4F2F-487C-96D6-7DE22B50A383}.Release|Win32.ActiveCfg = Release|Win32
-		{F9742903-4F2F-487C-96D6-7DE22B50A383}.Release|Win32.Build.0 = Release|Win32
-		{F9742903-4F2F-487C-96D6-7DE22B50A383}.Release|x64.ActiveCfg = Release|Win32
-		{83C6E7F6-114B-4CC4-87A0-3063208AF255}.Debug|Win32.ActiveCfg = Debug|Win32
-		{83C6E7F6-114B-4CC4-87A0-3063208AF255}.Debug|Win32.Build.0 = Debug|Win32
-		{83C6E7F6-114B-4CC4-87A0-3063208AF255}.Debug|x64.ActiveCfg = Debug|x64
-		{83C6E7F6-114B-4CC4-87A0-3063208AF255}.Debug|x64.Build.0 = Debug|x64
-		{83C6E7F6-114B-4CC4-87A0-3063208AF255}.Release (IPP DLL)|Win32.ActiveCfg = Release|Win32
-		{83C6E7F6-114B-4CC4-87A0-3063208AF255}.Release (IPP DLL)|x64.ActiveCfg = Release|x64
-		{83C6E7F6-114B-4CC4-87A0-3063208AF255}.Release|Win32.ActiveCfg = Release|Win32
-		{83C6E7F6-114B-4CC4-87A0-3063208AF255}.Release|Win32.Build.0 = Release|Win32
-		{83C6E7F6-114B-4CC4-87A0-3063208AF255}.Release|x64.ActiveCfg = Release|x64
-		{83C6E7F6-114B-4CC4-87A0-3063208AF255}.Release|x64.Build.0 = Release|x64
 		{CE96BC79-0218-4C95-B749-C4BBD4810026}.Debug|Win32.ActiveCfg = Debug|Win32
 		{CE96BC79-0218-4C95-B749-C4BBD4810026}.Debug|Win32.Build.0 = Debug|Win32
 		{CE96BC79-0218-4C95-B749-C4BBD4810026}.Debug|x64.ActiveCfg = Debug|Win32
@@ -86,18 +54,18 @@ Global
 		{CE96BC79-0218-4C95-B749-C4BBD4810026}.Release|Win32.Build.0 = Release|Win32
 		{CE96BC79-0218-4C95-B749-C4BBD4810026}.Release|x64.ActiveCfg = Release|x64
 		{CE96BC79-0218-4C95-B749-C4BBD4810026}.Release|x64.Build.0 = Release|x64
-		{565E562E-4F4A-46D7-B64F-6FBD0E77D480}.Debug|Win32.ActiveCfg = Debug|Win32
-		{565E562E-4F4A-46D7-B64F-6FBD0E77D480}.Debug|Win32.Build.0 = Debug|Win32
-		{565E562E-4F4A-46D7-B64F-6FBD0E77D480}.Debug|x64.ActiveCfg = Debug|x64
-		{565E562E-4F4A-46D7-B64F-6FBD0E77D480}.Debug|x64.Build.0 = Debug|x64
-		{565E562E-4F4A-46D7-B64F-6FBD0E77D480}.Release (IPP DLL)|Win32.ActiveCfg = Release (IPP DLL)|Win32
-		{565E562E-4F4A-46D7-B64F-6FBD0E77D480}.Release (IPP DLL)|Win32.Build.0 = Release (IPP DLL)|Win32
-		{565E562E-4F4A-46D7-B64F-6FBD0E77D480}.Release (IPP DLL)|x64.ActiveCfg = Release (IPP DLL)|x64
-		{565E562E-4F4A-46D7-B64F-6FBD0E77D480}.Release (IPP DLL)|x64.Build.0 = Release (IPP DLL)|x64
-		{565E562E-4F4A-46D7-B64F-6FBD0E77D480}.Release|Win32.ActiveCfg = Release|Win32
-		{565E562E-4F4A-46D7-B64F-6FBD0E77D480}.Release|Win32.Build.0 = Release|Win32
-		{565E562E-4F4A-46D7-B64F-6FBD0E77D480}.Release|x64.ActiveCfg = Release|x64
-		{565E562E-4F4A-46D7-B64F-6FBD0E77D480}.Release|x64.Build.0 = Release|x64
+		{244AC5EE-3659-406B-8E6A-296691AD61E9}.Debug|Win32.ActiveCfg = Debug|Win32
+		{244AC5EE-3659-406B-8E6A-296691AD61E9}.Debug|Win32.Build.0 = Debug|Win32
+		{244AC5EE-3659-406B-8E6A-296691AD61E9}.Debug|x64.ActiveCfg = Debug|x64
+		{244AC5EE-3659-406B-8E6A-296691AD61E9}.Debug|x64.Build.0 = Debug|x64
+		{244AC5EE-3659-406B-8E6A-296691AD61E9}.Release (IPP DLL)|Win32.ActiveCfg = Release|Win32
+		{244AC5EE-3659-406B-8E6A-296691AD61E9}.Release (IPP DLL)|Win32.Build.0 = Release|Win32
+		{244AC5EE-3659-406B-8E6A-296691AD61E9}.Release (IPP DLL)|x64.ActiveCfg = Release|x64
+		{244AC5EE-3659-406B-8E6A-296691AD61E9}.Release (IPP DLL)|x64.Build.0 = Release|x64
+		{244AC5EE-3659-406B-8E6A-296691AD61E9}.Release|Win32.ActiveCfg = Release|Win32
+		{244AC5EE-3659-406B-8E6A-296691AD61E9}.Release|Win32.Build.0 = Release|Win32
+		{244AC5EE-3659-406B-8E6A-296691AD61E9}.Release|x64.ActiveCfg = Release|x64
+		{244AC5EE-3659-406B-8E6A-296691AD61E9}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

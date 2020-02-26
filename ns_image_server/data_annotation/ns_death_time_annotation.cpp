@@ -2842,7 +2842,7 @@ void ns_death_time_annotation_compiler::normalize_times_to_zero_age(){
 }
 
 ns_lock ns_death_time_annotation_flag::flag_lock("flag");
-
+#ifndef NS_NO_SQL
 void ns_death_time_annotation_flag::get_flags_from_db(ns_image_server_sql * sql){
 
 
@@ -2905,7 +2905,7 @@ void ns_death_time_annotation_flag::get_flags_from_db(ns_image_server_sql * sql)
 	}
 	lock.release();
 };
-
+#endif
 
 const char * ns_death_time_annotation_flag::first_default_flag_short_label(){
 	return "MULTI_ERR";

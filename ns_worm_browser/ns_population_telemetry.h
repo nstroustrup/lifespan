@@ -898,9 +898,7 @@ public:
 						movement_vs_posture_y_axis_label = "Duration observed (days)";
 
 
-						if (r->first == 22796 && l->properties.stationary_path_id.group_id == 8)
-							cerr << "WHA!";
-
+					
 						if (death_plot == ns_plot_movement_death) {
 							if (set.descriptions[i].by_hand.movement_based_death_annotation != 0) {
 								pair_to_plot.first = set.descriptions[i].by_hand.movement_based_death_annotation;

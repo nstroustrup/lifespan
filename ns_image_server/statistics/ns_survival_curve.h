@@ -6,7 +6,9 @@
 #include <string>
 #include <iostream>
 #include "ns_movement_state.h"
+#ifndef NS_NO_SQL
 #include "ns_image_server_sql.h"
+#endif
 #include "ns_death_time_annotation.h"
 #include <set>
 #include "ns_region_metadata.h"
@@ -138,6 +140,7 @@ struct ns_genotype_db_internal_info{
 	long id;
 	std::string	genotype;
 };
+#ifndef NS_NO_SQL
 class ns_genotype_fetcher{
 
 public:
@@ -150,7 +153,7 @@ private:
 	mutable ns_genotype_list genotypes;
 	std::string empty_string;
 };
-
+#endif
 struct ns_survival_timepoint_event{
 	ns_survival_timepoint_event() { events.reserve(50); }
 	std::vector<ns_survival_timepoint_event_count> events;
@@ -531,7 +534,9 @@ struct ns_device_temperature_normalization_data{
 	ns_region_metadata::ns_strain_description_detail_type strain_description_detail_type;
 	double external_fixed_control_mean_lifespan;
 	bool fix_control_mean_lifespan;
+#ifndef NS_NO_SQL
 	void load_data_for_experiment(const unsigned long experiment_id,ns_sql & sql);
+#endif
 	bool identity() const{return produce_identity_;}
 
 	private:
@@ -580,9 +585,9 @@ public:
 	void generate_survival_statistics();
 	
 	void generate_aggregate_for_strain(const ns_region_metadata & m, ns_lifespan_experiment_set & r) const;
-
+	#ifndef NS_NO_SQL
 	void load_genotypes(ns_sql & sql);
-
+	#endif
 	void convert_absolute_times_to_ages();
 
 	void generate_common_time_set(ns_lifespan_experiment_set & new_set) const;

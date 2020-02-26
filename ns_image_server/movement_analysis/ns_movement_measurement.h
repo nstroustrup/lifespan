@@ -350,6 +350,21 @@ public:
 
 class ns_movement_colors{
 public:
-	static ns_color_8 color(const ns_movement_state & m);
+	static ns_color_8 color(const ns_movement_state & m){
+		switch (m) {
+		case ns_movement_death_associated_expansion: return ns_color_8(0, 200, 20);
+		case ns_movement_death_associated_post_expansion_contraction: return ns_color_8(200, 0, 20);
+		case ns_movement_stationary: return ns_color_8(255, 0, 0);
+		case ns_movement_posture: return ns_color_8(255, 255, 0);
+		case ns_movement_slow: return ns_color_8(0, 255, 0);
+		case ns_movement_fast:return  ns_color_8(255, 0, 255);
+		case ns_movement_machine_excluded: return ns_color_8(175, 175, 175);
+		case ns_movement_by_hand_excluded: return ns_color_8(225, 225, 225);
+
+		case ns_movement_not_calculated: return ns_color_8(0, 0, 0);
+		default: throw ns_ex("Uknown movement color request:") << (unsigned long)m;
+		}
+	}
+
 };
 #endif

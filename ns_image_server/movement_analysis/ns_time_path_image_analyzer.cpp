@@ -7133,7 +7133,7 @@ void ns_time_path_image_movement_analyzer<allocator_T>::load_images_for_group(co
 	#endif
 	if (groups[group_id].paths.size() == 0)
 		return;
-	const unsigned long number_of_images_loaded(groups[group_id].paths[0].number_of_images_loaded);
+	unsigned long number_of_images_loaded(groups[group_id].paths[0].number_of_images_loaded);
 	if (number_of_images_loaded == 0){
 		if (group_id >= size())
 			throw ns_ex("ns_time_path_image_movement_analyzer::load_images_for_group()::Invalid group: ") << group_id;
@@ -7157,6 +7157,13 @@ void ns_time_path_image_movement_analyzer<allocator_T>::load_images_for_group(co
 		}
 
 		ns_acquire_lock_for_scope lock(groups[group_id].paths[j].movement_image_storage_lock, __FILE__, __LINE__);
+		//get this number again after lock is obtained, in case another thread has altered it.
+		number_of_images_loaded = groups[group_id].paths[0].number_of_images_loaded;
+		if (number_of_images_loaded >= requested_number_of_images_to_load) {
+			lock.release();
+			cancel_asynch_group_load = false;
+			return;
+		}
 		if (number_of_images_loaded == 0){
 			if (groups[group_id].paths[j].output_image.id==0){
 				throw ns_ex("ns_time_path_image_movement_analyzer::load_images_for_group()::Group has no stored image id specified");

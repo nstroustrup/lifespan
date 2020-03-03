@@ -66,7 +66,7 @@ public:
 				}
 				else p++;
 			}
-			//delete younger ones if necissary
+			//delete younger ones if necessary
 			while (image_loading_times_for_groups.size() >= max_number_of_cached_worms) {
 				ns_loading_time_cache::iterator youngest(image_loading_times_for_groups.begin());
 				for (ns_loading_time_cache::iterator p = image_loading_times_for_groups.begin(); p != image_loading_times_for_groups.end(); p++) {

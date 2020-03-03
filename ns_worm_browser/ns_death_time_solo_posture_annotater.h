@@ -326,7 +326,7 @@ public:
 		ns_timing_data_configurator configurator;
 		configurator(region_info.region_id, data->movement_analyzer, data->machine_timing_data, data->by_hand_timing_data);
 
-		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Loading annotations 2"));
+		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("ns_death_time_posture_solo_annotater_data_cache_data()::Loading annotations for region ") << region_info.region_id << " from file \"" << data->annotation_file.output_filename() << "\"");
 		data->load_annotations(*source_.sql, false);
 	}
 	void clean_up(ns_death_time_posture_solo_annotater_data_cache_data_source& source) {

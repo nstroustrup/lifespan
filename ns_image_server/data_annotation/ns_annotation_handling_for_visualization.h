@@ -444,6 +444,10 @@ class ns_timing_data_and_death_time_annotation_matcher {
 public:
 	bool load_timing_data_from_set(const ns_death_time_annotation_set& set, const bool ignore_unuseful_annotations, timing_data_container& timing_data, std::vector<ns_death_time_annotation>& orphaned_events, std::string& error_message) {
 		//use the compiler to recognize all the stationary worms and put all the annotations together.
+		if (set.size() == 0) {
+			error_message = "Found an empty annotation file";
+			return false;
+		}
 		ns_death_time_annotation_compiler c;
 		c.add(set, ns_region_metadata());
 		if (c.regions.size() > 1)

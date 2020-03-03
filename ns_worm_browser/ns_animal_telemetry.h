@@ -111,7 +111,7 @@ public:
 			if (!in.is_null()) {
 				ns_death_time_annotation_set set;
 				set.read(ns_death_time_annotation_set::ns_all_annotations, in()());
-
+				
 				std::string error_message;
 				if (matcher.load_timing_data_from_set(set, false, by_hand_timing_data, orphaned_events, error_message)) {
 					if (error_message.size() != 0) {

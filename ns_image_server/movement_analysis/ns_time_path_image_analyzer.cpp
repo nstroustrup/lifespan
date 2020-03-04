@@ -2526,7 +2526,7 @@ std::string ns_output_interval_difference(const unsigned long time, const ns_dea
 	return ns_to_string_short(((double)time-(double)b.period_end)/(60.0*60*24),3);
 }
 
-std::string ns_output_best_guess_interval_difference(const unsigned long time, const const ns_movement_state_observation_boundary_interval& machine, const ns_death_time_annotation_time_interval & by_hand, const ns_analyzed_image_time_path& path) {
+std::string ns_output_best_guess_interval_difference(const unsigned long time, const ns_movement_state_observation_boundary_interval& machine, const ns_death_time_annotation_time_interval & by_hand, const ns_analyzed_image_time_path& path) {
 	if (by_hand.period_end_was_not_observed && machine.skipped)
 		return "";
 	if (!by_hand.period_end_was_not_observed)

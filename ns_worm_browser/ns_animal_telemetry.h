@@ -77,6 +77,7 @@ public:
 				image_loading_times_for_groups.erase(youngest);
 			}
 		}
+		ns_output_asynchronous_image_loading_debug(ns_text_stream_t() << "Loading images for worm.");
 		movement_analyzer.load_images_for_group(path_id.group_id, number_of_images_to_load, sql, false, false,image_cache);
 		image_loading_times_for_groups[path_id.group_id] = current_time;
 	}

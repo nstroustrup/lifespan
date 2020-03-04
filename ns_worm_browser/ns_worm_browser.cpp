@@ -8432,7 +8432,7 @@ void ns_death_time_solo_posture_annotater::register_click(const ns_vector_2i & i
 			}
 			if (switch_time) {
 				clear_cached_images(false);
-				set_current_timepoint(requested_time,handle, false);
+				move_to_timepoint_and_load_images(requested_time,handle, false);
 				{
 					timepoints[current_timepoint_id].load_image(1024, current_image, sql(), local_image_cache, memory_pool, 1);
 				}

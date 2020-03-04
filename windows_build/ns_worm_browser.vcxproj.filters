@@ -1,9 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="system_base">
-      <UniqueIdentifier>{859de5ad-35cd-4688-8d7b-f9ed946a6f9e}</UniqueIdentifier>
-    </Filter>
     <Filter Include="statistics">
       <UniqueIdentifier>{1f6f5d96-5ce2-457d-8bf6-eb3e9c988f96}</UniqueIdentifier>
     </Filter>
@@ -74,22 +71,25 @@
     <Filter Include="image_format_lib\tiff">
       <UniqueIdentifier>{30dad93e-2278-4295-b1f0-96592adfe1ce}</UniqueIdentifier>
     </Filter>
+    <Filter Include="statistics\system_base">
+      <UniqueIdentifier>{859de5ad-35cd-4688-8d7b-f9ed946a6f9e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\ns_image_server\system_base\ns_dir.cpp">
-      <Filter>system_base</Filter>
+      <Filter>statistics\system_base</Filter>
     </ClCompile>
     <ClCompile Include="..\ns_image_server\system_base\ns_ex.cpp">
-      <Filter>system_base</Filter>
+      <Filter>statistics\system_base</Filter>
     </ClCompile>
     <ClCompile Include="..\ns_image_server\system_base\ns_socket.cpp">
-      <Filter>system_base</Filter>
+      <Filter>statistics\system_base</Filter>
     </ClCompile>
     <ClCompile Include="..\ns_image_server\system_base\ns_sql.cpp">
-      <Filter>system_base</Filter>
+      <Filter>statistics\system_base</Filter>
     </ClCompile>
     <ClCompile Include="..\ns_image_server\system_base\ns_thread.cpp">
-      <Filter>system_base</Filter>
+      <Filter>statistics\system_base</Filter>
     </ClCompile>
     <ClCompile Include="..\ns_image_server\statistics\ns_normal_distribution.cpp">
       <Filter>statistics</Filter>
@@ -218,7 +218,7 @@
       <Filter>image_acquisition</Filter>
     </ClCompile>
     <ClCompile Include="..\ns_image_server\system_base\ns_xml.cpp">
-      <Filter>system_base</Filter>
+      <Filter>statistics\system_base</Filter>
     </ClCompile>
     <ClCompile Include="..\ns_image_server\image_server\ns_graph.cpp">
       <Filter>image_server</Filter>
@@ -706,28 +706,28 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\ns_image_server\system_base\ns_dir.h">
-      <Filter>system_base</Filter>
+      <Filter>statistics\system_base</Filter>
     </ClInclude>
     <ClInclude Include="..\ns_image_server\system_base\ns_ex.h">
-      <Filter>system_base</Filter>
+      <Filter>statistics\system_base</Filter>
     </ClInclude>
     <ClInclude Include="..\ns_image_server\system_base\ns_lock.h">
-      <Filter>system_base</Filter>
+      <Filter>statistics\system_base</Filter>
     </ClInclude>
     <ClInclude Include="..\ns_image_server\system_base\ns_managed_pointer.h">
-      <Filter>system_base</Filter>
+      <Filter>statistics\system_base</Filter>
     </ClInclude>
     <ClInclude Include="..\ns_image_server\system_base\ns_os_signal_handler.h">
-      <Filter>system_base</Filter>
+      <Filter>statistics\system_base</Filter>
     </ClInclude>
     <ClInclude Include="..\ns_image_server\system_base\ns_socket.h">
-      <Filter>system_base</Filter>
+      <Filter>statistics\system_base</Filter>
     </ClInclude>
     <ClInclude Include="..\ns_image_server\system_base\ns_sql.h">
-      <Filter>system_base</Filter>
+      <Filter>statistics\system_base</Filter>
     </ClInclude>
     <ClInclude Include="..\ns_image_server\system_base\ns_thread.h">
-      <Filter>system_base</Filter>
+      <Filter>statistics\system_base</Filter>
     </ClInclude>
     <ClInclude Include="..\ns_image_server\statistics\ns_by_hand_lifespan.h">
       <Filter>statistics</Filter>
@@ -934,7 +934,7 @@
       <Filter>image_acquisition</Filter>
     </ClInclude>
     <ClInclude Include="..\ns_image_server\system_base\ns_xml.h">
-      <Filter>system_base</Filter>
+      <Filter>statistics\system_base</Filter>
     </ClInclude>
     <ClInclude Include="..\ns_image_server\image_server\ns_file_location_specification.h">
       <Filter>image_server</Filter>

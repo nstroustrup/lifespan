@@ -304,9 +304,8 @@ public:
 		case ns_death_time_annotation::ns_explicitly_not_observed: {
 			death_associated_expansion_stop.event_explicitness = ns_death_time_annotation::ns_not_explicit;
 			ns_death_time_annotation_time_interval t(0, 0);
-			death_associated_expansion_stop.time = t;
-			death_associated_expansion_start.time = t;
-			death_associated_expansion_stop.time.period_end_was_not_observed = death_associated_expansion_stop.time.period_start_was_not_observed = true;
+			t.period_end_was_not_observed = t.period_start_was_not_observed = true;
+			death_associated_expansion_stop.time = death_associated_expansion_start.time = t;
 			break;
 		}
 		default: throw ns_ex("step_death_posture_relaxation_explicitness()::Unkown state!");

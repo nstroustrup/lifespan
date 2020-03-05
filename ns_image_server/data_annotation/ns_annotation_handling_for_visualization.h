@@ -304,9 +304,8 @@ public:
 		case ns_death_time_annotation::ns_explicitly_not_observed: {
 			death_associated_expansion_stop.event_explicitness = ns_death_time_annotation::ns_not_explicit;
 			ns_death_time_annotation_time_interval t(0, 0);
-			death_associated_expansion_stop.time = t;
-			death_associated_expansion_start.time = t;
-			death_associated_expansion_stop.time.period_end_was_not_observed = death_associated_expansion_stop.time.period_start_was_not_observed = true;
+			t.period_end_was_not_observed = t.period_start_was_not_observed = true;
+			death_associated_expansion_stop.time = death_associated_expansion_start.time = t;
 			break;
 		}
 		default: throw ns_ex("step_death_posture_relaxation_explicitness()::Unkown state!");
@@ -444,6 +443,10 @@ class ns_timing_data_and_death_time_annotation_matcher {
 public:
 	bool load_timing_data_from_set(const ns_death_time_annotation_set& set, const bool ignore_unuseful_annotations, timing_data_container& timing_data, std::vector<ns_death_time_annotation>& orphaned_events, std::string& error_message) {
 		//use the compiler to recognize all the stationary worms and put all the annotations together.
+		if (set.size() == 0) {
+			error_message = "Found an empty annotation file";
+			return false;
+		}
 		ns_death_time_annotation_compiler c;
 		c.add(set, ns_region_metadata());
 		if (c.regions.size() > 1)

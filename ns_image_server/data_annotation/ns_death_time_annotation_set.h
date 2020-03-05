@@ -155,7 +155,7 @@ struct ns_dying_animal_description_group{
 //single locations can be annotated to hold multiple worms.  So we need a container corresponding to each location that holds annotations for each worm in the multiple worm clusters.
 template<class annotation_t>
 struct ns_dying_animal_description_base {
-	ns_dying_animal_description_base() : final_number_of_worms_by_hand(0), final_number_of_worms_by_machine(0) {}
+	ns_dying_animal_description_base() : final_number_of_worms_by_hand(0), final_number_of_worms_by_machine(0){}
 	typedef ns_dying_animal_description_group<annotation_t> ns_group_type;
 	ns_group_type
 		by_hand,
@@ -220,6 +220,7 @@ public:
 	void add(const ns_death_time_annotation & e, const bool create_new_location);
 	void create_location(const ns_stationary_path_id & s, const ns_vector_2i& position, const ns_vector_2i& size);
 	void clear();
+	void empty_but_keep_memory();
 	ns_region_metadata metadata;
 
 	ns_death_time_annotation_time_interval latest_interval() const;
@@ -235,6 +236,7 @@ public:
 	typedef enum {ns_create_all,ns_do_not_create_regions,ns_do_not_create_regions_or_locations} ns_creation_type;
 	typedef std::map<ns_64_bit,ns_death_time_annotation_compiler_region> ns_region_list;
 	void clear(){regions.clear();}
+	void empty_but_keep_regions_and_memory();
 	ns_region_list regions;
 	
 	

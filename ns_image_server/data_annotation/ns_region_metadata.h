@@ -1,7 +1,8 @@
 #ifndef NS_REGION_METADATA
 #define NS_REGION_METADATA
-
+#ifndef NS_NO_SQL
 #include "ns_image_server_sql.h"
+#endif
 #include "ns_xml.h"
 
 struct ns_region_metadata{
@@ -208,13 +209,13 @@ std::string to_xml() const;
 				 position_of_sample_on_scanner = 
 				 size = ns_vector_2d(0,0);
 	}
-	
+	#ifndef NS_NO_SQL
 	void load_from_db(const ns_64_bit region_info_id, const std::string &analysis_type_, ns_sql & sql);
 	
 	void load_only_region_info_from_db(const ns_64_bit region_info_id, const std::string &analysis_type_, ns_sql & sql);
 
 	void load_only_sample_info_from_db(const ns_64_bit sample_id, ns_sql & sql);
-
+	#endif
 	static bool is_age_zero_field(const std::string & s);
 	void load_from_fields(const std::map<std::string,std::string> & m,std::map<std::string,std::string> &unknown_values);
 	std::string * get_field_by_name(const std::string & s);

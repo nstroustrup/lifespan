@@ -100,10 +100,10 @@ public:
 		}
 	}*/
 	void out_jmp(const ns_lifespan_experiment_set::ns_time_handing_behavior & b,std::ostream & o,const ns_metadata_specification & metadata_spec) const{
-		return ;
-		//	if (annotations.size() == 0)
+		
+			/*if (annotations.size() == 0)
 	//		throw ns_ex("No Annotations Provided");
-/*
+
 		for (unsigned int i = 0; i < annotations.size(); i++){
 			ns_metadata_worm_properties p;
 			p.event_period_end_time = 0;
@@ -166,16 +166,16 @@ class ns_by_hand_lifespan_experiment_specification{
 	}
 
 	void convert_to_lifespan_experiment_set(ns_lifespan_experiment_set & set){
-		set.curves.resize(0);
-		set.curves.resize(plates.size());
+		set.resize(0);
+		set.resize(plates.size());
 		std::set<unsigned long> observation_times;
 		for (unsigned int i = 0; i < plates.size(); i++){
-			set.curves[i].metadata = plates[i].standard_info;
-			set.curves[i].timepoints.resize(plates[i].events.size());
+			set.curve(i).metadata = plates[i].standard_info;
+			set.curve(i).timepoints.resize(plates[i].events.size());
 			observation_times.clear();
 			//build a list of all observation times
 			for (unsigned int j = 0; j < plates[i].events.size(); j++){
-				set.curves[i].timepoints[j].absolute_time =  plates[i].events[j].time.period_end;
+				set.curve(i).timepoints[j].absolute_time =  plates[i].events[j].time.period_end;
 				observation_times.insert(plates[i].events[j].time.period_end);
 			}			
 			for (unsigned int j = 0; j < plates[i].events.size(); j++){
@@ -203,13 +203,13 @@ class ns_by_hand_lifespan_experiment_specification{
 							ns_current_time(),
 							ns_death_time_annotation::ns_lifespan_machine,
 							ns_death_time_annotation::ns_single_worm,
-							ns_stationary_path_id(0,0,0),true,false,ns_plate_subregion_info(), ns_death_time_annotation::ns_explicitly_observed);
+							ns_stationary_path_id(0,0,0),true,false,ns_plate_subregion_info(), ns_death_time_annotation::ns_explicitly_observed,"",1,0, ns_death_time_annotation::ns_no_strategy_needed_for_single_worm_object, ns_death_time_annotation::ns_censoring_minimize_missing_times);
 				if (plates[i].events[j].deaths > 0){
 					for (unsigned int k = 0; k < plates[i].events[j].deaths; k++){
 						c.events.push_back(d);
 					}
-					set.curves[i].timepoints[j].movement_based_deaths.add(c);
-					set.curves[i].timepoints[j].best_guess_deaths.add(c);
+					set.curve(i).timepoints[j].movement_based_deaths.add(c);
+					set.curve(i).timepoints[j].best_guess_deaths.add(c);
 				}
 	//			plates[i].annotations.push_back(c);
 
@@ -223,8 +223,8 @@ class ns_by_hand_lifespan_experiment_specification{
 					for (unsigned int k = 0; k < plates[i].events[j].censored; k++){
 						c.events.push_back(d);
 					}
-					set.curves[i].timepoints[j].movement_based_deaths.add(c);
-					set.curves[i].timepoints[j].best_guess_deaths.add(c);
+					set.curve(i).timepoints[j].movement_based_deaths.add(c);
+					set.curve(i).timepoints[j].best_guess_deaths.add(c);
 				}
 	//			plates[i].annotations.push_back(c);
 				
@@ -338,10 +338,10 @@ private:
 					  censored_column(-1);
 				if (ns_to_lower(grid[event_type_row][i]) != "deaths"){
 					if (ns_to_lower(grid[event_type_row][i]) != "censored"){
-						throw ns_ex("If a \"censored\" column is specified for a strain, it must be on the right of the \"deaths\" column.");
+						throw ns_ex("In column ") << i << ": If a \"censored\" column is specified for a strain, it must be on the right of the \"deaths\" column.";
 					}
 					else 
-						throw ns_ex("Unknown Event type: \"") << grid[event_type_row][i] << "\"";
+						throw ns_ex("In column ") << i << ": Unknown Event type: \"" << grid[event_type_row][i] << "\"";
 				}
 				data_column=i;
 				if (i+1<grid[event_type_row].size() && ns_to_lower(grid[event_type_row][i+1]) == "censored")

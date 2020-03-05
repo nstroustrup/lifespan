@@ -524,7 +524,7 @@ public:
 class ns_gl_window_data{
 public:
 	ns_gl_window_data(const string & window_name):gl_buffer(0),display_lock(string("ns_lock::display_") + window_name),redraw_requested(false),display_rescale_factor(1.0 / ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor),
-		dynamic_range_rescale_factor(1),worm_image_size(10,10),telemetry_size(10,10), gl_image_size(10,10),image_zoom(1), pre_gl_downsample(1){}
+		dynamic_range_rescale_factor(1), render_rescale_factor(1),worm_image_size(10,10),telemetry_size(10,10), gl_image_size(10,10),image_zoom(1), pre_gl_downsample(1){}
 	ns_vector_2i worm_image_size,
 		telemetry_size,
 		gl_image_size;
@@ -533,7 +533,8 @@ public:
 	ns_8_bit * gl_buffer;
 	ns_image_properties gl_buffer_properties;
 	ns_lock display_lock;
-	float display_rescale_factor;
+	float display_rescale_factor;	//the rendered image is drawn larger to the gl devioce
+	float render_rescale_factor;	//the renderer is requested to draw an image this fold larger.
 	float dynamic_range_rescale_factor;
 
 	bool redraw_requested;
@@ -682,7 +683,7 @@ public:
 	typedef enum{ns_whole_experiment,ns_device,ns_plate} ns_optimization_subject;
 	void output_movement_analysis_optimization_data(const ns_optimization_subject & subject, const ns_parameter_set_range & range, bool run_posture, bool run_expansion);
 
-	typedef enum{ns_quantification_summary,ns_quantification_detailed,ns_quantification_detailed_with_by_hand, ns_build_worm_markov_posture_model_from_by_hand_annotations,ns_quantification_abbreviated_detailed} ns_movement_quantification_type;
+	typedef enum{ns_quantification_summary,ns_quantification_raw_machine,ns_quantification_by_hand, ns_quantification_by_hand_or_machine, ns_build_worm_markov_posture_model_from_by_hand_annotations,ns_quantification_abbreviated_by_hand_machine} ns_movement_quantification_type;
 	void generate_experiment_movement_image_quantification_analysis_data(ns_movement_quantification_type  detail_level, const ns_optimization_subject & subject);
 
 	void generate_training_set_from_by_hand_annotation();

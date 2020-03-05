@@ -326,7 +326,7 @@ public:
 		ns_timing_data_configurator configurator;
 		configurator(region_info.region_id, data->movement_analyzer, data->machine_timing_data, data->by_hand_timing_data);
 
-		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Loading annotations 2"));
+		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("ns_death_time_posture_solo_annotater_data_cache_data()::Loading annotations for region ") << region_info.region_id << " from file \"" << data->annotation_file.output_filename() << "\"");
 		data->load_annotations(*source_.sql, false);
 	}
 	void clean_up(ns_death_time_posture_solo_annotater_data_cache_data_source& source) {
@@ -496,6 +496,8 @@ private:
 		const unsigned long text_height(14);
 		font.set_height(text_height * ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor);
 		ns_vector_2i bottom_margin_bottom(bottom_margin_position(&handle));
+		if (!cur_worm->element(current_element_id()).registered_image_is_loaded())
+			throw ns_ex("Attempted to draw metadata on an unloaded element:") << current_element_id();
 		ns_vector_2i bottom_margin_top(bottom_margin_bottom.x + cur_worm->element(current_element_id()).image().properties().width + ns_death_time_solo_posture_annotater_timepoint::ns_side_border_width,
 			bottom_margin_bottom.y + ns_death_time_solo_posture_annotater_timepoint::bottom_border_height() - bottom_offset);
 
@@ -755,10 +757,10 @@ public:
 	}
 
 	static bool ns_fix_annotation(ns_death_time_annotation& a, ns_analyzed_image_time_path& p);
-	void set_current_timepoint(const unsigned long current_time, ns_death_time_posture_solo_annotater_data_cache_storage::handle_t& handle, const bool require_exact = true, const bool give_up_if_too_long = false) {
+	unsigned long move_to_timepoint_and_load_images(const unsigned long requested_time_to_display, ns_death_time_posture_solo_annotater_data_cache_storage::handle_t& handle, const bool require_exact = true, const bool give_up_if_too_long = false) {
 		auto cur_worm = current_worm(handle);
 		for (current_timepoint_id = 0; current_timepoint_id < cur_worm->element_count(); current_timepoint_id++) {
-			if (cur_worm->element(current_timepoint_id).absolute_time >= current_time)
+			if (cur_worm->element(current_timepoint_id).absolute_time >= requested_time_to_display)
 				break;
 		}
 		if (current_timepoint_id >= cur_worm->element_count())
@@ -775,18 +777,15 @@ public:
 		}
 
 		//load images for the worm.
-
-		//data_cache.load_images_for_worm(properties_for_all_animals.stationary_path_id,current_timepoint_id+10,sql);
-		//current_region_data->clear_images_for_worm(properties_for_all_animals.stationary_path_id,local_image_cache);
-
-		handle().data->load_images_for_worm(properties_for_all_animals.stationary_path_id, current_timepoint_id + 10, sql(), local_image_cache);
+		ns_output_asynchronous_image_loading_debug(ns_text_stream_t() << "Main thread requesting images for current_time_point_id = " << current_timepoint_id);
+		handle().data->load_images_for_worm(properties_for_all_animals.stationary_path_id, current_timepoint_id+1, sql(), local_image_cache);
 
 
-		if (require_exact && cur_worm->element(current_timepoint_id).absolute_time != current_time && !give_up_on_preload)
-			throw ns_ex("ns_death_time_solo_posture_annotater::set_current_timepoint()::Could not find requested element time:") << current_time;
+		if (require_exact && cur_worm->element(current_timepoint_id).absolute_time != requested_time_to_display && !give_up_on_preload)
+			throw ns_ex("ns_death_time_solo_posture_annotater::set_current_timepoint()::Could not find requested element time:") << requested_time_to_display;
 		if (current_timepoint_id + 1 < cur_worm->element_count())
 			current_timepoint_id++;
-
+		return cur_worm->element(current_timepoint_id).absolute_time;
 	}
 
 	unsigned long last_time_at_current_telementry_zoom(ns_death_time_posture_solo_annotater_data_cache_storage::handle_t& handle) const;
@@ -897,7 +896,7 @@ public:
 	ns_64_bit current_region_id;
 	ns_stationary_path_id current_worm_id;
 
-	void load_worm(const ns_64_bit region_info_id_, const ns_stationary_path_id& worm, const unsigned long current_time, const ns_death_time_solo_posture_annotater_timepoint::ns_visualization_type visualization_type, const ns_experiment_storyboard* storyboard, ns_worm_learner* worm_learner_, const double external_rescale_factor) {
+	void load_worm(const ns_64_bit region_info_id_, const ns_stationary_path_id& worm, const unsigned long requested_time_to_display, const ns_death_time_solo_posture_annotater_timepoint::ns_visualization_type visualization_type, const ns_experiment_storyboard* storyboard, ns_worm_learner* worm_learner_, const double external_rescale_factor) {
 
 		if (sql.is_null()) {
 
@@ -1048,19 +1047,24 @@ public:
 				update_events_to_storyboard(external_rescale_factor, handle);
 			}
 			//initialize worm timing data
-			unsigned long number_of_valid_elements;
-			for (number_of_valid_elements = 0; number_of_valid_elements < current_worm->element_count(); number_of_valid_elements++)
-				if (current_worm->element(number_of_valid_elements).excluded)
-					break;
+			
+			//find the last valid (eg. not excluded) timepoint associated with the worm
+			unsigned long number_of_elements_to_load = 0;
+			for (unsigned int i = 0; i < current_worm->element_count(); ++i) {
+				if (!current_worm->element(i).excluded) {
+					number_of_elements_to_load = i+1;
+				}
+			}		
 
 			if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Loading timepoints"));
-			timepoints.resize(number_of_valid_elements);
-			if (number_of_valid_elements == 0)
+			timepoints.resize(number_of_elements_to_load);
+
+			if (number_of_elements_to_load == 0)
 				throw ns_ex("This path has no valid elements!");
 			for (unsigned int i = 0; i < timepoints.size(); i++) {
 				timepoints[i].path_timepoint_element = &current_worm->element(i);
 				timepoints[i].element_id = i;
-				timepoints[i].movement_analyzer = &handle().data->movement_analyzer;  //*
+				timepoints[i].movement_analyzer = &handle().data->movement_analyzer;  
 				timepoints[i].group_id = properties_for_all_animals.stationary_path_id.group_id;
 				timepoints[i].set_visulaization_type(current_visualization_type);
 			}
@@ -1068,10 +1072,19 @@ public:
 
 			if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Starting asynch image load"));
 
-			handle().data->movement_analyzer.load_images_for_group_asynch(worm.group_id, number_of_valid_elements, asynch_loading_sql(), false, false, local_image_cache);
+			//start asynchronous loading of all images
+			ns_output_asynchronous_image_loading_debug(ns_text_stream_t() << "Main thread.");
+			handle().data->movement_analyzer.load_images_for_group_asynch(worm.group_id, number_of_elements_to_load, asynch_loading_sql(), false, false, local_image_cache);
 
 			if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Setting current timepoint"));
-			set_current_timepoint(current_time, handle, current_time != 0, true);
+			
+			unsigned long current_time(requested_time_to_display);
+			if (current_time > timepoints.rbegin()->path_timepoint_element->absolute_time) {
+				image_server.register_server_event_no_db(ns_image_server_event("Requesting a time after the last valid timepoint...displaying the last timepoint instead."));
+				current_time = timepoints.rbegin()->path_timepoint_element->absolute_time;
+			}
+			current_time = move_to_timepoint_and_load_images(current_time, handle, current_time != 0, true);
+
 			telemetry_zoom_factor = timepoints.size() / 250;
 			if (telemetry_zoom_factor < 1)
 				telemetry_zoom_factor = 1;
@@ -1113,6 +1126,8 @@ public:
 
 
 			if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Loading first image."));
+
+			//move image from movement_analysis structure to the solo annotater buffer
 			timepoints[current_timepoint_id].load_image(1024, current_image, sql(), local_image_cache, memory_pool, 1);
 			if (!current_image.loaded || current_image.im == 0)
 				throw ns_ex("The current animal's image was not loaded.");

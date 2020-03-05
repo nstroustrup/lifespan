@@ -1204,8 +1204,8 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 	}
 
 
-	static void generate_experiment_detailed_w_by_hand_movement_image_quantification_analysis_data(const std::string & value){worm_learner.generate_experiment_movement_image_quantification_analysis_data(ns_worm_learner::ns_quantification_detailed_with_by_hand, ns_worm_learner::ns_whole_experiment);	}
-	static void generate_experiment_abbreviated_movement_image_quantification_analysis_data(const std::string & value){worm_learner.generate_experiment_movement_image_quantification_analysis_data(ns_worm_learner::ns_quantification_abbreviated_detailed, ns_worm_learner::ns_whole_experiment);	}
+	static void generate_experiment_detailed_w_by_hand_movement_image_quantification_analysis_data(const std::string & value){worm_learner.generate_experiment_movement_image_quantification_analysis_data(ns_worm_learner::ns_quantification_by_hand, ns_worm_learner::ns_whole_experiment);	}
+	static void generate_experiment_abbreviated_movement_image_quantification_analysis_data(const std::string & value){worm_learner.generate_experiment_movement_image_quantification_analysis_data(ns_worm_learner::ns_quantification_abbreviated_by_hand_machine, ns_worm_learner::ns_whole_experiment);	}
 	
 	static void generate_single_frame_posture_image_pixel_data(const std::string & value){
 		worm_learner.generate_single_frame_posture_image_pixel_data((value.find("Plate") != std::string::npos));
@@ -1246,7 +1246,7 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 	
 	}
 	
-	static void generate_experiment_detailed_movement_image_quantification_analysis_data(const std::string & value){worm_learner.generate_experiment_movement_image_quantification_analysis_data(ns_worm_learner::ns_quantification_detailed, ns_worm_learner::ns_whole_experiment);	}
+	static void generate_experiment_detailed_movement_image_quantification_analysis_data(const std::string & value){worm_learner.generate_experiment_movement_image_quantification_analysis_data(ns_worm_learner::ns_quantification_raw_machine, ns_worm_learner::ns_whole_experiment);	}
 	
 	static void generate_experiment_summary_movement_image_quantification_analysis_data(const std::string & value){worm_learner.generate_experiment_movement_image_quantification_analysis_data(ns_worm_learner::ns_quantification_summary, ns_worm_learner::ns_whole_experiment);	}
 	
@@ -1583,9 +1583,9 @@ public:
 
 		add(ns_menu_item_spec(generate_area_movement,"Data Files/Movement Data/_Generate Movement State Time Series"));
 		//add(ns_menu_item_spec(generate_experiment_summary_movement_image_quantification_analysis_data,"Data/Movement/Generate Summary Time Path Image Analysis Quantification Data"));
-		add(ns_menu_item_spec(generate_experiment_detailed_movement_image_quantification_analysis_data,"Data Files/Movement Data/Generate Posture Analysis Data/Machine Event Times"));
-		add(ns_menu_item_spec(generate_experiment_detailed_w_by_hand_movement_image_quantification_analysis_data,"Data Files/Movement Data/Generate Posture Analysis Data/_By Hand Event Times"));
-		add(ns_menu_item_spec(generate_experiment_abbreviated_movement_image_quantification_analysis_data,"Data Files/Movement Data/Generate Posture Analysis Data/Abbreviated"));
+		add(ns_menu_item_spec(generate_experiment_detailed_movement_image_quantification_analysis_data,"Data Files/Movement Data/Generate Posture Analysis Data/All Individuals (No by hand annotations)"));
+		add(ns_menu_item_spec(generate_experiment_detailed_w_by_hand_movement_image_quantification_analysis_data,"Data Files/Movement Data/Generate Posture Analysis Data/_Only By Hand Annotated Individuals"));
+		add(ns_menu_item_spec(generate_experiment_abbreviated_movement_image_quantification_analysis_data,"Data Files/Movement Data/Generate Posture Analysis Data/All Individuals, Machine and By Hand (Abbreviated Format)"));
 	
 		ns_menu_item_spec st2(generate_single_frame_posture_image_pixel_data,"Data Files/Movement Data/Generate Single Frame Posture Image Data");
 		st2.options.push_back(ns_menu_item_options("Experiment"));
@@ -1819,7 +1819,7 @@ public:
 		update_menus();
 	}
 	void update_menus() {
-		ns_menu_item_spec spec(select_spec, "Regression Plot");
+		ns_menu_item_spec spec(select_spec, "Scatter Plot");
 
 		for (unsigned int i = 0; i < (int)ns_population_telemetry::ns_movement_plot_num; i++) {
 			ns_population_telemetry::ns_movement_plot_type g = (ns_population_telemetry::ns_movement_plot_type)i;
@@ -3075,7 +3075,7 @@ private:
 			have_focus = false;
 			break;
 		case FL_KEYDOWN: {
-			/*
+			
 			ns_fl_lock(__FILE__, __LINE__);
 			int c(Fl::event_key());
 			ns_fl_unlock(__FILE__, __LINE__);
@@ -3085,12 +3085,12 @@ private:
 					Fl::event_key(FL_Control_L) || Fl::event_key(FL_Control_R),
 					Fl::event_key(FL_Alt_L) || Fl::event_key(FL_Alt_R)
 				)) {
-					worm_learner.death_time_solo_annotater.request_refresh();
+					worm_learner.storyboard_annotater.draw_telemetry();
 					report_changes_made_to_screen();
 
 					return 1;
 				}
-			}*/
+			}
 			//}
 			break;
 		}
@@ -3502,14 +3502,15 @@ void idle_main_window_update_callback(void * force_redraw) {
 		  ns_fl_lock(__FILE__, __LINE__);
 		  if (worm_window == 0 || main_window == 0 || stats_window == 0)
 			  return;
+		  ns_handle_menu_bar_activity_request();
 		  //always call both functions together
+		  if (!main_window->draw_animation || main_window->last_draw_animation){
 		  if (worm_window->visible())
 			  idle_worm_window_update_callback(force_redraw);
 
 		  if (stats_window->visible())
 			  idle_stats_window_update_callback(force_redraw);
-
-		  ns_handle_menu_bar_activity_request();
+		  }
 		  ns_try_to_acquire_lock_for_scope storyboard_lock(worm_learner.storyboard_lock);
 		  if (storyboard_lock.try_to_get(__FILE__, __LINE__)) {
 			  if (worm_learner.current_annotater->refresh_requested()) {
@@ -3936,7 +3937,7 @@ void ns_run_startup_routines() {
 				survival_curve_compiler.add(by_hand_annotations.annotations, ns_death_time_annotation_compiler::ns_do_not_create_regions);
 				ns_lifespan_experiment_set survival_curves;
 				survival_curve_compiler.generate_survival_curve_set(survival_curves, ns_death_time_annotation::ns_only_machine_annotations, false, false);
-				cout << survival_curves.curves.size();
+				cout << survival_curves.size();
 				survival_curves.generate_survival_statistics();
 				std::ofstream tmp("tmp2.csv");
 				survival_curves.output_JMP_file(ns_death_time_annotation::ns_only_machine_annotations, ns_lifespan_experiment_set::ns_output_single_event_times, ns_lifespan_experiment_set::ns_days, tmp, ns_lifespan_experiment_set::ns_simple);

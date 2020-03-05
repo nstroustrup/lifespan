@@ -15,6 +15,8 @@
 #define NS_USE_FAST_IMAGE_REGISTRATION
 #undef NS_CALCULATE_SLOW_IMAGE_REGISTRATION
 
+void ns_output_asynchronous_image_loading_debug(ns_text_stream_t & s);
+
 
 ns_analyzed_image_time_path_death_time_estimator * ns_get_death_time_estimator_from_posture_analysis_model(const ns_posture_analysis_model & m);
 
@@ -449,7 +451,7 @@ public:
 	ns_analyzed_image_time_path(ns_64_bit unique_process_id_) : volatile_backwards_path_data_written(false), first_stationary_timepoint_(0),
 		entirely_excluded(false), images_preallocated(false), 
 		low_density_path(false), output_reciever(0), flow_output_reciever(0), path_db_id(0), region_info_id(0), movement_image_storage(0), flow_movement_image_storage(0),
-		number_of_images_loaded(0), flow(0), stabilized_worm_region_total(0), unique_process_id(unique_process_id_), movement_image_storage_lock("misl") {
+		number_of_images_loaded(0), flow(0), stabilized_worm_region_total(0), unique_process_id(unique_process_id_), movement_image_storage_lock("misl"), asynchronous_loading_lock("all"){
 		by_hand_annotation_event_times.resize((int)ns_number_of_movement_event_types, ns_death_time_annotation_time_interval::unobserved_interval());
 		by_hand_annotation_event_explicitness.resize((int)ns_number_of_movement_event_types, ns_death_time_annotation::ns_unknown_explicitness);
 	}
@@ -686,6 +688,9 @@ private:
 	void calculate_flow(const unsigned long element_index);
 	ns_optical_flow_processor * flow;
 
+	//The asynchronous loading lock guarentees that only one thread can loading images from disk.
+	ns_lock asynchronous_loading_lock;
+	//The movement access image storage lock, when held, prevents any other threads from accessing movement image data
 	ns_lock movement_image_storage_lock;
 };
 bool operator==(const ns_analyzed_image_time_path& a, const ns_analyzed_image_time_path& b);

@@ -96,9 +96,10 @@ int main(int argc, char* argv[]){
 		//		ofstream o_jmp(jmp_w_extra_metadata_name.c_str());
 		//		if (o_jmp.fail())
 		//			throw ns_ex("Could not open file for output: ") << jmp_w_extra_metadata_name;
-				
+				//ns_survival_data_with_censoring best, movement, expansion;
+				/*set.generate_aggregate_risk_timeseries(metadata,false,false,)
 				by_hand_spec.output_jmp_file_with_extra_metadata(ns_lifespan_experiment_set::ns_output_single_event_times,ns_lifespan_experiment_set::ns_control_group_behavior::ns_do_not_include_control_groups,o_jmp);
-				o_jmp.close();
+				o_jmp.close();*/
 			}
 			catch(...){}
 		}
@@ -111,9 +112,9 @@ int main(int argc, char* argv[]){
 	
 		ns_device_temperature_normalization_data regression_data;
 		regression_data.produce_identity();
-		set.compute_device_normalization_regression(regression_data,ns_lifespan_experiment_set::ns_ignore_censoring_data,ns_lifespan_experiment_set::ns_include_tails);
-		set.output_JMP_file(ns_lifespan_experiment_set::ns_output_single_event_times,ns_lifespan_experiment_set::ns_days,o_jmp_strict_detailed,ns_lifespan_experiment_set::ns_detailed_compact);
-		set.output_JMP_file(ns_lifespan_experiment_set::ns_output_single_event_times,ns_lifespan_experiment_set::ns_days,o_jmp_strict_simple,ns_lifespan_experiment_set::ns_simple);
+		//set.compute_device_normalization_regression(regression_data,ns_lifespan_experiment_set::ns_ignore_censoring_data,ns_lifespan_experiment_set::ns_include_tails);
+		set.output_JMP_file(ns_death_time_annotation::ns_only_machine_annotations, ns_lifespan_experiment_set::ns_output_single_event_times,ns_lifespan_experiment_set::ns_days,o_jmp_strict_detailed,ns_lifespan_experiment_set::ns_detailed_compact);
+		set.output_JMP_file(ns_death_time_annotation::ns_only_machine_annotations, ns_lifespan_experiment_set::ns_output_single_event_times,ns_lifespan_experiment_set::ns_days,o_jmp_strict_simple,ns_lifespan_experiment_set::ns_simple);
 	//	ns_lifespan_experiment_set set_2,set_3;
 	//	set.convert_absolute_times_to_ages();
 	//	set.generate_common_time_set(set_2);

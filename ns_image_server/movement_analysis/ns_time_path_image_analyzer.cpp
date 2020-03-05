@@ -31,7 +31,14 @@ const bool ns_skip_low_density_paths(false);
 
 //#define NS_OUTPUT_ALGINMENT_DEBUG
 
-
+ns_lock text_stream_debug_lock("tsdl");
+void ns_output_asynchronous_image_loading_debug(ns_text_stream_t& s) {
+	//only for debugging purposes
+	return;
+	/*ns_acquire_lock_for_scope lock(text_stream_debug_lock, __FILE__, __LINE__);
+	cerr << ns_thread::current_thread_id() << ": " << s.text() << "\n";
+	lock.release();*/
+}
 
 template<class allocator_T>
 void ns_analyzed_image_time_path::release_images(ns_time_path_image_movement_analysis_memory_pool<allocator_T> & pool) {
@@ -2519,6 +2526,15 @@ std::string ns_output_interval_difference(const unsigned long time, const ns_dea
 	return ns_to_string_short(((double)time-(double)b.period_end)/(60.0*60*24),3);
 }
 
+std::string ns_output_best_guess_interval_difference(const unsigned long time, const ns_movement_state_observation_boundary_interval& machine, const ns_death_time_annotation_time_interval & by_hand, const ns_analyzed_image_time_path& path) {
+	if (by_hand.period_end_was_not_observed && machine.skipped)
+		return "";
+	if (!by_hand.period_end_was_not_observed)
+		return ns_output_interval_difference(time, by_hand);
+	return ns_calc_rel_time_by_index(time,machine,path);
+}
+
+
 
 void ns_analyzed_image_time_path::write_posture_analysis_optimization_data_header(std::ostream & o){
 	o << "Experiment,Device,Plate Name,Animal Details,Group ID,Path ID,Excluded,Censored,Number of Worms in Clump,"
@@ -2783,8 +2799,9 @@ void ns_analyzed_image_time_path::write_detailed_movement_quantification_analysi
 		"Registration Offset X, Registration Offset Y, Registration Offset Magnitude,"
 		"Absolute Time, Age Relative Time,"
 		"Machine-Annotated Movement State,By Hand Annotated Movement State,"
-		"Machine Death Relative Time, Machine Slow Movement Cessation Relative Time, Machine Fast Movement Cessation Relative Time,Machine Death-Associated Expansion Time,Machine Post-mortem Contraction Time,"
-		"By Hand Death Relative Time, By Hand Slow Movement Cessation Relative Time, By Hand Fast Movement Cessation Relative Time,By Hand Death-Associated Expansion Time,By Hand Post-mortem Contraction Time,"
+		"Machine Movement Cessation Relative Time, Machine Slow Movement Cessation Relative Time, Machine Fast Movement Cessation Relative Time,Machine Death-Associated Expansion Time,Machine Post-mortem Contraction Time,"
+		"By Hand Movement Cessation Relative Time, By Hand Slow Movement Cessation Relative Time, By Hand Fast Movement Cessation Relative Time,By Hand Death-Associated Expansion Time,By Hand Post-mortem Contraction Time,"
+		"Best Guess Movement Cessation Relative Time, Best Guess Slow Movement Cessation Relative Time, Best Guess Fast Movement Cessation Relative Time,Best Guess Death-Associated Expansion Time,Best Guess Post-mortem Contraction Time,"
 		"Event-Aligned time,"
 		"Movement Sum, Movement Score, Denoised Movement Score,"
 		"Spatially Averaged Movement Sum Cropped,"
@@ -2800,9 +2817,12 @@ void ns_analyzed_image_time_path::write_detailed_movement_quantification_analysi
 		"Change in Stabilized Intensity 1x(pix/hour),Change in Stabilized Intensity 2x(pix/hour),Change in Stabilized Intensity 4x(pix/hour),"
 		"Change in Region Intensity (pix/hour),"
 		"Saturated Registration, Machine Error (Days ),"
-		"Death Time,"
-		"Total Foreground Area at Death,"
-		"Total Stablilized Intensity at Death,";
+		"Movement Cessation Time,"
+		"Total Foreground Area at Movement Cessation,"
+		"Total Stablilized Intensity at Movement Cessation,"
+		"Death-Associated Expansion Cessation Time,"
+		"Total Foreground Area at Death-Associated Expansion ,"
+		"Total Stablilized Intensity at Death-Associated Expansion";
 
 	#ifdef NS_CALCULATE_OPTICAL_FLOW
 	ns_optical_flow_quantification::write_header("Scaled Flow Magnitude", o); o << ",";
@@ -2878,53 +2898,72 @@ private:
 	std::vector<unsigned long> offsets;
 	std::vector<double> dt;
 };
-
+struct ns_event_time_to_use {
+	ns_event_time_to_use() :time(0), event_index(0),before_index(0),after_index(0),found(false) {}
+	ns_movement_event event_type;
+	unsigned long time;
+	unsigned long event_index,before_index, after_index;
+	bool found;
+};
 void ns_analyzed_image_time_path::write_detailed_movement_quantification_analysis_data(const ns_region_metadata & m, const unsigned long group_id, const unsigned long path_id, std::ostream & o, const bool output_only_elements_with_hand,const bool abbreviated_time_series)const{
 	if (output_only_elements_with_hand && by_hand_annotation_event_times[(int)ns_movement_cessation].period_end_was_not_observed)
 		return;
 	//find animal size one day before death
 	//double death_relative_time_to_normalize(0);
-	double time_after_death_to_write_in_abbreviated(24*60*60);
-	unsigned long end_index(0);
-	unsigned long death_index(0);
+	double time_after_event_time_to_write_in_abbreviated(4*24*60*60);
+	double time_before_event_time_to_write_in_abbreviated(2 * 24*60 * 60);
 	
-	unsigned long death_time(0);
-	if(!movement_analysis_result.state_intervals[(int)ns_movement_stationary].skipped){
-		long least_dt_to_death(LONG_MAX);
-		//double size_at_closest_distance(1);
-		if (by_hand_annotation_event_times[(int)ns_movement_stationary].period_end_was_not_observed) {
-			bool skipped;
-			death_time = machine_event_time(ns_movement_cessation, skipped).best_estimate_event_time_for_possible_partially_unbounded_interval();
-		}
-		else 
-			death_time = by_hand_annotation_event_times[(int)ns_movement_stationary].period_end;
-		
-		const double time_to_match_2(death_time+time_after_death_to_write_in_abbreviated);
+	std::map<ns_movement_state, ns_event_time_to_use > state_times;
+	state_times[ns_movement_stationary].event_type = ns_movement_cessation;
+	state_times[ns_movement_death_associated_expansion].event_type = ns_death_associated_expansion_start;
 
-		for (unsigned long k = 0; k < elements.size(); k++){
-	
-			const double dt(fabs(elements[k].absolute_time- death_time));
-			if (dt < least_dt_to_death){
-				least_dt_to_death = dt;
-				death_index = k;
-			}
+	for (auto p = state_times.begin(); p != state_times.end(); ++p) {
+		if (movement_analysis_result.state_intervals[(int)p->first].skipped && by_hand_annotation_event_times[(int)p->second.event_type].period_end_was_not_observed)
+			continue;
+		p->second.found = true;
+		long least_dt_to_death(LONG_MAX);
+		if (!by_hand_annotation_event_times[(int)p->second.event_type].period_end_was_not_observed)
+			p->second.time = by_hand_annotation_event_times[(int)p->second.event_type].period_end;
+		else{
+				bool skipped;
+				p->second.time = machine_event_time(p->second.event_type, skipped).best_estimate_event_time_for_possible_partially_unbounded_interval();
 		}
-		
-		if (abbreviated_time_series){
-			for (end_index = 0; end_index < elements.size(); end_index++){
-				if (elements[end_index].absolute_time >= time_to_match_2)
-					break;
+
+
+		for (unsigned long k = 0; k < elements.size(); k++) {
+			const double dt((double)p->second.time - elements[k].absolute_time);
+			if (dt > time_before_event_time_to_write_in_abbreviated)
+				p->second.before_index = k;
+			if (-time_after_event_time_to_write_in_abbreviated < dt)
+				p->second.after_index = k;
+			const double adt(fabs(dt));
+			if (adt < least_dt_to_death) {
+				least_dt_to_death = adt;
+				p->second.event_index = k;
 			}
 		}
 	}
 	
-	if (!abbreviated_time_series)
-		end_index = elements.size();
+	//set up start and end indicies to output to file
+	unsigned long start_index(0),end_index(elements.size());
+	if (abbreviated_time_series) {
+		if (state_times[ns_movement_death_associated_expansion].found)
+			end_index = state_times[ns_movement_death_associated_expansion].after_index;
+		if (state_times[ns_movement_stationary].found && state_times[ns_movement_stationary].after_index > end_index)
+			end_index = state_times[ns_movement_stationary].after_index;
+		
+		if (state_times[ns_movement_stationary].found)
+			start_index = state_times[ns_movement_stationary].before_index;
+		if (state_times[ns_movement_death_associated_expansion].found  && state_times[ns_movement_death_associated_expansion].before_index < start_index)
+			start_index = state_times[ns_movement_death_associated_expansion].before_index;
+
+	}
 
 	ns_time_series_event_aligner event_aligner;
 	event_aligner.calculate_alignment_dts(by_hand_annotation_event_times);
-
-	for (unsigned long k = 1; k < end_index; k++){
+	if (m.device == "duck" && m.sample_name == "duck_b" && m.region_name == "3" && group_id == 20)
+		cerr << "WHA?";
+	for (unsigned long k = start_index; k < end_index; k++){
 		m.out_JMP_plate_identity_data_short(o);
 		o << ",";
 		o << group_id<<","<<path_id<<","
@@ -2955,8 +2994,13 @@ void ns_analyzed_image_time_path::write_detailed_movement_quantification_analysi
 			<< ns_output_interval_difference(elements[k].absolute_time,by_hand_annotation_event_times[(int)ns_movement_cessation]) << ","
 			<< ns_output_interval_difference(elements[k].absolute_time,by_hand_annotation_event_times[(int)ns_translation_cessation]) << ","
 			<< ns_output_interval_difference(elements[k].absolute_time,by_hand_annotation_event_times[(int)ns_fast_movement_cessation]) << ","
-			<< ns_output_interval_difference(elements[k].absolute_time,by_hand_annotation_event_times[(int)ns_death_associated_expansion_stop]) << ","
-			<< ns_output_interval_difference(elements[k].absolute_time, by_hand_annotation_event_times[(int)ns_movement_death_associated_post_expansion_contraction]) << ","
+			<< ns_output_interval_difference(elements[k].absolute_time,by_hand_annotation_event_times[(int)ns_death_associated_expansion_start]) << ","
+			<< ns_output_interval_difference(elements[k].absolute_time, by_hand_annotation_event_times[(int)ns_death_associated_post_expansion_contraction_start]) << ","
+			<< ns_output_best_guess_interval_difference(elements[k].absolute_time, movement_analysis_result.state_intervals[(int)ns_movement_stationary],	by_hand_annotation_event_times[(int)ns_movement_cessation], *this) << ","
+			<< ns_output_best_guess_interval_difference(elements[k].absolute_time, movement_analysis_result.state_intervals[(int)ns_movement_posture],	by_hand_annotation_event_times[(int)ns_translation_cessation], *this) << ","
+			<< ns_output_best_guess_interval_difference(elements[k].absolute_time, movement_analysis_result.state_intervals[(int)ns_movement_slow], by_hand_annotation_event_times[(int)ns_fast_movement_cessation], *this) << ","
+				<< ns_output_best_guess_interval_difference(elements[k].absolute_time, movement_analysis_result.state_intervals[(int)ns_movement_death_associated_expansion], by_hand_annotation_event_times[(int)ns_death_associated_expansion_start], *this) << ","
+			<< ns_output_best_guess_interval_difference(elements[k].absolute_time, movement_analysis_result.state_intervals[(int)ns_movement_death_associated_post_expansion_contraction],by_hand_annotation_event_times[(int)ns_death_associated_post_expansion_contraction_start], *this) << ","
 			<< event_aligner.rel_dt(by_hand_movement_state(elements[k].absolute_time),elements[k].absolute_time) << ",";
 
 		
@@ -2995,11 +3039,16 @@ void ns_analyzed_image_time_path::write_detailed_movement_quantification_analysi
 													best_estimate_event_time_for_possible_partially_unbounded_interval(),
 													by_hand_annotation_event_times[(int)ns_movement_cessation]) <<",";
 
-		o << death_time << ",";
-		if (movement_analysis_result.state_intervals[(int)ns_movement_stationary].skipped)
+		if (!state_times[ns_movement_stationary].found)
+			o << ",,,";
+		else o << state_times[ns_movement_stationary].time << ","
+			<<elements[state_times[ns_movement_stationary].event_index].measurements.total_foreground_area << ","
+			<< elements[state_times[ns_movement_stationary].event_index].measurements.total_stabilized_area << ",";
+		if (!state_times[ns_movement_death_associated_expansion].found)
 			o << ",,";
-		else o << elements[death_index].measurements.total_foreground_area << ","
-			<< elements[death_index].measurements.total_stabilized_area << ",";
+		else o << state_times[ns_movement_death_associated_expansion].time << ","
+			<< elements[state_times[ns_movement_death_associated_expansion].event_index].measurements.total_foreground_area << ","
+			<< elements[state_times[ns_movement_death_associated_expansion].event_index].measurements.total_stabilized_area;
 
 	#ifdef NS_CALCULATE_OPTICAL_FLOW
 		elements[k].measurements.scaled_flow_magnitude.write(o); o << ",";
@@ -6922,6 +6971,8 @@ void ns_analyzed_image_time_path::load_movement_images_no_flow(const ns_analyzed
 		unsigned long dh(h);	
 		if(h + y > stop_y) dh = stop_y-y;
 		in.input_stream().send_lines(movement_loading_buffer,dh, movement_image_storage_internal_state);
+		///XXX test slower file servers
+		//ns_thread::sleep_milliseconds(1000);
 
 		for (unsigned long dy = 0; dy < dh; dy++){
 			const unsigned long cy(y+dy);
@@ -6994,13 +7045,16 @@ bool ns_time_path_image_movement_analyzer<allocator_T>::load_movement_image_db_i
 }
 template<class allocator_T>
 void ns_time_path_image_movement_analyzer<allocator_T>::stop_asynch_group_load() {
-	cancel_asynch_group_load = true;
-	while (asynch_group_loading_is_running)
-		ns_thread::sleep_milliseconds(100);
+	if (asynch_group_loading_is_running) {
+		cancel_asynch_group_load = true;
+		while (asynch_group_loading_is_running)
+			ns_thread::sleep_milliseconds(100);
+	}
 }
 
 template<class allocator_T>
 bool ns_time_path_image_movement_analyzer<allocator_T>::wait_until_element_is_loaded(const unsigned long group_id, const unsigned long element_id) {
+	ns_output_asynchronous_image_loading_debug(ns_text_stream_t() << "Waiting for element " << element_id << " in group " << group_id);
 	if (groups.size() <= group_id)
 		throw ns_ex("Invalid group");
 	if (groups[group_id].paths[0].elements.size() <= element_id)
@@ -7008,21 +7062,30 @@ bool ns_time_path_image_movement_analyzer<allocator_T>::wait_until_element_is_lo
 	if (groups[group_id].paths[0].elements[element_id].excluded)
 		cout << "Warning: waiting on excluded sample";
 
-	if (groups[group_id].paths[0].number_of_images_loaded > element_id)
-		return true;
-
 	while (true) {
 		//wait until next chunck is loaded
 		ns_acquire_lock_for_scope lock(groups[group_id].paths[0].movement_image_storage_lock, __FILE__, __LINE__);
-		lock.release();
-		if (groups[group_id].paths[0].number_of_images_loaded > element_id)
+		if (groups[group_id].paths[0].number_of_images_loaded > element_id) {
+			ns_output_asynchronous_image_loading_debug(ns_text_stream_t() << "Successfully waited, as " << groups[group_id].paths[0].number_of_images_loaded << " images are now loaded.");
+			lock.release();
+
 			return true;
-		if (!asynch_group_loading_is_running) {
-			if (asynch_group_loading_failed)
-				return false;
-			else 
-				throw ns_ex("Waiting for an unloaded element even after asynch loading has terminated.");
 		}
+		else {
+			ns_output_asynchronous_image_loading_debug(ns_text_stream_t() << "Checked in but only  " << groups[group_id].paths[0].number_of_images_loaded << " images are loaded.");
+			
+		}
+		if (!asynch_group_loading_is_running) {
+			if (asynch_group_loading_failed) {
+				lock.release();
+				return false;
+			}
+			else {
+				throw ns_ex("Waiting for an unloaded element even after asynch loading has terminated.");
+			}
+		}
+		lock.release(); 
+		ns_thread::sleep_milliseconds(10);
 	}
 
 }
@@ -7044,7 +7107,9 @@ ns_thread_return_type ns_time_path_image_movement_analyzer<allocator_T>::load_im
 	ns_asynch_image_load_parameters<allocator_T>* p = static_cast<ns_asynch_image_load_parameters<allocator_T>*>(pr);
 	try {
 		p->analyzer->asynch_group_loading_failed = false;
+		ns_output_asynchronous_image_loading_debug(ns_text_stream_t() << "Asynch thread.");
 		p->analyzer->load_images_for_group(p->group_id, p->number_of_images_to_load, *p->sql, p->load_images_after_last_valid_sample, p->load_flow_images, *p->image_cache);
+		ns_output_asynchronous_image_loading_debug(ns_text_stream_t() << "Asynch Loading finished.");
 		p->analyzer->asynch_group_loading_is_running = false;
 		delete p;
 	}
@@ -7081,23 +7146,63 @@ void ns_time_path_image_movement_analyzer<allocator_T>::load_images_for_group_as
 
 template<class allocator_T>
 void ns_time_path_image_movement_analyzer<allocator_T>::load_images_for_group(const unsigned long group_id, unsigned long requested_number_of_images_to_load,ns_sql & sql, const bool load_images_after_last_valid_sample, const bool load_flow_images, ns_simple_local_image_cache & image_cache){
+
+	ns_output_asynchronous_image_loading_debug(ns_text_stream_t() << "Loading images for group.");
 	if (cancel_asynch_group_load) {
 		cancel_asynch_group_load = false;
+		ns_output_asynchronous_image_loading_debug(ns_text_stream_t() << "Asynch cancelled");
 		return;
 	}
 	#ifdef NS_CALCULATE_OPTICAL_FLOW
 	if (load_flow_images)
 		throw ns_ex("Attempting to load flow images with NS_CALCULATE_OPTICAL_FLOW set to false");
 	#endif
-	if (groups[group_id].paths.size() == 0)
+	if (groups[group_id].paths.size() == 0) {
+
+		ns_output_asynchronous_image_loading_debug(ns_text_stream_t() << "Empty paths.");
 		return;
-	const unsigned long number_of_images_loaded(groups[group_id].paths[0].number_of_images_loaded);
+	}
+	unsigned long number_of_images_loaded(groups[group_id].paths[0].number_of_images_loaded);
 	if (number_of_images_loaded == 0){
 		if (group_id >= size())
 			throw ns_ex("ns_time_path_image_movement_analyzer::load_images_for_group()::Invalid group: ") << group_id;
 	}
-	if (number_of_images_loaded >= requested_number_of_images_to_load)
+	if (number_of_images_loaded >= requested_number_of_images_to_load) {
+		ns_output_asynchronous_image_loading_debug(ns_text_stream_t() << "Leaving satisfied, having done nothing.");
 		return;
+	}
+	ns_output_asynchronous_image_loading_debug(ns_text_stream_t() << "Waiting to start on loading lock.");
+	ns_try_to_acquire_lock_for_scope loading_lock(groups[group_id].paths[0].asynchronous_loading_lock);
+	ns_acquire_lock_for_scope image_access_lock(groups[group_id].paths[0].movement_image_storage_lock, __FILE__, __LINE__,false);
+	while (true) {
+		const bool obtained_loading_lock(loading_lock.try_to_get(__FILE__, __LINE__));
+
+		//check to see if another thread has loaded the images we requested. If so, we're done!
+		image_access_lock.get(__FILE__, __LINE__);
+		number_of_images_loaded = groups[group_id].paths[0].number_of_images_loaded;
+		if (number_of_images_loaded >= requested_number_of_images_to_load) {
+			ns_output_asynchronous_image_loading_debug(ns_text_stream_t() << "Requested image, " << requested_number_of_images_to_load << ", already loaded.");
+			image_access_lock.release();
+			if (obtained_loading_lock)
+				loading_lock.release();
+			cancel_asynch_group_load = false;
+
+			ns_output_asynchronous_image_loading_debug(ns_text_stream_t() << "Leaving satisfied, having waited.");
+			return;
+		}
+		//if there is another thread loading images, defer to it
+		if (!obtained_loading_lock) {
+
+			ns_output_asynchronous_image_loading_debug(ns_text_stream_t() << "Waiting for requested image, " << requested_number_of_images_to_load << ".");
+			image_access_lock.release();
+			ns_thread::sleep_milliseconds(100); //avoid rapid polling
+		}
+		else break;
+	}
+
+	ns_output_asynchronous_image_loading_debug(ns_text_stream_t() << "Starting to load requested image , " << requested_number_of_images_to_load);
+	//now we have the asynchronous loading lock, guarenteeing we are the only thread loading images for this group
+	//we also have the movement access image storage lock, guarenteeing we are the only thread accessing image data for this thread
 
 	const unsigned long chunk_size(10);
 
@@ -7114,7 +7219,7 @@ void ns_time_path_image_movement_analyzer<allocator_T>::load_images_for_group(co
 			}
 		}
 
-		ns_acquire_lock_for_scope lock(groups[group_id].paths[j].movement_image_storage_lock, __FILE__, __LINE__);
+		//get this number again after lock is obtained, in case another thread has altered it.
 		if (number_of_images_loaded == 0){
 			if (groups[group_id].paths[j].output_image.id==0){
 				throw ns_ex("ns_time_path_image_movement_analyzer::load_images_for_group()::Group has no stored image id specified");
@@ -7144,22 +7249,24 @@ void ns_time_path_image_movement_analyzer<allocator_T>::load_images_for_group(co
 			number_of_images_to_load = number_of_valid_elements;
 			//throw ns_ex("ns_time_path_image_movement_analyzer::load_images_for_group()::Requesting to many images!");
 		if (number_of_images_to_load == 0 || cancel_asynch_group_load) {
-			lock.release();
-
+			image_access_lock.release();
+			loading_lock.release();
 			cancel_asynch_group_load = false;
+			ns_output_asynchronous_image_loading_debug(ns_text_stream_t() << "Asynch cancelled or no images needed. (number of valid elements = " << number_of_valid_elements << ")");
 			return;
 		}
 
-		lock.release();
 		unsigned long number_of_new_images_to_load(number_of_images_to_load-number_of_images_loaded);
 			
 		//load in chunk by chunk
 		for (unsigned int k = 0; k < number_of_new_images_to_load; k+=chunk_size){
 			if (cancel_asynch_group_load) {
 				cancel_asynch_group_load = false;
+				ns_output_asynchronous_image_loading_debug(ns_text_stream_t() << "Asynch cancelled");
 				return;
 			}
-			lock.get(__FILE__, __LINE__);
+			if (k != 0)
+				image_access_lock.get(__FILE__, __LINE__);
 			ns_analyzed_time_image_chunk chunk(k,k+chunk_size);
 			if (chunk.stop_i >= number_of_new_images_to_load)
 				chunk.stop_i = number_of_new_images_to_load;
@@ -7171,18 +7278,24 @@ void ns_time_path_image_movement_analyzer<allocator_T>::load_images_for_group(co
 			else
 				groups[group_id].paths[j].load_movement_images(chunk,groups[group_id].paths[j].movement_image_storage,groups[group_id].paths[j].flow_movement_image_storage,memory_pool);
 //			
-			groups[group_id].paths[j].number_of_images_loaded += chunk_size;
+			groups[group_id].paths[j].number_of_images_loaded += chunk.stop_i-chunk.start_i;
+			ns_output_asynchronous_image_loading_debug(ns_text_stream_t() << "Loaded images " << chunk.start_i << "-" << chunk.stop_i);
 
 			//don't release on last iteration
-			if (k+chunk_size < number_of_new_images_to_load)
-				lock.release();
+			if (k + chunk_size <= number_of_new_images_to_load) {
+				image_access_lock.release();
+				ns_thread::sleep_milliseconds(10);
+			}
+
 		}
 		if (number_of_images_to_load == number_of_valid_elements){
 			groups[group_id].paths[j].end_movement_image_loading();
 			//groups[group_id].paths[j].movement_image_storage.input_stream().close();
 			groups[group_id].paths[j].movement_image_storage.clear();
 		}
-		lock.release();
+
+		image_access_lock.release();
+		loading_lock.release();
 	
 	}
 }

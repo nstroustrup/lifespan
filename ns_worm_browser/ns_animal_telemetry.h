@@ -66,7 +66,7 @@ public:
 				}
 				else p++;
 			}
-			//delete younger ones if necissary
+			//delete younger ones if necessary
 			while (image_loading_times_for_groups.size() >= max_number_of_cached_worms) {
 				ns_loading_time_cache::iterator youngest(image_loading_times_for_groups.begin());
 				for (ns_loading_time_cache::iterator p = image_loading_times_for_groups.begin(); p != image_loading_times_for_groups.end(); p++) {
@@ -77,6 +77,7 @@ public:
 				image_loading_times_for_groups.erase(youngest);
 			}
 		}
+		ns_output_asynchronous_image_loading_debug(ns_text_stream_t() << "Loading images for worm.");
 		movement_analyzer.load_images_for_group(path_id.group_id, number_of_images_to_load, sql, false, false,image_cache);
 		image_loading_times_for_groups[path_id.group_id] = current_time;
 	}
@@ -111,7 +112,7 @@ public:
 			if (!in.is_null()) {
 				ns_death_time_annotation_set set;
 				set.read(ns_death_time_annotation_set::ns_all_annotations, in()());
-
+				
 				std::string error_message;
 				if (matcher.load_timing_data_from_set(set, false, by_hand_timing_data, orphaned_events, error_message)) {
 					if (error_message.size() != 0) {

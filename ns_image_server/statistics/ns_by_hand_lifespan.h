@@ -166,16 +166,16 @@ class ns_by_hand_lifespan_experiment_specification{
 	}
 
 	void convert_to_lifespan_experiment_set(ns_lifespan_experiment_set & set){
-		set.curves.resize(0);
-		set.curves.resize(plates.size());
+		set.resize(0);
+		set.resize(plates.size());
 		std::set<unsigned long> observation_times;
 		for (unsigned int i = 0; i < plates.size(); i++){
-			set.curves[i].metadata = plates[i].standard_info;
-			set.curves[i].timepoints.resize(plates[i].events.size());
+			set.curve(i).metadata = plates[i].standard_info;
+			set.curve(i).timepoints.resize(plates[i].events.size());
 			observation_times.clear();
 			//build a list of all observation times
 			for (unsigned int j = 0; j < plates[i].events.size(); j++){
-				set.curves[i].timepoints[j].absolute_time =  plates[i].events[j].time.period_end;
+				set.curve(i).timepoints[j].absolute_time =  plates[i].events[j].time.period_end;
 				observation_times.insert(plates[i].events[j].time.period_end);
 			}			
 			for (unsigned int j = 0; j < plates[i].events.size(); j++){
@@ -208,8 +208,8 @@ class ns_by_hand_lifespan_experiment_specification{
 					for (unsigned int k = 0; k < plates[i].events[j].deaths; k++){
 						c.events.push_back(d);
 					}
-					set.curves[i].timepoints[j].movement_based_deaths.add(c);
-					set.curves[i].timepoints[j].best_guess_deaths.add(c);
+					set.curve(i).timepoints[j].movement_based_deaths.add(c);
+					set.curve(i).timepoints[j].best_guess_deaths.add(c);
 				}
 	//			plates[i].annotations.push_back(c);
 
@@ -223,8 +223,8 @@ class ns_by_hand_lifespan_experiment_specification{
 					for (unsigned int k = 0; k < plates[i].events[j].censored; k++){
 						c.events.push_back(d);
 					}
-					set.curves[i].timepoints[j].movement_based_deaths.add(c);
-					set.curves[i].timepoints[j].best_guess_deaths.add(c);
+					set.curve(i).timepoints[j].movement_based_deaths.add(c);
+					set.curve(i).timepoints[j].best_guess_deaths.add(c);
 				}
 	//			plates[i].annotations.push_back(c);
 				

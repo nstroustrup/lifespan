@@ -3937,7 +3937,7 @@ void ns_run_startup_routines() {
 				survival_curve_compiler.add(by_hand_annotations.annotations, ns_death_time_annotation_compiler::ns_do_not_create_regions);
 				ns_lifespan_experiment_set survival_curves;
 				survival_curve_compiler.generate_survival_curve_set(survival_curves, ns_death_time_annotation::ns_only_machine_annotations, false, false);
-				cout << survival_curves.curves.size();
+				cout << survival_curves.size();
 				survival_curves.generate_survival_statistics();
 				std::ofstream tmp("tmp2.csv");
 				survival_curves.output_JMP_file(ns_death_time_annotation::ns_only_machine_annotations, ns_lifespan_experiment_set::ns_output_single_event_times, ns_lifespan_experiment_set::ns_days, tmp, ns_lifespan_experiment_set::ns_simple);

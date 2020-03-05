@@ -12,6 +12,7 @@
 #include "ns_death_time_annotation.h"
 #include <set>
 #include "ns_region_metadata.h"
+#include "ns_image_pool.h"
 
 #define NS_OUTPUT_MULTIWORM_STATS
 
@@ -348,7 +349,8 @@ public:
 	void genenerate_survival_statistics();
 	void detetermine_best_guess_death_times();
 	void convert_absolute_times_to_ages();
-
+	ns_survival_data(int a) {}	//required by memory pool
+	ns_survival_data() {}	
 	//ns_survival_data_summary produce_summary() const;
 private:
 	void generate_risk_timeseries(){
@@ -542,6 +544,12 @@ struct ns_device_temperature_normalization_data{
 	private:
 	bool produce_identity_;
 };
+struct ns_survival_data_resizer {
+public:
+	int parse_initialization(int dummy) { return 0; }
+	template<class T>
+	void resize_after_initialization(const int & t, T & d) { ; }
+};
 
 class ns_lifespan_experiment_set{
 public:
@@ -551,6 +559,8 @@ public:
 		normalization_stats_for_fast_movement_cessation(ns_fast_movement_cessation){}
 	void load_from_JMP_file(std::ifstream & in);
 	void load_from_by_hand_lifespan_file(std::ifstream & in);
+
+	~ns_lifespan_experiment_set() { clear(); }
 		
 	typedef enum {ns_seconds,ns_minutes,ns_hours,ns_days} ns_time_units;
 	
@@ -577,9 +587,8 @@ public:
 	void output_matlab_file(std::ostream & o) const ;
 	void output_R_file(std::ostream & o)const ;
 
-	std::vector<ns_survival_data> curves;
 
-	void clear(){curves.resize(0);common_time_.clear();}
+	void clear();
 
 	void include_only_events_detected_by_machine();
 	void generate_survival_statistics();
@@ -604,11 +613,31 @@ public:
 	ns_lifespan_device_normalization_statistics_set normalization_stats_for_death,
 													normalization_stats_for_translation_cessation,
 													normalization_stats_for_fast_movement_cessation;
+	ns_survival_data& curve(const std::size_t& i) { return *curves[i]; }
+	const ns_survival_data& curve(const std::size_t& i) const { return *curves[i]; }
+	const std::size_t size() const { return curves.size(); }
+	void resize(const std::size_t& i) {
+		if (i < curves.size()) {
+			for (std::size_t j = i; i < curves.size(); j++)
+				memory_pool.release(curves[i]);
+			curves.resize(i);
+		}
+		else {
+			std::size_t old_size = curves.size();
+			curves.resize(i);
+			for (std::size_t j = old_size; j < curves.size(); j++)
+				curves[j] = memory_pool.get(0);
+		}
+	}
 private:
+
+	std::vector<ns_survival_data*> curves;
+
 	void compute_device_normalization_regression(const ns_movement_event & event_type, const ns_device_temperature_normalization_data & data, ns_lifespan_device_normalization_statistics_set & set, const ns_censoring_strategy & s, const ns_tail_strategy & t);
 	bool curves_on_constant_time_interval;
 	std::vector<unsigned long> common_time_;
 	std::vector<unsigned long> &common_time() {if (common_time_.empty()) throw ns_ex("Not on common time!"); return common_time_;}
+	static ns_image_pool<ns_survival_data, ns_survival_data_resizer> memory_pool;
 };
 
 /*

@@ -200,11 +200,10 @@ void ns_machine_analysis_data_loader::load_just_survival(ns_lifespan_experiment_
 				compiler.add(hand_loader.annotations);
 			}
 		}
-		set.curves.reserve(set.curves.size()+compiler.regions.size());
 		for (ns_death_time_annotation_compiler::ns_region_list::iterator p = compiler.regions.begin(); p != compiler.regions.end(); p++){
-			const unsigned long s(set.curves.size());
-			set.curves.resize(s+1);
-			p->second.generate_survival_curve(set.curves[s],ns_death_time_annotation::ns_machine_annotations_if_no_by_hand,true,false);
+			const unsigned long s(set.size());
+			set.resize(s+1);
+			p->second.generate_survival_curve(set.curve(s),ns_death_time_annotation::ns_machine_annotations_if_no_by_hand,true,false);
 		}
 		samples[i].clear();
 	

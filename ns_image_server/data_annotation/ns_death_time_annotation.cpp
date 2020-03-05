@@ -1183,6 +1183,12 @@ void ns_death_time_annotation_compiler_region::clear() {
 	fast_moving_animals.clear();
 	metadata.clear();
 }
+void ns_death_time_annotation_compiler_region::empty_but_keep_memory() {
+	locations.resize(0);
+	non_location_events.clear();
+	fast_moving_animals.clear();
+	metadata.clear();
+}
 
 
 void ns_death_time_annotation_compiler_region::create_location(const ns_stationary_path_id& s,const ns_vector_2i & position, const ns_vector_2i & size) {
@@ -2805,14 +2811,19 @@ void ns_death_time_annotation_compiler::generate_validation_information(std::ost
 		}
 	}
 }
+
+void ns_death_time_annotation_compiler::empty_but_keep_regions_and_memory() {
+
+	for (ns_region_list::iterator p = regions.begin(); p != regions.end(); ++p) 
+		p->second.empty_but_keep_memory();
+}
 void ns_death_time_annotation_compiler::generate_survival_curve_set(ns_lifespan_experiment_set & survival_curves, const ns_death_time_annotation::ns_by_hand_annotation_integration_strategy & death_times_to_use,const bool use_by_hand_worm_cluster_annotations,const bool warn_on_movement_problems) const{
-	survival_curves.curves.reserve(regions.size());
 	for(ns_region_list::const_iterator p = regions.begin(); p != regions.end(); ++p){
-		const std::vector<ns_survival_data>::size_type s(survival_curves.curves.size());
-		survival_curves.curves.resize(s+1);
-		p->second.generate_survival_curve(survival_curves.curves[s],death_times_to_use,use_by_hand_worm_cluster_annotations,warn_on_movement_problems);
-		if (survival_curves.curves[s].timepoints.size() == 0)//don't include empty curves
-			survival_curves.curves.resize(s);
+		const std::vector<ns_survival_data>::size_type s(survival_curves.size());
+		survival_curves.resize(s+1);
+		p->second.generate_survival_curve(survival_curves.curve(s),death_times_to_use,use_by_hand_worm_cluster_annotations,warn_on_movement_problems);
+		if (survival_curves.curve(s).timepoints.size() == 0)//don't include empty curves
+			survival_curves.resize(s);
 	}
 }
 

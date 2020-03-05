@@ -77,20 +77,20 @@ public:
 		
 			//find if any elements from the current set already exist
 			ns_survival_data * current_curve(0);
-			for (unsigned int j = 0; j < set.curves.size(); j++){
-				if (set.curves[j].metadata.experiment_name == line_data.experiment_name &&
-					set.curves[j].metadata.sample_name == line_data.sample_name &&
-					set.curves[j].metadata.region_name == line_data.region_name &&
-					set.curves[j].metadata.technique == line_data.technique &&
-					set.curves[j].metadata.time_at_which_animals_had_zero_age == line_data.time_at_which_animals_had_zero_age &&
-					set.curves[j].metadata.strain == line_data.strain){
-					current_curve = &set.curves[j];
+			for (unsigned int j = 0; j < set.size(); j++){
+				if (set.curve(j).metadata.experiment_name == line_data.experiment_name &&
+					set.curve(j).metadata.sample_name == line_data.sample_name &&
+					set.curve(j).metadata.region_name == line_data.region_name &&
+					set.curve(j).metadata.technique == line_data.technique &&
+					set.curve(j).metadata.time_at_which_animals_had_zero_age == line_data.time_at_which_animals_had_zero_age &&
+					set.curve(j).metadata.strain == line_data.strain){
+					current_curve = &set.curve(j);
 					break;
 				}
 			}
 			if (current_curve == 0){
-				set.curves.resize(set.curves.size()+1);
-				current_curve = &(*set.curves.rbegin());
+				set.resize(set.size()+1);
+				current_curve = &(set.curve(set.size()-1));
 				current_curve->metadata = line_data;
 			}
 			unsigned long current_time = ns_time_from_format_string(rows[i][date_column]);
@@ -123,19 +123,19 @@ public:
 		}
 
 		//go through all curves, sort the timepoints and remove any duplicate time points.
-		for (unsigned int i = 0; i < set.curves.size(); i++){
-			std::sort(set.curves[i].timepoints.begin(),set.curves[i].timepoints.end());
-			for (std::vector<ns_survival_timepoint>::iterator p = set.curves[i].timepoints.begin(); p != set.curves[i].timepoints.end();){
+		for (unsigned int i = 0; i < set.size(); i++){
+			std::sort(set.curve(i).timepoints.begin(),set.curve(i).timepoints.end());
+			for (std::vector<ns_survival_timepoint>::iterator p = set.curve(i).timepoints.begin(); p != set.curve(i).timepoints.end();){
 
 				std::vector<ns_survival_timepoint>::iterator q(p);
 				q++;
-				if (q==set.curves[i].timepoints.end())
+				if (q==set.curve(i).timepoints.end())
 					break;
 
 				if (q->absolute_time == p->absolute_time){
 					std::cerr << "Multiple identical timepoints found!\n";
 					p->add(*q);
-					set.curves[i].timepoints.erase(q);
+					set.curve(i).timepoints.erase(q);
 				}
 				else ++p;
 			}

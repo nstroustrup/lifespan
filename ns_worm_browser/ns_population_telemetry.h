@@ -153,7 +153,7 @@ public:
 		plot_death_time_expansion_ = false;
 	}
 
-	bool load_last_measurement_cache(const ns_64_bit& experiment_id, const ns_64_bit& region_id, ns_sql& sql) {
+	void load_last_measurement_cache(const ns_64_bit& experiment_id, const ns_64_bit& region_id, ns_sql& sql) {
 		last_measurement_cache.clear();
 		if (region_id != 0)
 			sql << "SELECT region_info_id, MAX(capture_time) FROM sample_region_images WHERE region_info_id =" << region_id;
@@ -642,8 +642,8 @@ public:
 		else if (survival_grouping == ns_group_by_strain) {
 			survival_curve_title = movement_vs_posture_title = "Animal Type";
 			std::map<std::string, std::pair<ns_region_metadata, ns_survival_plot_data_grouping> > all_strains;
-			for (auto p = set.curves.begin(); p != set.curves.end(); p++)
-				all_strains[p->metadata.device_regression_match_description()] = std::pair<ns_region_metadata, ns_survival_plot_data_grouping>(p->metadata, ns_survival_plot_data_grouping());
+			for (unsigned int i = 0; i < set.size(); i++)
+				all_strains[set.curve(i).metadata.device_regression_match_description()] = std::pair<ns_region_metadata, ns_survival_plot_data_grouping>(set.curve(i).metadata, ns_survival_plot_data_grouping());
 
 			survival_curves.resize(all_strains.size());
 
@@ -719,8 +719,8 @@ public:
 		else if (survival_grouping == ns_group_by_device) {
 			survival_curve_title = movement_vs_posture_title = "Device Name";
 			std::map<std::string, ns_survival_plot_data_grouping> all_devices;
-			for (auto p = set.curves.begin(); p != set.curves.end(); p++)
-				all_devices.emplace(std::pair<std::string, ns_survival_plot_data_grouping>(p->metadata.device, ns_survival_plot_data_grouping()));
+			for (unsigned int i = 0; i < set.size(); i++)
+				all_devices.emplace(std::pair<std::string, ns_survival_plot_data_grouping>(set.curve(i).metadata.device, ns_survival_plot_data_grouping()));
 			survival_curves.resize(all_devices.size());
 			const ns_telemetry_cache::key_type key(survival_grouping, death_plot, region_to_view, data_to_process.device_regression_match_description());
 			ns_telemetry_cache::iterator tel = telemetry_cache.find(key);

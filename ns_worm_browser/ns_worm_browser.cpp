@@ -1193,17 +1193,17 @@ struct ns_lifespan_experiment_set_multiworm_simulation{
 							   means,
 							   maximums;
 	void specify_analysis_type_and_technique(const std::string & analysis_type){
-		for (unsigned int i = 0; i < minimums.curves.size(); i++){
-			minimums.curves[i].metadata.analysis_type = analysis_type;
-			minimums.curves[i].metadata.technique = "Simulated Minimum";
+		for (unsigned int i = 0; i < minimums.size(); i++){
+			minimums.curve(i).metadata.analysis_type = analysis_type;
+			minimums.curve(i).metadata.technique = "Simulated Minimum";
 		}
-		for (unsigned int i = 0; i < maximums.curves.size(); i++){
-			maximums.curves[i].metadata.analysis_type = analysis_type;
-			maximums.curves[i].metadata.technique = "Simulated Maximum";
+		for (unsigned int i = 0; i < maximums.size(); i++){
+			maximums.curve(i).metadata.analysis_type = analysis_type;
+			maximums.curve(i).metadata.technique = "Simulated Maximum";
 		}
-		for (unsigned int i = 0; i < means.curves.size(); i++){
-			means.curves[i].metadata.analysis_type = analysis_type;
-			means.curves[i].metadata.technique = "Simulated Mean";
+		for (unsigned int i = 0; i < means.size(); i++){
+			means.curve(i).metadata.analysis_type = analysis_type;
+			means.curve(i).metadata.technique = "Simulated Mean";
 		}
 	};
 	void output_JMP_file(const ns_lifespan_experiment_set::ns_time_handing_behavior & time_handling_behavior, const ns_lifespan_experiment_set::ns_time_units & u,std::ostream & o,const ns_lifespan_experiment_set::ns_output_file_type & detailed, const bool output_header){
@@ -1409,21 +1409,21 @@ void ns_worm_learner::simulate_multiple_worm_clumps(const bool use_waiting_time_
 	two_worms.generate_survival_curve_set(twos,ns_death_time_annotation::ns_machine_annotations_if_no_by_hand,false,false);
 	three_worms.generate_survival_curve_set(threes,ns_death_time_annotation::ns_machine_annotations_if_no_by_hand,false,false);
 	four_plus_worms.generate_survival_curve_set(four_pluses,ns_death_time_annotation::ns_machine_annotations_if_no_by_hand,false,false);
-	for (unsigned int i = 0; i < singles.curves.size(); i++){
-		singles.curves[i].metadata.analysis_type = "1 Worm Clusters";
-		singles.curves[i].metadata.technique = "Measured";
+	for (unsigned int i = 0; i < singles.size(); i++){
+		singles.curve(i).metadata.analysis_type = "1 Worm Clusters";
+		singles.curve(i).metadata.technique = "Measured";
 	}
-	for (unsigned int i = 0; i < twos.curves.size(); i++){
-		twos.curves[i].metadata.analysis_type = "2 Worm Clusters";
-		twos.curves[i].metadata.technique = "Measured";
+	for (unsigned int i = 0; i < twos.size(); i++){
+		twos.curve(i).metadata.analysis_type = "2 Worm Clusters";
+		twos.curve(i).metadata.technique = "Measured";
 	}
-	for (unsigned int i = 0; i < threes.curves.size(); i++){
-		threes.curves[i].metadata.analysis_type = "3 Worm Clusters";
-		threes.curves[i].metadata.technique = "Measured";
+	for (unsigned int i = 0; i < threes.size(); i++){
+		threes.curve(i).metadata.analysis_type = "3 Worm Clusters";
+		threes.curve(i).metadata.technique = "Measured";
 	}
-	for (unsigned int i = 0; i < four_pluses.curves.size(); i++){
-		four_pluses.curves[i].metadata.analysis_type = "4+ Worm Clusters";
-		four_pluses.curves[i].metadata.technique = "Unchanged";
+	for (unsigned int i = 0; i < four_pluses.size(); i++){
+		four_pluses.curve(i).metadata.analysis_type = "4+ Worm Clusters";
+		four_pluses.curve(i).metadata.technique = "Unchanged";
 	}
 	
 	singles.output_JMP_file(ns_death_time_annotation::ns_only_machine_annotations,ns_lifespan_experiment_set::ns_output_event_intervals,ns_lifespan_experiment_set::ns_days,o()(),ns_lifespan_experiment_set::ns_detailed_compact,true);
@@ -4095,7 +4095,7 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 		//All by hand annotations have to match up to a /current/ machine annotation.  
 		machine_set.include_only_events_detected_by_machine();
 		machine_hand_set.include_only_events_detected_by_machine();
-		if (machine_set.curves.size() == 0)
+		if (machine_set.size() == 0)
 			throw ns_ex("No deaths were observed on any plate in the current experiment.  This could be because no worms died during the observation interval, or because the worm detection or posture analysis model files do not match the data.");
 
 		cerr << "Computing Risk Time series...\n";

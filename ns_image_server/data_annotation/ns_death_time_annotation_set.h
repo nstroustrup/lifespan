@@ -220,6 +220,7 @@ public:
 	void add(const ns_death_time_annotation & e, const bool create_new_location);
 	void create_location(const ns_stationary_path_id & s, const ns_vector_2i& position, const ns_vector_2i& size);
 	void clear();
+	void empty_but_keep_memory();
 	ns_region_metadata metadata;
 
 	ns_death_time_annotation_time_interval latest_interval() const;
@@ -235,6 +236,7 @@ public:
 	typedef enum {ns_create_all,ns_do_not_create_regions,ns_do_not_create_regions_or_locations} ns_creation_type;
 	typedef std::map<ns_64_bit,ns_death_time_annotation_compiler_region> ns_region_list;
 	void clear(){regions.clear();}
+	void empty_but_keep_regions_and_memory();
 	ns_region_list regions;
 	
 	

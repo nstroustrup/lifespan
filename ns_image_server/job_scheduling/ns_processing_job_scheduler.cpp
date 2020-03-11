@@ -86,12 +86,10 @@ bool ns_processing_job_scheduler::run_a_job(ns_processing_job & job,ns_sql & sql
 		image_server.register_server_event(ns_image_server_event("Updating job queue"),&sql);
 		image_server.update_processing_status("Updating Queue", 0, 0, &sql);
 		push_scheduler.report_job_as_finished(job,sql);
-		push_scheduler.discover_new_jobs(sql);
 		sql << "DELETE from processing_jobs WHERE id = " << job.id;
 		sql.send_query();
-		sql << "DELETE from processing_job_queue WHERE id = " << job.queue_entry_id;
-		sql.send_query();
 		sql.send_query("COMMIT");
+		push_scheduler.discover_new_jobs(sql);
 		return true;
 	}
 

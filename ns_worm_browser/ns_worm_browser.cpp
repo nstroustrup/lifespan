@@ -1946,6 +1946,7 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 	std::map<unsigned long, std::string> device_id_reverse_lookup;
 	unsigned long max_device_id(0);
 
+	std::vector<ns_ex> errors;
 	//useful data is cached for each region considered
 	unsigned long region_count(0);
 	if (detail_level == ns_quantification_raw_machine){
@@ -2024,185 +2025,194 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 			if (!device_name.empty() && movement_results.samples[i].device_name() != device_name)
 				continue;
 			for (unsigned int j = 0; j < movement_results.samples[i].regions.size(); j++) {
-				if (plate_id != 0 && plate_id != movement_results.samples[i].regions[j]->metadata.region_id)
-					continue;
-				if (movement_results.samples[i].regions[j]->excluded || movement_results.samples[i].regions[j]->censored) {
-					continue;
-				}
-				cerr << 100 * regions_processed / region_count << "%...";
-				regions_processed++;
+				try {
+					if (plate_id != 0 && plate_id != movement_results.samples[i].regions[j]->metadata.region_id)
+						continue;
+					if (movement_results.samples[i].regions[j]->excluded || movement_results.samples[i].regions[j]->censored) {
+						continue;
+					}
+					cerr << 100 * regions_processed / region_count << "%...";
+					regions_processed++;
 
-				ns_hand_annotation_loader by_hand_annotations;
-				by_hand_annotations.load_region_annotations(ns_death_time_annotation_set::ns_censoring_and_movement_transitions,
-					movement_results.samples[i].regions[j]->metadata.region_id,
-					experiment_id,
-					movement_results.samples[i].regions[j]->metadata.experiment_name,
-					movement_results.samples[i].regions[j]->metadata,
-					sql);
-				if (detail_level == ns_quantification_by_hand ||
-					detail_level == ns_quantification_by_hand_or_machine ||
-					detail_level == ns_build_worm_markov_posture_model_from_by_hand_annotations) {
-					//skip regions without by hand movement annotations
-					if (by_hand_annotations.annotations.regions.empty())
-						continue;
-					if (by_hand_annotations.annotations.regions.begin()->second.locations.empty())
-						continue;
-					if (filter_by_strain && movement_results.samples[i].regions[j]->metadata.device_regression_match_description() !=
-						strain_filter.device_regression_match_description())
-						continue;
-					bool found_hand_movement_annotation(false);
-					for (unsigned int i = 0; i < by_hand_annotations.annotations.regions.begin()->second.locations.size() && !found_hand_movement_annotation; i++) {
-						for (unsigned int j = 0; j < by_hand_annotations.annotations.regions.begin()->second.locations[i].annotations.size(); j++) {
-							if (by_hand_annotations.annotations.regions.begin()->second.locations[i].annotations[j].annotation_source != ns_death_time_annotation::ns_lifespan_machine
-								&&
-								(
-									by_hand_annotations.annotations.regions.begin()->second.locations[i].annotations[j].type == ns_movement_cessation ||
-									by_hand_annotations.annotations.regions.begin()->second.locations[i].annotations[j].type == ns_fast_movement_cessation ||
-									by_hand_annotations.annotations.regions.begin()->second.locations[i].annotations[j].type == ns_translation_cessation
-									)
-								) {
-								found_hand_movement_annotation = true;
-								break;
+					ns_hand_annotation_loader by_hand_annotations;
+					by_hand_annotations.load_region_annotations(ns_death_time_annotation_set::ns_censoring_and_movement_transitions,
+						movement_results.samples[i].regions[j]->metadata.region_id,
+						experiment_id,
+						movement_results.samples[i].regions[j]->metadata.experiment_name,
+						movement_results.samples[i].regions[j]->metadata,
+						sql);
+					if (detail_level == ns_quantification_by_hand ||
+						detail_level == ns_quantification_by_hand_or_machine ||
+						detail_level == ns_build_worm_markov_posture_model_from_by_hand_annotations) {
+						//skip regions without by hand movement annotations
+						if (by_hand_annotations.annotations.regions.empty())
+							continue;
+						if (by_hand_annotations.annotations.regions.begin()->second.locations.empty())
+							continue;
+						if (filter_by_strain && movement_results.samples[i].regions[j]->metadata.device_regression_match_description() !=
+							strain_filter.device_regression_match_description())
+							continue;
+						bool found_hand_movement_annotation(false);
+						for (unsigned int i = 0; i < by_hand_annotations.annotations.regions.begin()->second.locations.size() && !found_hand_movement_annotation; i++) {
+							for (unsigned int j = 0; j < by_hand_annotations.annotations.regions.begin()->second.locations[i].annotations.size(); j++) {
+								if (by_hand_annotations.annotations.regions.begin()->second.locations[i].annotations[j].annotation_source != ns_death_time_annotation::ns_lifespan_machine
+									&&
+									(
+										by_hand_annotations.annotations.regions.begin()->second.locations[i].annotations[j].type == ns_movement_cessation ||
+										by_hand_annotations.annotations.regions.begin()->second.locations[i].annotations[j].type == ns_fast_movement_cessation ||
+										by_hand_annotations.annotations.regions.begin()->second.locations[i].annotations[j].type == ns_translation_cessation
+										)
+									) {
+									found_hand_movement_annotation = true;
+									break;
+								}
 							}
 						}
-					}
-					if (!found_hand_movement_annotation)
-						continue;
-				}
-
-				movement_results.samples[i].regions[j]->contains_a_by_hand_death_time_annotation = true;
-				movement_results.samples[i].regions[j]->time_path_solution.load_from_db(movement_results.samples[i].regions[j]->metadata.region_id, sql, true);
-				ns_posture_analysis_model dummy_model(ns_posture_analysis_model::dummy());
-				const ns_posture_analysis_model* posture_analysis_model(&dummy_model);
-				ns_image_server::ns_posture_analysis_model_cache::const_handle_t handle;
-				image_server.get_posture_analysis_model_for_region(movement_results.samples[i].regions[j]->metadata.region_id, handle, sql);
-				posture_analysis_model = &handle().model_specification;
-
-				ns_acquire_for_scope<ns_analyzed_image_time_path_death_time_estimator> death_time_estimator(
-					ns_get_death_time_estimator_from_posture_analysis_model(
-						handle().model_specification));
-				const ns_time_series_denoising_parameters time_series_denoising_parameters(ns_time_series_denoising_parameters::load_from_db(movement_results.samples[i].regions[j]->metadata.region_id, sql));
-
-				
-
-				movement_results.samples[i].regions[j]->time_path_image_analyzer->load_completed_analysis_(
-					movement_results.samples[i].regions[j]->metadata.region_id,
-					movement_results.samples[i].regions[j]->time_path_solution,
-					time_series_denoising_parameters,
-					&death_time_estimator(),
-					sql,
-					false);
-				death_time_estimator.release();
-
-
-				movement_results.samples[i].regions[j]->by_hand_annotations = by_hand_annotations.annotations;
-				movement_results.samples[i].regions[j]->time_path_image_analyzer->add_by_hand_annotations(by_hand_annotations.annotations);
-				if (detail_level != ns_build_worm_markov_posture_model_from_by_hand_annotations && !header_written) {
-					string suffix;
-					switch(detail_level) {
-					case ns_quantification_abbreviated_by_hand_machine: suffix = "machine_by_hand_abbreviated"; break;
-					case ns_quantification_by_hand: suffix = "by_hand_only"; break;
-					case ns_quantification_by_hand_or_machine: suffix = "machine_by_hand"; break;
+						if (!found_hand_movement_annotation)
+							continue;
 					}
 
-					o_all.attach(image_server.results_storage.time_path_image_analysis_quantification(sub, suffix, true, sql, true).output());
-					if (movement_results.samples[i].regions[j]->time_path_image_analyzer->size() > 0) {
-						movement_results.samples[i].regions[j]->time_path_image_analyzer->group(0).paths[0].write_detailed_movement_quantification_analysis_header(o_all()());
-						o_all()() << "\n";
-					}
-					header_written = true;
+					movement_results.samples[i].regions[j]->contains_a_by_hand_death_time_annotation = true;
+					movement_results.samples[i].regions[j]->time_path_solution.load_from_db(movement_results.samples[i].regions[j]->metadata.region_id, sql, true);
+					ns_posture_analysis_model dummy_model(ns_posture_analysis_model::dummy());
+					const ns_posture_analysis_model* posture_analysis_model(&dummy_model);
+					ns_image_server::ns_posture_analysis_model_cache::const_handle_t handle;
+					image_server.get_posture_analysis_model_for_region(movement_results.samples[i].regions[j]->metadata.region_id, handle, sql);
+					posture_analysis_model = &handle().model_specification;
 
-				}
-				if (detail_level == ns_quantification_abbreviated_by_hand_machine) {
-					movement_results.samples[i].regions[j]->time_path_image_analyzer->write_detailed_movement_quantification_analysis_data(
-						movement_results.samples[i].regions[j]->metadata, o_all()(), false, -1, true);
-				}
-				else if (detail_level == ns_quantification_by_hand || detail_level == ns_quantification_by_hand_or_machine) {
-					const bool only_output_by_hand = detail_level == ns_quantification_by_hand;
-					movement_results.samples[i].regions[j]->time_path_image_analyzer->write_detailed_movement_quantification_analysis_data(
-						movement_results.samples[i].regions[j]->metadata, o_all()(),only_output_by_hand);
-				}
-				else if (detail_level == ns_build_worm_markov_posture_model_from_by_hand_annotations) {
-
-				
-					/*unsigned long internal_device_id = 0;
-					const auto d = device_id_lookup.find(movement_results.samples[i].regions[j]->metadata.device);
-					if (d == device_id_lookup.end()) {
-						device_id_lookup[movement_results.samples[i].regions[j]->metadata.device] = max_device_id;
-						device_id_reverse_lookup[max_device_id] = movement_results.samples[i].regions[j]->metadata.device;
-						internal_device_id = max_device_id;
-						max_device_id++;
-					}
-					else internal_device_id = d->second;
-					*/
-
-					bool added_data(false);
-					for (unsigned int g = 0; g < movement_results.samples[i].regions[j]->time_path_image_analyzer->size(); g++) {
-						for (unsigned int p = 0; p < movement_results.samples[i].regions[j]->time_path_image_analyzer->group(g).paths.size(); p++) {
-							ns_death_time_annotation a(movement_results.samples[i].regions[j]->time_path_image_analyzer->group(g).paths[p].sticky_properties());
-							if (a.is_excluded() ||
-								a.is_censored() ||
-								a.flag.event_should_be_excluded() ||
-								movement_results.samples[i].regions[j]->time_path_image_analyzer->group(g).paths[p].sticky_properties().event_observation_type != ns_death_time_annotation::ns_standard ||
-								movement_results.samples[i].regions[j]->time_path_image_analyzer->group(g).paths[p].by_hand_death_time().fully_unbounded() ||
-								movement_results.samples[i].regions[j]->time_path_image_analyzer->group(g).paths[p].sticky_properties().number_of_worms() > 1)
-								continue;
-
-							a.stationary_path_id.detection_set_id = movement_results.samples[i].regions[j]->time_path_image_analyzer->db_analysis_id();
-							a.stationary_path_id.group_id = g;
-							a.stationary_path_id.path_id = p;
-							a.region_info_id = movement_results.samples[i].regions[j]->metadata.region_id;
-							ns_analyzed_image_time_path* path = &movement_results.samples[i].regions[j]->time_path_image_analyzer->group(g).paths[p];
-
-							//unsigned long internal_device_id = device_id_lookup[movement_results.samples[i].regions[j]->metadata.device];
-							//add the observation to each group it belongs to--the "all observations" group and its genotype-specific group.
-							const std::string plate_type_summary(movement_results.samples[i].regions[j]->metadata.plate_type_summary("-", true));
-							auto plate_name = plate_name_cache.emplace(movement_results.samples[i].regions[j]->metadata.plate_name()).first;
-							if (subject != ns_plate && !filter_by_strain) {
-								observations_sorted_by_genotype["all"].add_observation(NS_CURRENT_POSTURE_MODEL_VERSION, a, path, &(*plate_name),&movement_results.samples[i].regions[j]->metadata.device);
-								auto c1 = number_of_individuals_per_genotype.find("all");
-								if (c1 == number_of_individuals_per_genotype.end())
-									number_of_individuals_per_genotype["all"] = 1;
-								else c1->second++;
-							}
-					
-							if (test_strict_ordering){
-								observations_sorted_by_genotype["all_with_strict_event_ordering"].add_observation(NS_CURRENT_POSTURE_MODEL_VERSION, a, path, &(*plate_name), &movement_results.samples[i].regions[j]->metadata.device);
-								auto c1 = number_of_individuals_per_genotype.find("all_with_strict_event_ordering");
-								if (c1 == number_of_individuals_per_genotype.end()) 
-									number_of_individuals_per_genotype["all_with_strict_event_ordering"] = 1;
-								else c1->second++;
-							}
-							observations_sorted_by_genotype[plate_type_summary].add_observation(NS_CURRENT_POSTURE_MODEL_VERSION, a, path, &(*plate_name), &movement_results.samples[i].regions[j]->metadata.device);
-
-							auto c2 = number_of_individuals_per_genotype.find(plate_type_summary);
-							if (c2 == number_of_individuals_per_genotype.end())
-								number_of_individuals_per_genotype[plate_type_summary] = 1;
-							else c2->second++;
+					ns_acquire_for_scope<ns_analyzed_image_time_path_death_time_estimator> death_time_estimator(
+						ns_get_death_time_estimator_from_posture_analysis_model(
+							handle().model_specification));
+					const ns_time_series_denoising_parameters time_series_denoising_parameters(ns_time_series_denoising_parameters::load_from_db(movement_results.samples[i].regions[j]->metadata.region_id, sql));
 
 
-							added_data = true;
+
+					movement_results.samples[i].regions[j]->time_path_image_analyzer->load_completed_analysis_(
+						movement_results.samples[i].regions[j]->metadata.region_id,
+						movement_results.samples[i].regions[j]->time_path_solution,
+						time_series_denoising_parameters,
+						&death_time_estimator(),
+						sql,
+						false);
+					death_time_estimator.release();
 
 
+					movement_results.samples[i].regions[j]->by_hand_annotations = by_hand_annotations.annotations;
+					movement_results.samples[i].regions[j]->time_path_image_analyzer->add_by_hand_annotations(by_hand_annotations.annotations);
+					if (detail_level != ns_build_worm_markov_posture_model_from_by_hand_annotations && !header_written) {
+						string suffix;
+						switch (detail_level) {
+						case ns_quantification_abbreviated_by_hand_machine: suffix = "machine_by_hand_abbreviated"; break;
+						case ns_quantification_by_hand: suffix = "by_hand_only"; break;
+						case ns_quantification_by_hand_or_machine: suffix = "machine_by_hand"; break;
 						}
-					}
 
+						o_all.attach(image_server.results_storage.time_path_image_analysis_quantification(sub, suffix, true, sql, true).output());
+						if (movement_results.samples[i].regions[j]->time_path_image_analyzer->size() > 0) {
+							movement_results.samples[i].regions[j]->time_path_image_analyzer->group(0).paths[0].write_detailed_movement_quantification_analysis_header(o_all()());
+							o_all()() << "\n";
+						}
+						header_written = true;
+
+					}
+					if (detail_level == ns_quantification_abbreviated_by_hand_machine) {
+						movement_results.samples[i].regions[j]->time_path_image_analyzer->write_detailed_movement_quantification_analysis_data(
+							movement_results.samples[i].regions[j]->metadata, o_all()(), false, -1, true);
+					}
+					else if (detail_level == ns_quantification_by_hand || detail_level == ns_quantification_by_hand_or_machine) {
+						const bool only_output_by_hand = detail_level == ns_quantification_by_hand;
+						movement_results.samples[i].regions[j]->time_path_image_analyzer->write_detailed_movement_quantification_analysis_data(
+							movement_results.samples[i].regions[j]->metadata, o_all()(), only_output_by_hand);
+					}
+					else if (detail_level == ns_build_worm_markov_posture_model_from_by_hand_annotations) {
+
+
+						/*unsigned long internal_device_id = 0;
+						const auto d = device_id_lookup.find(movement_results.samples[i].regions[j]->metadata.device);
+						if (d == device_id_lookup.end()) {
+							device_id_lookup[movement_results.samples[i].regions[j]->metadata.device] = max_device_id;
+							device_id_reverse_lookup[max_device_id] = movement_results.samples[i].regions[j]->metadata.device;
+							internal_device_id = max_device_id;
+							max_device_id++;
+						}
+						else internal_device_id = d->second;
+						*/
+
+						bool added_data(false);
+						for (unsigned int g = 0; g < movement_results.samples[i].regions[j]->time_path_image_analyzer->size(); g++) {
+							for (unsigned int p = 0; p < movement_results.samples[i].regions[j]->time_path_image_analyzer->group(g).paths.size(); p++) {
+								ns_death_time_annotation a(movement_results.samples[i].regions[j]->time_path_image_analyzer->group(g).paths[p].sticky_properties());
+								if (a.is_excluded() ||
+									a.is_censored() ||
+									a.flag.event_should_be_excluded() ||
+									movement_results.samples[i].regions[j]->time_path_image_analyzer->group(g).paths[p].sticky_properties().event_observation_type != ns_death_time_annotation::ns_standard ||
+									movement_results.samples[i].regions[j]->time_path_image_analyzer->group(g).paths[p].by_hand_death_time().fully_unbounded() ||
+									movement_results.samples[i].regions[j]->time_path_image_analyzer->group(g).paths[p].sticky_properties().number_of_worms() > 1)
+									continue;
+
+								a.stationary_path_id.detection_set_id = movement_results.samples[i].regions[j]->time_path_image_analyzer->db_analysis_id();
+								a.stationary_path_id.group_id = g;
+								a.stationary_path_id.path_id = p;
+								a.region_info_id = movement_results.samples[i].regions[j]->metadata.region_id;
+								ns_analyzed_image_time_path* path = &movement_results.samples[i].regions[j]->time_path_image_analyzer->group(g).paths[p];
+
+								//unsigned long internal_device_id = device_id_lookup[movement_results.samples[i].regions[j]->metadata.device];
+								//add the observation to each group it belongs to--the "all observations" group and its genotype-specific group.
+								const std::string plate_type_summary(movement_results.samples[i].regions[j]->metadata.plate_type_summary("-", true));
+								auto plate_name = plate_name_cache.emplace(movement_results.samples[i].regions[j]->metadata.plate_name()).first;
+								if (subject != ns_plate && !filter_by_strain) {
+									observations_sorted_by_genotype["all"].add_observation(NS_CURRENT_POSTURE_MODEL_VERSION, a, path, &(*plate_name), &movement_results.samples[i].regions[j]->metadata.device);
+									auto c1 = number_of_individuals_per_genotype.find("all");
+									if (c1 == number_of_individuals_per_genotype.end())
+										number_of_individuals_per_genotype["all"] = 1;
+									else c1->second++;
+								}
+
+								if (test_strict_ordering) {
+									observations_sorted_by_genotype["all_with_strict_event_ordering"].add_observation(NS_CURRENT_POSTURE_MODEL_VERSION, a, path, &(*plate_name), &movement_results.samples[i].regions[j]->metadata.device);
+									auto c1 = number_of_individuals_per_genotype.find("all_with_strict_event_ordering");
+									if (c1 == number_of_individuals_per_genotype.end())
+										number_of_individuals_per_genotype["all_with_strict_event_ordering"] = 1;
+									else c1->second++;
+								}
+								observations_sorted_by_genotype[plate_type_summary].add_observation(NS_CURRENT_POSTURE_MODEL_VERSION, a, path, &(*plate_name), &movement_results.samples[i].regions[j]->metadata.device);
+
+								auto c2 = number_of_individuals_per_genotype.find(plate_type_summary);
+								if (c2 == number_of_individuals_per_genotype.end())
+									number_of_individuals_per_genotype[plate_type_summary] = 1;
+								else c2->second++;
+
+
+								added_data = true;
+
+
+							}
+						}
+
+					}
+					else {
+						throw ns_ex("No longer implemented");
+					}
+					//if we are running cross validation, we can't afford to reload all the data each time.
+					if (!run_hmm_cross_validation)
+						movement_results.samples[i].regions[j]->time_path_image_analyzer->clear();
 				}
-				else {
-					throw ns_ex("No longer implemented");
+				catch (ns_ex & ex) {
+					ns_ex ex2(movement_results.samples[i].regions[j]->metadata.plate_name() + ":");
+					ex2 << ex.text();
+					errors.push_back(ex2);
 				}
-				//if we are running cross validation, we can't afford to reload all the data each time.
-				if (!run_hmm_cross_validation)
-					movement_results.samples[i].regions[j]->time_path_image_analyzer->clear();
 			}
 		}
 	}
 
 	cout << "\n";
 
+	std::string results_text;
+	for (unsigned int i = 0; i < errors.size(); ++i)
+		results_text += errors[i].text() + "\n";
 
 	if (detail_level == ns_build_worm_markov_posture_model_from_by_hand_annotations) {
-		std::string results_text;
 		results_text += "=== Automated Animal Death Time Identification Calibration Results === \n\n";
 		//exclude animal types with too few annotations.
 		for (auto p = number_of_individuals_per_genotype.begin(); p != number_of_individuals_per_genotype.end(); ++p) {
@@ -2222,6 +2232,15 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 		td.w = 1000;
 		td.h = 700;
 		ns_run_in_main_thread_wait_for_close<ns_text_dialog> b(&td);
+	}
+	else {
+		ns_text_dialog td;
+		td.grid_text.push_back(results_text);
+		td.title = "Data output errors:";
+		td.w = 1000;
+		td.h = 700;
+		ns_run_in_main_thread_wait_for_close<ns_text_dialog> b(&td);
+
 	}
 	
 	o_all.release();
@@ -3798,6 +3817,7 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 				}
 			}
 			*/
+			cerr << "IF THE WORM BROWSER APPEARS TO BE HUNG, DRAG THE MAIN WINDOW AROUND THE SCREEN--THIS GETS IT UNSTUCK.  Sorry for the unusual bug!\n";
 			ns_thread_pool< ns_immediately_recalc_censoring_job,
 				ns_immediately_recalc_censoring_job_persistant_data> thread_pool;
 			thread_pool.set_number_of_threads(image_server_const.maximum_number_of_processing_threads());

@@ -3817,6 +3817,7 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(bool use_by_
 				}
 			}
 			*/
+			cerr << "IF THE WORM BROWSER APPEARS TO BE HUNG, DRAG THE MAIN WINDOW AROUND THE SCREEN--THIS GETS IT UNSTUCK.  Sorry for the unusual bug!\n";
 			ns_thread_pool< ns_immediately_recalc_censoring_job,
 				ns_immediately_recalc_censoring_job_persistant_data> thread_pool;
 			thread_pool.set_number_of_threads(image_server_const.maximum_number_of_processing_threads());

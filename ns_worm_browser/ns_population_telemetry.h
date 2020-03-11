@@ -900,22 +900,16 @@ public:
 
 					
 						if (death_plot == ns_plot_movement_death) {
-							if (set.descriptions[i].by_hand.movement_based_death_annotation != 0) {
+							if (set.descriptions[i].by_hand.movement_based_death_annotation != 0) 
 								pair_to_plot.first = set.descriptions[i].by_hand.movement_based_death_annotation;
-							}
-							else {
+							else
 								pair_to_plot.first = set.descriptions[i].machine.movement_based_death_annotation;
-							}
 						}
 						else if (death_plot == ns_plot_expansion_death) {
-							if (set.descriptions[i].by_hand.death_associated_expansion_start != 0) {
+							if (set.descriptions[i].by_hand.death_associated_expansion_start != 0) 
 								pair_to_plot.first = set.descriptions[i].by_hand.death_associated_expansion_start;
-							}
-							else {
-								if (set.descriptions[i].machine.death_associated_expansion_start != 0) {
-									pair_to_plot.first = set.descriptions[i].machine.death_associated_expansion_start;
-								}
-							}
+							else 
+								pair_to_plot.first = set.descriptions[i].machine.death_associated_expansion_start;
 						}
 						else if (death_plot == ns_plot_best_guess) {
 							const ns_death_time_annotation* movement,

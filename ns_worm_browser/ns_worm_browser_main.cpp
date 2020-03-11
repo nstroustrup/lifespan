@@ -3486,8 +3486,10 @@ void idle_main_window_update_callback(void * force_redraw) {
 
 			if (schedule_timer) {
 				worm_learner.main_window.redraw_requested = true;
-				worm_learner.worm_window.redraw_requested = true;
-				worm_learner.stats_window.redraw_requested = true;
+				if (!main_window->draw_animation && !main_window->last_draw_animation) {
+					worm_learner.worm_window.redraw_requested = true;
+					worm_learner.stats_window.redraw_requested = true;
+				}
 				Fl::awake(schedule_repeating_callback, (void*)1);// Fl::repeat_timeout(1.0 / IDLE_THROTTLE_FPS, idle_main_window_update_callback);
 			}
 		}
@@ -3505,11 +3507,11 @@ void idle_main_window_update_callback(void * force_redraw) {
 		  ns_handle_menu_bar_activity_request();
 		  //always call both functions together
 		  if (!main_window->draw_animation || main_window->last_draw_animation){
-		  if (worm_window->visible())
-			  idle_worm_window_update_callback(force_redraw);
+			  if (worm_window->visible())
+				  idle_worm_window_update_callback(force_redraw);
 
-		  if (stats_window->visible())
-			  idle_stats_window_update_callback(force_redraw);
+			  if (stats_window->visible())
+				  idle_stats_window_update_callback(force_redraw);
 		  }
 		  ns_try_to_acquire_lock_for_scope storyboard_lock(worm_learner.storyboard_lock);
 		  if (storyboard_lock.try_to_get(__FILE__, __LINE__)) {

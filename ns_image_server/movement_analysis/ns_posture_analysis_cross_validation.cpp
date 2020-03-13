@@ -503,7 +503,8 @@ void ns_run_hmm_cross_validation(std::string & results_text, ns_image_server_res
 		for (auto q = p->second.validation_runs_sorted_by_validation_type.begin(); q != p->second.validation_runs_sorted_by_validation_type.end(); q++) {
 			for (auto r = q->second.replicates.begin(); r != q->second.replicates.end();) {
 				try {
-					ns_emperical_posture_quantification_value_estimator::ns_states_permitted states = ns_emperical_posture_quantification_value_estimator::ns_all_states;
+					ns_emperical_posture_quantification_value_estimator::ns_states_permitted states = ns_emperical_posture_quantification_value_estimator::ns_no_expansion_while_alive;
+					//ns_emperical_posture_quantification_value_estimator::ns_all_states;
 					if (p->first == "all_with_strict_event_ordering")
 						states = ns_emperical_posture_quantification_value_estimator::ns_no_expansion_while_alive;
 					r->training_set.build_estimator_from_observations(model_building_and_testing_info[p->first], states);

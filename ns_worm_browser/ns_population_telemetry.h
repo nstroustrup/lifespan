@@ -898,17 +898,17 @@ public:
 						movement_vs_posture_y_axis_label = "Duration observed (days)";
 
 
-					
+
 						if (death_plot == ns_plot_movement_death) {
-							if (set.descriptions[i].by_hand.movement_based_death_annotation != 0) 
+							if (set.descriptions[i].by_hand.movement_based_death_annotation != 0)
 								pair_to_plot.first = set.descriptions[i].by_hand.movement_based_death_annotation;
 							else
 								pair_to_plot.first = set.descriptions[i].machine.movement_based_death_annotation;
 						}
 						else if (death_plot == ns_plot_expansion_death) {
-							if (set.descriptions[i].by_hand.death_associated_expansion_start != 0) 
+							if (set.descriptions[i].by_hand.death_associated_expansion_start != 0)
 								pair_to_plot.first = set.descriptions[i].by_hand.death_associated_expansion_start;
-							else 
+							else
 								pair_to_plot.first = set.descriptions[i].machine.death_associated_expansion_start;
 						}
 						else if (death_plot == ns_plot_best_guess) {
@@ -926,19 +926,16 @@ public:
 							pair_to_plot.first = ns_dying_animal_description_group<ns_death_time_annotation_time_interval>::calculate_best_guess_death_annotation(movement, death_associated_expansion);
 						}
 						else throw ns_ex("Unknown death plot type!");
-						if (set.descriptions[i].machine.last_fast_movement_annotation != 0){
-							if (set.descriptions[i].machine.stationary_worm_dissapearance != 0) {
+						double observation_duration = set.descriptions[i].machine.observation_duration();
+						if (observation_duration != -1) {
+							pair_to_plot.second = ns_scatter_plot_coordinate(observation_duration);
+						}
+						else {
+							auto p = last_measurement_cache.find(r->first);
+							if (p != last_measurement_cache.end())
 								pair_to_plot.second = ns_scatter_plot_coordinate(
-									set.descriptions[i].machine.stationary_worm_dissapearance->time.best_estimate_event_time_for_possible_partially_unbounded_interval() -
+									p->second -
 									set.descriptions[i].machine.last_fast_movement_annotation->time.best_estimate_event_time_for_possible_partially_unbounded_interval());
-							}
-							else {
-								auto p = last_measurement_cache.find(r->first);
-								if (p != last_measurement_cache.end())
-									pair_to_plot.second = ns_scatter_plot_coordinate(
-										p->second -
-										set.descriptions[i].machine.last_fast_movement_annotation->time.best_estimate_event_time_for_possible_partially_unbounded_interval());
-							}
 						}
 					}
 				}

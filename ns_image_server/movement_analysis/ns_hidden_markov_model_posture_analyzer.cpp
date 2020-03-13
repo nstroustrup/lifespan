@@ -198,7 +198,7 @@ double ns_hmm_solver::run_viterbi(const ns_analyzed_image_time_path & path, cons
 	unsigned long first_appearance_id = path.first_stationary_timepoint();
 
 	std::vector<unsigned long>optimal_path_state(path_indices.size(), 0);
-	double optimal_path_log_probability;
+	double optimal_path_log_probability, cumulative_renormalization_factor(0);
 	//std::cerr << "Start:\n"
 	{
 		unsigned long fbdone = 0, nobs(path_indices.size());
@@ -295,6 +295,7 @@ double ns_hmm_solver::run_viterbi(const ns_analyzed_image_time_path & path, cons
 		}
 		*optimal_path_state.rbegin() = 0;
 		optimal_path_log_probability = -DBL_MAX;
+		cumulative_renormalization_factor = 0;
 
 		bool found_valid = false;
 		//find the last valid frame and find the most likely final state of the path
@@ -306,6 +307,7 @@ double ns_hmm_solver::run_viterbi(const ns_analyzed_image_time_path & path, cons
 					continue;
 				if (!found_valid || probabilitiy_of_path[mstat*(nobs - 1) + j] > optimal_path_log_probability) {
 					optimal_path_log_probability = probabilitiy_of_path[mstat*(nobs - 1) + j];
+					cumulative_renormalization_factor = renormalization_factors[t];
 					*optimal_path_state.rbegin() = j;
 					found_valid = true;
 				}
@@ -322,6 +324,7 @@ double ns_hmm_solver::run_viterbi(const ns_analyzed_image_time_path & path, cons
 			}
 			optimal_path_state[t - 1] = previous_state[mstat*t + optimal_path_state[t]];
 			optimal_path_log_probability += probabilitiy_of_path[mstat*t + optimal_path_state[t]];
+			cumulative_renormalization_factor += renormalization_factors[t];
 		}
 	
 		//std::cout << "\n";
@@ -368,7 +371,7 @@ double ns_hmm_solver::run_viterbi(const ns_analyzed_image_time_path & path, cons
 	//if (movement_transitions.size() == 1)
 	//	std::cout << "YIKES";
 
-	return optimal_path_log_probability;
+	return optimal_path_log_probability- cumulative_renormalization_factor;
 }
 
 void ns_hmm_solver::build_movement_state_solution_from_movement_transitions(const unsigned long first_stationary_path_index,const std::vector<unsigned long> path_indices, const std::vector<ns_hmm_state_transition_time_path_index > & movement_transitions){

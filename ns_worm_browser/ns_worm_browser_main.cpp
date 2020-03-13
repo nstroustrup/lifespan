@@ -1206,7 +1206,7 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 
 	static void generate_experiment_detailed_w_by_hand_movement_image_quantification_analysis_data(const std::string & value){worm_learner.generate_experiment_movement_image_quantification_analysis_data(ns_worm_learner::ns_quantification_by_hand, ns_worm_learner::ns_whole_experiment);	}
 	static void generate_experiment_abbreviated_movement_image_quantification_analysis_data(const std::string & value){worm_learner.generate_experiment_movement_image_quantification_analysis_data(ns_worm_learner::ns_quantification_abbreviated_by_hand_machine, ns_worm_learner::ns_whole_experiment);	}
-	
+	static void generate_path_path_classification_diagnostics(const std::string& value) { worm_learner.generate_experiment_movement_image_quantification_analysis_data(ns_worm_learner::ns_quantification_path_classification_diagnostics, ns_worm_learner::ns_whole_experiment); }
 	static void generate_single_frame_posture_image_pixel_data(const std::string & value){
 		worm_learner.generate_single_frame_posture_image_pixel_data((value.find("Plate") != std::string::npos));
 	}
@@ -1583,9 +1583,10 @@ public:
 
 		add(ns_menu_item_spec(generate_area_movement,"Data Files/Movement Data/_Generate Movement State Time Series"));
 		//add(ns_menu_item_spec(generate_experiment_summary_movement_image_quantification_analysis_data,"Data/Movement/Generate Summary Time Path Image Analysis Quantification Data"));
-		add(ns_menu_item_spec(generate_experiment_detailed_movement_image_quantification_analysis_data,"Data Files/Movement Data/Generate Posture Analysis Data/All Individuals (No by hand annotations)"));
-		add(ns_menu_item_spec(generate_experiment_detailed_w_by_hand_movement_image_quantification_analysis_data,"Data Files/Movement Data/Generate Posture Analysis Data/_Only By Hand Annotated Individuals"));
-		add(ns_menu_item_spec(generate_experiment_abbreviated_movement_image_quantification_analysis_data,"Data Files/Movement Data/Generate Posture Analysis Data/All Individuals, Machine and By Hand (Abbreviated Format)"));
+		add(ns_menu_item_spec(generate_experiment_abbreviated_movement_image_quantification_analysis_data, "Data Files/Movement Data/Generate Posture Analysis Data/All Individuals, Machine and By Hand (Abbreviated Format)"));
+		add(ns_menu_item_spec(generate_experiment_detailed_w_by_hand_movement_image_quantification_analysis_data, "Data Files/Movement Data/Generate Posture Analysis Data/Only By Hand Annotated Individuals"));
+		add(ns_menu_item_spec(generate_experiment_detailed_movement_image_quantification_analysis_data,"Data Files/Movement Data/Generate Posture Analysis Data/_All Individuals (No by hand annotations)"));
+		add(ns_menu_item_spec(generate_path_path_classification_diagnostics, "Data Files/Movement Data/Generate Posture Analysis Data/Classification Diagnostics"));
 	
 		ns_menu_item_spec st2(generate_single_frame_posture_image_pixel_data,"Data Files/Movement Data/Generate Single Frame Posture Image Data");
 		st2.options.push_back(ns_menu_item_options("Experiment"));

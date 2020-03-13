@@ -150,6 +150,12 @@ struct ns_dying_animal_description_group{
 			throw ns_ex("ns_dying_animal_description_group()::get_event()::Unsupported event type request!");
 		}
 	}
+	double observation_duration() const {
+		if (last_fast_movement_annotation == 0 || stationary_worm_dissapearance == 0)
+			return -1;
+		return 	stationary_worm_dissapearance->time.best_estimate_event_time_for_possible_partially_unbounded_interval() -
+			last_fast_movement_annotation->time.best_estimate_event_time_for_possible_partially_unbounded_interval();
+	}
 };
 
 //single locations can be annotated to hold multiple worms.  So we need a container corresponding to each location that holds annotations for each worm in the multiple worm clusters.

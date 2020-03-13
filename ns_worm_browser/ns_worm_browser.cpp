@@ -1995,6 +1995,7 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 		detail_level == ns_quantification_by_hand ||
 		detail_level == ns_quantification_by_hand_or_machine ||
 		detail_level == ns_build_worm_markov_posture_model_from_by_hand_annotations ||
+		detail_level == ns_quantification_path_classification_diagnostics ||
 		detail_level == ns_quantification_abbreviated_by_hand_machine) {
 		cout << "Loading time path image analysis data...\n";
 		//since there is less data here, we calculate it on the fly.
@@ -2105,11 +2106,15 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 						case ns_quantification_abbreviated_by_hand_machine: suffix = "machine_by_hand_abbreviated"; break;
 						case ns_quantification_by_hand: suffix = "by_hand_only"; break;
 						case ns_quantification_by_hand_or_machine: suffix = "machine_by_hand"; break;
+						case ns_quantification_path_classification_diagnostics: suffix = "classification_diagnostics"; break;
 						}
 
 						o_all.attach(image_server.results_storage.time_path_image_analysis_quantification(sub, suffix, true, sql, true).output());
 						if (movement_results.samples[i].regions[j]->time_path_image_analyzer->size() > 0) {
-							movement_results.samples[i].regions[j]->time_path_image_analyzer->group(0).paths[0].write_detailed_movement_quantification_analysis_header(o_all()());
+							if (detail_level == ns_quantification_path_classification_diagnostics) {
+								movement_results.samples[i].regions[j]->time_path_image_analyzer->group(0).paths[0].write_path_classification_diagnostics_header(o_all()());
+							}
+							else movement_results.samples[i].regions[j]->time_path_image_analyzer->group(0).paths[0].write_detailed_movement_quantification_analysis_header(o_all()());
 							o_all()() << "\n";
 						}
 						header_written = true;
@@ -2122,6 +2127,11 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 					else if (detail_level == ns_quantification_by_hand || detail_level == ns_quantification_by_hand_or_machine) {
 						const bool only_output_by_hand = detail_level == ns_quantification_by_hand;
 						movement_results.samples[i].regions[j]->time_path_image_analyzer->write_detailed_movement_quantification_analysis_data(
+							movement_results.samples[i].regions[j]->metadata, o_all()(), only_output_by_hand);
+					}
+					else if (detail_level == ns_quantification_path_classification_diagnostics) {
+						const bool only_output_by_hand = detail_level == ns_quantification_by_hand;
+						movement_results.samples[i].regions[j]->time_path_image_analyzer->write_path_classification_diagnostics_data(
 							movement_results.samples[i].regions[j]->metadata, o_all()(), only_output_by_hand);
 					}
 					else if (detail_level == ns_build_worm_markov_posture_model_from_by_hand_annotations) {
@@ -2234,12 +2244,14 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 		ns_run_in_main_thread_wait_for_close<ns_text_dialog> b(&td);
 	}
 	else {
-		ns_text_dialog td;
-		td.grid_text.push_back(results_text);
-		td.title = "Data output errors:";
-		td.w = 1000;
-		td.h = 700;
-		ns_run_in_main_thread_wait_for_close<ns_text_dialog> b(&td);
+		if (results_text.size() > 0) {
+			ns_text_dialog td;
+			td.grid_text.push_back(results_text);
+			td.title = "Data output errors:";
+			td.w = 1000;
+			td.h = 700;
+			ns_run_in_main_thread_wait_for_close<ns_text_dialog> b(&td);
+		}
 
 	}
 	

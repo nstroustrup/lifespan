@@ -125,40 +125,47 @@ ns_worm_terminal_main_window * main_window;
 ns_worm_terminal_worm_window * worm_window;
 ns_worm_terminal_stats_window* stats_window;
 
+//only call from within valid() section of the draw function
+void ns_setup_default_gl_window_settings(Fl_Gl_Window * window) {
+	glShadeModel(GL_FLAT);
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	glFrustum(-1.0, 1.0, -1.0, 1.0, /* transformation */
+		5, 20.0);
+	glMatrixMode(GL_MODELVIEW);  /* back to modelview matrix */
+	glViewport(0, 0, window->pixel_w(), window->pixel_h());
+	//glTranslatef(0,0,-10);
+	window->ortho();
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	//glOrtho(0, 1, 0, 1, -1, 1);
+	glEnable(GL_TEXTURE_2D);
+	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
+	glDisable(GL_DEPTH_TEST);
+
+}
 // OPENGL WINDOW CLASS
 class ns_worm_terminal_gl_window : public Fl_Gl_Window {
 	bool mouse_is_down;
 	ns_vector_2i mouse_click_location;
 	bool have_focus;
 
-    void fix_viewport(unsigned long x, unsigned long y, int width,int height) {
-		return;
-        glLoadIdentity();
-     
-    	glShadeModel (GL_FLAT);
-		glMatrixMode (GL_PROJECTION);    /* prepare for and then */ 
-	    glLoadIdentity ();               /* define the projection */
-	    glFrustum (-1.0, 1.0, -1.0, 1.0, /* transformation */
-	                  5, 20.0); 
-	    glMatrixMode (GL_MODELVIEW);  /* back to modelview matrix */
-	    glViewport (0,0, width,height);      /* define the viewport */
-
-    }
     // DRAW METHOD
     void draw() {
-		if (!valid()) {
-			glShadeModel(GL_FLAT);
-			glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-			glClearColor(0.0, 0.0, 0.0, 0.0);
+		if (!valid()) 
+			ns_setup_default_gl_window_settings(this);
+		try{
+			worm_learner.main_window.update_display(pixel_w(), pixel_h());
 		}
-		  try{
-				worm_learner.main_window.update_display();	 
-		  }
-		  catch(std::exception & exception){
-			ns_ex ex(exception);
-				cerr << ex.text() << "\n";
-				exit(1);
-			}
+		catch(std::exception & exception){
+		ns_ex ex(exception);
+			cerr << ex.text() << "\n";
+			exit(1);
+		}
+		catch (...) {
+			cerr << "Unknown exception occurred!" << "\n";
+			exit(1);
+		}
     }   
 	int handle(int state){
 		//Fl_Gl_Window::handle(state);
@@ -254,14 +261,15 @@ public:
         Fl_Gl_Window::resize(X,Y,W,H);
 		if (W != w() || H != h()){
 	//		cerr << W << "x" << H << " from " << w() << "x" << h() << "\n";
-       		fix_viewport(X,Y,W,H);
+       		//fix_viewport(X,Y,W,H);
 		}
    //     redraw();
     }
 
     // OPENGL WINDOW CONSTRUCTOR
     ns_worm_terminal_gl_window(int X,int Y,int W,int H,const char*L="worm window") :Fl_Gl_Window(X,Y,W,H,L),mouse_is_down(false),mouse_click_location(0,0),have_focus(false) {
-        end();
+		mode(FL_RGB8| FL_ALPHA | FL_OPENGL3 | FL_DOUBLE);
+		end();
     }
 };
 
@@ -303,14 +311,11 @@ class ns_worm_gl_window : public Fl_Gl_Window {
     }
     // DRAW METHOD
     void draw() {
-		if (!valid()) {
-			glShadeModel(GL_FLAT);
-			glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-			glClearColor(0.0, 0.0, 0.0, 0.0);
-		}
+		if (!valid()) 
+			ns_setup_default_gl_window_settings(this);
 
 		  try{
-				worm_learner.worm_window.update_display();
+				worm_learner.worm_window.update_display(pixel_w(), pixel_h());
 		  }
 		  catch(std::exception & exception){
 			ns_ex ex(exception);
@@ -433,14 +438,11 @@ class ns_worm_stats_gl_window : public Fl_Gl_Window {
 	}
 	// DRAW METHOD
 	void draw() {
-		if (!valid()) {
-			glShadeModel(GL_FLAT);
-			glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-			glClearColor(0.0, 0.0, 0.0, 0.0);
-		}
+		if (!valid())
+			ns_setup_default_gl_window_settings(this);
 
 		try {
-			worm_learner.stats_window.update_display();
+			worm_learner.stats_window.update_display(pixel_w(), pixel_h());
 		}
 		catch (std::exception& exception) {
 			ns_ex ex(exception);

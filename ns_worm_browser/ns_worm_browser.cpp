@@ -6400,6 +6400,7 @@ inline ns_8_bit ns_rescale(const ns_8_bit & val,const float & f){
 	return (ns_8_bit)g;
 }
 
+
 void ns_worm_learner::draw_image(const double x, const double y, ns_image_standard & image){
 	float	dynamic_stretch_factor = main_window.dynamic_range_rescale_factor;
 	ns_acquire_lock_for_scope lock(main_window.display_lock,__FILE__,__LINE__);
@@ -6436,25 +6437,18 @@ void ns_worm_learner::draw_image(const double x, const double y, ns_image_standa
 	main_window.gl_image_size.x = (unsigned int)floor(new_image_size.width*gl_resize);
 	//cout << "gl" << 	main_window.gl_image_size.x << "," << 	main_window.gl_image_size.y << "\n ";
 
-	if (main_window.gl_buffer_properties.width != new_image_size.width || main_window.gl_buffer_properties.height != new_image_size.height || main_window.gl_buffer_properties.components != new_image_size.components){
+	if (main_window.gl_buffer.properties().width != new_image_size.width || main_window.gl_buffer.properties().height != new_image_size.height){
 		
-		if (main_window.gl_buffer != 0){
-			delete[] main_window.gl_buffer ;
-			main_window.gl_buffer = 0;
-		}
 		
-		main_window.gl_buffer = new ns_8_bit[new_image_size.components*new_image_size.height*new_image_size.width];
-	
-		main_window.gl_buffer_properties = new_image_size;
-
+		main_window.gl_buffer.resize(ns_image_properties(new_image_size.height, new_image_size.width, 4));
 		area_handler.register_size_change(new_image_size);
 	}
 	if (image.properties().components == 3){
-		for (unsigned int _x = 0; _x < main_window.gl_buffer_properties.width; _x++)
-		for (int _y = 0; _y < (int)main_window.gl_buffer_properties.height; _y++){
-				for (unsigned int c = 0; c < 3; c++){
-					main_window.gl_buffer [new_image_size.width*3*_y + 3*_x + c] = ns_rescale(image[image.properties().height-1 - _y*main_window.pre_gl_downsample ][3*_x*main_window.pre_gl_downsample+c],dynamic_stretch_factor);
-				}
+		for (unsigned int _x = 0; _x < main_window.gl_buffer.properties().width; _x++)
+		for (int _y = 0; _y < (int)main_window.gl_buffer.properties().height; _y++){
+				for (unsigned int c = 0; c < 3; c++)
+					main_window.gl_buffer(_x,_y)[c]= ns_rescale(image[image.properties().height-1 - _y*main_window.pre_gl_downsample ][3*_x*main_window.pre_gl_downsample+c],dynamic_stretch_factor);
+				main_window.gl_buffer(_x, _y)[3] = 255;
 		}
 	}
 
@@ -6462,9 +6456,10 @@ void ns_worm_learner::draw_image(const double x, const double y, ns_image_standa
 	else if (image.properties().components == 1){
 		for (int _y = 0; _y < (int)new_image_size.height; _y++){
 			for (unsigned int _x = 0; _x < new_image_size.width; _x++){
-				main_window.gl_buffer [new_image_size.width*3*_y + 3*_x + 0] =
-				main_window.gl_buffer [new_image_size.width*3*_y + 3*_x + 1] =
-				main_window.gl_buffer [new_image_size.width*3*_y + 3*_x + 2] = ns_rescale(image[image.properties().height-1 - _y*main_window.pre_gl_downsample ][_x*main_window.pre_gl_downsample],dynamic_stretch_factor);
+				main_window.gl_buffer(_x, _y)[0] =
+					main_window.gl_buffer(_x, _y)[1] =
+					main_window.gl_buffer(_x, _y)[2] = ns_rescale(image[image.properties().height-1 - _y*main_window.pre_gl_downsample ][_x*main_window.pre_gl_downsample],dynamic_stretch_factor);
+				main_window.gl_buffer(_x, _y)[3] = 255;
 			}
 		}		
 	}
@@ -6545,19 +6540,10 @@ void ns_worm_learner::draw_worm_window_image(ns_image_standard & image){
 
 	//cerr << "Draw requests a worm window size of " << worm_window.image_size << "\n";
 
-	if (worm_window.gl_buffer_properties.width != buffer_size.x || worm_window.gl_buffer_properties.height != buffer_size.y
-		|| worm_window.gl_buffer_properties.components != 3){
-		
-		if (worm_window.gl_buffer != 0){
-			delete[] worm_window.gl_buffer ;
-			worm_window.gl_buffer = 0;
-		}
-		
-		worm_window.gl_buffer = new ns_8_bit[3*buffer_size.x*buffer_size.y];
-		
-		worm_window.gl_buffer_properties.components = 3;
-		worm_window.gl_buffer_properties.width = buffer_size.x;
-		worm_window.gl_buffer_properties.height = buffer_size.y;
+	if (worm_window.gl_buffer.properties().width != buffer_size.x || worm_window.gl_buffer.properties().height != buffer_size.y){
+			
+		worm_window.gl_buffer.resize(ns_image_properties(buffer_size.y, buffer_size.x, 3));
+
 	}
 	const unsigned long worm_image_height = (new_image_size.height - death_time_solo_annotater.bottom_margin_position(0).y*ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor-1)/worm_window.pre_gl_downsample;
 	//cout << "worm_image_height:" << worm_image_height << "\n";
@@ -6567,34 +6553,28 @@ void ns_worm_learner::draw_worm_window_image(ns_image_standard & image){
 
 		for (int _y = 0; _y< worm_image_height; _y++) {
 			for (unsigned int _x = 0; _x < new_image_size.width; _x++) {
-				worm_window.gl_buffer[3 * (worm_window.gl_buffer_properties.width*_y + _x)] =
-					image[(image.properties().height - 1 - _y*worm_window.pre_gl_downsample)][3 * _x*worm_window.pre_gl_downsample];
-				worm_window.gl_buffer[3 * (worm_window.gl_buffer_properties.width*_y + _x) + 1] =
-					image[(image.properties().height - 1 - _y*worm_window.pre_gl_downsample)][3 * _x*worm_window.pre_gl_downsample + 1];
-				worm_window.gl_buffer[3 * (worm_window.gl_buffer_properties.width*_y + _x) + 2] =
-					image[(image.properties().height - 1 - _y*worm_window.pre_gl_downsample)][3 * _x*worm_window.pre_gl_downsample + 2];
+				for (unsigned int c = 0; c < 3; c++)
+				worm_window.gl_buffer(_x,_y)[c] =
+					image[(image.properties().height - 1 - _y*worm_window.pre_gl_downsample)][3 * _x*worm_window.pre_gl_downsample+c];
+				worm_window.gl_buffer(_x,_y)[3] = 255;
 			}
 	
 		}
 		//copy over the bottom area of the image (which contains the image of the worm)
 	for (int _y = worm_image_height; _y < new_image_size.height; _y++) {
 			for (unsigned int _x = 0; _x < new_image_size.width; _x++) {
-		     
-			    worm_window.gl_buffer[3 * (worm_window.gl_buffer_properties.width*_y + _x)] = 
-					ns_rescale(image[image.properties().height - 1 - _y*worm_window.pre_gl_downsample][3 * _x*worm_window.pre_gl_downsample], worm_window.dynamic_range_rescale_factor);
-				worm_window.gl_buffer[3 * (worm_window.gl_buffer_properties.width*_y + _x) + 1] =
-					ns_rescale(image[(image.properties().height - 1 - _y*worm_window.pre_gl_downsample)][3 * _x*worm_window.pre_gl_downsample + 1], worm_window.dynamic_range_rescale_factor);
-				worm_window.gl_buffer[3 * (worm_window.gl_buffer_properties.width*_y + _x) + 2] =
-					ns_rescale(image[(image.properties().height - 1 - _y*worm_window.pre_gl_downsample)][3 * _x*worm_window.pre_gl_downsample + 2], worm_window.dynamic_range_rescale_factor);
+				for (unsigned int c = 0; c < 3; c++)
+					worm_window.gl_buffer(_x, _y)[c] =
+						ns_rescale(image[image.properties().height - 1 - _y*worm_window.pre_gl_downsample][3 * _x*worm_window.pre_gl_downsample+c], worm_window.dynamic_range_rescale_factor);
+				worm_window.gl_buffer(_x, _y)[3] = 255;
 			}
 		//	worm_window.gl_buffer[3 * (worm_window.gl_buffer_properties.width*_y)] = 255;
 		}
 
-	for (int _y = new_image_size.height; _y < worm_window.gl_buffer_properties.height; _y++)
+	for (int _y = new_image_size.height; _y < worm_window.gl_buffer.properties().height; _y++)
 		for (unsigned int _x = 0; _x < new_image_size.width; _x++) {
-			worm_window.gl_buffer[3 * (worm_window.gl_buffer_properties.width*_y + _x)] =
-				worm_window.gl_buffer[3 * (worm_window.gl_buffer_properties.width*_y + _x) + 1] =
-				worm_window.gl_buffer[3 * (worm_window.gl_buffer_properties.width*_y + _x) + 2] = 0;
+			worm_window.gl_buffer(_x,_y)[0] = worm_window.gl_buffer(_x, _y)[1] = worm_window.gl_buffer(_x, _y)[2] = 0;
+			worm_window.gl_buffer(_x, _y)[3] = 255;
 		}
 	
 	//	cout << "("<< image.properties().height << "," << image.properties().width << ")\n";
@@ -6625,14 +6605,17 @@ void ns_worm_learner::draw_worm_window_image(ns_image_standard & image){
 		
 			death_time_solo_annotater.draw_telemetry(ns_vector_2i(new_image_size.width, 0),
 				death_time_solo_annotater.telemetry_size(),
-				ns_vector_2i(worm_window.gl_buffer_properties.width,
-					worm_window.gl_buffer_properties.height), worm_window.display_rescale_factor,
+				ns_vector_2i(worm_window.gl_buffer.properties().width,
+					worm_window.gl_buffer.properties().height), worm_window.display_rescale_factor,
 				worm_window.gl_buffer);
 
 			//clear out bottom margin
-			for (int _y = death_time_solo_annotater.telemetry_size().y; _y < worm_window.gl_buffer_properties.height; _y++)
-				for (unsigned int _x = 3 * new_image_size.width; _x < 3 * worm_window.gl_buffer_properties.width; _x++)
-					worm_window.gl_buffer[3 * (worm_window.gl_buffer_properties.height - _y-1)*worm_window.gl_buffer_properties.width + _x] = 0;
+			for (int _y = death_time_solo_annotater.telemetry_size().y; _y < worm_window.gl_buffer.properties().height; _y++)
+				for (unsigned int _x = new_image_size.width; _x < worm_window.gl_buffer.properties().width; _x++) {
+					for (int c = 0; c < 3; c++)
+						worm_window.gl_buffer(_x, _y)[c] = 0;
+					worm_window.gl_buffer(_x, _y)[3] = 255;
+				}
 		
 	//		death_time_solo_annotater.draw_registration_debug(ns_vector_2i(new_prop.width, death_time_solo_annotater.telemetry.image_size().y),
 		//		ns_vector_2i(worm_window.gl_buffer_properties.width,
@@ -6641,9 +6624,12 @@ void ns_worm_learner::draw_worm_window_image(ns_image_standard & image){
 		
 		}
 		catch (ns_ex & ex) {
-			for (int _y = 0; _y < worm_window.gl_buffer_properties.height; _y++) 
-				for (unsigned int _x = 3*new_image_size.width; _x < 3*worm_window.gl_buffer_properties.width; _x++) 
-					worm_window.gl_buffer[3 * worm_window.gl_buffer_properties.width*_y + _x] = 0;
+			for (int _y = 0; _y < worm_window.gl_buffer.properties().height; _y++) 
+				for (unsigned int _x = new_image_size.width; _x < worm_window.gl_buffer.properties().width; _x++) {
+					for (int c = 0; c < 3; c++)
+						worm_window.gl_buffer(_x, _y)[c] = 0;
+					worm_window.gl_buffer(_x, _y)[3] = 255;
+				}
 			cout << "Error while drawing telemetry: " << ex.text();
 		}
 		
@@ -6693,94 +6679,30 @@ void ns_worm_learner::draw_stats_window_image() {
 	stats_window.gl_image_size = buffer_size;
 
 
-	if (stats_window.gl_buffer_properties.width != stats_window.gl_image_size.x || stats_window.gl_buffer_properties.height != stats_window.gl_image_size.y
-		|| stats_window.gl_buffer_properties.components != 3) {
+	if (stats_window.gl_buffer.properties().width != stats_window.gl_image_size.x || stats_window.gl_buffer.properties().height != stats_window.gl_image_size.y) {
 
-		if (stats_window.gl_buffer != 0) {
-			delete[] stats_window.gl_buffer;
-			stats_window.gl_buffer = 0;
-		}
+		stats_window.gl_buffer.resize(ns_image_properties(buffer_size.y, buffer_size.x,3));
 
-		stats_window.gl_buffer = new ns_8_bit[3 * buffer_size.x * buffer_size.y];
-
-		stats_window.gl_buffer_properties.components = 3;
-		stats_window.gl_buffer_properties.width = buffer_size.x;
-		stats_window.gl_buffer_properties.height = buffer_size.y;
 	}
 	const unsigned long worm_image_height = (new_image_size.height - 1) / stats_window.pre_gl_downsample;
-	//cout << "worm_image_height:" << worm_image_height << "\n";
-	/*
-	for (int _y = 0; _y < worm_image_height; _y++) {
-		for (unsigned int _x = 0; _x < new_image_size.width; _x++) {
-			stats_window.gl_buffer[3 * (stats_window.gl_buffer_properties.width * _y + _x)] = 255;
-				image[(image.properties().height - 1 - _y * stats_window.pre_gl_downsample)][3 * _x * stats_window.pre_gl_downsample];
-			stats_window.gl_buffer[3 * (stats_window.gl_buffer_properties.width * _y + _x) + 1] =
-				image[(image.properties().height - 1 - _y * stats_window.pre_gl_downsample)][3 * _x * stats_window.pre_gl_downsample + 1];
-			stats_window.gl_buffer[3 * (stats_window.gl_buffer_properties.width * _y + _x) + 2] =
-				image[(image.properties().height - 1 - _y * stats_window.pre_gl_downsample)][3 * _x * stats_window.pre_gl_downsample + 2];
-		}
-
-	}
-	//copy over the bottom area of the imate (which contains the image of the worm)
-	for (int _y = worm_image_height; _y < new_image_size.height; _y++) {
-		for (unsigned int _x = 0; _x < new_image_size.width; _x++) {
-
-			stats_window.gl_buffer[3 * (stats_window.gl_buffer_properties.width * _y + _x)] =
-				ns_rescale(image[image.properties().height - 1 - _y * stats_window.pre_gl_downsample][3 * _x * stats_window.pre_gl_downsample], stats_window.dynamic_range_rescale_factor);
-			stats_window.gl_buffer[3 * (stats_window.gl_buffer_properties.width * _y + _x) + 1] =
-				ns_rescale(image[(image.properties().height - 1 - _y * stats_window.pre_gl_downsample)][3 * _x * stats_window.pre_gl_downsample + 1], stats_window.dynamic_range_rescale_factor);
-			stats_window.gl_buffer[3 * (stats_window.gl_buffer_properties.width * _y + _x) + 2] =
-				ns_rescale(image[(image.properties().height - 1 - _y * stats_window.pre_gl_downsample)][3 * _x * stats_window.pre_gl_downsample + 2], stats_window.dynamic_range_rescale_factor);
-		}
-		//	stats_window.gl_buffer[3 * (stats_window.gl_buffer_properties.width*_y)] = 255;
-	}
-
-	for (int _y = new_image_size.height; _y < stats_window.gl_buffer_properties.height; _y++)
-		for (unsigned int _x = 0; _x < new_image_size.width; _x++) {
-			stats_window.gl_buffer[3 * (stats_window.gl_buffer_properties.width * _y + _x)] =
-				stats_window.gl_buffer[3 * (stats_window.gl_buffer_properties.width * _y + _x) + 1] =
-				stats_window.gl_buffer[3 * (stats_window.gl_buffer_properties.width * _y + _x) + 2] = 0;
-		}
-*/
-	//	cout << "("<< image.properties().height << "," << image.properties().width << ")\n";
 	
-	/*
-	//now we handle the gl scaling
-	if (stats_window.display_rescale_factor <= 1 && (stats_window.gl_image_size.x * stats_window.display_rescale_factor > this->maximum_window_size.x ||
-		stats_window.gl_image_size.y * stats_window.display_rescale_factor > this->maximum_window_size.y)) {
-		cerr << "Cannot resize, as the current window has hit the maximum size specified in the ns_worm_browser.ini file\n";
-		stats_window.display_rescale_factor = floor(min(maximum_window_size.x / (double)stats_window.gl_image_size.x,
-			maximum_window_size.y / (double)stats_window.gl_image_size.y) * 10) / 10;
-		//cerr << stats_window.display_rescale_factor << " ";
-	}*/
-
-
-
 	
 	try {
 
-
 		storyboard_annotater.population_telemetry.draw(ns_population_telemetry::ns_movement_vs_posture,ns_vector_2i(0, 0),
 			telemetry_dimensions,
-			ns_vector_2i(stats_window.gl_buffer_properties.width,
-				stats_window.gl_buffer_properties.height),stats_window.display_rescale_factor,
+			ns_vector_2i(stats_window.gl_buffer.properties().width,
+				stats_window.gl_buffer.properties().height),stats_window.display_rescale_factor,
 			stats_window.gl_buffer);
 
-		//clear out bottom margin
-		/*for (int _y = telemetry_size.y; _y < stats_window.gl_buffer_properties.height; _y++)
-			for (unsigned int _x = 3 * new_image_size.width; _x < 3 * stats_window.gl_buffer_properties.width; _x++)
-				stats_window.gl_buffer[3 * (stats_window.gl_buffer_properties.height - _y - 1) * stats_window.gl_buffer_properties.width + _x] = 0;
-				*/
-		//		death_time_solo_annotater.draw_registration_debug(ns_vector_2i(new_prop.width, death_time_solo_annotater.telemetry.image_size().y),
-			//		ns_vector_2i(stats_window.gl_buffer_properties.width,
-				//		stats_window.gl_buffer_properties.height),
-					//stats_window.gl_buffer);
 
 	}
 	catch (ns_ex& ex) {
-		for (int _y = 0; _y < stats_window.gl_buffer_properties.height; _y++)
-			for (unsigned int _x = 3 * new_image_size.width; _x < 3 * stats_window.gl_buffer_properties.width; _x++)
-				stats_window.gl_buffer[3 * stats_window.gl_buffer_properties.width * _y + _x] = 0;
+		for (int _y = 0; _y < stats_window.gl_buffer.properties().height; _y++)
+			for (unsigned int _x = 0; _x < stats_window.gl_buffer.properties().width; _x++) 
+				for (unsigned int c = 0; c < 3; c++)
+					stats_window.gl_buffer(_x,_y)[c] = 0;
+			
 		cout << "Error while drawing population telemetry: " << ex.text();
 	}
 
@@ -7019,11 +6941,11 @@ void ns_worm_learner::draw_animation(const double &t){
 	main_window.display_lock.wait_to_acquire(__FILE__, __LINE__);
 	//	return;
 	try{
-		if (animation.properties().width +offset <= main_window.gl_buffer_properties.width &&
-			animation.properties().height +offset <= main_window.gl_buffer_properties.height){
+		if (animation.properties().width +offset <= main_window.gl_buffer.properties().width &&
+			animation.properties().height +offset <= main_window.gl_buffer.properties().height){
 				ns_rotate_image_color(4*t,animation,animation_temp);
-				ns_vector_2i pos(main_window.gl_buffer_properties.width-animation.properties().width-1,
-								main_window.gl_buffer_properties.height-animation.properties().height-1);
+				ns_vector_2i pos(main_window.gl_buffer.properties().width-animation.properties().width-1,
+								main_window.gl_buffer.properties().height-animation.properties().height-1);
 
 			//	ns_vector_2i pos(main_window.gl_buffer_properties.width-animation.properties().width-1 - offset*(1.0+sin(4*t)),
 			//					main_window.gl_buffer_properties.height-animation.properties().height - 2*offset - 1 + offset*(1.0+cos(4*t)));
@@ -7031,20 +6953,20 @@ void ns_worm_learner::draw_animation(const double &t){
 				for (unsigned int y = 1; y < animation.properties().height-1; y++){
 					for (unsigned x = 1; x < animation.properties().width-1; x++){
 						for (unsigned c = 0; c < 3; c++)
-							main_window.gl_buffer [main_window.gl_buffer_properties.width*3*(pos.y+y) + 3*(pos.x+x) + c] = animation_temp[(animation.properties().height- y-1)][3*x+c];
+							main_window.gl_buffer(pos.x + x, pos.y+y)[c] = animation_temp[(animation.properties().height- y-1)][3*x+c];
 					}
 				}
 				for (unsigned x = 1; x < animation.properties().width-1; x++){
 					for (unsigned c = 0; c < 3; c++){
-						main_window.gl_buffer [main_window.gl_buffer_properties.width*3*(pos.y+0) + 3*(pos.x+x) + c] = 125;
-						main_window.gl_buffer [main_window.gl_buffer_properties.width*3*(pos.y+animation.properties().height-1) + 3*(pos.x+x) + c] = 125;
+						main_window.gl_buffer(pos.x + x, pos.y + 0)[c]= 125;
+						main_window.gl_buffer(pos.x + x, pos.y+animation.properties().height-1)[c] = 125;
 					}
 				}
 
 				for (unsigned int y = 0; y < animation.properties().height; y++){
 						for (unsigned c = 0; c < 3; c++){
-							main_window.gl_buffer [main_window.gl_buffer_properties.width*3*(pos.y+y) + 3*(pos.x+0) + c] = 125;
-							main_window.gl_buffer [main_window.gl_buffer_properties.width*3*(pos.y+y) + 3*(pos.x+animation.properties().width-1) + c] = 125;
+							main_window.gl_buffer(pos.x+0,pos.y+y)[c] = 125;
+							main_window.gl_buffer(pos.x + animation.properties().width - 1,pos.y+y)[c] = 125;
 						}
 				}
 		}
@@ -7057,7 +6979,25 @@ void ns_worm_learner::draw_animation(const double &t){
 	//main_window.redraw_screen();
 }
 
-void ns_gl_window_data::update_display() {
+void check_gl_err() {
+	GLenum err;
+	//cerr << "Checking...";
+	while ((err = glGetError()) != GL_NO_ERROR)
+	{
+		switch (err) {
+		case GL_INVALID_ENUM: cerr << "Invalid enum"; break;
+		case GL_INVALID_VALUE: cerr << "Invalid value"; break;
+		case GL_INVALID_OPERATION: cerr << "Invalid operation"; break;
+		case GL_STACK_OVERFLOW: cerr << "Stack Overflow"; break;
+		case GL_STACK_UNDERFLOW: cerr << "Stack underflow"; break;
+		case GL_OUT_OF_MEMORY: cerr << "Out of memory"; break;
+		default: cerr << "Unknown error: " << err;
+		}
+		cerr << "\n";
+	}
+	//cerr << "\n";
+}
+void ns_gl_window_data::update_display(long x, long y) {
 
 	ns_acquire_lock_for_scope lock(display_lock, __FILE__, __LINE__);
 	unsigned long new_gl_image_pane_width = (gl_image_size.x);
@@ -7068,17 +7008,17 @@ void ns_gl_window_data::update_display() {
 	if (new_gl_image_pane_height == 0)
 		new_gl_image_pane_height = 100;
 
-	float zoom_x = (float)((float)new_gl_image_pane_width) / gl_buffer_properties.width;
-	float zoom_y = (float)((float)new_gl_image_pane_height) / gl_buffer_properties.height;
+	float zoom_x = (float)((float)new_gl_image_pane_width) / gl_buffer.properties().width;
+	float zoom_y = (float)((float)new_gl_image_pane_height) / gl_buffer.properties().height;
 	if (zoom_x < .01)
 		zoom_x = .01;
 
 
-	float cur_resize = (gl_buffer_properties.width * image_zoom) / (float)gl_image_size.x;
+	float cur_resize = (gl_buffer.properties().width * image_zoom) / (float)gl_image_size.x;
 
 	image_zoom = zoom_x;
-	gl_image_size.x = (unsigned int)((gl_buffer_properties.width * image_zoom));
-	gl_image_size.y = (unsigned int)((gl_buffer_properties.height * image_zoom));
+	gl_image_size.x = (unsigned int)((gl_buffer.properties().width * image_zoom));
+	gl_image_size.y = (unsigned int)((gl_buffer.properties().height * image_zoom));
 
 	worm_image_size = worm_image_size * cur_resize;
 	telemetry_size = gl_image_size - worm_image_size;
@@ -7086,18 +7026,55 @@ void ns_gl_window_data::update_display() {
 
 	//	cerr << "update display needs to resize the worm image to " << image_size << "\n";
 		//xxxx
-	#ifndef MESA
+	GLuint      texture[1];
+	/*#ifndef MESA
 		glDrawBuffer(GL_FRONT_AND_BACK);
-	#endif
-	glClear(GL_COLOR_BUFFER_BIT);
+	#endif*/
+		
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		check_gl_err();
+		glClearColor(0.0, 0.0, 0.0, 1.0);
+		check_gl_err();
+		gl_buffer.upload_textures();
+		gl_buffer.draw(x, y);
+		/*
+		glGenTextures(1, &texture[0]);
+		glBindTexture(GL_TEXTURE_2D, texture[0]);
+		check_gl_err();
+		int xs = pow(2, floor(log(gl_buffer_properties.width) / log(2))),
+			ys = pow(2, floor(log(gl_buffer_properties.height) / log(2)));
+
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, xs, ys, 0, GL_RGBA, GL_UNSIGNED_BYTE, gl_buffer);
+
+		check_gl_err();
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		//glPixelZoom(image_zoom * display_rescale_factor, image_zoom * display_rescale_factor);
+		//glColor3f(0.5f, 0.0f, 1.0f);
+		glBegin(GL_QUADS);           
+		glTexCoord2f(0.0f, 0.0f);		glVertex3f(0.0f, 0.0f,0);  
+		glTexCoord2f(1, 0.0f);	glVertex3f(x, 0,0);
+		glTexCoord2f(1, 1);	glVertex3f(x, y,0);
+		glTexCoord2f(0.0f, 1);	glVertex3f(0.0f, y,0);
+		glEnd();
+		check_gl_err();
+		cerr << "Done.";
+		*/
+
+		
+		//glDeleteTextures(1, &texture[0]);
+		/*
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glDisable(GL_DEPTH_TEST);
 	glPixelZoom(image_zoom * display_rescale_factor, image_zoom * display_rescale_factor);
 	glRasterPos2i((GLint)-1, (GLint)-1);
 	//glPixelStorei(GL_PACK_ALIGNMENT, 1);
 
-	glDrawPixels(gl_buffer_properties.width, gl_buffer_properties.height, GL_RGB, GL_UNSIGNED_BYTE, gl_buffer);
+	glDrawPixels(gl_buffer_properties.width, gl_buffer_properties.height, GL_RGBA, GL_UNSIGNED_BYTE, gl_buffer);
+	
 	#ifndef MESA
 	glDrawBuffer(GL_BACK);
-	#endif 
+	#endif */
 	lock.release();
 }
 
@@ -7693,12 +7670,7 @@ bool ns_a_is_above_or_left_of_b(const ns_vector_2i &a,const ns_vector_2i & b,int
 }
 
 ns_worm_learner::~ns_worm_learner(){
-  if (main_window.gl_buffer != 0)
-    delete[] main_window.gl_buffer;
-  if (worm_window.gl_buffer != 0)
-    delete[] worm_window.gl_buffer;
-  if (stats_window.gl_buffer != 0)
-	  delete[] stats_window.gl_buffer;
+  
   ns_safe_delete(worm_detection_results);
   model_specifications.resize(0);
 	ns_acquire_lock_for_scope lock(persistant_sql_lock, __FILE__, __LINE__);
@@ -7724,11 +7696,11 @@ const ns_svm_model_specification & ns_worm_learner::get_svm_model_specification(
 
 extern ns_worm_learner worm_learner;
 
-void ns_area_handler::undraw_all_boxes(ns_8_bit * screen_buffer, const ns_image_standard & background, const unsigned long image_scaling, const double pixel_scaling) const {
+void ns_area_handler::undraw_all_boxes(ns_tiled_gl_image & buffer, const ns_image_standard & background, const unsigned long image_scaling, const double pixel_scaling) const {
 	for (std::vector<ns_area_box>::const_iterator b = boxes.begin(); b != boxes.end(); b++) 
-		remove_box_from_screen_buffer(b, screen_buffer, background, image_scaling, pixel_scaling);
+		remove_box_from_screen_buffer(b, buffer, background, image_scaling, pixel_scaling);
 }
-void ns_area_handler::click(const ns_handle_action & action, const ns_button_press & current_locations, ns_button_press & drag_start_locations,ns_8_bit * screen_buffer, const ns_image_standard & background,const unsigned long image_scaling, const double pixel_scaling){
+void ns_area_handler::click(const ns_handle_action & action, const ns_button_press & current_locations, ns_button_press & drag_start_locations, ns_tiled_gl_image & screen_buffer, const ns_image_standard & background,const unsigned long image_scaling, const double pixel_scaling){
 	
 	if (last_pixel_scaling != pixel_scaling) {
 		undraw_all_boxes(screen_buffer, background, image_scaling, last_pixel_scaling);
@@ -7911,40 +7883,50 @@ void ns_area_handler::clear_boxes(){
 	current_unfinished_box = boxes.end();
 	selected_box = boxes.end();
 }
-void ns_draw_square_boxes(const ns_vector_2i & loc,ns_8_bit * screen_buffer,const ns_image_properties & properties,const unsigned long size,const double image_scaling){
+void ns_draw_square_boxes(const ns_vector_2i & loc, ns_tiled_gl_image & screen_buffer,const ns_image_properties & properties,const unsigned long size,const double image_scaling){
 	for (unsigned int y = 0; y < size; y++){
 		for (unsigned int x = 0; x < size; x++){
 				if (properties.height < (1 + loc.y+y))
 					throw ns_ex("Yikes!");
+				screen_buffer(loc.x + x, loc.y + y)[0] = 200;
+				screen_buffer(loc.x + x, loc.y + y)[1] = 0;
+				screen_buffer(loc.x + x, loc.y + y)[2] = 0;
+				/*
 				screen_buffer[properties.width*3*(properties.height-1 - loc.y-y)+3*(loc.x+x)] = 200;
 				screen_buffer[properties.width*3*(properties.height-1 - loc.y-y)+3*(loc.x+x)+1] = 0;
-				screen_buffer[properties.width*3*(properties.height-1 - loc.y-y)+3*(loc.x+x)+2] = 0;
+				screen_buffer[properties.width*3*(properties.height-1 - loc.y-y)+3*(loc.x+x)+2] = 0;*/
 		}
 	}
 }
-void ns_restore_square_boxes(const ns_vector_2i & loc,ns_8_bit * screen_buffer,const ns_image_properties & properties,const unsigned long size,const double image_scaling, const ns_image_standard & background){
+void ns_restore_square_boxes(const ns_vector_2i & loc, ns_tiled_gl_image & screen_buffer,const ns_image_properties & properties,const unsigned long size,const double image_scaling, const ns_image_standard & background){
 
 	if (properties.components == 3){
 		for (unsigned int y = 0; y < size; y++){
 			for (unsigned int x = 0; x < size; x++){
-		
+
+				screen_buffer(loc.x + x, loc.y + y)[0] = background[image_scaling * (y + loc.y)][3 * ((unsigned long)(image_scaling * (loc.x + x)))];
+				screen_buffer(loc.x + x, loc.y + y)[1] = background[image_scaling * (y + loc.y)][3 * ((unsigned long)(image_scaling * (loc.x + x))) + 1];
+				screen_buffer(loc.x + x, loc.y + y)[2] = background[image_scaling * (y + loc.y)][3 * ((unsigned long)(image_scaling * (loc.x + x))) + 2];
+
+				/*
 				screen_buffer[properties.width*3*(properties.height-1 - y-loc.y)+3*(loc.x+x)] = background[(unsigned long)(image_scaling*(y+loc.y))][3*((unsigned long)(image_scaling*(loc.x+x)))];
 				screen_buffer[properties.width*3*(properties.height-1 - y-loc.y)+3*(loc.x+x)+1] = background[(unsigned long)(image_scaling*(y+loc.y))][(3*((unsigned long)(image_scaling*(loc.x+x))))+1];
 				screen_buffer[properties.width*3*(properties.height-1 - y-loc.y)+3*(loc.x+x)+2] = background[(unsigned long)(image_scaling*(y+loc.y))][(3*((unsigned long)(image_scaling*(loc.x+x))))+2];
+				*/
 			}
 		}
 	}
 	else{
 		for (unsigned int y = 0; y < size; y++){
 			for (unsigned int x = 0; x < size; x++){
-				screen_buffer[properties.width*3*(properties.height-1 - y-loc.y)+3*(loc.x+x)] = background[(unsigned long)(image_scaling*(y+loc.y))][(unsigned long)(image_scaling*(loc.x+x))];
-				screen_buffer[properties.width*3*(properties.height-1 - y-loc.y)+3*(loc.x+x)+1] = background[(unsigned long)(image_scaling*(y+loc.y))][(unsigned long)(image_scaling*(loc.x+x))];
-				screen_buffer[properties.width*3*(properties.height-1 - y-loc.y)+3*(loc.x+x)+2] = background[(unsigned long)(image_scaling*(y+loc.y))][(unsigned long)(image_scaling*(loc.x+x))];
+				screen_buffer(y+loc.y,loc.x+x)[0] = background[(unsigned long)(image_scaling*(y+loc.y))][(unsigned long)(image_scaling*(loc.x+x))];
+				screen_buffer(y+loc.y,loc.x+x)[1] = background[(unsigned long)(image_scaling*(y+loc.y))][(unsigned long)(image_scaling*(loc.x+x))];
+				screen_buffer(y+loc.y,loc.x+x)[2] = background[(unsigned long)(image_scaling*(y+loc.y))][(unsigned long)(image_scaling*(loc.x+x))];
 			}
 		}
 	}
 }
-void ns_area_handler::draw_boxes(ns_8_bit * screen_buffer,const ns_image_properties & properties_,const unsigned long image_scaling, const double pixel_scaling) const{
+void ns_area_handler::draw_boxes(ns_tiled_gl_image & screen_buffer,const ns_image_properties & properties_,const unsigned long image_scaling, const double pixel_scaling) const{
 	ns_image_properties properties(properties_);
 	properties.height/=image_scaling;
 	properties.width/=image_scaling;
@@ -7970,18 +7952,18 @@ void ns_area_handler::draw_boxes(ns_8_bit * screen_buffer,const ns_image_propert
 			for (unsigned int y = a.y; y + px < h; y+=2*px){
 				for (unsigned int y_ = 0; y_ < px; y_++){
 					for (unsigned int x = 0; x < px; x++){
-						screen_buffer[properties.width*3*((properties.height-1) - (y+y_))+3*(a.x+x)] = 200;
-						screen_buffer[properties.width*3*((properties.height-1) - (y+y_))+3*(a.x+x)+1] = 0;
-						screen_buffer[properties.width*3*((properties.height-1) - (y+y_))+3*(a.x+x)+2] = 0;
+						screen_buffer((y+y_),a.x+x)[0] = 200;
+						screen_buffer((y+y_),a.x+x)[1] = 0;
+						screen_buffer((y+y_),a.x+x)[2] = 0;
 					}
 				}
 			}
 			for (unsigned int y = 0; y < px; y++){
 				for (unsigned int x = a.x; x + px < w; x+=2*px){
 					for (unsigned int x_ = 0; x_ < px; x_++){
-						screen_buffer[properties.width*3*((properties.height-1) - a.y-y)+3*(x+x_)] = 200;
-						screen_buffer[properties.width*3*((properties.height-1) - a.y-y)+3*(x+x_)+1] = 0;
-						screen_buffer[properties.width*3*((properties.height-1) - a.y-y)+3*(x+x_)+2] = 0;
+						screen_buffer(a.y-y,x+x_)[0] = 200;
+						screen_buffer(a.y-y,x+x_)[1] = 0;
+						screen_buffer(a.y-y,x+x_)[2] = 0;
 					}
 				}
 			}
@@ -7990,26 +7972,26 @@ void ns_area_handler::draw_boxes(ns_8_bit * screen_buffer,const ns_image_propert
 			for (unsigned int y = a.y; y + px < b.y; y+=2*px){
 				for (unsigned int y_ = 0; y_ < px; y_++){
 					for (unsigned int x = 0; x < px; x++){
-					screen_buffer[properties.width*3*((properties.height-1) - (y+y_))+3*(a.x+x)] = 200;
-					screen_buffer[properties.width*3*((properties.height-1) - (y+y_))+3*(a.x+x)+1] = 0;
-					screen_buffer[properties.width*3*((properties.height-1) - (y+y_))+3*(a.x+x)+2] = 0;
+						screen_buffer((y + y_), a.x + x)[0] = 200;
+						screen_buffer((y + y_), a.x + x)[1] = 0;
+						screen_buffer((y + y_), a.x + x)[2] = 0;
 				
-					screen_buffer[properties.width*3*((properties.height-1) - (y+y_))+3*(b.x+x)] = 200;
-					screen_buffer[properties.width*3*((properties.height-1) - (y+y_))+3*(b.x+x)+1] = 0;
-					screen_buffer[properties.width*3*((properties.height-1) - (y+y_))+3*(b.x+x)+2] = 0;
+						screen_buffer((y + y_), b.x + x)[0] = 200;
+						screen_buffer((y + y_), b.x + x)[1] = 0;
+						screen_buffer((y + y_), b.x + x)[2] = 0;
 					}
 				}
 			}
 			for (unsigned int y = 0; y < px; y++){
 				for (unsigned int x = a.x; x + px < b.x; x+=2*px){
 					for (unsigned int x_ = 0; x_ < px; x_++){
-						screen_buffer[properties.width*3*((properties.height-1) - a.y-y)+3*(x+x_)] = 200;
-						screen_buffer[properties.width*3*((properties.height-1) - a.y-y)+3*(x+x_)+1] = 0;
-						screen_buffer[properties.width*3*((properties.height-1) - a.y-y)+3*(x+x_)+2] = 0;
+						screen_buffer(a.y+y,x+x_)[0] = 200;
+						screen_buffer(a.y+y,x+x_)[1] = 0;
+						screen_buffer(a.y+y,x+x_)[2] = 0;
 				
-						screen_buffer[properties.width*3*((properties.height-1) - b.y-y)+3*(x+x_)] = 200;
-						screen_buffer[properties.width*3*((properties.height-1) - b.y-y)+3*(x+x_)+1] = 0;
-						screen_buffer[properties.width*3*((properties.height-1 )- b.y-y)+3*(x+x_)+2] = 0;
+						screen_buffer(b.y+y,x+x_)[0]= 200;
+						screen_buffer(b.y+y,x+x_)[1] = 0;
+						screen_buffer(b.y+y,x+x_)[2] = 0;
 					}
 				}
 			}
@@ -8018,9 +8000,45 @@ void ns_area_handler::draw_boxes(ns_8_bit * screen_buffer,const ns_image_propert
 	}
 }
 
+void ns_gl_tile::upload() {
+	if (texture != 0)
+		glDeleteTextures(1, &texture);
+	glGenTextures(1, &texture);
+	glBindTexture(GL_TEXTURE_2D, texture);
+	check_gl_err();
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, tile_x, tile_y, 0, GL_RGBA, GL_UNSIGNED_BYTE, &buffer[0]);
+	check_gl_err();
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+}
+ns_gl_tile::~ns_gl_tile(){
+	if (texture != 0) glDeleteTextures(1, &texture);
+}
 
+void ns_tiled_gl_image::draw(long image_w, long image_h) const {
+	if (prop.width == 0 || prop.height == 0)
+		throw ns_ex("Attempting to draw an empty image!");
+	const double dx(image_w / (double)prop.width),
+		dy(image_h / (double)prop.height);
+	const double t_w = ns_gl_tile::tile_x * dx,
+		t_h = ns_gl_tile::tile_y * dy;
+	for (unsigned int i = 0; i < buffers.size(); i++) {
+		int t_y = i / grid_x;
+		int t_x = i - t_y * grid_x;
+		double t_pos_y = t_y * ns_gl_tile::tile_x * dx,
+			t_pos_x = t_x * ns_gl_tile::tile_y * dy;
 
-void ns_area_handler::remove_box_from_screen_buffer(const std::vector<ns_area_box>::const_iterator cur_box,ns_8_bit * screen_buffer, const ns_image_standard & background,const unsigned long image_scaling,const double pixel_scaling) const{
+		glBindTexture(GL_TEXTURE_2D, buffers[i].texture);
+		glBegin(GL_QUADS);
+		glTexCoord2f(0.0f, 0.0f);	glVertex3f(t_pos_x, t_pos_y, 0);
+		glTexCoord2f(1, 0.0f);	glVertex3f(t_pos_x + t_w, t_pos_y, 0);
+		glTexCoord2f(1, 1);	glVertex3f(t_pos_x + t_w, t_pos_y + t_h, 0);
+		glTexCoord2f(0.0f, 1);	glVertex3f(t_pos_x, t_pos_y+ t_h, 0);
+		glEnd();
+	}
+}
+
+void ns_area_handler::remove_box_from_screen_buffer(const std::vector<ns_area_box>::const_iterator cur_box,ns_tiled_gl_image & screen_buffer, const ns_image_standard & background,const unsigned long image_scaling,const double pixel_scaling) const{
 	
 	ns_vector_2i a(cur_box->image_coords.top_left/image_scaling),
 				 b(cur_box->image_coords.bottom_right/image_scaling);
@@ -8046,40 +8064,40 @@ void ns_area_handler::remove_box_from_screen_buffer(const std::vector<ns_area_bo
 		if (cur_box->image_coords.bottom_right == ns_vector_2i(-1,-1)){
 			for (unsigned int y = a.y; y < h; y++){
 				for (unsigned int x = 0; x < px; x++){
-					screen_buffer[properties.width*3*(properties.height-1 - y)+3*(a.x+x)] = background[image_scaling*y][3*(image_scaling*a.x)];
-					screen_buffer[properties.width*3*(properties.height-1 - y)+3*(a.x+x)+1] = background[image_scaling*y][3*(image_scaling*a.x)+1];
-					screen_buffer[properties.width*3*(properties.height-1 - y)+3*(a.x+x)+2] = background[image_scaling*y][3*(image_scaling*a.x)+2];
+					screen_buffer(y,a.x+x)[0] = background[image_scaling*y][3*(image_scaling*a.x)];
+					screen_buffer(y,a.x+x)[1] = background[image_scaling*y][3*(image_scaling*a.x)+1];
+					screen_buffer(y,a.x+x)[2] = background[image_scaling*y][3*(image_scaling*a.x)+2];
 				}
 			}
 			for (unsigned int y= 0; y < px; y++){
 				for (unsigned int x = a.x; x < w; x++){
-					screen_buffer[properties.width*3*(properties.height-1 - a.y-y)+3*x] = background[image_scaling*(a.y)][3*image_scaling*x];
-					screen_buffer[properties.width*3*(properties.height-1 - a.y-y)+3*x+1] = background[image_scaling*(a.y)][3*image_scaling*x+1];
-					screen_buffer[properties.width*3*(properties.height-1 - a.y-y)+3*x+2] = background[image_scaling*(a.y)][3*image_scaling*x+2];
+					screen_buffer( a.y+y,x)[0] = background[image_scaling*(a.y)][3*image_scaling*x];
+					screen_buffer( a.y+y,x)[1] = background[image_scaling*(a.y)][3*image_scaling*x+1];
+					screen_buffer( a.y+y,x)[2] = background[image_scaling*(a.y)][3*image_scaling*x+2];
 				}
 			}
 		}
 		else{
 			for (int y = a.y; y < b.y; y++){
 				for (unsigned int x = 0; x < px; x++){
-				screen_buffer[properties.width*3*(properties.height-1 - y)+3*(a.x+x)] = background[image_scaling*y][3*image_scaling*a.x];
-				screen_buffer[properties.width*3*(properties.height-1 - y)+3*(a.x+x)+1] = background[image_scaling*y][3*image_scaling*a.x+1];
-				screen_buffer[properties.width*3*(properties.height-1 - y)+3*(a.x+x)+2] = background[image_scaling*y][3*image_scaling*a.x+2];
-				
-				screen_buffer[properties.width*3*(properties.height-1 - y)+3*(b.x+x)] = background[image_scaling*y][3*image_scaling*b.x];
-				screen_buffer[properties.width*3*(properties.height-1 - y)+3*(b.x+x)+1] = background[image_scaling*y][3*image_scaling*b.x+1];
-				screen_buffer[properties.width*3*(properties.height-1 - y)+3*(b.x+x)+2] = background[image_scaling*y][3*image_scaling*b.x+2];
+				screen_buffer(y,a.x+x)[0] =background[image_scaling*y][3*image_scaling*a.x];
+				screen_buffer(y,a.x+x)[1] = background[image_scaling*y][3*image_scaling*a.x+1];
+				screen_buffer(y,a.x+x)[2] = background[image_scaling*y][3*image_scaling*a.x+2];
+						
+				screen_buffer(y,b.x+x)[0] = background[image_scaling*y][3*image_scaling*b.x];
+				screen_buffer(y,b.x+x)[1] = background[image_scaling*y][3*image_scaling*b.x+1];
+				screen_buffer(y,b.x+x)[2] = background[image_scaling*y][3*image_scaling*b.x+2];
 				}
 			}
 			for (int y= 0; y < px; y++){
 				for (int x = a.x; x < b.x; x++){
-					screen_buffer[properties.width*3*(properties.height-1 - a.y-y)+3*x] = background[image_scaling*a.y][3*image_scaling*x];
-					screen_buffer[properties.width*3*(properties.height-1 - a.y-y)+3*x+1] = background[image_scaling*a.y][3*image_scaling*x+1];
-					screen_buffer[properties.width*3*(properties.height-1 - a.y-y)+3*x+2] = background[image_scaling*a.y][3*image_scaling*x+2];
-				
-					screen_buffer[properties.width*3*(properties.height-1 - b.y-y)+3*x] = background[image_scaling*b.y][3*image_scaling*x];
-					screen_buffer[properties.width*3*(properties.height-1 - b.y-y)+3*x+1] = background[image_scaling*b.y][3*image_scaling*x+1];
-					screen_buffer[properties.width*3*(properties.height-1 - b.y-y)+3*x+2] = background[image_scaling*b.y][3*image_scaling*x+2];
+					screen_buffer(a.y+y,x)[0] = background[image_scaling*a.y][3*image_scaling*x];
+					screen_buffer(a.y+y,x)[1] = background[image_scaling*a.y][3*image_scaling*x+1];
+					screen_buffer(a.y+y,x)[2] = background[image_scaling*a.y][3*image_scaling*x+2];
+						
+					screen_buffer(b.y+y,x)[0] = background[image_scaling*b.y][3*image_scaling*x];
+					screen_buffer(b.y+y,x)[1] = background[image_scaling*b.y][3*image_scaling*x+1];
+					screen_buffer(b.y+y,x)[2] = background[image_scaling*b.y][3*image_scaling*x+2];
 				}
 			}
 		}
@@ -8088,40 +8106,39 @@ void ns_area_handler::remove_box_from_screen_buffer(const std::vector<ns_area_bo
 		if (cur_box->image_coords.bottom_right == ns_vector_2i(-1,-1)){
 			for (unsigned int y = a.y; y < h; y++){
 				for (unsigned int x = 0; x < px; x++){
-					screen_buffer[properties.width*3*(properties.height-1 - y)+3*(a.x+x)] = background[image_scaling*y][image_scaling*a.x];
-					screen_buffer[properties.width*3*(properties.height-1 - y)+3*(a.x+x)+1] = background[image_scaling*y][image_scaling*a.x];
-					screen_buffer[properties.width*3*(properties.height-1 - y)+3*(a.x+x)+2] = background[image_scaling*y][image_scaling*a.x];
+					screen_buffer(y,a.x+x)[0] = background[image_scaling*y][image_scaling*a.x];
+					screen_buffer(y,a.x+x)[1] = background[image_scaling*y][image_scaling*a.x];
+					screen_buffer(y,a.x+x)[2] = background[image_scaling*y][image_scaling*a.x];
 				}
 			}
 			for (int y = 0; y < px; y++){
 				for (unsigned int x = a.x; x < w; x++){
-					screen_buffer[properties.width*3*(properties.height-1 - a.y-y)+3*x] = background[image_scaling*a.y][image_scaling*x];
-					screen_buffer[properties.width*3*(properties.height-1 - a.y-y)+3*x+1] = background[image_scaling*a.y][image_scaling*x];
-					screen_buffer[properties.width*3*(properties.height-1 - a.y-y)+3*x+2] = background[image_scaling*a.y][image_scaling*x];
+					screen_buffer(a.y+y,x)[0] = background[image_scaling*a.y][image_scaling*x];
+					screen_buffer(a.y+y,x)[1] = background[image_scaling*a.y][image_scaling*x];
+					screen_buffer(a.y+y,x)[2] = background[image_scaling*a.y][image_scaling*x];
 				}
 			}
 		}
 		else{
 			for (int y = a.y; y < b.y; y++){
 				for (unsigned int x = 0; x < px; x++){
-					screen_buffer[properties.width*3*(properties.height-1 - y)+3*(a.x+x)] =   background[image_scaling*y][image_scaling*a.x];
-					screen_buffer[properties.width*3*(properties.height-1 - y)+3*(a.x+x)+1] = background[image_scaling*y][image_scaling*a.x];
-					screen_buffer[properties.width*3*(properties.height-1 - y)+3*(a.x+x)+2] = background[image_scaling*y][image_scaling*a.x];
-				
-					screen_buffer[properties.width*3*(properties.height-1 - y)+3*(b.x+x)] =   background[image_scaling*y][image_scaling*b.x];
-					screen_buffer[properties.width*3*(properties.height-1 - y)+3*(b.x+x)+1] = background[image_scaling*y][image_scaling*b.x];
-					screen_buffer[properties.width*3*(properties.height-1 - y)+3*(b.x+x)+2] = background[image_scaling*y][image_scaling*b.x];
+					screen_buffer(y,a.x+x)[0] = background[image_scaling*y][image_scaling*a.x];
+					screen_buffer(y,a.x+x)[1] = background[image_scaling*y][image_scaling*a.x];
+					screen_buffer(y,a.x+x)[2] = background[image_scaling*y][image_scaling*a.x];
+								
+					screen_buffer(y,b.x+x)[0] = background[image_scaling*y][image_scaling*b.x];
+					screen_buffer(y,b.x+x)[1] = background[image_scaling*y][image_scaling*b.x];
+					screen_buffer(y,b.x+x)[2] = background[image_scaling*y][image_scaling*b.x];
 				}
 			}
 			for (unsigned int y= 0; y< px; y++){
 				for (int x = a.x; x < b.x; x++){
-					screen_buffer[properties.width*3*(properties.height-1 - a.y-y)+3*x] =   background[image_scaling*a.y][image_scaling*x];
-					screen_buffer[properties.width*3*(properties.height-1 - a.y-y)+3*x+1] = background[image_scaling*a.y][image_scaling*x];
-					screen_buffer[properties.width*3*(properties.height-1 - a.y-y)+3*x+2] = background[image_scaling*a.y][image_scaling*x];
-				
-					screen_buffer[properties.width*3*(properties.height-1 - b.y-y)+3*x] =   background[image_scaling*b.y][image_scaling*x];
-					screen_buffer[properties.width*3*(properties.height-1 - b.y-y)+3*x+1] = background[image_scaling*b.y][image_scaling*x];
-					screen_buffer[properties.width*3*(properties.height-1 - b.y-y)+3*x+2] = background[image_scaling*b.y][image_scaling*x];
+					screen_buffer(a.y+y,x)[0] = background[image_scaling*a.y][image_scaling*x];
+					screen_buffer(a.y+y,x)[1] = background[image_scaling*a.y][image_scaling*x];
+					screen_buffer(a.y+y,x)[2] = background[image_scaling*a.y][image_scaling*x];
+					screen_buffer(b.y+y,x)[0] = background[image_scaling*b.y][image_scaling*x];
+					screen_buffer(b.y+y,x)[1] = background[image_scaling*b.y][image_scaling*x];
+					screen_buffer(b.y+y,x)[2] = background[image_scaling*b.y][image_scaling*x];
 				}
 			}
 		}
@@ -8366,7 +8383,7 @@ unsigned long ns_death_time_solo_posture_annotater::last_time_at_current_telemen
 	return current_time + (1.0 / telemetry_zoom_factor)*(path_stop_time - current_time);
 }
 
-void ns_death_time_solo_posture_annotater::draw_telemetry(const ns_vector_2i & position, const ns_vector_2i & graph_size, const ns_vector_2i & buffer_size, const float rescale_factor,ns_8_bit * buffer) {
+void ns_death_time_solo_posture_annotater::draw_telemetry(const ns_vector_2i & position, const ns_vector_2i & graph_size, const ns_vector_2i & buffer_size, const float rescale_factor,ns_tiled_gl_image & buffer) {
 	if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Starting to draw telemetry."));
 	if (telemetry_zoom_factor < 1) {
 		cerr << "Weird telemetry zoom factor: " << telemetry_zoom_factor << "\n";

@@ -640,7 +640,7 @@ private:
 		return 3 * ((buffer_size.y - y - position.y-1)*buffer_size.x + x + position.x);
 	}
 	ns_vector_2i border() const { return ns_vector_2i(25, 25); }
-	void overlay_metadata(const ns_animal_telemetry::ns_graph_contents graph_contents,const unsigned long current_element, const ns_vector_2i & position, const ns_vector_2i & buffer_size, const long marker_resize_factor,ns_8_bit * buffer) {
+	void overlay_metadata(const ns_animal_telemetry::ns_graph_contents graph_contents,const unsigned long current_element, const ns_vector_2i & position, const ns_vector_2i & buffer_size, const long marker_resize_factor,ns_tiled_gl_image & buffer) {
 		unsigned long x_score, y_score, x_size, y_size, x_slope, y_slope;
 		long segment_id = segment_ids[current_element];
 		if (segment_id == -1)
@@ -655,25 +655,28 @@ private:
 		map_value_from_bottom_graph_onto_image(time_axis[current_element], slope_vals[segment_id].y[segment_element_id], x_slope, y_slope);
 		for (int y = -2* marker_resize_factor; y <= 2 * marker_resize_factor; y++)
 			for (int x = -2 * marker_resize_factor; x <= 2 * marker_resize_factor; x++) {
-				unsigned long p(map_pixel_from_image_onto_buffer(x_score+x+border().x, y_score+y+ border().y, position, buffer_size));
-				buffer[p] = 255;
-				buffer[p+1] = 0;
-				buffer[p+2] = 0;
+				const ns_vector_2i p(x_score + x + border().x + position.x, y_score + y + border().y + position.y);
+				buffer(p.x,p.y)[0] = 255;
+				buffer(p.x, p.y)[1] = 0;
+				buffer(p.x, p.y)[2] = 0;
+				buffer(p.x, p.y)[3] = 255;
 				if (graph_contents == ns_animal_telemetry::ns_all || graph_contents == ns_animal_telemetry::ns_movement_intensity || graph_contents == ns_animal_telemetry::ns_movement_intensity_slope_1x
 					|| graph_contents == ns_animal_telemetry::ns_movement_intensity_slope_2x
 					|| graph_contents == ns_animal_telemetry::ns_movement_intensity_slope_4x) {
-					p = map_pixel_from_image_onto_buffer(x_size + x + border().x, y_size + y + border().y, position, buffer_size);
-					buffer[p] = 255;
-					buffer[p + 1] = 0;
-					buffer[p + 2] = 0;
+					const ns_vector_2i p2(x_size + x + border().x + position.x, y_size + y + border().y + position.y);
+					buffer(p2.x, p2.y)[0] = 255;
+					buffer(p2.x, p2.y)[1] = 0;
+					buffer(p2.x, p2.y)[2] = 0;
+					buffer(p2.x, p2.y)[3] = 255;
 				}
 				if (graph_contents == ns_animal_telemetry::ns_movement_intensity_slope_1x
 					|| graph_contents == ns_animal_telemetry::ns_movement_intensity_slope_2x
 					|| graph_contents == ns_animal_telemetry::ns_movement_intensity_slope_4x) {
-					p = map_pixel_from_image_onto_buffer(x_slope + x + border().x, y_slope + y + border().y, position, buffer_size);
-					buffer[p] = 255;
-					buffer[p + 1] = 0;
-					buffer[p + 2] = 0;
+					const ns_vector_2i p3(x_slope + x + border().x + position.x, y_slope + y + border().y + position.y);
+					buffer(p3.x, p3.y)[0] = 255;
+					buffer(p3.x, p3.y)[1] = 0;
+					buffer(p3.x, p3.y)[2] = 0;
+					buffer(p3.x, p3.y)[3] = 255;
 				}
 			}
 
@@ -738,7 +741,7 @@ public:
 		base_graph_bottom.init(ns_image_properties(0, 0, 3));
 		posture_analysis_model = mod;
 	}
-	void draw(const ns_graph_contents graph_contents, const unsigned long element_id, const ns_vector_2i & position, const ns_vector_2i & graph_size, const ns_vector_2i & buffer_size, const float marker_resize_factor, ns_8_bit * buffer, const unsigned long start_time=0, const unsigned long stop_time=UINT_MAX) {
+	void draw(const ns_graph_contents graph_contents, const unsigned long element_id, const ns_vector_2i & position, const ns_vector_2i & graph_size, const ns_vector_2i & buffer_size, const float marker_resize_factor, ns_tiled_gl_image & buffer, const unsigned long start_time=0, const unsigned long stop_time=UINT_MAX) {
 		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Starting to draw telemetry."));
 		if (base_graph_top.properties().height == 0 || graph_contents != last_graph_contents || last_start_time != start_time || last_stop_time != stop_time || last_rescale_factor != marker_resize_factor) {
 			base_graph_top.use_more_memory_to_avoid_reallocations();
@@ -768,56 +771,74 @@ public:
 
 		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Drawing everything"));
 		//top margin
+		const long yo = (graph_size.y - 1);
 		for (unsigned int y = 0; y < border().y; y++)
-			for (unsigned int x = 0; x < graph_size.x; x++)
+			for (unsigned int x = 0; x < graph_size.x; x++) {
 				for (unsigned int c = 0; c < 3; c++) 
-					buffer[map_pixel_from_image_onto_buffer(x, y, position, buffer_size) + c] = 0;
+					buffer(x + position.x, yo-(y + position.y))[c] = 0;
+				buffer(x + position.x, yo - (y + position.y))[3] = 255;
+			}
 		//TOP GRAPH
 		for (unsigned int y = 0; y < base_graph_top.properties().height; y++) {
 			//left margin
-			for (unsigned int x = 0; x < border().x; x++)
+			for (unsigned int x = 0; x < border().x; x++) {
 				for (unsigned int c = 0; c < 3; c++)
-					buffer[map_pixel_from_image_onto_buffer(x, y + border().y, position, buffer_size) + c] = 0;
+					buffer(x + position.x, yo - (y + border().y + position.y))[c] = 0;
+				buffer(x + position.x, yo - (y + border().y + position.y))[3] = 255;
+			}
 			//graph
 			for (unsigned int x = 0; x < base_graph_top.properties().width; x++) {
 				for (unsigned int c = 0; c < 3; c++) 
-					buffer[map_pixel_from_image_onto_buffer(x + border().x, y + border().y, position, buffer_size) + c] = base_graph_top[y][3 * x + c];
+					buffer(x + border().x + position.x, yo - (y + border().y + position.y))[c] = base_graph_top[y][3 * x + c];
+				buffer(x + border().x + position.x, yo - (y + border().y + position.y))[3] = 255;
 			}
 
 			//right margin
-			for (unsigned int x = base_graph_top.properties().width + border().x; x < graph_size.x; x++)
-				for (unsigned int c = 0; c < 3; c++)
-					buffer[map_pixel_from_image_onto_buffer(x, y + border().y, position, buffer_size) + c] = 0;
+			for (unsigned int x = base_graph_top.properties().width + border().x; x < graph_size.x; x++){
+				for (unsigned int c = 0; c < 3; c++) 
+					buffer(x + position.x, yo - (y + border().y + position.y))[c] = 0;
+				buffer(x + position.x, yo - (y + border().y + position.y))[3] = 255;
+				}
 		}
 		//middle margin
 		for (unsigned int y = border().y + base_graph_bottom.properties().height; y < 2*border().y + base_graph_bottom.properties().height; y++)
-			for (unsigned int x = 0; x < graph_size.x; x++)
+			for (unsigned int x = 0; x < graph_size.x; x++) {
 				for (unsigned int c = 0; c < 3; c++)
-					buffer[map_pixel_from_image_onto_buffer(x, y, position, buffer_size) + c] = 0;
+					buffer(x + position.x, yo - (y + position.y))[c] = 0;
+				buffer(x + position.x, yo - (y + position.y))[3] = 255;
+			}
+
 		const long bottom_graph_y_offset(2 * border().y + base_graph_bottom.properties().height);
 
 		//BOTTOM GRAPH
 		for (unsigned int y = 0; y < base_graph_bottom.properties().height; y++) {
 			//left margin
-			for (unsigned int x = 0; x < border().x; x++)
+			for (unsigned int x = 0; x < border().x; x++) {
 				for (unsigned int c = 0; c < 3; c++)
-					buffer[map_pixel_from_image_onto_buffer(x, y + bottom_graph_y_offset, position, buffer_size) + c] = 0;
+					buffer(x + position.x, yo - (y + bottom_graph_y_offset + position.y))[c] = 0;
+				buffer(x + position.x, yo - (y + bottom_graph_y_offset + position.y))[3] = 255;
+			}
 			//graph
 			for (unsigned int x = 0; x < base_graph_bottom.properties().width; x++) {
 				for (unsigned int c = 0; c < 3; c++)
-					buffer[map_pixel_from_image_onto_buffer(x + border().x, y + bottom_graph_y_offset, position, buffer_size) + c] = base_graph_bottom[y][3 * x + c];
+					buffer(x + border().x + position.x, yo - (y + bottom_graph_y_offset + position.y))[c] = base_graph_bottom[y][3 * x + c];
+				buffer(x + border().x + position.x, yo - (y + bottom_graph_y_offset + position.y))[3] = 255;
 			}
 
 			//right margin
-			for (unsigned int x = base_graph_bottom.properties().width + border().x; x < graph_size.x; x++)
+			for (unsigned int x = base_graph_bottom.properties().width + border().x; x < graph_size.x; x++) {
 				for (unsigned int c = 0; c < 3; c++)
-					buffer[map_pixel_from_image_onto_buffer(x, y + bottom_graph_y_offset, position, buffer_size) + c] = 0;
+					buffer(x + position.x, yo - (y + bottom_graph_y_offset + position.y))[c] = 0;
+				buffer(x + position.x, yo - (y + bottom_graph_y_offset + position.y))[3] = 255;
+			}
 		}
 		//top margin
 		for (unsigned int y = bottom_graph_y_offset + base_graph_bottom.properties().height; y < graph_size.y; y++)
-			for (unsigned int x = 0; x < graph_size.x; x++)
+			for (unsigned int x = 0; x < graph_size.x; x++) {
 				for (unsigned int c = 0; c < 3; c++)
-					buffer[map_pixel_from_image_onto_buffer(x, y, position, buffer_size) + c] = 0;
+					buffer(x + position.x, yo - (y + position.y))[c] = 0;
+				buffer(x + position.x, yo - (y + position.y))[3] = 255;
+			}
 
 		overlay_metadata(graph_contents, element_id - first_element, position, buffer_size, marker_resize_factor, buffer);
 	}

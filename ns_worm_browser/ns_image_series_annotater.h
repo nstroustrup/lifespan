@@ -2,6 +2,7 @@
 #define NS_TIME_SERIES_ANNOTATER_H
 #include "ns_image.h"
 #include "ns_image_pool.h"
+#include "ns_tiled_gl_image.h"
 
 
 

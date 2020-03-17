@@ -7884,13 +7884,14 @@ void ns_area_handler::clear_boxes(){
 	selected_box = boxes.end();
 }
 void ns_draw_square_boxes(const ns_vector_2i & loc, ns_tiled_gl_image & screen_buffer,const ns_image_properties & properties,const unsigned long size,const double image_scaling){
+	const int yo(properties.height - 1);
 	for (unsigned int y = 0; y < size; y++){
 		for (unsigned int x = 0; x < size; x++){
 				if (properties.height < (1 + loc.y+y))
 					throw ns_ex("Yikes!");
-				screen_buffer(loc.x + x, loc.y + y)[0] = 200;
-				screen_buffer(loc.x + x, loc.y + y)[1] = 0;
-				screen_buffer(loc.x + x, loc.y + y)[2] = 0;
+				screen_buffer(loc.x + x, yo- (loc.y + y))[0] = 200;
+				screen_buffer(loc.x + x, yo - (loc.y + y))[1] = 0;
+				screen_buffer(loc.x + x, yo - (loc.y + y))[2] = 0;
 				/*
 				screen_buffer[properties.width*3*(properties.height-1 - loc.y-y)+3*(loc.x+x)] = 200;
 				screen_buffer[properties.width*3*(properties.height-1 - loc.y-y)+3*(loc.x+x)+1] = 0;
@@ -7899,14 +7900,14 @@ void ns_draw_square_boxes(const ns_vector_2i & loc, ns_tiled_gl_image & screen_b
 	}
 }
 void ns_restore_square_boxes(const ns_vector_2i & loc, ns_tiled_gl_image & screen_buffer,const ns_image_properties & properties,const unsigned long size,const double image_scaling, const ns_image_standard & background){
-
+	const int yo(properties.height - 1);
 	if (properties.components == 3){
 		for (unsigned int y = 0; y < size; y++){
 			for (unsigned int x = 0; x < size; x++){
 
-				screen_buffer(loc.x + x, loc.y + y)[0] = background[image_scaling * (y + loc.y)][3 * ((unsigned long)(image_scaling * (loc.x + x)))];
-				screen_buffer(loc.x + x, loc.y + y)[1] = background[image_scaling * (y + loc.y)][3 * ((unsigned long)(image_scaling * (loc.x + x))) + 1];
-				screen_buffer(loc.x + x, loc.y + y)[2] = background[image_scaling * (y + loc.y)][3 * ((unsigned long)(image_scaling * (loc.x + x))) + 2];
+				screen_buffer(loc.x + x, yo-(loc.y + y))[0] = background[image_scaling * (y + loc.y)][3 * ((unsigned long)(image_scaling * (loc.x + x)))];
+				screen_buffer(loc.x + x, yo - (loc.y + y))[1] = background[image_scaling * (y + loc.y)][3 * ((unsigned long)(image_scaling * (loc.x + x))) + 1];
+				screen_buffer(loc.x + x, yo - (loc.y + y))[2] = background[image_scaling * (y + loc.y)][3 * ((unsigned long)(image_scaling * (loc.x + x))) + 2];
 
 				/*
 				screen_buffer[properties.width*3*(properties.height-1 - y-loc.y)+3*(loc.x+x)] = background[(unsigned long)(image_scaling*(y+loc.y))][3*((unsigned long)(image_scaling*(loc.x+x)))];
@@ -7919,9 +7920,9 @@ void ns_restore_square_boxes(const ns_vector_2i & loc, ns_tiled_gl_image & scree
 	else{
 		for (unsigned int y = 0; y < size; y++){
 			for (unsigned int x = 0; x < size; x++){
-				screen_buffer(y+loc.y,loc.x+x)[0] = background[(unsigned long)(image_scaling*(y+loc.y))][(unsigned long)(image_scaling*(loc.x+x))];
-				screen_buffer(y+loc.y,loc.x+x)[1] = background[(unsigned long)(image_scaling*(y+loc.y))][(unsigned long)(image_scaling*(loc.x+x))];
-				screen_buffer(y+loc.y,loc.x+x)[2] = background[(unsigned long)(image_scaling*(y+loc.y))][(unsigned long)(image_scaling*(loc.x+x))];
+				screen_buffer(y+loc.y, yo - (loc.x+x))[0] = background[(unsigned long)(image_scaling*(y+loc.y))][(unsigned long)(image_scaling*(loc.x+x))];
+				screen_buffer(y+loc.y, yo - (loc.x+x))[1] = background[(unsigned long)(image_scaling*(y+loc.y))][(unsigned long)(image_scaling*(loc.x+x))];
+				screen_buffer(y+loc.y, yo - (loc.x+x))[2] = background[(unsigned long)(image_scaling*(y+loc.y))][(unsigned long)(image_scaling*(loc.x+x))];
 			}
 		}
 	}
@@ -7934,12 +7935,11 @@ void ns_area_handler::draw_boxes(ns_tiled_gl_image & screen_buffer,const ns_imag
 		w(properties.width),
 		c(properties.components);
 		
-	int px(2*ceil(pixel_scaling));
-
+	const int px(2*ceil(pixel_scaling));
+	const long yo(properties.height - 1);
 	for (unsigned int i = 0; i < boxes.size(); i++){
 		ns_vector_2i a(boxes[i].image_coords.top_left/image_scaling),
 			b(boxes[i].image_coords.bottom_right/image_scaling);
-	//	cerr << "prop: " << h << "x" << w << ":" << c << "\t scaling: " << scaling << ":" << a << " " << a << "\n";
 		ns_draw_square_boxes(a,screen_buffer,properties,2*px,image_scaling);
 		if (!(boxes[i].image_coords.bottom_right == ns_vector_2i(-1,-1))){
 			ns_draw_square_boxes(ns_vector_2i(b.x-2*px,a.y),screen_buffer,properties,2*px,image_scaling);
@@ -7952,18 +7952,18 @@ void ns_area_handler::draw_boxes(ns_tiled_gl_image & screen_buffer,const ns_imag
 			for (unsigned int y = a.y; y + px < h; y+=2*px){
 				for (unsigned int y_ = 0; y_ < px; y_++){
 					for (unsigned int x = 0; x < px; x++){
-						screen_buffer((y+y_),a.x+x)[0] = 200;
-						screen_buffer((y+y_),a.x+x)[1] = 0;
-						screen_buffer((y+y_),a.x+x)[2] = 0;
+						screen_buffer(a.x + x, yo-(y + y_))[0] = 200;
+						screen_buffer(a.x + x, yo - (y + y_))[1] = 0;
+						screen_buffer(a.x + x, yo - (y+y_))[2] = 0;
 					}
 				}
 			}
 			for (unsigned int y = 0; y < px; y++){
 				for (unsigned int x = a.x; x + px < w; x+=2*px){
 					for (unsigned int x_ = 0; x_ < px; x_++){
-						screen_buffer(a.y-y,x+x_)[0] = 200;
-						screen_buffer(a.y-y,x+x_)[1] = 0;
-						screen_buffer(a.y-y,x+x_)[2] = 0;
+						screen_buffer(x + x_, yo - (a.y + y))[0] = 200;
+						screen_buffer(x + x_, yo - (a.y + y))[1] = 0;
+						screen_buffer(x + x_, yo - (a.y + y))[2] = 0;
 					}
 				}
 			}
@@ -7972,26 +7972,26 @@ void ns_area_handler::draw_boxes(ns_tiled_gl_image & screen_buffer,const ns_imag
 			for (unsigned int y = a.y; y + px < b.y; y+=2*px){
 				for (unsigned int y_ = 0; y_ < px; y_++){
 					for (unsigned int x = 0; x < px; x++){
-						screen_buffer((y + y_), a.x + x)[0] = 200;
-						screen_buffer((y + y_), a.x + x)[1] = 0;
-						screen_buffer((y + y_), a.x + x)[2] = 0;
-				
-						screen_buffer((y + y_), b.x + x)[0] = 200;
-						screen_buffer((y + y_), b.x + x)[1] = 0;
-						screen_buffer((y + y_), b.x + x)[2] = 0;
+						screen_buffer( a.x + x, yo - (y + y_))[0] = 200;
+						screen_buffer(a.x + x, yo - (y + y_))[1] = 0;
+						screen_buffer(a.x + x, yo - (y + y_))[2] = 0;
+
+						screen_buffer(b.x + x, yo - (y + y_))[0] = 200;
+						screen_buffer(b.x + x, yo - (y + y_))[1] = 0;
+						screen_buffer(b.x + x, yo - (y + y_))[2] = 0;
 					}
 				}
 			}
 			for (unsigned int y = 0; y < px; y++){
 				for (unsigned int x = a.x; x + px < b.x; x+=2*px){
 					for (unsigned int x_ = 0; x_ < px; x_++){
-						screen_buffer(a.y+y,x+x_)[0] = 200;
-						screen_buffer(a.y+y,x+x_)[1] = 0;
-						screen_buffer(a.y+y,x+x_)[2] = 0;
-				
-						screen_buffer(b.y+y,x+x_)[0]= 200;
-						screen_buffer(b.y+y,x+x_)[1] = 0;
-						screen_buffer(b.y+y,x+x_)[2] = 0;
+						screen_buffer(x + x_, yo - (a.y + y))[0] = 200;
+						screen_buffer(x + x_, yo - (a.y + y))[1] = 0;
+						screen_buffer(x + x_, yo - (a.y + y))[2] = 0;
+
+						screen_buffer(x + x_, yo - (b.y + y))[0] = 200;
+						screen_buffer(x + x_, yo - (b.y + y))[1] = 0;
+						screen_buffer(x + x_, yo - (b.y+y))[2] = 0;
 					}
 				}
 			}
@@ -8001,6 +8001,22 @@ void ns_area_handler::draw_boxes(ns_tiled_gl_image & screen_buffer,const ns_imag
 }
 
 void ns_gl_tile::upload() {
+	//duplicate first row
+	for (unsigned int y = 0; y < border; y++)
+		for (unsigned int x = 4; x < 4 * tile_x - 4; x++) 
+			buffer[4*y*tile_x+x] = buffer[4 * border*tile_x + x];
+
+	//duplate left and right rows
+	for (unsigned int y = 0; y < tile_y - 1; y++)
+		for (unsigned int x = 0; x < 4*border; x++) {
+			buffer[4 * tile_x * y + x] =  buffer[4 * tile_x * y + 4*border + x];
+			buffer[4 * tile_x * (y + 1) - 4*border + x] = buffer[4 * tile_x * (y + 1) - 4 * (border+1) + x];
+		}
+	//bottom row
+	for (unsigned int y = 0; y < border; y++)
+		for (unsigned int x = 0; x < 4 * tile_x; x++)
+			buffer[4 * tile_x * (tile_y - 1-y) + x] = buffer[4 * tile_x * (tile_y - border-1) + x];
+
 	if (texture != 0)
 		glDeleteTextures(1, &texture);
 	glGenTextures(1, &texture);
@@ -8010,6 +8026,9 @@ void ns_gl_tile::upload() {
 	check_gl_err();
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+	texture_altered_since_last_upload = false;
 }
 ns_gl_tile::~ns_gl_tile(){
 	if (texture != 0) glDeleteTextures(1, &texture);
@@ -8018,22 +8037,37 @@ ns_gl_tile::~ns_gl_tile(){
 void ns_tiled_gl_image::draw(long image_w, long image_h) const {
 	if (prop.width == 0 || prop.height == 0)
 		throw ns_ex("Attempting to draw an empty image!");
-	const double dx(image_w / (double)prop.width),
-		dy(image_h / (double)prop.height);
-	const double t_w = ns_gl_tile::tile_x * dx,
-		t_h = ns_gl_tile::tile_y * dy;
+
+	//expansion of each tile to remove border
+	float t_dx(ns_gl_tile::border / (float)ns_gl_tile::tile_x),
+		t_dy(ns_gl_tile::border / (float)ns_gl_tile::tile_y);
+
+	const float dx(image_w / ((double)prop.width)*(1- 2*t_dx)),
+		dy(image_h / ((double)prop.height)* (1 - 2*t_dy));
+
+	const float t_w = (ns_gl_tile::tile_x) * dx,
+		t_h = (ns_gl_tile::tile_y) * dy;
 	for (unsigned int i = 0; i < buffers.size(); i++) {
 		int t_y = i / grid_x;
 		int t_x = i - t_y * grid_x;
-		double t_pos_y = t_y * ns_gl_tile::tile_x * dx,
-			t_pos_x = t_x * ns_gl_tile::tile_y * dy;
+		float t_pos_y = t_y * ns_gl_tile::tile_x * dx,
+			  t_pos_x = t_x * ns_gl_tile::tile_y * dy;
 
 		glBindTexture(GL_TEXTURE_2D, buffers[i].texture);
+		/*
 		glBegin(GL_QUADS);
-		glTexCoord2f(0.0f, 0.0f);	glVertex3f(t_pos_x, t_pos_y, 0);
-		glTexCoord2f(1, 0.0f);	glVertex3f(t_pos_x + t_w, t_pos_y, 0);
-		glTexCoord2f(1, 1);	glVertex3f(t_pos_x + t_w, t_pos_y + t_h, 0);
-		glTexCoord2f(0.0f, 1);	glVertex3f(t_pos_x, t_pos_y+ t_h, 0);
+		glTexCoord2f(0.0f, 0.0f);	glVertex3f(t_pos_x-t_overlap_x, t_pos_y-t_overlap_y, i/(float)buffers.size());
+		glTexCoord2f(1, 0.0f);		glVertex3f(t_pos_x + t_w, t_pos_y - t_overlap_y, i / (float)buffers.size());
+		glTexCoord2f(1, 1);			glVertex3f(t_pos_x + t_w, t_pos_y + t_h, i / (float)buffers.size());
+		glTexCoord2f(0.0f, 1);		glVertex3f(t_pos_x - t_overlap_x, t_pos_y+ t_h, i / (float)buffers.size());
+		*/
+		
+		glBindTexture(GL_TEXTURE_2D, buffers[i].texture);
+		glBegin(GL_QUADS);
+		glTexCoord2f(t_dx, t_dy);	glVertex3f((t_pos_x), (t_pos_y), 0);
+		glTexCoord2f(1- t_dx, t_dy);	glVertex3f((t_pos_x + t_w), (t_pos_y), 0);
+		glTexCoord2f(1- t_dx, 1- t_dy);	glVertex3f((t_pos_x + t_w), (t_pos_y + t_h), 0);
+		glTexCoord2f(t_dx, 1- t_dy);	glVertex3f((t_pos_x), (t_pos_y+ t_h), 0);
 		glEnd();
 	}
 }
@@ -8043,7 +8077,6 @@ void ns_area_handler::remove_box_from_screen_buffer(const std::vector<ns_area_bo
 	ns_vector_2i a(cur_box->image_coords.top_left/image_scaling),
 				 b(cur_box->image_coords.bottom_right/image_scaling);
 
-	//const int px(ceil(1.0/pixel_scaling));
 
 	ns_image_properties properties(background.properties());	
 	properties.width/=image_scaling;
@@ -8052,7 +8085,7 @@ void ns_area_handler::remove_box_from_screen_buffer(const std::vector<ns_area_bo
 	w(properties.width),
 	c(properties.components);
 	int px(2*ceil(pixel_scaling));
-
+	const int yo(properties.height - 1);
 	ns_restore_square_boxes(a,screen_buffer,properties,2*px,image_scaling,background);
 	if (!(cur_box->image_coords.bottom_right == ns_vector_2i(-1,-1))){
 		ns_restore_square_boxes(ns_vector_2i(b.x-2*px,a.y),screen_buffer,properties,2*px,image_scaling,background);
@@ -8064,40 +8097,40 @@ void ns_area_handler::remove_box_from_screen_buffer(const std::vector<ns_area_bo
 		if (cur_box->image_coords.bottom_right == ns_vector_2i(-1,-1)){
 			for (unsigned int y = a.y; y < h; y++){
 				for (unsigned int x = 0; x < px; x++){
-					screen_buffer(y,a.x+x)[0] = background[image_scaling*y][3*(image_scaling*a.x)];
-					screen_buffer(y,a.x+x)[1] = background[image_scaling*y][3*(image_scaling*a.x)+1];
-					screen_buffer(y,a.x+x)[2] = background[image_scaling*y][3*(image_scaling*a.x)+2];
+					screen_buffer(a.x+x, yo - y)[0] = background[image_scaling*y][3*(image_scaling*a.x)];
+					screen_buffer(a.x+x, yo - y)[1] = background[image_scaling*y][3*(image_scaling*a.x)+1];
+					screen_buffer(a.x+x, yo - y)[2] = background[image_scaling*y][3*(image_scaling*a.x)+2];
 				}
 			}
 			for (unsigned int y= 0; y < px; y++){
-				for (unsigned int x = a.x; x < w; x++){
-					screen_buffer( a.y+y,x)[0] = background[image_scaling*(a.y)][3*image_scaling*x];
-					screen_buffer( a.y+y,x)[1] = background[image_scaling*(a.y)][3*image_scaling*x+1];
-					screen_buffer( a.y+y,x)[2] = background[image_scaling*(a.y)][3*image_scaling*x+2];
+				for (unsigned int x = a.x; x +px < w; x++){
+					screen_buffer(x, yo - (a.y + y))[0] = background[image_scaling*(a.y)][3*image_scaling*x];
+					screen_buffer(x, yo - (a.y + y))[1] = background[image_scaling*(a.y)][3*image_scaling*x+1];
+					screen_buffer(x, yo - (a.y + y))[2] = background[image_scaling*(a.y)][3*image_scaling*x+2];
 				}
 			}
 		}
 		else{
 			for (int y = a.y; y < b.y; y++){
 				for (unsigned int x = 0; x < px; x++){
-				screen_buffer(y,a.x+x)[0] =background[image_scaling*y][3*image_scaling*a.x];
-				screen_buffer(y,a.x+x)[1] = background[image_scaling*y][3*image_scaling*a.x+1];
-				screen_buffer(y,a.x+x)[2] = background[image_scaling*y][3*image_scaling*a.x+2];
+				screen_buffer(a.x + x, yo - y)[0] =background[image_scaling*y][3*image_scaling*a.x];
+				screen_buffer(a.x + x, yo - y)[1] = background[image_scaling*y][3*image_scaling*a.x+1];
+				screen_buffer(a.x + x, yo - y)[2] = background[image_scaling*y][3*image_scaling*a.x+2];
 						
-				screen_buffer(y,b.x+x)[0] = background[image_scaling*y][3*image_scaling*b.x];
-				screen_buffer(y,b.x+x)[1] = background[image_scaling*y][3*image_scaling*b.x+1];
-				screen_buffer(y,b.x+x)[2] = background[image_scaling*y][3*image_scaling*b.x+2];
+				screen_buffer(b.x + x, yo - y)[0] = background[image_scaling*y][3*image_scaling*b.x];
+				screen_buffer(b.x + x, yo - y)[1] = background[image_scaling*y][3*image_scaling*b.x+1];
+				screen_buffer(b.x + x, yo - y)[2] = background[image_scaling*y][3*image_scaling*b.x+2];
 				}
 			}
 			for (int y= 0; y < px; y++){
 				for (int x = a.x; x < b.x; x++){
-					screen_buffer(a.y+y,x)[0] = background[image_scaling*a.y][3*image_scaling*x];
-					screen_buffer(a.y+y,x)[1] = background[image_scaling*a.y][3*image_scaling*x+1];
-					screen_buffer(a.y+y,x)[2] = background[image_scaling*a.y][3*image_scaling*x+2];
+					screen_buffer(x, yo - (a.y+y))[0] = background[image_scaling*a.y][3*image_scaling*x];
+					screen_buffer(x, yo - (a.y + y))[1] = background[image_scaling*a.y][3*image_scaling*x+1];
+					screen_buffer(x, yo - (a.y + y))[2] = background[image_scaling*a.y][3*image_scaling*x+2];
 						
-					screen_buffer(b.y+y,x)[0] = background[image_scaling*b.y][3*image_scaling*x];
-					screen_buffer(b.y+y,x)[1] = background[image_scaling*b.y][3*image_scaling*x+1];
-					screen_buffer(b.y+y,x)[2] = background[image_scaling*b.y][3*image_scaling*x+2];
+					screen_buffer(x, yo - (b.y + y))[0] = background[image_scaling*b.y][3*image_scaling*x];
+					screen_buffer(x, yo - (b.y + y))[1] = background[image_scaling*b.y][3*image_scaling*x+1];
+					screen_buffer(x, yo - (b.y + y))[2] = background[image_scaling*b.y][3*image_scaling*x+2];
 				}
 			}
 		}
@@ -8106,39 +8139,39 @@ void ns_area_handler::remove_box_from_screen_buffer(const std::vector<ns_area_bo
 		if (cur_box->image_coords.bottom_right == ns_vector_2i(-1,-1)){
 			for (unsigned int y = a.y; y < h; y++){
 				for (unsigned int x = 0; x < px; x++){
-					screen_buffer(y,a.x+x)[0] = background[image_scaling*y][image_scaling*a.x];
-					screen_buffer(y,a.x+x)[1] = background[image_scaling*y][image_scaling*a.x];
-					screen_buffer(y,a.x+x)[2] = background[image_scaling*y][image_scaling*a.x];
+					screen_buffer(a.x + x, yo - y)[0] = background[image_scaling*y][image_scaling*a.x];
+					screen_buffer(a.x + x, yo - y)[1] = background[image_scaling*y][image_scaling*a.x];
+					screen_buffer(a.x + x, yo - y)[2] = background[image_scaling*y][image_scaling*a.x];
 				}
 			}
 			for (int y = 0; y < px; y++){
 				for (unsigned int x = a.x; x < w; x++){
-					screen_buffer(a.y+y,x)[0] = background[image_scaling*a.y][image_scaling*x];
-					screen_buffer(a.y+y,x)[1] = background[image_scaling*a.y][image_scaling*x];
-					screen_buffer(a.y+y,x)[2] = background[image_scaling*a.y][image_scaling*x];
+					screen_buffer(x, yo - (a.y+y))[0] = background[image_scaling*a.y][image_scaling*x];
+					screen_buffer(x, yo - (a.y+y))[1] = background[image_scaling*a.y][image_scaling*x];
+					screen_buffer(x, yo - (a.y+y))[2] = background[image_scaling*a.y][image_scaling*x];
 				}
 			}
 		}
 		else{
 			for (int y = a.y; y < b.y; y++){
 				for (unsigned int x = 0; x < px; x++){
-					screen_buffer(y,a.x+x)[0] = background[image_scaling*y][image_scaling*a.x];
-					screen_buffer(y,a.x+x)[1] = background[image_scaling*y][image_scaling*a.x];
-					screen_buffer(y,a.x+x)[2] = background[image_scaling*y][image_scaling*a.x];
+					screen_buffer(a.x + x, yo - y)[0] = background[image_scaling*y][image_scaling*a.x];
+					screen_buffer(a.x + x, yo - y)[1] = background[image_scaling*y][image_scaling*a.x];
+					screen_buffer(a.x + x, yo - y)[2] = background[image_scaling*y][image_scaling*a.x];
 								
-					screen_buffer(y,b.x+x)[0] = background[image_scaling*y][image_scaling*b.x];
-					screen_buffer(y,b.x+x)[1] = background[image_scaling*y][image_scaling*b.x];
-					screen_buffer(y,b.x+x)[2] = background[image_scaling*y][image_scaling*b.x];
+					screen_buffer(b.x + x, yo - y)[0] = background[image_scaling*y][image_scaling*b.x];
+					screen_buffer(b.x + x, yo - y)[1] = background[image_scaling*y][image_scaling*b.x];
+					screen_buffer(b.x + x, yo - y)[2] = background[image_scaling*y][image_scaling*b.x];
 				}
 			}
 			for (unsigned int y= 0; y< px; y++){
 				for (int x = a.x; x < b.x; x++){
-					screen_buffer(a.y+y,x)[0] = background[image_scaling*a.y][image_scaling*x];
-					screen_buffer(a.y+y,x)[1] = background[image_scaling*a.y][image_scaling*x];
-					screen_buffer(a.y+y,x)[2] = background[image_scaling*a.y][image_scaling*x];
-					screen_buffer(b.y+y,x)[0] = background[image_scaling*b.y][image_scaling*x];
-					screen_buffer(b.y+y,x)[1] = background[image_scaling*b.y][image_scaling*x];
-					screen_buffer(b.y+y,x)[2] = background[image_scaling*b.y][image_scaling*x];
+					screen_buffer(x, yo - (a.y+y))[0] = background[image_scaling*a.y][image_scaling*x];
+					screen_buffer(x, yo - (a.y+y))[1] = background[image_scaling*a.y][image_scaling*x];
+					screen_buffer(x, yo - (a.y+y))[2] = background[image_scaling*a.y][image_scaling*x];
+					screen_buffer(x, yo - (b.y+y))[0] = background[image_scaling*b.y][image_scaling*x];
+					screen_buffer(x, yo - (b.y+y))[1] = background[image_scaling*b.y][image_scaling*x];
+					screen_buffer(x, yo - (b.y+y))[2] = background[image_scaling*b.y][image_scaling*x];
 				}
 			}
 		}

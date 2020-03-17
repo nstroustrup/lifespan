@@ -131,7 +131,7 @@ void ns_setup_default_gl_window_settings(Fl_Gl_Window * window) {
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	glFrustum(-1.0, 1.0, -1.0, 1.0, /* transformation */
-		5, 20.0);
+		0, 1);
 	glMatrixMode(GL_MODELVIEW);  /* back to modelview matrix */
 	glViewport(0, 0, window->pixel_w(), window->pixel_h());
 	//glTranslatef(0,0,-10);
@@ -141,7 +141,7 @@ void ns_setup_default_gl_window_settings(Fl_Gl_Window * window) {
 	//glOrtho(0, 1, 0, 1, -1, 1);
 	glEnable(GL_TEXTURE_2D);
 	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
-	glDisable(GL_DEPTH_TEST);
+	//glDisable(GL_DEPTH_TEST);
 
 }
 // OPENGL WINDOW CLASS

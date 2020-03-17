@@ -629,7 +629,7 @@ private:
 	}
 	inline void map_value_from_top_graph_onto_image(const float &x, const float &y, unsigned long & x1, unsigned long & y1) {
 		x1 = graph_top_specifics.boundary_bottom_and_left.x + (unsigned int)(graph_top_specifics.dx*(x - graph_top_specifics.axes.boundary(0) + graph_top_specifics.axes.axis_offset(0)));
-		y1 = base_graph_top.properties().height - graph_top_specifics.boundary_bottom_and_left.y - (unsigned int)(graph_top_specifics.dy*(y - graph_top_specifics.axes.boundary(2) + graph_top_specifics.axes.axis_offset(1)));
+		y1 =  (unsigned int)(graph_top_specifics.dy*(y - graph_top_specifics.axes.boundary(2) + graph_top_specifics.axes.axis_offset(1)));
 	}
 
 	inline void map_value_from_bottom_graph_onto_image(const float &x, const float &y, unsigned long & x1, unsigned long & y1) {
@@ -655,15 +655,15 @@ private:
 		map_value_from_bottom_graph_onto_image(time_axis[current_element], slope_vals[segment_id].y[segment_element_id], x_slope, y_slope);
 		for (int y = -2* marker_resize_factor; y <= 2 * marker_resize_factor; y++)
 			for (int x = -2 * marker_resize_factor; x <= 2 * marker_resize_factor; x++) {
-				const ns_vector_2i p(x_score + x + border().x + position.x, y_score + y + border().y + position.y);
-				buffer(p.x,p.y)[0] = 255;
+				const ns_vector_2i p(x_score + x + border().x + position.x, buffer_size.y - 1 - (y + border().y + position.y));
+				buffer(p.x,buffer_size.y-1-p.y)[0] = 255;
 				buffer(p.x, p.y)[1] = 0;
 				buffer(p.x, p.y)[2] = 0;
 				buffer(p.x, p.y)[3] = 255;
 				if (graph_contents == ns_animal_telemetry::ns_all || graph_contents == ns_animal_telemetry::ns_movement_intensity || graph_contents == ns_animal_telemetry::ns_movement_intensity_slope_1x
 					|| graph_contents == ns_animal_telemetry::ns_movement_intensity_slope_2x
 					|| graph_contents == ns_animal_telemetry::ns_movement_intensity_slope_4x) {
-					const ns_vector_2i p2(x_size + x + border().x + position.x, y_size + y + border().y + position.y);
+					const ns_vector_2i p2(x_size + x + border().x + position.x, buffer_size.y - 1 - (y_size + y + border().y + position.y));
 					buffer(p2.x, p2.y)[0] = 255;
 					buffer(p2.x, p2.y)[1] = 0;
 					buffer(p2.x, p2.y)[2] = 0;
@@ -672,7 +672,7 @@ private:
 				if (graph_contents == ns_animal_telemetry::ns_movement_intensity_slope_1x
 					|| graph_contents == ns_animal_telemetry::ns_movement_intensity_slope_2x
 					|| graph_contents == ns_animal_telemetry::ns_movement_intensity_slope_4x) {
-					const ns_vector_2i p3(x_slope + x + border().x + position.x, y_slope + y + border().y + position.y);
+					const ns_vector_2i p3(x_slope + x + border().x + position.x, buffer_size.y - 1 - (y_slope + y + border().y + position.y));
 					buffer(p3.x, p3.y)[0] = 255;
 					buffer(p3.x, p3.y)[1] = 0;
 					buffer(p3.x, p3.y)[2] = 0;

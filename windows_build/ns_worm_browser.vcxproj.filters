@@ -1167,6 +1167,9 @@
     <ClInclude Include="..\ns_image_server\image_processing\ns_worm_detection_model_training.h">
       <Filter>image_processing</Filter>
     </ClInclude>
+    <ClInclude Include="..\ns_worm_browser\ns_tiled_gl_image.h">
+      <Filter>worm_browser</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="start.tif">

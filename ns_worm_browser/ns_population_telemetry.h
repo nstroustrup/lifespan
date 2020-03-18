@@ -315,8 +315,8 @@ private:
 
 		ns_graph_axes axes2;
 		if (movement_plot == ns_plot_death_times_absolute) {
-			axes2.boundary(0) = axes2.boundary(2) = tmin * .95;
-			axes2.boundary(1) = axes2.boundary(3) = tmax*1.05;
+			axes2.boundary(0) = axes2.boundary(2) = min(tmin * .95, tmin * 1.05);	//could be negative
+			axes2.boundary(1) = axes2.boundary(3) = max(tmax * .95, tmax * 1.05);
 		}
 		else {
 			axes2.boundary(0) = tmin * .95;
@@ -340,9 +340,9 @@ private:
 		y1 = movement_vs_posture_image.properties().height - movement_vs_posture_specifics.boundary_bottom_and_left.y - (unsigned int)(movement_vs_posture_specifics.dy * (y - movement_vs_posture_specifics.axes.boundary(2) + movement_vs_posture_specifics.axes.axis_offset(1)));
 	}
 	inline unsigned long map_pixel_from_image_onto_buffer(const unsigned long& x, const unsigned long& y, const ns_vector_2i& position, const ns_vector_2i& buffer_size) {
-		return 3 * ((buffer_size.y - y - position.y - 1) * buffer_size.x + x + position.x);
+		return 4 * ((buffer_size.y - y - position.y - 1) * buffer_size.x + x + position.x);
 	}
-	void overlay_metadata(const ns_population_telemetry::ns_graph_contents graph_contents, const ns_vector_2i& position, const ns_vector_2i& buffer_size, const long marker_resize_factor, ns_8_bit* buffer) {
+	void overlay_metadata(const ns_population_telemetry::ns_graph_contents graph_contents, const ns_vector_2i& position, const ns_vector_2i& buffer_size, const long marker_resize_factor, ns_tiled_gl_image & buffer) {
 
 	}
 	ns_graph_contents last_graph_contents;
@@ -898,17 +898,17 @@ public:
 						movement_vs_posture_y_axis_label = "Duration observed (days)";
 
 
-					
+
 						if (death_plot == ns_plot_movement_death) {
-							if (set.descriptions[i].by_hand.movement_based_death_annotation != 0) 
+							if (set.descriptions[i].by_hand.movement_based_death_annotation != 0)
 								pair_to_plot.first = set.descriptions[i].by_hand.movement_based_death_annotation;
 							else
 								pair_to_plot.first = set.descriptions[i].machine.movement_based_death_annotation;
 						}
 						else if (death_plot == ns_plot_expansion_death) {
-							if (set.descriptions[i].by_hand.death_associated_expansion_start != 0) 
+							if (set.descriptions[i].by_hand.death_associated_expansion_start != 0)
 								pair_to_plot.first = set.descriptions[i].by_hand.death_associated_expansion_start;
-							else 
+							else
 								pair_to_plot.first = set.descriptions[i].machine.death_associated_expansion_start;
 						}
 						else if (death_plot == ns_plot_best_guess) {
@@ -926,19 +926,16 @@ public:
 							pair_to_plot.first = ns_dying_animal_description_group<ns_death_time_annotation_time_interval>::calculate_best_guess_death_annotation(movement, death_associated_expansion);
 						}
 						else throw ns_ex("Unknown death plot type!");
-						if (set.descriptions[i].machine.last_fast_movement_annotation != 0){
-							if (set.descriptions[i].machine.stationary_worm_dissapearance != 0) {
+						double observation_duration = set.descriptions[i].machine.observation_duration();
+						if (observation_duration != -1) {
+							pair_to_plot.second = ns_scatter_plot_coordinate(observation_duration);
+						}
+						else {
+							auto p = last_measurement_cache.find(r->first);
+							if (p != last_measurement_cache.end() && set.descriptions[i].machine.last_fast_movement_annotation != 0)
 								pair_to_plot.second = ns_scatter_plot_coordinate(
-									set.descriptions[i].machine.stationary_worm_dissapearance->time.best_estimate_event_time_for_possible_partially_unbounded_interval() -
+									p->second -
 									set.descriptions[i].machine.last_fast_movement_annotation->time.best_estimate_event_time_for_possible_partially_unbounded_interval());
-							}
-							else {
-								auto p = last_measurement_cache.find(r->first);
-								if (p != last_measurement_cache.end())
-									pair_to_plot.second = ns_scatter_plot_coordinate(
-										p->second -
-										set.descriptions[i].machine.last_fast_movement_annotation->time.best_estimate_event_time_for_possible_partially_unbounded_interval());
-							}
 						}
 					}
 				}
@@ -995,6 +992,8 @@ public:
 			undefined_y_position = max_y_x_diff * 1.15;
 		else if (regression_plot == ns_death_vs_observation_duration)
 			undefined_y_position = (max_y) * 1.15;
+		else if (max_y < metadata.time_at_which_animals_had_zero_age)
+			undefined_y_position = (max_x - metadata.time_at_which_animals_had_zero_age) * 1.15;	//if no values are specified for any point
 		else
 			undefined_y_position = (max_y - metadata.time_at_which_animals_had_zero_age) * 1.15;
 
@@ -1044,7 +1043,7 @@ public:
 		undefined_y_position = undefined_y_position / 60.0 / 60.0 / 24.0;
 
 	}
-	void draw(const ns_graph_contents graph_contents, const ns_vector_2i& position, const ns_vector_2i& graph_size, const ns_vector_2i& buffer_size, const float marker_resize_factor, ns_8_bit* buffer, const unsigned long start_time = 0, const unsigned long stop_time = UINT_MAX) {
+	void draw(const ns_graph_contents graph_contents, const ns_vector_2i& position, const ns_vector_2i& graph_size, const ns_vector_2i& buffer_size, const float marker_resize_factor, ns_tiled_gl_image & buffer, const unsigned long start_time = 0, const unsigned long stop_time = UINT_MAX) {
 		
 		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Starting to draw telemetry."));
 		if (survival_image.properties().height == 0 || graph_contents != last_graph_contents || last_start_time != start_time || last_stop_time != stop_time || last_rescale_factor != marker_resize_factor || !(last_graph_size == graph_size)) {
@@ -1088,38 +1087,50 @@ public:
 		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Drawing everything"));
 
 		const unsigned long movement_x_offset(2 * border().x + survival_image.properties().width+ survival_image_legend.properties().width);
+
+		const long yo = (graph_size.y - 1);
 		//top margin
 		for (unsigned int y = 0; y < border().y; y++)
-			for (unsigned int x = 0; x < graph_size.x; x++)
+			for (unsigned int x = 0; x < graph_size.x; x++) {
 				for (unsigned int c = 0; c < 3; c++)
-					buffer[map_pixel_from_image_onto_buffer(x, y, position, buffer_size) + c] = 0;
+					buffer(x + position.x, yo-(y + position.y))[c] = 0;
+				buffer(x + position.x, yo - (y + position.y))[3] = 255;
+			}
 		//TOP GRAPH
 		for (unsigned int y = 0; y < survival_image.properties().height; y++) {
 			//left margin
-			for (unsigned int x = 0; x < border().x; x++)
+			for (unsigned int x = 0; x < border().x; x++) {
 				for (unsigned int c = 0; c < 3; c++)
-					buffer[map_pixel_from_image_onto_buffer(x, y + border().y, position, buffer_size) + c] = 0;
+					buffer(x + position.x, yo - (y + border().y + position.y))[c] = 0;
+				buffer(x + position.x, yo - (y + border().y + position.y))[3] = 0;
+			}
 			//graph
 			for (unsigned int x = 0; x < survival_image.properties().width; x++) {
-				for (unsigned int c = 0; c < 3; c++)
-					buffer[map_pixel_from_image_onto_buffer(x + border().x, y + border().y, position, buffer_size) + c] = survival_image[y][3 * x + c];
+				for (unsigned int c = 0; c < 3; c++)	
+					buffer(x + border().x + position.x, yo - (y + border().y + position.y))[c] = survival_image[y][3 * x + c];
+				buffer(x + border().x + position.x, yo - (y + border().y + position.y))[3] = 255;
 			}
 			//graph legend
 			for (unsigned int x = 0; x < survival_image_legend.properties().width; x++) {
 				for (unsigned int c = 0; c < 3; c++)
-					buffer[map_pixel_from_image_onto_buffer(x + border().x+ survival_image.properties().width, y + border().y, position, buffer_size) + c] = survival_image_legend[y][3 * x + c];
+					buffer(x + border().x + survival_image.properties().width+ position.x, yo - (y + border().y + position.y))[c] = survival_image_legend[y][3 * x + c];
+				buffer(x + border().x + survival_image.properties().width + position.x, yo - (y + border().y + position.y))[3] = 255;
 			}
 
 			//right margin
-			for (unsigned int x = survival_image.properties().width + survival_image_legend.properties().width+border().x; x < movement_x_offset; x++)
+			for (unsigned int x = survival_image.properties().width + survival_image_legend.properties().width + border().x; x < movement_x_offset; x++) {
 				for (unsigned int c = 0; c < 3; c++)
-					buffer[map_pixel_from_image_onto_buffer(x, y + border().y, position, buffer_size) + c] = 0;
+					buffer(x + position.x, yo - (y + border().y + position.y))[c] = 0;
+				buffer(x + position.x, yo - (y + border().y + position.y))[3] = 255;
+			}
 		}
 		//bottom margin
 		for (unsigned int y = survival_image.properties().height+border().y; y < graph_size.y; y++)
-			for (unsigned int x = 0; x < movement_x_offset; x++)
+			for (unsigned int x = 0; x < movement_x_offset; x++) {
 				for (unsigned int c = 0; c < 3; c++)
-					buffer[map_pixel_from_image_onto_buffer(x, y, position, buffer_size) + c] = 0;
+					buffer(x + position.x, yo - (y + position.y))[c] = 0;
+				buffer(x + position.x, yo - (y + position.y))[3] = 255;
+			}
 
 		if (graph_contents == ns_population_telemetry::ns_movement_vs_posture ) {
 			//BOTTOM GRAPH
@@ -1132,26 +1143,31 @@ public:
 				//graph
 				for (unsigned int x = 0; x < movement_vs_posture_image.properties().width; x++) {
 					for (unsigned int c = 0; c < 3; c++)
-						buffer[map_pixel_from_image_onto_buffer(x + movement_x_offset, y + border().y, position, buffer_size) + c] = movement_vs_posture_image[y][3 * x + c];
+						buffer(x + movement_x_offset + position.x, yo - (y + border().y + position.y))[c]= movement_vs_posture_image[y][3 * x + c];
+					buffer(x + movement_x_offset + position.x, yo - (y + border().y + position.y))[3] = 255;
 				}
 				//graph legend
 				for (unsigned int x = 0; x < movement_vs_posture_image_legend.properties().width; x++) {
 					for (unsigned int c = 0; c < 3; c++)
-						buffer[map_pixel_from_image_onto_buffer(x + movement_x_offset + movement_vs_posture_image.properties().width, y + border().y, position, buffer_size) + c] = movement_vs_posture_image_legend[y][3 * x + c];
+						buffer(x + movement_x_offset + movement_vs_posture_image.properties().width + position.x, yo - (y + border().y + position.y))[c] = movement_vs_posture_image_legend[y][3 * x + c];
+					buffer(x + movement_x_offset + movement_vs_posture_image.properties().width + position.x, yo - (y + border().y + position.y))[3] = 255;
 				}
 
 				//right margin
-				for (unsigned int x = movement_vs_posture_image.properties().width+ movement_vs_posture_image_legend.properties().width+ movement_x_offset; x < graph_size.x; x++)
+				for (unsigned int x = movement_vs_posture_image.properties().width + movement_vs_posture_image_legend.properties().width + movement_x_offset; x < graph_size.x; x++) {
 					for (unsigned int c = 0; c < 3; c++)
-						buffer[map_pixel_from_image_onto_buffer(x , y + border().y, position, buffer_size) + c] = 0;
+						buffer(x + position.x, yo - (y + border().y + position.y))[c] = 0;
+					buffer(x + position.x, yo - (y + border().y + position.y))[3] = 255;
+				}
 			}
 			//bottom margin
 			for (unsigned int y = movement_vs_posture_image.properties().height + border().y; y < graph_size.y; y++)
-				for (unsigned int x = movement_x_offset; x < graph_size.x; x++)
+				for (unsigned int x = movement_x_offset; x < graph_size.x; x++) {
 					for (unsigned int c = 0; c < 3; c++)
-						buffer[map_pixel_from_image_onto_buffer(x, y, position, buffer_size) + c] = 0;
+						buffer(x + position.x, yo - (y + position.y))[c] = 0;
+					buffer(x + position.x, yo - (y + position.y))[3] = 255;
+				}
 		}
-		
 		overlay_metadata(graph_contents, position, buffer_size, marker_resize_factor, buffer);
 	}
 };

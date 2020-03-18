@@ -501,6 +501,7 @@ public:
 	const ns_analyzed_image_time_path_element & element(const unsigned long i) const { return elements[i]; }
 
 	void write_detailed_movement_quantification_analysis_header(std::ostream & o);
+	static void write_path_classification_diagnostics_header(std::ostream& o);
 	static void write_posture_analysis_optimization_data_header(std::ostream & o);
 	static void write_expansion_analysis_optimization_data_header(std::ostream & o);
 	void write_posture_analysis_optimization_data(const std::string & software_version_number,const ns_stationary_path_id & id, const std::vector<double> & thresholds, const std::vector<unsigned long> & hold_times, const ns_region_metadata & m, const ns_time_series_denoising_parameters & denoising_parameters, std::ostream & o, ns_parameter_optimization_results & results,ns_parameter_optimization_results * results_2) const;
@@ -542,6 +543,8 @@ public:
 	ns_image_properties registered_image_properties;
 	//void output_image_movement_summary(std::ostream & o);
 	void write_detailed_movement_quantification_analysis_data(const ns_region_metadata & m, const unsigned long group_id, const unsigned long path_id, std::ostream & o,const bool output_only_elements_with_hand,const bool abbreviated_time_series=false) const;
+	void write_path_classification_diagnostics_data(const ns_region_metadata& m, const unsigned long group_id, const unsigned long path_id, std::ostream& o, const bool output_only_elements_with_hand) const;
+
 	void calculate_movement_quantification_summary(ns_movement_analysis_result& result) const;
 	static ns_vector_2i max_step_alignment_offset();
 
@@ -814,8 +817,8 @@ public:
 	
 	
 	//void write_summary_movement_quantification_analysis_data(const ns_region_metadata & m, std::ostream & o)const;
-
-	void write_detailed_movement_quantification_analysis_data(const ns_region_metadata & m, std::ostream & o,const bool only_output_elements_with_by_hand_data,const long specific_animal_id=-1, const bool abbreviated_time_series=false)const;
+	void write_detailed_movement_quantification_analysis_data(const ns_region_metadata& m, std::ostream& o, const bool only_output_elements_with_by_hand_data, const long specific_animal_id = -1, const bool abbreviated_time_series = false)const;
+	void write_path_classification_diagnostics_data(const ns_region_metadata & m, std::ostream & o,const bool only_output_elements_with_by_hand_data,const long specific_animal_id=-1)const;
 	void write_posture_analysis_optimization_data(const std::string & software_version_number,const std::vector<double> & thresholds, const std::vector<unsigned long> & hold_times, const ns_region_metadata & m,std::ostream & o, ns_parameter_optimization_results & results, ns_parameter_optimization_results * results_2=0) const;
 	void write_expansion_analysis_optimization_data(const std::vector<double> & thresholds, const std::vector<unsigned long> & hold_times, const ns_region_metadata & m, std::ostream & o, ns_parameter_optimization_results & results, ns_parameter_optimization_results * results_2=0) const;
 

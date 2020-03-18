@@ -46,6 +46,8 @@
 #include "ns_mask_management.h"
 #include "ns_lifespan_statistics.h"
 #include "ns_machine_analysis_data_loader.h"
+
+#include "ns_tiled_gl_image.h"
 //#include "ns_worm_tracker.h"
 using namespace std;
 
@@ -202,11 +204,11 @@ class ns_area_handler{
 public:
 	ns_area_handler():unfinished_box_exists(false),selected_box_exists(false),moved_since_last_click(false), last_pixel_scaling(0),created_new_box_in_current_click(false){current_unfinished_box = boxes.end(); selected_box = boxes.end();}
 	typedef enum {ns_select_handle,ns_move_handle,ns_deselect_handle,ns_move_all_boxes} ns_handle_action;
-	void undraw_all_boxes(ns_8_bit * screen_buffer, const ns_image_standard & background, const unsigned long image_scaling, const double pixel_scaling) const;
-	void click(const ns_handle_action & action,const ns_button_press & current_locations,ns_button_press & drag_start_locations, ns_8_bit * screen_buffer, const ns_image_standard & background,const unsigned long scaling, const double pixel_scaling);
+	void undraw_all_boxes(ns_tiled_gl_image & screen_buffer, const ns_image_standard & background, const unsigned long image_scaling, const double pixel_scaling) const;
+	void click(const ns_handle_action & action,const ns_button_press & current_locations,ns_button_press & drag_start_locations, ns_tiled_gl_image & screen_buffer, const ns_image_standard & background,const unsigned long scaling, const double pixel_scaling);
 	void output_boxes(std::ostream & out, const std::string & device_name,const float & resolution,const std::string & units);
 	void clear_boxes();
-	void draw_boxes(ns_8_bit * screen_buffer,const ns_image_properties & buffer_size,const unsigned long image_scaling, const double pixel_scaling) const;
+	void draw_boxes(ns_tiled_gl_image & screen_buffer,const ns_image_properties & buffer_size,const unsigned long image_scaling, const double pixel_scaling) const;
 
 	void register_size_change(ns_image_properties & prop){
 		bool detete_current_unfinished(false);
@@ -227,7 +229,7 @@ public:
 	}
 private:
 	double last_pixel_scaling;
-	void remove_box_from_screen_buffer(const std::vector<ns_area_box>::const_iterator b, ns_8_bit * screen_buffer, const ns_image_standard & background,const unsigned long scaling, const double pixel_scaling) const;
+	void remove_box_from_screen_buffer(const std::vector<ns_area_box>::const_iterator b, ns_tiled_gl_image & screen_buffer, const ns_image_standard & background,const unsigned long scaling, const double pixel_scaling) const;
 	std::vector<ns_area_box>::iterator current_unfinished_box;
 	std::vector<ns_area_box>::iterator selected_box;
 	ns_box::ns_box_location cur_box_handle;
@@ -519,19 +521,16 @@ public:
 	
 };
 
-
-
 class ns_gl_window_data{
 public:
-	ns_gl_window_data(const string & window_name):gl_buffer(0),display_lock(string("ns_lock::display_") + window_name),redraw_requested(false),display_rescale_factor(1.0 / ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor),
+	ns_gl_window_data(const string & window_name):display_lock(string("ns_lock::display_") + window_name),redraw_requested(false),display_rescale_factor(1.0 / ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor),
 		dynamic_range_rescale_factor(1), render_rescale_factor(1),worm_image_size(10,10),telemetry_size(10,10), gl_image_size(10,10),image_zoom(1), pre_gl_downsample(1){}
 	ns_vector_2i worm_image_size,
 		telemetry_size,
 		gl_image_size;
 	float image_zoom;
 	unsigned int pre_gl_downsample;
-	ns_8_bit * gl_buffer;
-	ns_image_properties gl_buffer_properties;
+	ns_tiled_gl_image gl_buffer;
 	ns_lock display_lock;
 	float display_rescale_factor;	//the rendered image is drawn larger to the gl devioce
 	float render_rescale_factor;	//the renderer is requested to draw an image this fold larger.
@@ -541,7 +540,7 @@ public:
 	void redraw_screen(){
 		redraw_requested = true;
 	}
-	void update_display();
+	void update_display(long x, long y);
 	//void redraw_screen(const unsigned long w, const unsigned long h,const bool resize=true){
 	//	redraw_requested=true;
 	//}	
@@ -683,7 +682,7 @@ public:
 	typedef enum{ns_whole_experiment,ns_device,ns_plate} ns_optimization_subject;
 	void output_movement_analysis_optimization_data(const ns_optimization_subject & subject, const ns_parameter_set_range & range, bool run_posture, bool run_expansion);
 
-	typedef enum{ns_quantification_summary,ns_quantification_raw_machine,ns_quantification_by_hand, ns_quantification_by_hand_or_machine, ns_build_worm_markov_posture_model_from_by_hand_annotations,ns_quantification_abbreviated_by_hand_machine} ns_movement_quantification_type;
+	typedef enum{ns_quantification_summary,ns_quantification_raw_machine,ns_quantification_by_hand, ns_quantification_by_hand_or_machine, ns_build_worm_markov_posture_model_from_by_hand_annotations,ns_quantification_abbreviated_by_hand_machine, ns_quantification_path_classification_diagnostics} ns_movement_quantification_type;
 	void generate_experiment_movement_image_quantification_analysis_data(ns_movement_quantification_type  detail_level, const ns_optimization_subject & subject);
 
 	void generate_training_set_from_by_hand_annotation();

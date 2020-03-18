@@ -2790,6 +2790,7 @@ void ns_analyzed_image_time_path::calculate_movement_quantification_summary(ns_m
 	if (result.quantification_summary.count_after_death != 0) 
 		result.quantification_summary.variability_after_death = result.quantification_summary.variability_after_death / result.quantification_summary.count_after_death;
 }
+
 void ns_analyzed_image_time_path::write_detailed_movement_quantification_analysis_header(std::ostream & o){
 	ns_region_metadata::out_JMP_plate_identity_header_short(o);
 	o << ",";
@@ -2905,6 +2906,82 @@ struct ns_event_time_to_use {
 	unsigned long event_index,before_index, after_index;
 	bool found;
 };
+
+struct ns_basic_stats {
+	ns_basic_stats() :max(-DBL_MAX), min(DBL_MAX), sum(0), average(0), var(0) {}
+	double max, min, sum, average, var;
+	unsigned long N;
+	template<class T>
+	void reg(const T& t) {
+		N++;
+		if (t < min) min = t;
+		if (t > max) max = t;
+		average += t;
+	}
+	static void write_header(const std::string& label, std::ostream& o) {
+		o << label << " Max," << label << " Min," << label << " Average," << label << " Variance";
+	}
+	void write(ostream& o) {
+		o << max << "," << min << "," << average << "," << var;
+	}
+};
+void ns_analyzed_image_time_path::write_path_classification_diagnostics_header(std::ostream& o) {
+	ns_region_metadata::out_JMP_plate_identity_header_short(o);
+	o << ",Group ID, Path ID, Excluded,Flag,Censored,Number of Animals In Clump, Number of Images,Solution loglikelihood,Animal died, Animal Expanded,Low Density,First Element Time (days), last Element time (days),";
+	ns_basic_stats::write_header("Intensity Slope", o);
+	o << ","; ns_basic_stats::write_header("Intensity Value", o);
+	o << ","; ns_basic_stats::write_header("Movement", o);
+}
+
+void ns_analyzed_image_time_path::write_path_classification_diagnostics_data(const ns_region_metadata& m, const unsigned long group_id, const unsigned long path_id, std::ostream& o, const bool output_only_elements_with_hand) const {
+	if (output_only_elements_with_hand && by_hand_annotation_event_times[(int)ns_movement_cessation].period_end_was_not_observed)
+		return;
+	m.out_JMP_plate_identity_data_short(o);
+	o << ",";
+	o << group_id << "," << path_id << ","
+		<< ((censoring_and_flag_details.is_excluded() || censoring_and_flag_details.flag.event_should_be_excluded() || this->entirely_excluded) ? "1" : "0") << ",";
+	if (censoring_and_flag_details.flag.specified())
+		o << censoring_and_flag_details.flag.label_short;
+	o << ","
+		<< (censoring_and_flag_details.is_censored() ? "1" : "0") << ","
+		<< censoring_and_flag_details.number_of_worms() << ",";
+
+	o << this->elements.size() << ",";
+	if (death_time_annotations().empty())
+		o << ",";
+	else o << death_time_annotations().events.begin()->loglikelihood << ",";
+	o << this->movement_analysis_result.animal_died() << ",";
+	o << this->movement_analysis_result.animal_contracted() << ",";
+
+	o << this->low_density_path << ",";
+	o << (elements.begin()->absolute_time - first_stationary_timepoint()) / 60.0 / 60/24.0 << "," << (elements.rbegin()->absolute_time - first_stationary_timepoint()) / 60.0 / 60 / 24.0 << ",";
+	ns_basic_stats intensity_slope, intensity_val, movement_val;
+	for (unsigned int i = 0; i < elements.size(); i++) {
+		intensity_slope.reg(elements[i].measurements.change_in_total_stabilized_intensity_4x);
+		intensity_val.reg(elements[i].measurements.total_intensity_within_stabilized_denoised);
+		movement_val.reg(elements[i].measurements.death_time_posture_analysis_measure_v2_uncropped());
+	}
+	intensity_slope.average /= intensity_slope.N;
+	intensity_val.average /= intensity_val.N;
+	movement_val.average /= movement_val.N;
+
+	for (unsigned int i = 0; i < elements.size(); i++) {
+		intensity_slope.var += pow(elements[i].measurements.change_in_total_stabilized_intensity_1x - intensity_slope.average, 2);
+		intensity_val.var += pow(elements[i].measurements.total_intensity_within_stabilized_denoised - intensity_val.average, 2);
+		movement_val.var += pow(elements[i].measurements.death_time_posture_analysis_measure_v2_uncropped() - movement_val.average, 2);
+	}
+	intensity_slope.var = sqrt(intensity_slope.var / intensity_slope.N);
+	intensity_val.var = sqrt(intensity_val.var / intensity_val.N);
+	movement_val.var = sqrt(movement_val.var / movement_val.N);
+	intensity_slope.write(o);
+	o << ",";
+	intensity_val.write(o);
+	o << ",";
+	movement_val.write(o);
+	o << "\n";
+}
+
+
 void ns_analyzed_image_time_path::write_detailed_movement_quantification_analysis_data(const ns_region_metadata & m, const unsigned long group_id, const unsigned long path_id, std::ostream & o, const bool output_only_elements_with_hand,const bool abbreviated_time_series)const{
 	if (output_only_elements_with_hand && by_hand_annotation_event_times[(int)ns_movement_cessation].period_end_was_not_observed)
 		return;
@@ -2961,8 +3038,6 @@ void ns_analyzed_image_time_path::write_detailed_movement_quantification_analysi
 
 	ns_time_series_event_aligner event_aligner;
 	event_aligner.calculate_alignment_dts(by_hand_annotation_event_times);
-	if (m.device == "duck" && m.sample_name == "duck_b" && m.region_name == "3" && group_id == 20)
-		cerr << "WHA?";
 	for (unsigned long k = start_index; k < end_index; k++){
 		m.out_JMP_plate_identity_data_short(o);
 		o << ",";
@@ -3119,6 +3194,20 @@ void ns_time_path_image_movement_analyzer<allocator_T>::write_detailed_movement_
 			if (groups[i].paths[j].movement_analysis_result.state_intervals.size() != ns_movement_number_of_states)
 				throw ns_ex("ns_time_path_image_movement_analyzer::write_movement_quantification_analysis_data()::Event Indicies not loaded properly!");
 			groups[i].paths[j].write_detailed_movement_quantification_analysis_data(m,i,j,o,only_output_elements_with_by_hand_data,abbreviated_time_series);
+		}
+	}
+}
+
+template<class allocator_T>
+void ns_time_path_image_movement_analyzer<allocator_T>::write_path_classification_diagnostics_data(const ns_region_metadata& m, std::ostream& o, const bool only_output_elements_with_by_hand_data, const long specific_animal_id)const {
+
+	for (unsigned long i = 0; i < groups.size(); i++) {
+		for (unsigned long j = 0; j < groups[i].paths.size(); j++) {
+			if (specific_animal_id != -1 && i != specific_animal_id )
+				continue;
+			if (groups[i].paths[j].movement_analysis_result.state_intervals.size() != ns_movement_number_of_states)
+				throw ns_ex("ns_time_path_image_movement_analyzer::write_movement_quantification_analysis_data()::Event Indicies not loaded properly!");
+			groups[i].paths[j].write_path_classification_diagnostics_data(m, i, j, o, only_output_elements_with_by_hand_data);
 		}
 	}
 }

@@ -769,6 +769,7 @@
     <ClInclude Include="..\ns_worm_browser\ns_experiment_storyboard_annotater.h" />
     <ClInclude Include="..\ns_worm_browser\ns_image_series_annotater.h" />
     <ClInclude Include="..\ns_worm_browser\ns_population_telemetry.h" />
+    <ClInclude Include="..\ns_worm_browser\ns_tiled_gl_image.h" />
     <ClInclude Include="..\ns_worm_browser\ns_worm_browser.h" />
     <ClInclude Include="..\ns_worm_browser\ns_worm_detection_set_annotater.h" />
     <ClInclude Include="resource.h" />

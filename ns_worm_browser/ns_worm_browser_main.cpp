@@ -125,40 +125,47 @@ ns_worm_terminal_main_window * main_window;
 ns_worm_terminal_worm_window * worm_window;
 ns_worm_terminal_stats_window* stats_window;
 
+//only call from within valid() section of the draw function
+void ns_setup_default_gl_window_settings(Fl_Gl_Window * window) {
+	glShadeModel(GL_FLAT);
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	glFrustum(-1.0, 1.0, -1.0, 1.0, /* transformation */
+		0, 1);
+	glMatrixMode(GL_MODELVIEW);  /* back to modelview matrix */
+	glViewport(0, 0, window->pixel_w(), window->pixel_h());
+	//glTranslatef(0,0,-10);
+	window->ortho();
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	//glOrtho(0, 1, 0, 1, -1, 1);
+	glEnable(GL_TEXTURE_2D);
+	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
+	//glDisable(GL_DEPTH_TEST);
+
+}
 // OPENGL WINDOW CLASS
 class ns_worm_terminal_gl_window : public Fl_Gl_Window {
 	bool mouse_is_down;
 	ns_vector_2i mouse_click_location;
 	bool have_focus;
 
-    void fix_viewport(unsigned long x, unsigned long y, int width,int height) {
-		return;
-        glLoadIdentity();
-     
-    	glShadeModel (GL_FLAT);
-		glMatrixMode (GL_PROJECTION);    /* prepare for and then */ 
-	    glLoadIdentity ();               /* define the projection */
-	    glFrustum (-1.0, 1.0, -1.0, 1.0, /* transformation */
-	                  5, 20.0); 
-	    glMatrixMode (GL_MODELVIEW);  /* back to modelview matrix */
-	    glViewport (0,0, width,height);      /* define the viewport */
-
-    }
     // DRAW METHOD
     void draw() {
-		if (!valid()) {
-			glShadeModel(GL_FLAT);
-			glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-			glClearColor(0.0, 0.0, 0.0, 0.0);
+		if (!valid()) 
+			ns_setup_default_gl_window_settings(this);
+		try{
+			worm_learner.main_window.update_display(pixel_w(), pixel_h());
 		}
-		  try{
-				worm_learner.main_window.update_display();	 
-		  }
-		  catch(std::exception & exception){
-			ns_ex ex(exception);
-				cerr << ex.text() << "\n";
-				exit(1);
-			}
+		catch(std::exception & exception){
+		ns_ex ex(exception);
+			cerr << ex.text() << "\n";
+			exit(1);
+		}
+		catch (...) {
+			cerr << "Unknown exception occurred!" << "\n";
+			exit(1);
+		}
     }   
 	int handle(int state){
 		//Fl_Gl_Window::handle(state);
@@ -254,14 +261,15 @@ public:
         Fl_Gl_Window::resize(X,Y,W,H);
 		if (W != w() || H != h()){
 	//		cerr << W << "x" << H << " from " << w() << "x" << h() << "\n";
-       		fix_viewport(X,Y,W,H);
+       		//fix_viewport(X,Y,W,H);
 		}
    //     redraw();
     }
 
     // OPENGL WINDOW CONSTRUCTOR
     ns_worm_terminal_gl_window(int X,int Y,int W,int H,const char*L="worm window") :Fl_Gl_Window(X,Y,W,H,L),mouse_is_down(false),mouse_click_location(0,0),have_focus(false) {
-        end();
+		mode(FL_RGB8| FL_ALPHA | FL_OPENGL3 | FL_DOUBLE);
+		end();
     }
 };
 
@@ -303,14 +311,11 @@ class ns_worm_gl_window : public Fl_Gl_Window {
     }
     // DRAW METHOD
     void draw() {
-		if (!valid()) {
-			glShadeModel(GL_FLAT);
-			glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-			glClearColor(0.0, 0.0, 0.0, 0.0);
-		}
+		if (!valid()) 
+			ns_setup_default_gl_window_settings(this);
 
 		  try{
-				worm_learner.worm_window.update_display();
+				worm_learner.worm_window.update_display(pixel_w(), pixel_h());
 		  }
 		  catch(std::exception & exception){
 			ns_ex ex(exception);
@@ -433,14 +438,11 @@ class ns_worm_stats_gl_window : public Fl_Gl_Window {
 	}
 	// DRAW METHOD
 	void draw() {
-		if (!valid()) {
-			glShadeModel(GL_FLAT);
-			glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-			glClearColor(0.0, 0.0, 0.0, 0.0);
-		}
+		if (!valid())
+			ns_setup_default_gl_window_settings(this);
 
 		try {
-			worm_learner.stats_window.update_display();
+			worm_learner.stats_window.update_display(pixel_w(), pixel_h());
 		}
 		catch (std::exception& exception) {
 			ns_ex ex(exception);
@@ -1206,7 +1208,7 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 
 	static void generate_experiment_detailed_w_by_hand_movement_image_quantification_analysis_data(const std::string & value){worm_learner.generate_experiment_movement_image_quantification_analysis_data(ns_worm_learner::ns_quantification_by_hand, ns_worm_learner::ns_whole_experiment);	}
 	static void generate_experiment_abbreviated_movement_image_quantification_analysis_data(const std::string & value){worm_learner.generate_experiment_movement_image_quantification_analysis_data(ns_worm_learner::ns_quantification_abbreviated_by_hand_machine, ns_worm_learner::ns_whole_experiment);	}
-	
+	static void generate_path_path_classification_diagnostics(const std::string& value) { worm_learner.generate_experiment_movement_image_quantification_analysis_data(ns_worm_learner::ns_quantification_path_classification_diagnostics, ns_worm_learner::ns_whole_experiment); }
 	static void generate_single_frame_posture_image_pixel_data(const std::string & value){
 		worm_learner.generate_single_frame_posture_image_pixel_data((value.find("Plate") != std::string::npos));
 	}
@@ -1583,9 +1585,10 @@ public:
 
 		add(ns_menu_item_spec(generate_area_movement,"Data Files/Movement Data/_Generate Movement State Time Series"));
 		//add(ns_menu_item_spec(generate_experiment_summary_movement_image_quantification_analysis_data,"Data/Movement/Generate Summary Time Path Image Analysis Quantification Data"));
-		add(ns_menu_item_spec(generate_experiment_detailed_movement_image_quantification_analysis_data,"Data Files/Movement Data/Generate Posture Analysis Data/All Individuals (No by hand annotations)"));
-		add(ns_menu_item_spec(generate_experiment_detailed_w_by_hand_movement_image_quantification_analysis_data,"Data Files/Movement Data/Generate Posture Analysis Data/_Only By Hand Annotated Individuals"));
-		add(ns_menu_item_spec(generate_experiment_abbreviated_movement_image_quantification_analysis_data,"Data Files/Movement Data/Generate Posture Analysis Data/All Individuals, Machine and By Hand (Abbreviated Format)"));
+		add(ns_menu_item_spec(generate_experiment_abbreviated_movement_image_quantification_analysis_data, "Data Files/Movement Data/Generate Posture Analysis Data/All Individuals, Machine and By Hand (Abbreviated Format)"));
+		add(ns_menu_item_spec(generate_experiment_detailed_w_by_hand_movement_image_quantification_analysis_data, "Data Files/Movement Data/Generate Posture Analysis Data/Only By Hand Annotated Individuals"));
+		add(ns_menu_item_spec(generate_experiment_detailed_movement_image_quantification_analysis_data,"Data Files/Movement Data/Generate Posture Analysis Data/_All Individuals (No by hand annotations)"));
+		add(ns_menu_item_spec(generate_path_path_classification_diagnostics, "Data Files/Movement Data/Generate Posture Analysis Data/Classification Diagnostics"));
 	
 		ns_menu_item_spec st2(generate_single_frame_posture_image_pixel_data,"Data Files/Movement Data/Generate Single Frame Posture Image Data");
 		st2.options.push_back(ns_menu_item_options("Experiment"));

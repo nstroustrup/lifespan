@@ -629,19 +629,19 @@ private:
 	}
 	inline void map_value_from_top_graph_onto_image(const float &x, const float &y, unsigned long & x1, unsigned long & y1) {
 		x1 = graph_top_specifics.boundary_bottom_and_left.x + (unsigned int)(graph_top_specifics.dx*(x - graph_top_specifics.axes.boundary(0) + graph_top_specifics.axes.axis_offset(0)));
-		y1 =  (unsigned int)(graph_top_specifics.dy*(y - graph_top_specifics.axes.boundary(2) + graph_top_specifics.axes.axis_offset(1)));
+		y1 = base_graph_top.properties().height-1-(graph_top_specifics.boundary_bottom_and_left.y + (unsigned int)(graph_top_specifics.dy*(y - graph_top_specifics.axes.boundary(2) + graph_top_specifics.axes.axis_offset(1))));
 	}
 
 	inline void map_value_from_bottom_graph_onto_image(const float &x, const float &y, unsigned long & x1, unsigned long & y1) {
 		x1 = graph_bottom_specifics.boundary_bottom_and_left.x + (unsigned int)(graph_bottom_specifics.dx*(x - graph_bottom_specifics.axes.boundary(0) + graph_bottom_specifics.axes.axis_offset(0)));
-		y1 = base_graph_top.properties().height + border().y + base_graph_bottom.properties().height - graph_bottom_specifics.boundary_bottom_and_left.y - (unsigned int)(graph_bottom_specifics.dy*(y - graph_bottom_specifics.axes.boundary(2) + graph_bottom_specifics.axes.axis_offset(1)));
+		y1 = base_graph_bottom.properties().height - 1 - (graph_bottom_specifics.boundary_bottom_and_left.y + (unsigned int)(graph_bottom_specifics.dy*(y - graph_bottom_specifics.axes.boundary(2) + graph_bottom_specifics.axes.axis_offset(1))));
 	}
 	inline unsigned long map_pixel_from_image_onto_buffer(const unsigned long &x, const unsigned long &y, const ns_vector_2i &position, const ns_vector_2i &buffer_size) {
 		return 3 * ((buffer_size.y - y - position.y-1)*buffer_size.x + x + position.x);
 	}
 	ns_vector_2i border() const { return ns_vector_2i(25, 25); }
-	void overlay_metadata(const ns_animal_telemetry::ns_graph_contents graph_contents,const unsigned long current_element, const ns_vector_2i & position, const ns_vector_2i & buffer_size, const long marker_resize_factor,ns_tiled_gl_image & buffer) {
-		unsigned long x_score, y_score, x_size, y_size, x_slope, y_slope;
+	void overlay_metadata(const ns_animal_telemetry::ns_graph_contents graph_contents, const unsigned long current_element, const ns_vector_2i& position, const long marker_resize_factor, ns_tiled_gl_image& buffer) {
+		unsigned long x_top, y_top, x_bottom_1, y_bottom_1, x_bottom_2, y_bottom_2;
 		long segment_id = segment_ids[current_element];
 		if (segment_id == -1)
 			return;
@@ -650,35 +650,43 @@ private:
 		long segment_element_id = current_element - segment_offsets[segment_id];
 		if (segment_element_id >= movement_vals[segment_id].y.size())
 			throw ns_ex("Out of element id");
-		map_value_from_top_graph_onto_image(time_axis[current_element], movement_vals[segment_id].y[segment_element_id], x_score, y_score);
-		map_value_from_bottom_graph_onto_image(time_axis[current_element], size_vals[segment_id].y[segment_element_id], x_size, y_size);
-		map_value_from_bottom_graph_onto_image(time_axis[current_element], slope_vals[segment_id].y[segment_element_id], x_slope, y_slope);
-		for (int y = -2* marker_resize_factor; y <= 2 * marker_resize_factor; y++)
+		map_value_from_top_graph_onto_image(time_axis[current_element], movement_vals[segment_id].y[segment_element_id], x_top, y_top);
+		map_value_from_bottom_graph_onto_image(time_axis[current_element], size_vals[segment_id].y[segment_element_id], x_bottom_1, y_bottom_1);
+		map_value_from_bottom_graph_onto_image(time_axis[current_element], slope_vals[segment_id].y[segment_element_id], x_bottom_2, y_bottom_2);
+		for (int y = -2 * marker_resize_factor; y <= 2 * marker_resize_factor; y++)
 			for (int x = -2 * marker_resize_factor; x <= 2 * marker_resize_factor; x++) {
-				const ns_vector_2i p(x_score + x + border().x + position.x, buffer_size.y - 1 - (y + border().y + position.y));
-				buffer(p.x,buffer_size.y-1-p.y)[0] = 255;
+				const ns_vector_2i p(x_top + x + border().x + position.x, buffer.properties().height-1-(y_top + y + border().y + position.y));
+				buffer(p.x, p.y)[0] = 255;
 				buffer(p.x, p.y)[1] = 0;
 				buffer(p.x, p.y)[2] = 0;
 				buffer(p.x, p.y)[3] = 255;
-				if (graph_contents == ns_animal_telemetry::ns_all || graph_contents == ns_animal_telemetry::ns_movement_intensity || graph_contents == ns_animal_telemetry::ns_movement_intensity_slope_1x
-					|| graph_contents == ns_animal_telemetry::ns_movement_intensity_slope_2x
-					|| graph_contents == ns_animal_telemetry::ns_movement_intensity_slope_4x) {
-					const ns_vector_2i p2(x_size + x + border().x + position.x, buffer_size.y - 1 - (y_size + y + border().y + position.y));
+			}
+		if (graph_contents == ns_animal_telemetry::ns_all || graph_contents == ns_animal_telemetry::ns_movement_intensity || graph_contents == ns_animal_telemetry::ns_movement_intensity_slope_1x
+			|| graph_contents == ns_animal_telemetry::ns_movement_intensity_slope_2x
+			|| graph_contents == ns_animal_telemetry::ns_movement_intensity_slope_4x) {
+			for (int y = -2 * marker_resize_factor; y <= 2 * marker_resize_factor; y++)
+				for (int x = -2 * marker_resize_factor; x <= 2 * marker_resize_factor; x++) {
+
+					const ns_vector_2i p2(x_bottom_1 + x + border().x + position.x, buffer.properties().height - 1 - (y_bottom_1 + y + 2*border().y + base_graph_top.properties().height+position.y));
 					buffer(p2.x, p2.y)[0] = 255;
 					buffer(p2.x, p2.y)[1] = 0;
 					buffer(p2.x, p2.y)[2] = 0;
 					buffer(p2.x, p2.y)[3] = 255;
 				}
-				if (graph_contents == ns_animal_telemetry::ns_movement_intensity_slope_1x
-					|| graph_contents == ns_animal_telemetry::ns_movement_intensity_slope_2x
-					|| graph_contents == ns_animal_telemetry::ns_movement_intensity_slope_4x) {
-					const ns_vector_2i p3(x_slope + x + border().x + position.x, buffer_size.y - 1 - (y_slope + y + border().y + position.y));
+		}
+
+		if (graph_contents == ns_animal_telemetry::ns_movement_intensity_slope_1x
+			|| graph_contents == ns_animal_telemetry::ns_movement_intensity_slope_2x
+			|| graph_contents == ns_animal_telemetry::ns_movement_intensity_slope_4x) {
+			for (int y = -2 * marker_resize_factor; y <= 2 * marker_resize_factor; y++)
+				for (int x = -2 * marker_resize_factor; x <= 2 * marker_resize_factor; x++) {
+					const ns_vector_2i p3(x_bottom_2 + x + border().x + position.x, buffer.properties().height - 1 - (y_bottom_2 + y + 2 * border().y + base_graph_top.properties().height + position.y));
 					buffer(p3.x, p3.y)[0] = 255;
 					buffer(p3.x, p3.y)[1] = 0;
 					buffer(p3.x, p3.y)[2] = 0;
 					buffer(p3.x, p3.y)[3] = 255;
 				}
-			}
+		}
 
 	}
 	ns_graph_contents last_graph_contents;
@@ -709,7 +717,8 @@ public:
 		unsigned long x_seconds = x * 60 * 60 * 24 + path->element(0).absolute_time;
 		for (unsigned int i = 0; i < path->element_count(); i++) {
 			const bool g(path->element(i).absolute_time >= x_seconds);
-			const float dt = (path->element(i).absolute_time >= x_seconds) ? (path->element(i).absolute_time - x_seconds) : (x_seconds - path->element(i).absolute_time);
+			//can't use fabs due to potential overflow with unsigned longs.
+			const float dt = fabs(path->element(i).absolute_time >= x_seconds) ? (path->element(i).absolute_time - x_seconds) : (x_seconds - path->element(i).absolute_time);
 			if (dt < min_dt) {
 				min_dt = dt;
 				min_i = i;
@@ -741,7 +750,7 @@ public:
 		base_graph_bottom.init(ns_image_properties(0, 0, 3));
 		posture_analysis_model = mod;
 	}
-	void draw(const ns_graph_contents graph_contents, const unsigned long element_id, const ns_vector_2i & position, const ns_vector_2i & graph_size, const ns_vector_2i & buffer_size, const float marker_resize_factor, ns_tiled_gl_image & buffer, const unsigned long start_time=0, const unsigned long stop_time=UINT_MAX) {
+	void draw(const ns_graph_contents graph_contents, const unsigned long element_id, const ns_vector_2i & position, const ns_vector_2i & graph_size, const float marker_resize_factor, ns_tiled_gl_image & buffer, const unsigned long start_time=0, const unsigned long stop_time=UINT_MAX) {
 		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Starting to draw telemetry."));
 		if (base_graph_top.properties().height == 0 || graph_contents != last_graph_contents || last_start_time != start_time || last_stop_time != stop_time || last_rescale_factor != marker_resize_factor) {
 			base_graph_top.use_more_memory_to_avoid_reallocations();
@@ -771,7 +780,7 @@ public:
 
 		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Drawing everything"));
 		//top margin
-		const long yo = (graph_size.y - 1);
+		const long yo = (buffer.properties().height - 1);
 		for (unsigned int y = 0; y < border().y; y++)
 			for (unsigned int x = 0; x < graph_size.x; x++) {
 				for (unsigned int c = 0; c < 3; c++) 
@@ -840,7 +849,7 @@ public:
 				buffer(x + position.x, yo - (y + position.y))[3] = 255;
 			}
 
-		overlay_metadata(graph_contents, element_id - first_element, position, buffer_size, marker_resize_factor, buffer);
+		overlay_metadata(graph_contents, element_id - first_element, position, marker_resize_factor, buffer);
 	}
 	void show(bool s) { _show = s; }
 	bool show() const { return _show;  }

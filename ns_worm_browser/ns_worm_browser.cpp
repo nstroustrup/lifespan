@@ -6604,17 +6604,14 @@ void ns_worm_learner::draw_worm_window_image(ns_image_standard & image){
 		
 		
 			death_time_solo_annotater.draw_telemetry(ns_vector_2i(new_image_size.width, 0),
-				death_time_solo_annotater.telemetry_size(),
-				ns_vector_2i(worm_window.gl_buffer.properties().width,
-					worm_window.gl_buffer.properties().height), worm_window.display_rescale_factor,
-				worm_window.gl_buffer);
+				death_time_solo_annotater.telemetry_size(), worm_window.display_rescale_factor,worm_window.gl_buffer);
 
 			//clear out bottom margin
 			for (int _y = death_time_solo_annotater.telemetry_size().y; _y < worm_window.gl_buffer.properties().height; _y++)
 				for (unsigned int _x = new_image_size.width; _x < worm_window.gl_buffer.properties().width; _x++) {
 					for (int c = 0; c < 3; c++)
-						worm_window.gl_buffer(_x, _y)[c] = 0;
-					worm_window.gl_buffer(_x, _y)[3] = 255;
+						worm_window.gl_buffer(_x, worm_window.gl_buffer.properties().height-1-_y)[c] = 0;
+					worm_window.gl_buffer(_x, worm_window.gl_buffer.properties().height - 1 - _y)[3] = 255;
 				}
 		
 	//		death_time_solo_annotater.draw_registration_debug(ns_vector_2i(new_prop.width, death_time_solo_annotater.telemetry.image_size().y),
@@ -8416,7 +8413,7 @@ unsigned long ns_death_time_solo_posture_annotater::last_time_at_current_telemen
 	return current_time + (1.0 / telemetry_zoom_factor)*(path_stop_time - current_time);
 }
 
-void ns_death_time_solo_posture_annotater::draw_telemetry(const ns_vector_2i & position, const ns_vector_2i & graph_size, const ns_vector_2i & buffer_size, const float rescale_factor,ns_tiled_gl_image & buffer) {
+void ns_death_time_solo_posture_annotater::draw_telemetry(const ns_vector_2i & position, const ns_vector_2i & graph_size, const float rescale_factor,ns_tiled_gl_image & buffer) {
 	if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Starting to draw telemetry."));
 	if (telemetry_zoom_factor < 1) {
 		cerr << "Weird telemetry zoom factor: " << telemetry_zoom_factor << "\n";
@@ -8454,7 +8451,7 @@ void ns_death_time_solo_posture_annotater::draw_telemetry(const ns_vector_2i & p
 	stop_time = ((unsigned long)(ceil(stop_time / (double)time_block_resolution))) * time_block_resolution;
 	if (stop_time > path_stop_time)stop_time = path_stop_time;
 	if (start_time < path_start_time)start_time = path_start_time;
-	telemetry.draw(graph_contents, current_timepoint_id, position, graph_size, buffer_size, ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor/ rescale_factor,buffer,start_time,stop_time);
+	telemetry.draw(graph_contents, current_timepoint_id, position, graph_size, ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor/ rescale_factor,buffer,start_time,stop_time);
 	
 	if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Done with telemetry."));
 }

@@ -315,8 +315,8 @@ private:
 
 		ns_graph_axes axes2;
 		if (movement_plot == ns_plot_death_times_absolute) {
-			axes2.boundary(0) = axes2.boundary(2) = tmin * .95;
-			axes2.boundary(1) = axes2.boundary(3) = tmax*1.05;
+			axes2.boundary(0) = axes2.boundary(2) = min(tmin * .95, tmin * 1.05);	//could be negative
+			axes2.boundary(1) = axes2.boundary(3) = max(tmax * .95, tmax * 1.05);
 		}
 		else {
 			axes2.boundary(0) = tmin * .95;
@@ -992,6 +992,8 @@ public:
 			undefined_y_position = max_y_x_diff * 1.15;
 		else if (regression_plot == ns_death_vs_observation_duration)
 			undefined_y_position = (max_y) * 1.15;
+		else if (max_y < metadata.time_at_which_animals_had_zero_age)
+			undefined_y_position = (max_x - metadata.time_at_which_animals_had_zero_age) * 1.15;	//if no values are specified for any point
 		else
 			undefined_y_position = (max_y - metadata.time_at_which_animals_had_zero_age) * 1.15;
 

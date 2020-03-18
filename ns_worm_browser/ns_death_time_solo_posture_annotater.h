@@ -789,7 +789,7 @@ public:
 	}
 
 	unsigned long last_time_at_current_telementry_zoom(ns_death_time_posture_solo_annotater_data_cache_storage::handle_t& handle) const;
-	void draw_telemetry(const ns_vector_2i& position, const ns_vector_2i& graph_size, const ns_vector_2i& buffer_size, const float rescale_factor, ns_tiled_gl_image & buffer);
+	void draw_telemetry(const ns_vector_2i& position, const ns_vector_2i& graph_size, const float rescale_factor, ns_tiled_gl_image & buffer);
 	void draw_registration_debug(const ns_vector_2i& position, const ns_vector_2i& buffer_size, ns_8_bit* buffer) {
 		if (current_timepoint_id == 0)
 			return;

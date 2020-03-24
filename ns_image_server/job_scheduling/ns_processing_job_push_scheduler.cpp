@@ -283,13 +283,13 @@ void ns_image_server_push_job_scheduler::report_new_job_and_mark_it_so(const ns_
 			try{
 				sql.send_query("BEGIN");
 				report_new_job(job,sql);
-				sql << "UPDATE processing_jobs SET currently_under_processing = 0, processed_by_push_scheduler = " << image_server.host_id() << " WHERE id=" << job.id;
+				sql << "UPDATE processing_jobs SET currently_under_processing = 0, processed_by_push_scheduler = 1 WHERE id=" << job.id;
 				sql.send_query();
 				sql.send_query("COMMIT");
 			}
 			catch(ns_ex & ex){
 				ns_64_bit event_id = image_server.register_server_event(ns_image_server_event("An error occurred processing a new job:") << ex.text(),&sql);
-				sql << "UPDATE processing_jobs SET currently_under_processing = 0, processed_by_push_scheduler = " << image_server.host_id() << ", problem=" << event_id << " WHERE id=" << job.id;
+				sql << "UPDATE processing_jobs SET currently_under_processing = 0, processed_by_push_scheduler = 1, problem=" << event_id << " WHERE id=" << job.id;
 				sql.send_query();
 				sql.send_query("COMMIT");
 			}
@@ -354,7 +354,7 @@ void ns_image_server_push_job_scheduler::discover_new_jobs(ns_sql & sql){
 				//already been performed).  Try it now.
 				if (p_jobs[i].pending_another_jobs_completion){
 					if (!try_to_process_a_job_pending_anothers_completion(p_jobs[i],sql)){
-						sql << "UPDATE processing_jobs SET currently_under_processing = 0, processed_by_push_scheduler = " << image_server.host_id() << " WHERE id=" << p_jobs[i].id;
+						sql << "UPDATE processing_jobs SET currently_under_processing = 0, processed_by_push_scheduler = 1 WHERE id=" << p_jobs[i].id;
 						sql.send_query();
 						sql.send_query("COMMIT");
 					}

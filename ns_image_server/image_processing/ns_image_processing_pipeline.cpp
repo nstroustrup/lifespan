@@ -1075,6 +1075,7 @@ void ns_image_processing_pipeline::generate_sample_regions_from_mask(ns_64_bit s
 				"strain='',"
 				"last_posture_analysis_model_used='',"
 				"last_posture_analysis_method_used='',"
+				"last_position_analysis_method_used='',"
 				"last_worm_detection_model_used=''";
 
 			sql.send_query();

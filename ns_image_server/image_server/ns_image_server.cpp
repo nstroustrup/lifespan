@@ -1493,7 +1493,7 @@ void ns_image_server::create_and_configure_sql_database(bool local, const std::s
 		}
 	}
 	if (found_db) {
-		sql << "SELECT table_schema AS \"Database\", ROUND(SUM(data_length + index_length) / 1024 / 1024, 2) FROM information_schema.TABLES";
+		sql << "SELECT ROUND(SUM(data_length + index_length) / 1024 / 1024, 2) FROM information_schema.TABLES";
 		ns_sql_result res2;
 		sql.get_rows(res2);
 		if (res2.size() == 0)

@@ -1493,7 +1493,16 @@ void ns_image_server::create_and_configure_sql_database(bool local, const std::s
 		}
 	}
 	if (found_db) {
-		cout << "The database " << db << " already exists.  Do you want to delete it and create it again?\n"
+		sql << "SELECT table_schema AS \"Database\", ROUND(SUM(data_length + index_length) / 1024 / 1024, 2) FROM information_schema.TABLES";
+		ns_sql_result res2;
+		sql.get_rows(res2);
+		if (res2.size() == 0)
+			throw ns_ex("Could not obtain database size.");
+		ns_64_bit database_size_in_mb(ns_atoi64(res2[0][0].c_str()));
+		if (database_size_in_mb > 10)
+			throw ns_ex() << "The database " << db << " already exists on " << hostname << ", and contains " << database_size_in_mb << " megabytes of data.  It is too dangerous to delete this automatically.  However, if you really want to install a new schema, log in manually and run the sql command \"DROP SCHEMA " << db << "\";";
+
+		cout << "The database " << db << " already exists on " << hostname << ".  Do you want to delete it and create it again?\n"
 			"WARNING: This will delete all metadata not backed up to disk!\n"
 			"To delete, type y . To cancel and do nothing, type n : ";
 		while (true) {
@@ -1501,8 +1510,8 @@ void ns_image_server::create_and_configure_sql_database(bool local, const std::s
 			getline(cin,a);
 			cout << "\n";
 			if (a == "y") {
-				cout << "Are you sure?  This will drop your database schema and erase all metadata that you have not already backed up to disk.\n"
-						"Only proceed if you really understand what you are doing.\n"
+				cout << "Are you sure?  This will drop your database schema and erase " << database_size_in_mb << " megabytes of data on " << hostname << "\n"
+						"Only proceed if you really understand what you are doing!\n"
 						"To proceed, type y . To cancel and do nothing, type n : ";
 				while (true) {
 					string b;

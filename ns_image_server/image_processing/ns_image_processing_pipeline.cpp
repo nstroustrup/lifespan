@@ -1071,8 +1071,12 @@ void ns_image_processing_pipeline::generate_sample_regions_from_mask(ns_64_bit s
 				"posture_analysis_method = '" << default_posture_analysis_method << "',"
 				"worm_detection_model = '" << default_worm_detection_model << "',"
 				"position_analysis_model = '" << default_position_analysis_model << "',"
-				"time_series_denoising_flag = " << (int)ns_time_series_denoising_parameters::default_strategy();
-				"strain=''";
+				"time_series_denoising_flag = " << ns_to_string((int)ns_time_series_denoising_parameters::default_strategy()) <<","
+				"strain='',"
+				"last_posture_analysis_model_used='',"
+				"last_posture_analysis_method_used='',"
+				"last_position_analysis_model_used=''," 
+				"last_worm_detection_model_used=''";
 
 			sql.send_query();
 		}

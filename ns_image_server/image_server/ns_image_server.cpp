@@ -698,6 +698,28 @@ ns_local_buffer_connection * ns_image_server::new_local_buffer_connection(const 
 	lock.release();
 	return buf;
 }
+void ns_add_version_compatibility_columns(const std::string& table_name, ns_sql& sql) {
+	if (table_name == "sample_region_image_info") {
+		sql << "ALTER TABLE `sample_region_image_info` "
+			"ADD COLUMN `temporal_interpolation_performed` INT UNSIGNED NOT NULL DEFAULT '0' AFTER `op30_image_id`,"
+			"ADD COLUMN `movement_file_triplet_id` INT NULL AFTER `temporal_interpolation_performed`,"
+			"ADD COLUMN `movement_file_triplet_interpolated_id` INT NULL AFTER `movement_file_triplet_id`,"
+			"ADD COLUMN `movement_file_time_path_id` INT NULL AFTER `movement_file_triplet_interpolated_id`,"
+			"ADD COLUMN `movement_file_time_path_image_id` INT NULL AFTER `movement_file_time_path_id`";
+		sql.send_query();
+	}
+}
+void ns_remove_version_compatibility_columns(const std::string& table_name, ns_sql& sql) {
+	if (table_name == "sample_region_image_info") {
+		sql << "ALTER TABLE `sample_region_image_info` "
+			"DROP COLUMN `temporal_interpolation_performed`,"
+			"DROP COLUMN `movement_file_triplet_id`,"
+			"DROP COLUMN `movement_file_triplet_interpolated_id`,"
+			"DROP COLUMN `movement_file_time_path_id`,"
+			"DROP COLUMN `movement_file_time_path_image_id`";
+		sql.send_query();
+	}
+}
 
 void ns_get_table_create(const std::string & table_name, std::string & result, ns_sql & sql){
 	sql << "SHOW CREATE TABLE `" << table_name << "`";
@@ -1493,7 +1515,16 @@ void ns_image_server::create_and_configure_sql_database(bool local, const std::s
 		}
 	}
 	if (found_db) {
-		cout << "The database " << db << " already exists.  Do you want to delete it and create it again?\n"
+		sql << "SELECT ROUND(SUM(data_length + index_length) / 1024 / 1024, 2) FROM information_schema.TABLES";
+		ns_sql_result res2;
+		sql.get_rows(res2);
+		if (res2.size() == 0)
+			throw ns_ex("Could not obtain database size.");
+		ns_64_bit database_size_in_mb(ns_atoi64(res2[0][0].c_str()));
+		if (database_size_in_mb > 10)
+			throw ns_ex() << "The database " << db << " already exists on " << hostname << ", and contains " << database_size_in_mb << " megabytes of data.  It is too dangerous to delete this automatically.  However, if you really want to install a new schema, log in manually and run the sql command \"DROP SCHEMA " << db << "\";";
+
+		cout << "The database " << db << " already exists on " << hostname << ".  Do you want to delete it and create it again?\n"
 			"WARNING: This will delete all metadata not backed up to disk!\n"
 			"To delete, type y . To cancel and do nothing, type n : ";
 		while (true) {
@@ -1501,8 +1532,8 @@ void ns_image_server::create_and_configure_sql_database(bool local, const std::s
 			getline(cin,a);
 			cout << "\n";
 			if (a == "y") {
-				cout << "Are you sure?  This will drop your database schema and erase all metadata that you have not already backed up to disk.\n"
-						"Only proceed if you really understand what you are doing.\n"
+				cout << "Are you sure?  This will drop your database schema and erase " << database_size_in_mb << " megabytes of data on " << hostname << "\n"
+						"Only proceed if you really understand what you are doing!\n"
 						"To proceed, type y . To cancel and do nothing, type n : ";
 				while (true) {
 					string b;
@@ -1917,15 +1948,39 @@ bool ns_update_db_using_experimental_data_from_file(const std::string new_databa
 	sql << "SHOW DATABASES";
 	ns_sql_result databases;
 	sql.get_rows(databases);
-	bool database_exists(false);
+	bool database_exists(false), need_to_create_schema(false);
 	for (unsigned int i = 0; i < databases.size();i++){
 		if (databases[i][0] == new_database){
 			database_exists = true;
 			break;
 		}
 	}
-	if (database_exists && !use_existing_database)
-		return false;
+	if (!database_exists)
+		need_to_create_schema = true;
+	if (database_exists && !use_existing_database) {
+		//don't overwrite databases that have any existing tables.
+		sql << "USE " << new_database << "";
+		sql.send_query();
+		try {
+			sql << "SHOW TABLES";
+			ns_sql_result tables;
+			sql.get_rows(tables);
+			if (tables.size() > 0) {
+				sql << "USE " << current_database;
+				sql.send_query();
+				return false;
+			}
+			sql << "USE " << current_database;
+			sql.send_query();
+			need_to_create_schema = true;
+		}
+		catch (...) {
+			sql << "USE " << current_database;
+			sql.send_query();
+			throw;
+		}
+
+	}
 
 	ns_dir dir;
 	std::vector<std::string> files;
@@ -1933,7 +1988,7 @@ bool ns_update_db_using_experimental_data_from_file(const std::string new_databa
 	if (files.size() == 0)
 		throw ns_ex("No data files could be found in the directory") << output_directory;
 
-	if (!database_exists){
+	if (!database_exists || need_to_create_schema){
 		cout << "Creating a new database, \"" << new_database << "\", to hold the data...\n";
 		sql << "SHOW TABLES";
 		ns_sql_result tables;
@@ -1941,15 +1996,16 @@ bool ns_update_db_using_experimental_data_from_file(const std::string new_databa
 		vector<std::string> create_commands(tables.size());
 		for (unsigned int i = 0; i < tables.size(); i++)
 				ns_get_table_create(tables[i][0],create_commands[i],sql);
-
-		sql << "CREATE DATABASE " << new_database << "";
-		sql.send_query();
+		if (!database_exists) {
+			sql << "CREATE DATABASE " << new_database << "";
+			sql.send_query();
+		}
 		sql << "USE " << new_database << "";
 		sql.send_query();
 		try{
 			for (unsigned int i = 0; i < create_commands.size(); i++){
-				sql << create_commands[i];
-				sql.send_query();
+					sql << create_commands[i];
+					sql.send_query();
 			}
 			sql << "USE " << current_database << "";
 			sql.send_query();
@@ -1988,8 +2044,22 @@ bool ns_update_db_using_experimental_data_from_file(const std::string new_databa
 
 				)
 				allow_empty_file = true;
-			//tabn
-			ns_add_data_to_db_from_file(table_name,source,sql,allow_empty_file);
+			try {
+				ns_add_data_to_db_from_file(table_name, source, sql, allow_empty_file);
+			}
+			catch (ns_ex & ex) {
+				//Importing from old database schema can cause problems when they contained columns
+				//no longer present in the database.  We can rescue import by adding them and then deleting them afterwards.
+				ns_add_version_compatibility_columns(table_name, sql);
+				try {
+					ns_add_data_to_db_from_file(table_name, source, sql, allow_empty_file);
+					ns_remove_version_compatibility_columns(table_name, sql);
+				}
+				catch (...) {
+					ns_remove_version_compatibility_columns(table_name, sql);
+					throw;
+				}
+			}
 			sql << "USE " << current_database;
 			sql.send_query();
 		}

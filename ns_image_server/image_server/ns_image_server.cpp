@@ -2377,16 +2377,10 @@ void ns_image_server::load_quotes(std::vector<std::pair<std::string,std::string>
 	}
 }
 bool ns_image_server::new_software_release_available(){
-	ns_sql * con = new_sql_connection(__FILE__,__LINE__);
-	try{
-		bool res = new_software_release_available(*con);
-		delete con;
-		return res;
-	}
-	catch(...){
-		delete con;
-		throw;
-	}
+	ns_acquire_for_scope<ns_sql> sql(new_sql_connection(__FILE__,__LINE__));
+	bool res = new_software_release_available(sql());
+	sql.release();
+	return res;
 }
 
 void ns_image_server::wait_for_pending_threads(){

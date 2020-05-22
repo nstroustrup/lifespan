@@ -129,7 +129,8 @@ class ns_sql_connection{
   ns_sql_connection & operator<<(const T & s){current_query << s;return *this;}
   ns_sql_connection & write_data(const char *, const unsigned long length);
 
-  std::string query() const{ return current_query.to_str();}
+  const std::string & query() const{ return current_query.to_str();}
+  const std::string& database() const { return _database; }
 
   std::string escape_string(const std::string & str);
 
@@ -154,8 +155,9 @@ class ns_sql_connection{
    bool commit;
 
    std::string _server_name,
-			_user_id,
-			_password;
+	   _user_id,
+	   _password,
+	   _database;
 	unsigned int _retry_count;
 
 	std::string latest_error(const bool lock_needed=true);

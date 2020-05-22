@@ -113,6 +113,14 @@ struct ns_box{
 	
 };
 
+struct ns_browser_command_subject {
+	ns_image_server_results_subject subject;
+	std::string input_file;
+	std::string output_file;
+	std::string flag;
+};
+typedef std::vector<ns_browser_command_subject> ns_browser_command_subject_set;
+
 std::string ns_check_analyses_are_up_to_date(const unsigned long region_id, const unsigned long experiment_id, ns_sql & sql);
 bool ns_warn_user_about_out_of_date_analyses(const unsigned long region_id, const unsigned long experiment_id, ns_sql& sql);
 
@@ -259,9 +267,9 @@ struct ns_experiment_region_chooser_sample{
 	std::vector<ns_experiment_region_chooser_region> regions;
 	std::string device;
 };
-struct ns_experiment_region_selector_experiment_info{
-	ns_experiment_region_selector_experiment_info(){}
-	ns_experiment_region_selector_experiment_info(const unsigned long id, const std::string & name_, const unsigned long group_id_):
+struct ns_experiment_region_gui_selector_experiment_info{
+	ns_experiment_region_gui_selector_experiment_info(){}
+	ns_experiment_region_gui_selector_experiment_info(const unsigned long id, const std::string & name_, const unsigned long group_id_):
 	experiment_id(id),name(name_),experiment_group_id(group_id_){}
 	std::string name;
 	unsigned long experiment_id;
@@ -269,7 +277,7 @@ struct ns_experiment_region_selector_experiment_info{
 	std::string experiment_group_name;
 };
 bool ns_load_image_from_resource(int resource_id,const std::string &filename);
-class ns_experiment_region_selector{
+class ns_experiment_region_gui_selector{
 public:
 	typedef enum {ns_show_all,ns_hide_censored,ns_hide_uncensored} ns_censor_masking;
 	
@@ -300,7 +308,7 @@ public:
 	ns_censor_masking censor_masking() const{return current_censor_masking;}
 	void set_censor_masking(const ns_censor_masking & censor_masking ){current_censor_masking = censor_masking;}
 
-	ns_experiment_region_selector():experiment_id(0),cur_sample(0),cur_region(0), cur_strain(0){}
+	ns_experiment_region_gui_selector():experiment_id(0),cur_sample(0),cur_region(0), cur_strain(0){}
 	void set_current_experiment(const std::string & experiment_name,ns_sql & sql){
 		for (unsigned int i = 0; i < experiment_groups.size(); i++){
 			for (unsigned int j = 0; j < experiment_groups[i].size(); j++){
@@ -464,20 +472,20 @@ public:
 		}
 	}
 	std::vector<ns_experiment_region_chooser_sample> samples;
-	std::vector<std::vector<ns_experiment_region_selector_experiment_info> > experiment_groups;
+	std::vector<std::vector<ns_experiment_region_gui_selector_experiment_info> > experiment_groups;
 	typedef std::map<std::string,ns_region_metadata> ns_experiment_strain_list;
 	ns_experiment_strain_list experiment_strains;
 
 	void load_experiment_names(ns_sql & sql){
 		ns_worm_browser_output_debug(__LINE__,__FILE__,std::string("Loading experiment names from db"));
 		
-		std::map<unsigned long,vector<ns_experiment_region_selector_experiment_info> > experiments_by_group;
+		std::map<unsigned long,vector<ns_experiment_region_gui_selector_experiment_info> > experiments_by_group;
 		experiment_groups.resize(0);
 		sql << "SELECT id,name,group_id FROM experiments WHERE hidden = 0 ORDER BY first_time_point DESC";
 		ns_sql_result res;
 		sql.get_rows(res);
 		for (unsigned int i = 0; i < res.size(); i++)
-			experiments_by_group[atol(res[i][2].c_str())].push_back(ns_experiment_region_selector_experiment_info(atol(res[i][0].c_str()),res[i][1],atol(res[i][2].c_str())));
+			experiments_by_group[atol(res[i][2].c_str())].push_back(ns_experiment_region_gui_selector_experiment_info(atol(res[i][0].c_str()),res[i][1],atol(res[i][2].c_str())));
 		sql << "SELECT group_id,group_name,hidden FROM experiment_groups WHERE hidden=0 ORDER BY group_order ASC";
 		sql.get_rows(res);
 		experiment_groups.resize(res.size()+1);
@@ -496,7 +504,7 @@ public:
 			}
 	}
 
-	bool get_experiment_info(const unsigned long id, ns_experiment_region_selector_experiment_info & info) const{
+	bool get_experiment_info(const unsigned long id, ns_experiment_region_gui_selector_experiment_info & info) const{
 		for (unsigned int i = 0; i < experiment_groups.size(); i++)
 			for (unsigned int j = 0; j < experiment_groups[i].size(); j++){
 				if (id == experiment_groups[i][j].experiment_id){
@@ -511,7 +519,7 @@ public:
 		return false;
 	}
 	bool get_experiment_name(const unsigned long id,std::string & name) const {
-		ns_experiment_region_selector_experiment_info info;
+		ns_experiment_region_gui_selector_experiment_info info;
 		
 		ns_worm_browser_output_debug(__LINE__,__FILE__,"Getting experiment info");
 		bool res(get_experiment_info(id, info));
@@ -520,6 +528,7 @@ public:
 	}
 	
 };
+
 
 class ns_gl_window_data{
 public:
@@ -576,13 +585,13 @@ public:
 	ns_behavior_mode current_behavior_mode(){
 		return behavior_mode;
 	}
-	ns_worm_learner():behavior_mode(ns_draw_boxes),mask_analyzer(4096), process_mask_menu_displayed(false),
-		worm_detection_results(0),model_specification(&default_model),last_annotation_type_loaded(ns_death_time_annotation_set::ns_no_annotations),
-	  current_image_lock("ns_worm_learner::current_image"),storyboard_lock("sbl"),
-		movement_data_is_strictly_decreasing_(false),overwrite_existing_mask_when_submitting(false),output_svg_spines(false),static_mask(0),generate_mp4_(false),
-		/*submit_capture_specification_to_db_when_recieved(false),*/overwrite_submitted_capture_specification(false),maximum_window_size(1024,768),
-	  storyboard_annotater(2),main_window("Main Window"), persistant_sql_connection(0), persistant_sql_lock("psl"), show_testing_menus(false),
-				worm_window("Worm Window"), stats_window("Statistics Window"), worm_image_offset_due_to_telemetry_graph_spacing(0, 0), precache_solo_worm_images(false),worm_detection_set_annotater(2){
+	ns_worm_learner() :behavior_mode(ns_draw_boxes), mask_analyzer(4096), process_mask_menu_displayed(false),
+		worm_detection_results(0), model_specification(&default_model), last_annotation_type_loaded(ns_death_time_annotation_set::ns_no_annotations),
+		current_image_lock("ns_worm_learner::current_image"), storyboard_lock("sbl"),
+		movement_data_is_strictly_decreasing_(false), overwrite_existing_mask_when_submitting(false), output_svg_spines(false), static_mask(0), generate_mp4_(false),
+		/*submit_capture_specification_to_db_when_recieved(false),*/overwrite_submitted_capture_specification(false), maximum_window_size(1024, 768),
+		storyboard_annotater(2), main_window("Main Window"), persistant_sql_connection(0), persistant_sql_lock("psl"), show_testing_menus(false),
+		worm_window("Worm Window"), stats_window("Statistics Window"), worm_image_offset_due_to_telemetry_graph_spacing(0, 0), precache_solo_worm_images(false), worm_detection_set_annotater(2), running_as_gui(true) {
 		storyboard_annotater.set_resize_factor(2);
 		last_button_press.click_type = ns_button_press::ns_none;
 		current_annotater = &storyboard_annotater;
@@ -611,7 +620,7 @@ public:
 	void repair_captured_image_transfer_errors(unsigned long experiment_id);
 
 	//mask
-	void produce_mask_file(const ns_bulk_experiment_mask_manager::ns_mask_type mask_type,const std::string & filename);
+	void produce_mask_file(const ns_browser_command_subject& subject, const ns_bulk_experiment_mask_manager::ns_mask_type mask_type);
 	void decode_mask_file(const std::string & filename, const std::string & output_vis_filename="");
 	void submit_mask_file_to_cluster(const ns_bulk_experiment_mask_manager::ns_mask_type mask_type);
 	void view_current_mask();
@@ -645,9 +654,9 @@ public:
 	void calculate_erosion_gradient();
 
 	//movement analysis
-	void generate_survival_curve_from_hand_annotations();
-	void compare_machine_and_by_hand_annotations();
-	void simulate_multiple_worm_clumps(const bool use_waiting_time_cropping,const bool require_nearly_slow_moving);
+	void generate_survival_curve_from_hand_annotations(const ns_browser_command_subject_set& subject);
+	void compare_machine_and_by_hand_annotations(const ns_browser_command_subject_set& subject);
+	void simulate_multiple_worm_clumps(const ns_browser_command_subject_set & subject, const bool use_waiting_time_cropping,const bool require_nearly_slow_moving);
 	void calculate_heatmap_overlay();
 	void calculate_movement_threshold(const std::string & filename, const bool & visulization=false);
 	void test_time_path_analysis_parameters(unsigned long region_id);
@@ -660,7 +669,7 @@ public:
 
 	//data analysis
 	void generate_single_frame_posture_image_pixel_data(const bool single_Region);
-	void compile_experiment_survival_and_movement_data(bool use_by_hand_censoring,const ns_region_visualization & vis,const  ns_movement_data_source_type::type & type);
+	void compile_experiment_survival_and_movement_data(const ns_browser_command_subject_set & subject, bool use_by_hand_censoring,const ns_region_visualization & vis,const  ns_movement_data_source_type::type & type);
 	void load_current_experiment_movement_results(const ns_death_time_annotation_set::ns_annotation_type_to_load & annotations_to_load, const unsigned long experiment_id);
 	void output_experiment_movement_graph_wrapper_files(ns_machine_analysis_region_data & r, const std::string & filename);
 	bool movement_data_is_strictly_decreasing(){return movement_data_is_strictly_decreasing_;}
@@ -679,13 +688,13 @@ public:
 	void export_experiment_data(const unsigned long experiment_id);
 	bool import_experiment_data(const std::string & database_name,const std::string & directory, const bool reuse_database);
 	
-	typedef enum{ns_whole_experiment,ns_device,ns_plate} ns_optimization_subject;
-	void output_movement_analysis_optimization_data(const ns_optimization_subject & subject, const ns_parameter_set_range & range, bool run_posture, bool run_expansion);
+	typedef enum{ns_unknown,ns_whole_experiment,ns_device,ns_plate} ns_optimization_subject;
+	void output_movement_analysis_optimization_data(const ns_browser_command_subject_set& data, const ns_optimization_subject & subject, const ns_parameter_set_range & range, bool run_posture, bool run_expansion);
 
 	typedef enum{ns_quantification_summary,ns_quantification_raw_machine,ns_quantification_by_hand, ns_quantification_by_hand_or_machine, ns_build_worm_markov_posture_model_from_by_hand_annotations,ns_quantification_abbreviated_by_hand_machine, ns_quantification_path_classification_diagnostics} ns_movement_quantification_type;
-	void generate_experiment_movement_image_quantification_analysis_data(ns_movement_quantification_type  detail_level, const ns_optimization_subject & subject);
+	void generate_experiment_movement_image_quantification_analysis_data(const ns_browser_command_subject_set& data, ns_movement_quantification_type  detail_level, const ns_optimization_subject & subject);
 
-	void generate_training_set_from_by_hand_annotation();
+	void generate_training_set_from_by_hand_annotation(const ns_browser_command_subject_set& subject);
 	void generate_detailed_animal_data_file();
 
 
@@ -870,8 +879,8 @@ public:
 
 	const std::string & get_current_clipboard_filename() const {return current_clipboard_filename;}
 	
-	ns_experiment_region_selector data_selector;
-	ns_experiment_region_selector statistics_data_selector;
+	ns_experiment_region_gui_selector data_gui_selector;
+	ns_experiment_region_gui_selector statistics_data_gui_selector;
 
 	//ns_death_time_posture_annotater death_time_annotater;
 	ns_image_series_annotater * current_annotater;
@@ -909,6 +918,7 @@ public:
 	bool precache_solo_worm_images;
 
 	void load_specific_worm(const ns_64_bit & region_id, const unsigned long& group_id, double external_rescale_factor);
+	bool running_as_gui;
 private:
 	ns_image_standard animation_temp;
 	ns_death_time_annotation_set::ns_annotation_type_to_load last_annotation_type_loaded;

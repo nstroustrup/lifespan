@@ -31,6 +31,23 @@ void invalidate_stored_data_depending_on_movement_analysis(const ns_processing_j
 	sql.send_query();
 	already_performed = true;
 }
+
+bool run_inferred_analysis(ns_time_path_solution & time_path_solution, const ns_64_bit region_id, const bool log_output, ns_image_server * image_server, ns_sql & sql) {
+	
+
+	//make sure all interpolated data points are wiped before regenerating them.
+	sql << "DELETE images FROM images, sample_region_images as r WHERE images.id = r.worm_interpolation_results_id AND r.region_info_id = " << region_id;
+	sql.send_query();
+	sql << "UPDATE sample_region_images as r SET r.worm_interpolation_results_id = 0 WHERE r.region_info_id = " << region_id;
+	sql.send_query();
+
+	time_path_solution.identify_subregions_labels_from_subregion_mask(region_id, sql);
+
+	if (log_output)
+		image_server->register_server_event(ns_image_server_event("Caching image data for inferred worm positions."), &sql);
+	ns_image_server_time_path_inferred_worm_aggregator ag;
+	return ag.create_images_for_solution(region_id, time_path_solution, sql);
+}
 void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image_server * image_server, ns_sql & sql, bool log_output, long specific_worm, ns_hmm_movement_analysis_optimizatiom_stats*optional_debug_results) {
 	if (job.region_id == 0)
 		throw ns_ex("Movement data can be rebuilt only for regions.");
@@ -51,6 +68,7 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 
 	bool invalidated_old_data(false);
 	const bool skip_inferred_worm_analysis(image_server->get_cluster_constant_value("skip_inferred_worm_analysis", "false", &sql) != "false");
+	const bool force_inferred_worm_analysis(image_server->get_cluster_constant_value("force_inferred_worm_analysis", "false", &sql) != "false");
 
 	//we get the posture analysis model file first, even though it is not needed until after the time path solover is run
 	//in case there is a problem with the model file.  We want to throw an error quickly, rather than after many steps have already been run/
@@ -90,6 +108,25 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 		if (log_output)
 			image_server->register_server_event(ns_image_server_event("Loading point cloud solution from disk."), &sql);
 		time_path_solution.load_from_db(job.region_id, sql, false);
+
+		if (force_inferred_worm_analysis) {
+			bool problem = run_inferred_analysis(time_path_solution, job.region_id, log_output, image_server, sql);
+			if (problem)
+				throw ns_ex("Corrupted images identified.  Giving up.");
+
+			time_path_solution.save_to_db(job.region_id, sql);
+
+			ns_acquire_for_scope<ns_ostream> position_3d_file_output(
+				image_server->results_storage.animal_position_timeseries_3d(
+					results_subject, sql, ns_image_server_results_storage::ns_3d_plot
+				).output()
+			);
+			time_path_solution.output_visualization_csv(position_3d_file_output()());
+			position_3d_file_output.release();
+
+			image_server->results_storage.write_animal_position_timeseries_3d_launcher(results_subject, ns_image_server_results_storage::ns_3d_plot, sql);
+		}
+
 	}
 	else {
 		unsigned long count(0);
@@ -116,20 +153,10 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 			if (prefix_length_str.length() > 0) {
 				prefix_length = atol(prefix_length_str.c_str());
 			}
-			//make sure all interpolated data points are wiped before regenerating them.
-			sql << "DELETE images FROM images, sample_region_images as r WHERE images.id = r.worm_interpolation_results_id AND r.region_info_id = " << job.region_id;
-			sql.send_query();
-			sql << "UPDATE sample_region_images as r SET r.worm_interpolation_results_id = 0 WHERE r.region_info_id = " << job.region_id;
-			sql.send_query();
-					   
 			time_path_solution.fill_gaps_and_add_path_prefixes(prefix_length);
 
-			time_path_solution.identify_subregions_labels_from_subregion_mask(job.region_id, sql);
-
-			if (log_output)
-				image_server->register_server_event(ns_image_server_event("Caching image data for inferred worm positions."), &sql);
-			ns_image_server_time_path_inferred_worm_aggregator ag;
-			bool problematic_image_encountered(ag.create_images_for_solution(job.region_id, time_path_solution, sql));
+			bool problematic_image_encountered = run_inferred_analysis(time_path_solution, job.region_id, log_output, image_server, sql);
+			
 			//corrupt images are marked as problematic in the db and have their worm detection deleted. Thus, we need to rebuild the 
 			//solution in order to account for these deletions.
 			if (problematic_image_encountered) {

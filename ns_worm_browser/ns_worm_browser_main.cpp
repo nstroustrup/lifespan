@@ -4132,10 +4132,205 @@ void ns_run_startup_routines() {
 	
 }
 void write_commandline_usage(const ns_worm_terminal_main_menu_organizer & organizer) {
-	cout << "usage: ns_worm_browser [command] [experiment] [sample OR sample::plate] [flag]\n";
+	cout << "usage: ns_worm_browser [command] [database::experiment::sample::plate] -i [input_file] -o [output_file] -f [flag]\n";
+	cout << "Database, sample, and plate specifications are optional.  Multiple subjects can be specified.\n";
 	cout << "Available Commands:\n";
 	organizer.output_possible_actions(cout);
 	cout << "\n";
+}
+bool ns_parse_commandline_subject(const std::string& subject, ns_image_server_results_subject & sub, ns_sql & sql, ns_ex & err) {
+	std::vector<std::string> s;
+	s.reserve(4);
+	s.resize(1);
+	int num_colons(0);
+	//split the string
+	for (unsigned int i = 0; i < subject.size(); i++) {
+		const bool colon = subject[i] == ':';
+		switch (num_colons) {
+		case 0:
+			if (!colon)
+				s.rbegin() += subject[i]; 
+			break;
+		case 1: break;
+			if (!colon)
+				err = ns_ex("Invalid subject.  Must be in the format database::experiment::sample::plate .  Database, sample, and plate specifications are optional.");
+			return false;
+		case 2: 
+			if (colon) {
+				err = ns_ex("Invalid subject.  Must be in the format database::experiment::sample::plate .  Database, sample, and plate specifications are optional.");
+				return false;
+			}
+			else {
+				s.resize(s.size() + 1);
+				s.rbegin() += subject[i]; break;
+				num_colons = 0;
+			}
+		}
+		if (colon) num_colons++;
+	}
+	if (num_colons != 0) {
+		err = ns_ex("Invalid subject.  Must be in the format database::experiment::sample::plate .  Database, sample, and plate specifications are optional.");
+		return false;
+	}
+
+	const std::string* database(0), * experiment(0), * sample(0), * plate(0);
+	switch(s.size()){
+	case 1:
+		experiment = &s[0]; break;
+	case 2:
+		database = &s[0];
+		experiment = &s[1];
+		break;
+	case 3:
+		experiment = &s[0];
+		sample = &s[1];
+		plate = &s[2];
+		break;
+	case 4:
+		database = &s[0];
+		experiment = &s[1];
+		sample = &s[2];
+		plate = &s[3];
+		break;
+	default:
+		err = ns_ex("Invalid subject.  Must be in the format database::experiment::sample::region .  Database, sample, and plate specifications are optional.");
+		return false;
+	}
+	//validate subject
+	if (database != 0) {
+		sql << "SHOW DATABASES";
+		ns_sql_result res;
+		sql.get_rows(res);
+		bool database_found;
+		for (unsigned i = 0; i < res.size(); i++) {
+			if (res[i][0] == *database) {
+				database_found = true;
+				break;
+			}
+		}
+		if (!database_found) {
+			err = ns_ex("Could not find database '") << *database << "'";
+			return false;
+		}
+		sub.database_name = *database;
+	}
+	else sub.database_name.resize(0);
+	std::string cur_db = sql.database();
+	if (database != 0) {
+		sql.select_db(*database);
+	}
+	try {
+		if (experiment != 0) {
+			sql << "SELECT id FROM experiments WHERE name = '" << sql.escape_string(*experiment);
+			ns_sql_result res;
+			sql.get_rows(res);
+			if (res.size() != 1) {
+				err = ns_ex("Could not find experiment '") << *experiment << "'";
+				return false;
+			}
+			sub.experiment_name = *experiment;
+			sub.experiment_id = ns_atoi64(res[0][0].c_str());
+		}
+		else {
+			sub.experiment_id = 0;
+			sub.experiment_name.resize(0);
+		}
+		if (sample != 0 && plate == 0 || sample == 0 && plate != 0) {
+			err = ns_ex("Neither the sample nor region names can be specified without one another");
+			return false;
+		}
+		if (plate != 0) {
+			if (experiment != 0) {
+				err = ns_ex("Regions cannot be specified without the experiment name.");
+				return false;
+			}
+
+			sql << "SELECT s.id, r.id FROM experiments as e, capture_samples as s, sample_region_image_info as r WHERE "
+				"e.name = '" << sql.escape_string(*experiment)
+				<< "' AND s.name =' " << sql.escape_string(*sample)
+				<< "' AND r.name = " << sql.escape_string(*plate)
+				<< "' AND s.experiment_id = e.id AND r.sample_id = s.id";
+			ns_sql_result res;
+			sql.get_rows(res);
+			if (res.size() != 1) {
+				err = ns_ex("Could not find region '") << *sample << "::" << *plate << " in experiment " << *experiment << " in database " << sql.database();
+				return false;
+			}
+			sub.sample_name = *sample;
+			sub.sample_id = ns_atoi64(res[0][0].c_str());
+			sub.region_name = *plate;
+			sub.region_id = ns_atoi64(res[0][1].c_str());
+		} 
+		else {
+			sub.sample_id = sub.region_id = 0;
+			sub.sample_name.resize(0);
+			sub.region_name.resize(0);
+		}
+	}
+	catch (...) {
+		if (!cur_db.empty())
+			sql.select_db(cur_db);
+		throw;
+	}
+	if (!cur_db.empty())
+		sql.select_db(cur_db);
+	err = ns_ex();
+	return true;
+}
+
+void ns_process_commandline_arguments(const int argc,  char** argv, ns_browser_command_subject_set& subjects,ns_sql & sql) {
+	subjects.reserve(10);
+	std::string cur_output_file, cur_flag;
+	unsigned long number_of_output_files_specified(0), number_of_flags_specified(0);
+	for (unsigned int i = 2; i < argc; ){
+		if (argv[i] == "-o") {
+			if (i + 1 == argc)
+				throw ns_ex("-o specified with no argument.");
+			if (subjects.empty())
+				throw ns_ex("A subject or input file must be specified before the -o argument.");
+			subjects.rbegin()->output_file = cur_output_file = argv[i + 1];
+			if (!ns_dir::file_is_writeable(cur_output_file))
+				throw ns_ex("Could not write to output file ") << cur_output_file;
+			i += 2;
+			number_of_output_files_specified++;
+			
+			continue;
+		}
+		if (argv[i] == "-i") {
+			if (i + 1 == argc)
+				throw ns_ex("-i specified with no argument.");
+			if (subjects.empty()) 
+				subjects.resize(1);
+			subjects.rbegin()->input_file = argv[i + 1];
+			if (!ns_dir::file_exists(argv[i + 1]))
+				throw ns_ex("Could not open input file ") << argv[i + 1];
+			i += 2;
+			continue;
+		}
+		if (argv[i] == "-f") {
+			if (i + 1 == argc)
+				throw ns_ex("-f specified with no argument.");
+			if (subjects.empty())
+				throw ns_ex("A subject or input file must be specified before the -f argument.");
+			subjects.rbegin()->flag = cur_flag = argv[i + 1];
+			i += 2;
+			number_of_flags_specified++;
+			continue;
+		}
+		subjects.resize(subjects.size() + 1);
+		ns_ex err;
+		const bool is_subject(ns_parse_commandline_subject(argv[i], subjects.rbegin()->subject, sql, err));
+		if (is_subject)
+			continue;
+		throw err;
+	}
+	if (number_of_output_files_specified == 0)
+		for (unsigned int i = 0; i < subjects.size(); i++)
+			subjects[i].output_file = cur_output_file;
+
+	if (number_of_flags_specified == 0)
+		for (unsigned int i = 0; i < subjects.size(); i++)
+			subjects[i].flag = cur_flag;
 }
 
 int main(int argc, char** argv) {
@@ -4155,11 +4350,13 @@ int main(int argc, char** argv) {
 				return 0;
 			}
 			ns_browser_command_subject_set subject_set;
+			ns_sql& sql(worm_learner.get_sql_connection());
+			ns_process_commandline_arguments(argc, argv, subject_set, sql);
 			try {
 				menu_organizer.dispatch_request(subject_set, command);
 			}
 			catch (ns_ex & ex) {
-				cout << "Error: " << ex.text() << "\n";
+				std::cout << "Error: " << ex.text() << "\n";
 				write_commandline_usage(menu_organizer);
 				return 1;
 			}

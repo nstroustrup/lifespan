@@ -630,8 +630,9 @@ const ns_image_server_image ns_image_server_captured_image_region::create_storag
 }
 
 void ns_image_server_captured_image_region::update_all_processed_image_records(ns_sql & sql){
-	sql << "UPDATE sample_region_images SET ";
-	bool needs_comma(false);
+	sql << "UPDATE sample_region_images SET "
+		"worm_detection_results_id = " << region_detection_results_id << ","
+		"worm_interpolation_results_id = " << region_interpolation_results_id;
 	for (unsigned long i = 0; i < op_images_.size(); i++){
 		if (i == ns_unprocessed)
 			continue;
@@ -639,10 +640,8 @@ void ns_image_server_captured_image_region::update_all_processed_image_records(n
 
 		if (ns_processing_step_db_table_name(task) !=  "sample_region_images")
 			continue;
-		if (needs_comma)
-				sql << ",";
-		sql << ns_processing_step_db_column_name(task) << "=" << op_images_[i];
-		needs_comma = true;
+		
+		sql << "," << ns_processing_step_db_column_name(task) << "=" << op_images_[i];
 	}
 	sql << " WHERE id = " << region_images_id;
 	sql.send_query();

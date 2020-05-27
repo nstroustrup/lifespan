@@ -2917,7 +2917,20 @@ void ns_worm_learner::repair_missing_captured_images(const ns_64_bit experiment_
 	
 }
 		
-
+void to_lower(string& a) {
+	for (unsigned int i = 0; i < a.size(); i++)
+		a[i] = tolower(a[i]);
+}
+struct ns_existing_region_image_record {
+	ns_existing_region_image_record() {}
+	ns_existing_region_image_record(const ns_64_bit& c) :region_image_id(0), capture_sample_image_id(c) {}
+	ns_existing_region_image_record(const ns_64_bit& c, const ns_64_bit& r) :region_image_id(r), capture_sample_image_id(c) {}
+	ns_64_bit region_image_id,
+		capture_sample_image_id;
+};
+bool operator <(const ns_existing_region_image_record& a, const ns_existing_region_image_record& b) {
+	return a.capture_sample_image_id < b.capture_sample_image_id;
+}
 void ns_worm_learner::rebuild_experiment_regions_from_disk(const ns_64_bit experiment_id){
 	ns_sql& sql(get_sql_connection());
 
@@ -2934,7 +2947,9 @@ void ns_worm_learner::rebuild_experiment_regions_from_disk(const ns_64_bit exper
 	additional_tasks_to_load.push_back(ns_process_lossy_stretch);
 	additional_tasks_to_load.push_back(ns_process_threshold);
 	additional_tasks_to_load.push_back(ns_process_thumbnail);
-	std::vector<std::map<ns_64_bit,ns_region_processed_image_disk_info> > existing_processed_task_images;
+	additional_tasks_to_load.push_back(ns_process_region_vis);
+	additional_tasks_to_load.push_back(ns_process_region_interpolation_vis);
+	std::vector<std::map<ns_64_bit,ns_region_processed_image_disk_info> > processed_task_images_on_disk;
 	std::string partition(image_server.image_storage.get_partition_for_experiment(experiment_id,&sql,true));
 
 	for (unsigned long i = 0; i < sample_res.size(); i++){
@@ -2947,22 +2962,34 @@ void ns_worm_learner::rebuild_experiment_regions_from_disk(const ns_64_bit exper
 		ns_sql_result region_res;
 		sql.get_rows(region_res);
 		for (unsigned long k = 0; k < region_res.size(); k++){
-			existing_processed_task_images.clear();
-			existing_processed_task_images.resize(additional_tasks_to_load.size());
+			processed_task_images_on_disk.clear();
+			processed_task_images_on_disk.resize(additional_tasks_to_load.size());
 
 			const ns_64_bit region_info_id = ns_atoi64(region_res[k][0].c_str());
 
 			//we need to build a list of all processed images to link them to the main image if they exist
-			for (unsigned long j = 0; j < additional_tasks_to_load.size(); j++){
-				ns_file_location_specification path2(image_server.image_storage.get_path_for_region(region_info_id,&sql,additional_tasks_to_load[j]));
+			for (unsigned long j = 0; j < additional_tasks_to_load.size(); j++) {
+				ns_file_location_specification path2(image_server.image_storage.get_path_for_region(region_info_id, &sql, additional_tasks_to_load[j]));
 				std::string absolute_path(path2.absolute_long_term_filename());
 				if (!ns_dir::file_exists(absolute_path))
 					continue;
 				ns_dir dir;
 				std::vector<std::string> filenames;
-				if (additional_tasks_to_load[j] == ns_process_thumbnail)
-					dir.load_masked(absolute_path,"jpg",filenames);
-				else dir.load_masked(absolute_path,"tif",filenames);
+				dir.load(absolute_path);
+				filenames.reserve(dir.files.size());
+				std::string ext;
+				for (unsigned int k = 0; k < dir.files.size(); k++) {
+					ext = ns_dir::extract_extension(dir.files[k]);
+					to_lower(ext);
+					if (additional_tasks_to_load[j] == ns_process_thumbnail) {
+						if (ext == "jpg")
+							filenames.push_back(dir.files[k]);
+					}
+					else if (ext == "tif" || ext == "jp2")
+						filenames.push_back(dir.files[k]);
+				}
+
+			
 				std::string::size_type pos = absolute_path.find(partition);
 				if (pos==absolute_path.npos)
 					throw ns_ex("Incorrect path identified: Images are not in a partition of the long term storage directory");
@@ -2983,8 +3010,8 @@ void ns_worm_learner::rebuild_experiment_regions_from_disk(const ns_64_bit exper
 						dim.im.partition = partition;
 						dim.im.filename = filenames[l];
 						dim.im.path = relative_path;
-
-						existing_processed_task_images[j][region_image.region_images_id] = dim;
+						//organize by the captured_images id, as the sample_region_image_id is not always present in filenames.
+						processed_task_images_on_disk[j][region_image.captured_images_id] = dim;
 					}
 					catch(...){
 
@@ -3007,87 +3034,116 @@ void ns_worm_learner::rebuild_experiment_regions_from_disk(const ns_64_bit exper
 			relative_path.resize(relative_path.size()-1);
 			//find all region images based on the existance of an unproccessed (masked) image
 			ns_dir dir;
-			std:: vector<std::string> filenames;
-			dir.load_masked(absolute_path,".tif",filenames);
-			sql << "SELECT id FROM sample_region_images WHERE region_info_id = " << region_info_id;
+			std:: vector<std::string> region_image_filenames;
+			dir.load(absolute_path);
+			region_image_filenames.reserve(dir.files.size());
+			std::string ext;
+			for (unsigned int k = 0; k < dir.files.size(); k++) {
+				ext = ns_dir::extract_extension(dir.files[k]);
+				to_lower(ext);
+				if (ext == "tif" || ext == "jp2")
+					region_image_filenames.push_back(dir.files[k]);
+			}
+			sql << "SELECT id, capture_sample_image_id FROM sample_region_images WHERE region_info_id = " << region_info_id;
 			ns_sql_result res2;
 			sql.get_rows(res2);
-			std::set<ns_64_bit> existing_region_images;
+			std::set<ns_existing_region_image_record> region_images_in_db;
 
-			for (unsigned long j = 0; j < res2.size(); j++)
-				existing_region_images.insert(existing_region_images.end(),ns_atoi64(res2[j][0].c_str()));
+
+			for (unsigned long k = 0; k < res2.size(); k++)
+				region_images_in_db.insert(region_images_in_db.end(), ns_existing_region_image_record(ns_atoi64(res2[k][1].c_str()), ns_atoi64(res2[k][0].c_str())));
 		
 			sql << "SELECT id, capture_time FROM captured_images WHERE sample_id = " << sample_id;
 			sql.get_rows(res2);
 			std::map<unsigned long,ns_64_bit> existing_captured_images;
-			for (unsigned long j = 0; j < res2.size(); j++){
-				const ns_64_bit id(ns_atoi64(res2[j][0].c_str()));
-				existing_captured_images[atol(res2[j][1].c_str())] = id;
+			for (unsigned long k = 0; k < res2.size(); k++){
+				const ns_64_bit id(ns_atoi64(res2[k][0].c_str()));
+				existing_captured_images[atol(res2[k][1].c_str())] = id;
 			}
 		
-
-			for (unsigned long j = 0; j < filenames.size(); j++){
+			bool missing_metadata_found_for_analyzed_images(false);
+			for (unsigned long k = 0; k < region_image_filenames.size(); k++){
 				ns_image_server_captured_image_region region_image;
-				region_image.from_filename(filenames[j]);
+				region_image.from_filename(region_image_filenames[k]);
 				region_image.region_info_id = region_info_id;
 				region_image.device_name = device_name;
 
-				std::set<ns_64_bit>::const_iterator p = existing_region_images.find(region_image.region_images_id);
-				if (p != existing_region_images.end())
-					continue;
-				
-				number_of_additions++;
-				cout << filenames[j] << " appears to be missing a database entry.  A new record will be created.\n";
+				auto region_image_db_record = region_images_in_db.find(region_image.captured_images_id);
+				const bool region_image_record_already_exists(region_image_db_record != region_images_in_db.end());
+				if (!region_image_record_already_exists) {
 
-				ns_image_server_captured_image cap_im(region_image);
-				std::map<unsigned long,ns_64_bit>::const_iterator p2 = existing_captured_images.find(cap_im.capture_time);
-				if (p2 == existing_captured_images.end()){
-					cout << "Creating a capture sample image record for the region image.\n";
-					ns_64_bit old_im_id(cap_im.captured_images_id);
-					cap_im.sample_id = sample_id;
-					cap_im.experiment_id = experiment_id;
-					cap_im.captured_images_id = 0;
-					cap_im.save(&sql);
-					region_image.captured_images_id = cap_im.captured_images_id;
-					existing_captured_images[cap_im.capture_time] = cap_im.captured_images_id;
+					number_of_additions++;
+					cout << region_image_filenames[k] << " appears to be missing a database entry.  A new record will be created.\n";
+
+					ns_image_server_captured_image cap_im(region_image);
+					std::map<unsigned long, ns_64_bit>::const_iterator p2 = existing_captured_images.find(cap_im.capture_time);
+					if (p2 == existing_captured_images.end()) {
+						cout << "Creating a capture sample image record for the region image.\n";
+						ns_64_bit old_im_id(cap_im.captured_images_id);
+						cap_im.sample_id = sample_id;
+						cap_im.experiment_id = experiment_id;
+						cap_im.captured_images_id = 0;
+						cap_im.save(&sql);
+						region_image.captured_images_id = cap_im.captured_images_id;
+						existing_captured_images[cap_im.capture_time] = cap_im.captured_images_id;
+					}
+					else region_image.captured_images_id = p2->second;
+
+					ns_image_server_image unprocessed_image;
+					unprocessed_image.capture_time = region_image.capture_time;
+					unprocessed_image.partition = partition;
+					unprocessed_image.filename = region_image_filenames[k];
+					unprocessed_image.path = relative_path;
+					unprocessed_image.save_to_db(0, &sql, false);
+					region_image.region_images_image_id = unprocessed_image.id;
 				}
-				else region_image.captured_images_id = p2->second;
+				else {
+					region_image.load_from_db(region_image_db_record->region_image_id,&sql);
+				}
 				
-				ns_image_server_image unprocessed_image;
-				unprocessed_image.capture_time = region_image.capture_time;
-				unprocessed_image.partition = partition;
-				unprocessed_image.filename = filenames[j];;
-				unprocessed_image.path = relative_path;
-				unprocessed_image.save_to_db(0,&sql,false);
-				region_image.region_images_image_id = unprocessed_image.id;
-				
+				bool additional_tasks_found_on_disk = false;
+				for (unsigned long m=0; m < additional_tasks_to_load.size();m++){
 
-				for (unsigned long j=0; j < additional_tasks_to_load.size(); j++){
+					//if no additional tasks are found on disk we're done
+					std::map<ns_64_bit,ns_region_processed_image_disk_info>::iterator processed_task_image_on_disk =
+						processed_task_images_on_disk[m].find(region_image.captured_images_id);
+					if (processed_task_image_on_disk == processed_task_images_on_disk[m].end())
+						continue;
 
-					std::map<ns_64_bit,ns_region_processed_image_disk_info>::iterator p = 
-						existing_processed_task_images[j].find(region_image.region_images_id);
-
-					if (p == existing_processed_task_images[j].end())
+					//check to see if the database already has a record for this task.
+					//first, find the right ID to use
+					ns_64_bit & processed_image_db_id = region_image.op_images_[additional_tasks_to_load[m]];
+					//if the task is already in the db, we are done!
+					if (processed_image_db_id == processed_task_image_on_disk->second.im.id)
 						continue;
 					//create a new database record for existing file and link it to the region image record
-					p->second.im.id = 0;
-					p->second.im.save_to_db(0,&sql);
-					region_image.op_images_[additional_tasks_to_load[j]] = p->second.im.id;
+					processed_task_image_on_disk->second.im.id = 0;
+					processed_task_image_on_disk->second.im.save_to_db(0,&sql);
+					processed_image_db_id = processed_task_image_on_disk->second.im.id;
+					if (!missing_metadata_found_for_analyzed_images) {
+						cout << "Creating record for lost metadata.\n";
+						missing_metadata_found_for_analyzed_images = true;
+					}
+					additional_tasks_found_on_disk = true; 
+					if (region_image_record_already_exists)
+						number_of_additions++;
 				}
 				
 	//			region_image.captured_images_id = cap_im.captured_images_id;
-				
-				region_image.specified_16_bit = false;
-				region_image.experiment_name = experiment_name;
-				region_image.experiment_id = experiment_id;
-				region_image.sample_id = sample_id;
-				region_image.sample_name = sample_name;
-				//create a new record
-				region_image.mask_color = 0;
-				region_image.detected_worm_state = ns_detected_worm_unsorted;
-				region_image.region_images_id = 0;
-				region_image.save(&sql);
-				region_image.update_all_processed_image_records(sql);
+				if (!region_image_record_already_exists) {
+					region_image.specified_16_bit = false;
+					region_image.experiment_name = experiment_name;
+					region_image.experiment_id = experiment_id;
+					region_image.sample_id = sample_id;
+					region_image.sample_name = sample_name;
+					//create a new record
+					region_image.mask_color = 0;
+					region_image.detected_worm_state = ns_detected_worm_unsorted;
+					region_image.region_images_id = 0;
+					region_image.save(&sql);
+				}
+				if (additional_tasks_found_on_disk)	
+					region_image.update_all_processed_image_records(sql);
 
 				/*std::string new_filename = im.filename(&sql) + "." + ns_dir::extract_extension(image.filename);
 				std::string old_filename = image.filename;

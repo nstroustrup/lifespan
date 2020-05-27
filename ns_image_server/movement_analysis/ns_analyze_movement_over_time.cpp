@@ -116,6 +116,12 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 			if (prefix_length_str.length() > 0) {
 				prefix_length = atol(prefix_length_str.c_str());
 			}
+			//make sure all interpolated data points are wiped before regenerating them.
+			sql << "DELETE images FROM images, sample_region_images as r WHERE images.id = r.worm_interpolation_results_id AND r.region_info_id = " << job.region_id;
+			sql.send_query();
+			sql << "UPDATE sample_region_images as r SET r.worm_interpolation_results_id = 0 WHERE r.region_info_id = " << job.region_id;
+			sql.send_query();
+					   
 			time_path_solution.fill_gaps_and_add_path_prefixes(prefix_length);
 
 			time_path_solution.identify_subregions_labels_from_subregion_mask(job.region_id, sql);

@@ -1957,6 +1957,7 @@ bool ns_update_db_using_experimental_data_from_file(const std::string new_databa
 	}
 	if (!database_exists)
 		need_to_create_schema = true;
+
 	if (database_exists && !use_existing_database) {
 		//don't overwrite databases that have any existing tables.
 		sql << "USE " << new_database << "";
@@ -1996,6 +1997,8 @@ bool ns_update_db_using_experimental_data_from_file(const std::string new_databa
 		vector<std::string> create_commands(tables.size());
 		for (unsigned int i = 0; i < tables.size(); i++)
 				ns_get_table_create(tables[i][0],create_commands[i],sql);
+		if (tables.size() == 0)
+			throw ns_ex("Before importing, please set the default/current database to one that already has the schema set up!");
 		if (!database_exists) {
 			sql << "CREATE DATABASE " << new_database << "";
 			sql.send_query();
@@ -2187,7 +2190,7 @@ void ns_write_experimental_data_in_database_to_file(const unsigned long experime
 
 	ns_sql_result image_ids2;
 	sql << "SELECT d.data_storage_on_disk_id FROM worm_detection_results as d, sample_region_images as m, sample_region_image_info as i, capture_samples as s "
-		"WHERE d.id = m.worm_detection_results_id AND m.region_info_id = i.id AND i.sample_id = s.id AND s.experiment_id = " << experiment_id;
+		"WHERE (d.id = m.worm_detection_results_id OR d.id = m.worm_interpolation_results_id) AND m.region_info_id = i.id AND i.sample_id = s.id AND s.experiment_id = " << experiment_id;
 	sql.get_rows(image_ids2);
 	ns_concatenate_results(image_ids2,image_ids);
 

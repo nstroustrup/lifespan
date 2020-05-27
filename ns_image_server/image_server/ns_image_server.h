@@ -301,9 +301,9 @@ public:
 	void set_processing_node_behavior(const bool act_as_processing_node){_act_as_processing_node = act_as_processing_node;}
 
 	///returns a human-readible description of the sql server the image server is using.
-	std::string sql_info(ns_sql & sql){
+	std::string sql_info(ns_sql_connection * sql){
 		if (sql_server_addresses.empty()) throw ns_ex("sql_info()::No sql sever specified");
-		return sql_user + std::string("@") + sql.hostname() + std::string(".") + *sql_database_choice;
+		return sql_user + std::string("@") + sql->hostname() + std::string(" ") + sql->database();
 	}
 
 	///Scanners identify themselves by scanning a barcode on their surface.

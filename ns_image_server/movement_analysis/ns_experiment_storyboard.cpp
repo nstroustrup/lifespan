@@ -1544,6 +1544,7 @@ void ns_experiment_storyboard_compiled_event_set::load(const ns_experiment_story
 	else
 		by_hand_annotations.load_experiment_annotations(ns_death_time_annotation_set::ns_censoring_and_movement_transitions, experiment_ids[0], sql);
 	all_events.add(by_hand_annotations.annotations, ns_death_time_annotation_compiler::ns_do_not_create_regions_or_locations);
+
 }
 bool ns_experiment_storyboard_compiled_event_set::need_to_reload_for_new_spec(const ns_experiment_storyboard_spec & new_spec) {
 
@@ -1598,8 +1599,6 @@ bool ns_experiment_storyboard::create_storyboard_metadata_from_machine_annotatio
 			else time_of_last_death = death_times[(unsigned long)(death_times.size()*.9)];
 		}
 	}
-	
-
 	return load_events_from_annotation_compiler(ns_creating_from_machine_annotations, compiled_event_set.all_events,spec.use_absolute_time,false,spec.minimum_distance_to_juxtipose_neighbors,sql);
 
 }

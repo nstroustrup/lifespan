@@ -1172,6 +1172,8 @@ int main(int argc, char ** argv){
 			image_server.register_host(&sql(), true, true);  //we need to get the host id in order to be able to look for a request to change databases.
 			image_server.request_database_from_db_and_switch_to_it(*static_cast<ns_sql *>(&sql()), true);  //this registers host in the new db as well
 
+			image_server.register_server_event(ns_image_server_event("Connected to ") << image_server.sql_info(&sql()),&sql());
+
 			image_server.clear_performance_statistics(*static_cast<ns_sql *>(&sql()));
 			image_server.clear_old_server_events(*static_cast<ns_sql *>(&sql()));
 			image_server.load_quotes(quotes, *static_cast<ns_sql *>(&sql()));

@@ -1740,7 +1740,7 @@ ns_emperical_posture_quantification_value_estimator::ns_states_permitted ns_empe
 void ns_emperical_posture_quantification_value_estimator::write_visualization(std::ostream & o, const std::string & experiment_name)const{
 }
 
-bool ns_emperical_posture_quantification_value_estimator::add_observation(const std::string &software_version, const ns_death_time_annotation & properties,const ns_analyzed_image_time_path * path, const std::string * plate_name, const std::string * device_name){
+bool ns_emperical_posture_quantification_value_estimator::add_observation(const std::string& software_version, const ns_death_time_annotation& properties, const ns_analyzed_image_time_path* path, const std::string* database_name, const ns_64_bit& experiment_id, const std::string* plate_name, const std::string* device_name){
 	//only consider paths with death times annotated.
 	if (!path->by_hand_death_time().fully_unbounded()){
 		ns_analyzed_image_time_path_element_measurements path_mean, path_mean_square,path_variance;
@@ -1852,7 +1852,9 @@ bool ns_emperical_posture_quantification_value_estimator::add_observation(const 
 			e.emission_time = path->element(i).absolute_time;
 			e.region_name = plate_name;
 			e.device_name = device_name;
-			e.region_id = properties.region_info_id;
+			e.region_info_id = properties.region_info_id;
+			e.database_name = database_name;
+			e.experiment_id = experiment_id;
 			ns_hmm_emission_normalization_stats & stats = normalization_stats[e.path_id];
 			stats.path_mean = path_mean;
 			stats.path_variance = path_variance;

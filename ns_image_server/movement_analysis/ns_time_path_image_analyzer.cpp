@@ -1780,7 +1780,7 @@ bool operator!=(const ns_analyzed_image_specification& a, const ns_analyzed_imag
 
 
 template<class allocator_T>
-bool ns_time_path_image_movement_analyzer<allocator_T>::calculate_optimzation_stats_for_current_hmm_estimator(ns_hmm_movement_analysis_optimizatiom_stats & s, const ns_emperical_posture_quantification_value_estimator * e, std::set<ns_stationary_path_id> & paths_to_test, bool generate_path_info) {
+bool ns_time_path_image_movement_analyzer<allocator_T>::calculate_optimzation_stats_for_current_hmm_estimator(const std::string * database_name,ns_hmm_movement_analysis_optimizatiom_stats & s, const ns_emperical_posture_quantification_value_estimator * e, std::set<ns_stationary_path_id> & paths_to_test, bool generate_path_info) {
 	bool found_worm(false);
 	for (unsigned long g = 0; g < groups.size(); g++)
 		for (unsigned long p = 0; p < groups[g].paths.size(); p++) {
@@ -1833,9 +1833,10 @@ bool ns_time_path_image_movement_analyzer<allocator_T>::calculate_optimzation_st
 				const ns_death_time_annotation_time_interval machine_result = groups[g].paths[p].machine_event_time(st, machine_skipped);
 				const ns_death_time_annotation_time_interval by_hand_result = groups[g].paths[p].by_hand_annotation_event_times[st];
 
+				s.animals.rbegin()->database_name = database_name;
 				s.animals.rbegin()->properties = groups[g].paths[p].censoring_and_flag_details;
 				s.animals.rbegin()->properties.stationary_path_id = ns_stationary_path_id(g, p, this->analysis_id);
-				s.animals.rbegin()->id = ns_stationary_path_id(g, p, this->analysis_id);
+				s.animals.rbegin()->path_id = ns_stationary_path_id(g, p, this->analysis_id);
 				s.animals.rbegin()->properties.region_info_id = this->region_info_id;
 				ns_hmm_movement_analysis_optimizatiom_stats_event_annotation * result = &(s.animals.rbegin()->measurements[st]);
 
@@ -4528,15 +4529,19 @@ void ns_hmm_movement_analysis_optimizatiom_stats::write_error_header(std::ostrea
 	o << "\n";
 }
 
-void ns_hmm_movement_analysis_optimizatiom_stats::write_error_data(std::ostream & o, const std::string & genotype_set, const std::string & cross_validation_info, const unsigned long & replicate_id,const std::map<ns_64_bit,ns_region_metadata> & metadata_cache) const{
+void ns_hmm_movement_analysis_optimizatiom_stats::write_error_data(std::ostream & o, const std::string & genotype_set, const std::string & cross_validation_info, const unsigned long & replicate_id,const std::map<std::string,std::map<ns_64_bit,ns_region_metadata> > & metadata_cache) const{
 
 	for (unsigned int k = 0; k < animals.size(); k++) {
-		auto m = metadata_cache.find(animals[k].properties.region_info_id);
-		if (m == metadata_cache.end())
-			throw ns_ex("Could not find metadata for region ") << animals[k].properties.region_info_id;
+		auto db_m = metadata_cache.find(*animals[k].database_name);
+		if (db_m == metadata_cache.end())
+			throw ns_ex("Could not find metadata for database  ") << *animals[k].database_name;
+		auto m = db_m->second.find( animals[k].properties.region_info_id);
+		if (m == db_m->second.end())	///XXX The problem is here!  
+			throw ns_ex("Could not find metadata for region  ") << animals[k].properties.region_info_id;
+			   
 		//ns_acquire_for_scope<ostream> all_observations(image_server.results_storage.time_path_image_analysis_quantification(sub, "hmm_obs", false, sql()).output());
 		o << m->second.experiment_name << "," << m->second.device << "," << m->second.plate_name() << "," << m->second.plate_type_summary("-")
-			<< "," << animals[k].id.group_id << "," << animals[k].id.path_id << ","
+			<< "," << animals[k].path_id.group_id << "," << animals[k].path_id.path_id << ","
 			<< (animals[k].properties.is_excluded() ? "1" : "0") << ","
 			<< (animals[k].properties.is_censored() ? "1" : "0") << ","
 			<< animals[k].properties.number_of_worms() << ","
@@ -4588,10 +4593,14 @@ void ns_hmm_movement_analysis_optimizatiom_stats::write_hmm_path_header(std::ost
 	o << ", Machine Movement Cessation Time Error (days), Machine Expansion time Error (days), Machine post-expansion Contraction time Error (days)\n";
 }
 
-void ns_hmm_movement_analysis_optimizatiom_stats::write_hmm_path_data(std::ostream & o, const std::map<ns_64_bit, ns_region_metadata> & metadata_cache) const {
+void ns_hmm_movement_analysis_optimizatiom_stats::write_hmm_path_data(std::ostream & o, const std::map<std::string,std::map<ns_64_bit, ns_region_metadata> > & metadata_cache) const {
 	for (unsigned int k = 0; k < animals.size(); k++) {
-		auto m = metadata_cache.find(animals[k].properties.region_info_id);
-		if (m == metadata_cache.end())
+		auto db_m = metadata_cache.find(*animals[k].database_name);
+		if (db_m == metadata_cache.end())
+			throw ns_ex("Could not find metadata for database") << *animals[k].database_name;
+
+		auto m = db_m->second.find(animals[k].properties.region_info_id);
+		if (m == db_m->second.end())
 			throw ns_ex("Could not find metadata for region ") << animals[k].properties.region_info_id;
 		double cumulative_differential_probability(0);
 		std::vector<double> cumulative_sub_probabilities(animals[0].state_info_variable_names.size(), 0);
@@ -4599,7 +4608,7 @@ void ns_hmm_movement_analysis_optimizatiom_stats::write_hmm_path_data(std::ostre
 			throw ns_ex("Invalid path size");
 		for (unsigned int i = 0; i < animals[k].machine_state_info.path.size(); i++) {
 			o << m->second.experiment_name << "," << m->second.plate_name() << "," << m->second.plate_type_summary("-")
-				<< "," << animals[k].id.group_id << "," << animals[k].id.path_id << ","
+				<< "," << animals[k].path_id.group_id << "," << animals[k].path_id.path_id << ","
 				<< (animals[k].properties.is_excluded() ? "1" : "0") << ","
 				<< (animals[k].properties.is_censored() ? "1" : "0") << ","
 				<< (animals[k].properties.number_of_worms()) << ",";

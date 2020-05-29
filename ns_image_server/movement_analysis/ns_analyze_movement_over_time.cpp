@@ -302,7 +302,9 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 						metadata.load_from_db(job.region_id, "", sql);
 					}
 					time_path_image_analyzer.add_by_hand_annotations(by_hand_region_annotations.annotations);
-					if (!time_path_image_analyzer.calculate_optimzation_stats_for_current_hmm_estimator(*optional_debug_results, &posture_analysis_model_handle().model_specification.hmm_posture_estimator, individuals, true))
+					//this will leak!  Is there a better place to store it?
+					std::string* database_name = new std::string(sql.database());
+					if (!time_path_image_analyzer.calculate_optimzation_stats_for_current_hmm_estimator(database_name,*optional_debug_results, &posture_analysis_model_handle().model_specification.hmm_posture_estimator, individuals, true))
 						throw ns_ex("Could not produce HMM optimization data because no by hand annotations have been made for the individual specified.");
 				}
 			}

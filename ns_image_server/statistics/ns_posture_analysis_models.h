@@ -10,10 +10,12 @@
 
 class ns_analyzed_image_time_path;
 struct ns_hmm_emission {
-	ns_hmm_emission() :genotype(0),region_name(0),device_name(0) {}
+	ns_hmm_emission() :genotype(0),region_name(0),device_name(0),experiment_id(0) {}
 	ns_analyzed_image_time_path_element_measurements measurement;
 	ns_stationary_path_id path_id;
-	ns_64_bit region_id;
+	ns_64_bit region_info_id;
+	ns_64_bit experiment_id;
+	const std::string* database_name;
 	const std::string* region_name;
 	const std::string * device_name;
 
@@ -36,7 +38,7 @@ public:
 	static ns_states_permitted state_permissions_from_string(const std::string & s);
 	~ns_emperical_posture_quantification_value_estimator();
 	friend class ns_time_path_movement_markov_solver;
-	bool add_observation(const std::string &software_version, const ns_death_time_annotation & properties, const ns_analyzed_image_time_path * path, const std::string* plate_name, const std::string * device_name );
+	bool add_observation(const std::string &software_version, const ns_death_time_annotation & properties, const ns_analyzed_image_time_path * path, const std::string* database_name, const ns_64_bit& experiment_id, const std::string* plate_name, const std::string * device_name );
 	void build_estimator_from_observations(std::string & output, const ns_states_permitted & states_permitted);
 
 	void log_probability_for_each_state(const ns_analyzed_image_time_path_element_measurements & e,std::vector<double> & p) const;

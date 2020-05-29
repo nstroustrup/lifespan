@@ -732,12 +732,14 @@ public:
 			throw ns_ex("Could not handle menu request:: ") << request;
 		}
 		catch(ns_ex & ex){
-			cerr << "Error: " << ex.text();
-			ns_alert_dialog d;
-			d.text = ex.text();
-			// d.act();
-			ns_run_in_main_thread<ns_alert_dialog> dd(&d);
-			
+			if (worm_learner.running_as_gui) {
+				cerr << "Error: " << ex.text();
+				ns_alert_dialog d;
+				d.text = ex.text();
+				// d.act();
+				ns_run_in_main_thread<ns_alert_dialog> dd(&d);
+			}
+			else throw;
 			/*MessageBox(
 				0,
 				ex.text().c_str(),
@@ -1281,9 +1283,10 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 			return;
 		ns_worm_learner::ns_optimization_subject translated_flag;
 		ns_worm_learner::ns_optimization_subject gui_sub(ns_worm_learner::ns_unknown);
-		if (value.find("experiment") != value.npos) {
-			std::string flag;
-			if (worm_learner.running_as_gui) {
+
+		if (worm_learner.running_as_gui) {
+			//if (value.find("experiment") != value.npos) {
+				std::string flag;
 				if (subject.size() != 1)
 					throw ns_ex("Can only specify one experiment via GUI");
 				if (gui_sub == ns_worm_learner::ns_unknown) {
@@ -1303,41 +1306,18 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 					}
 				}
 				translated_flag = gui_sub;
-			}
-			else {
-				if (subject[0].flag == "plate")
-					translated_flag = ns_worm_learner::ns_plate;
-				else if (subject[0].flag == "device")
-					translated_flag = ns_worm_learner::ns_device;
-				else if (subject[0].flag == "all")
-					translated_flag = ns_worm_learner::ns_whole_experiment;
-				else
-					translated_flag = ns_worm_learner::ns_whole_experiment;
-			}
-			bool posture_req = value.find("Posture") != value.npos;
-			bool size_req = value.find("Size") != value.npos;
-			worm_learner.generate_experiment_movement_image_quantification_analysis_data(subject, ns_worm_learner::ns_build_worm_markov_posture_model_from_by_hand_annotations, translated_flag);
+			//}
 		}
 		else {
-			if (worm_learner.running_as_gui) {
-				if (subject.size() != 1)
-					throw ns_ex("Can only specify one experiment via GUI");
-				ns_file_chooser cc;
-				cc.choose_directory();
-				cc.title = "Choose the directory that holds HMM observation files ";
-				cc.default_directory = image_server.long_term_storage_directory;
-				ns_run_in_main_thread<ns_file_chooser> e(&cc);
-				if (!cc.chosen || cc.result.empty())
-					return;
-				ns_browser_command_subject_set sub(1);
-				sub[0].input_file = cc.result;
-				worm_learner.calculate_hmm_from_files(cc.result);
-			}
-			else {
-				for (unsigned int i = 0; i < subject.size(); i++)
-					worm_learner.calculate_hmm_from_files(subject[i].input_file);
-			}
-		};
+			if (subject[0].flag == "device")
+				translated_flag = ns_worm_learner::ns_device;
+			else translated_flag = ns_worm_learner::ns_whole_experiment;
+		}
+			
+		bool posture_req = value.find("Posture") != value.npos;
+		bool size_req = value.find("Size") != value.npos;
+		worm_learner.generate_experiment_movement_image_quantification_analysis_data(subject, ns_worm_learner::ns_build_worm_markov_posture_model_from_by_hand_annotations, translated_flag);
+		
 	
 	}
 	
@@ -1736,10 +1716,7 @@ public:
 		//add(ns_menu_item_spec(generate_survival_curve_from_hand_annotations,"&Calibration/Generate Survival Curves from by hand annotations"));
 
 		add(ns_menu_item_spec(false, generate_movement_image_analysis_optimization_data, "Calibration/Posture Analaysis/Build new Threshold model from storyboard annnotations"));
-		ns_menu_item_spec st3(false,generate_worm_markov_posture_model_from_by_hand_annotations, "Calibration/Posture Analaysis/_Build new HMM Model from storyboard annnotations");
-		st3.options.push_back(ns_menu_item_options("From this experiment"));
-		st3.options.push_back(ns_menu_item_options("From observation Files"));
-		add(st3);
+		add(ns_menu_item_spec(false,generate_worm_markov_posture_model_from_by_hand_annotations, "Calibration/Posture Analaysis/_Build new HMM Model from storyboard annnotations"));
 		add(ns_menu_item_spec(false, compare_machine_and_by_hand_annotations, "&Calibration/Posture Analaysis/_Compare Storyboard annotations to fully-automated results"));
 
 
@@ -4149,7 +4126,7 @@ bool ns_parse_commandline_subject(const std::string& subject, ns_image_server_re
 		switch (num_colons) {
 		case 0:
 			if (!colon)
-				s.rbegin() += subject[i]; 
+				(*s.rbegin()) += subject[i]; 
 			break;
 		case 1: break;
 			if (!colon)
@@ -4221,7 +4198,7 @@ bool ns_parse_commandline_subject(const std::string& subject, ns_image_server_re
 	}
 	try {
 		if (experiment != 0) {
-			sql << "SELECT id FROM experiments WHERE name = '" << sql.escape_string(*experiment);
+			sql << "SELECT id FROM experiments WHERE name = '" << sql.escape_string(*experiment) << "'";
 			ns_sql_result res;
 			sql.get_rows(res);
 			if (res.size() != 1) {
@@ -4283,7 +4260,8 @@ void ns_process_commandline_arguments(const int argc,  char** argv, ns_browser_c
 	std::string cur_output_file, cur_flag;
 	unsigned long number_of_output_files_specified(0), number_of_flags_specified(0);
 	for (unsigned int i = 2; i < argc; ){
-		if (argv[i] == "-o") {
+		const std::string arg(argv[i]);
+		if (arg == "-o") {
 			if (i + 1 == argc)
 				throw ns_ex("-o specified with no argument.");
 			if (subjects.empty())
@@ -4296,7 +4274,7 @@ void ns_process_commandline_arguments(const int argc,  char** argv, ns_browser_c
 			
 			continue;
 		}
-		if (argv[i] == "-i") {
+		if (arg == "-i") {
 			if (i + 1 == argc)
 				throw ns_ex("-i specified with no argument.");
 			if (subjects.empty()) 
@@ -4307,7 +4285,7 @@ void ns_process_commandline_arguments(const int argc,  char** argv, ns_browser_c
 			i += 2;
 			continue;
 		}
-		if (argv[i] == "-f") {
+		if (arg == "-f") {
 			if (i + 1 == argc)
 				throw ns_ex("-f specified with no argument.");
 			if (subjects.empty())
@@ -4319,16 +4297,18 @@ void ns_process_commandline_arguments(const int argc,  char** argv, ns_browser_c
 		}
 		subjects.resize(subjects.size() + 1);
 		ns_ex err;
-		const bool is_subject(ns_parse_commandline_subject(argv[i], subjects.rbegin()->subject, sql, err));
-		if (is_subject)
+		const bool is_subject(ns_parse_commandline_subject(arg, subjects.rbegin()->subject, sql, err));
+		if (is_subject) {
+			++i;
 			continue;
+		}
 		throw err;
 	}
-	if (number_of_output_files_specified == 0)
+	if (number_of_output_files_specified == 1)
 		for (unsigned int i = 0; i < subjects.size(); i++)
 			subjects[i].output_file = cur_output_file;
 
-	if (number_of_flags_specified == 0)
+	if (number_of_flags_specified == 1)
 		for (unsigned int i = 0; i < subjects.size(); i++)
 			subjects[i].flag = cur_flag;
 }

@@ -278,6 +278,7 @@ void ns_worm_learner::output_experiment_movement_graph_wrapper_files(ns_machine_
 	o << "Nicholas Stroustrup," << ns_format_time_string_for_human(ns_current_time()) << "<br>";
 	o.close();*/
 }
+
 double ns_mean(const std::vector<double> & d){
 	if (d.size() == 0) return 0;
 	double sum(0);
@@ -988,6 +989,158 @@ void ns_worm_learner::output_device_timing_data(const unsigned long experiment_i
 	}
 	*/
 //}
+struct ns_region_annotation_counts {
+	ns_region_annotation_counts() :movement_cessation_count(0), death_associated_expansion_count(0), post_mortem_contraction_count(0), complete_hmm_annotation_count(0), total_individuals(0){}
+	ns_64_bit movement_cessation_count,
+		death_associated_expansion_count,
+		post_mortem_contraction_count,
+		complete_hmm_annotation_count,
+		total_individuals;
+
+	void operator+=(const ns_region_annotation_counts& a) {
+		movement_cessation_count += a.movement_cessation_count;
+		death_associated_expansion_count += a.death_associated_expansion_count;
+		post_mortem_contraction_count += a.post_mortem_contraction_count;
+		complete_hmm_annotation_count += a.complete_hmm_annotation_count;
+		total_individuals += a.total_individuals;
+	}
+};
+ns_region_annotation_counts operator+(const ns_region_annotation_counts& a, const ns_region_annotation_counts& b) {
+	ns_region_annotation_counts sum;
+	sum.movement_cessation_count = a.movement_cessation_count + b.movement_cessation_count;
+	sum.death_associated_expansion_count = a.death_associated_expansion_count + b.death_associated_expansion_count;
+	sum.post_mortem_contraction_count = a.post_mortem_contraction_count + b.post_mortem_contraction_count;
+	sum.complete_hmm_annotation_count = a.complete_hmm_annotation_count + b.complete_hmm_annotation_count;
+	sum.total_individuals = a.total_individuals + b.total_individuals;
+	return sum;
+}
+void ns_worm_learner::count_by_hand_annotations(const ns_browser_command_subject_set& subject){
+	ns_sql& sql(get_sql_connection());
+	std::map<std::string,std::map<ns_64_bit,std::map<ns_64_bit,ns_region_annotation_counts> > > annotation_counts;
+	std::map<std::string, std::map<ns_64_bit, std::map<ns_64_bit, ns_region_metadata> > > metadata;
+	for (unsigned int exp_i = 0; exp_i < subject.size(); exp_i++) {
+		const std::string& database(subject[exp_i].subject.database_name);
+		ns_select_database_for_scope scope(database, sql);
+		if (subject[exp_i].subject.region_id != 0)
+			annotation_counts[database][subject[exp_i].subject.experiment_id][subject[exp_i].subject.region_id] = ns_region_annotation_counts();
+		else {
+			std::vector<ns_64_bit> experiments;
+			if (subject[exp_i].subject.experiment_id != 0)
+				experiments.push_back(subject[exp_i].subject.experiment_id);
+			else {
+				sql << "SELECT id FROM experiments";
+				ns_sql_result res;
+				sql.get_rows(res);
+				experiments.resize(res.size());
+				for (unsigned int i = 0; i < experiments.size(); i++)
+					experiments[i] = ns_atoi64(res[i][0].c_str());
+			}
+			if (experiments.empty())
+				continue;
+			sql << "SELECT r.id, s.experiment_id FROM sample_region_image_info as r, capture_samples as s WHERE r.excluded_from_analysis = 0 AND r.censored = 0 AND r.sample_id = s.id AND s.excluded_from_analysis = 0 AND s.censored = 0 AND (s.experiment_id = " << experiments[0];
+			for (unsigned int i = 1; i < experiments.size(); i++)
+				sql << " OR s.experiment_id = " << experiments[i];
+			sql << ")";
+			ns_sql_result res;
+			sql.get_rows(res);
+			cout << "Loading region info for " << res.size() << " regions...";
+			int perc(0);
+			for (unsigned int i = 0; i < res.size(); i++) {
+				if ((100 * i) / res.size() > perc + 10) {
+					perc = (100 * i) / res.size();
+					cout << perc << "%...";
+				}
+				const ns_64_bit region_id(ns_atoi64(res[i][0].c_str())),
+					experiment_id = ns_atoi64(res[i][1].c_str());
+				annotation_counts[database][experiment_id][region_id] = ns_region_annotation_counts();
+				metadata[database][experiment_id][region_id].load_from_db(region_id, "", sql);
+			}
+			cout << "\n";
+		}
+	}
+	if (annotation_counts.empty())
+		return;
+	ns_image_server_results_subject spec;
+	if (annotation_counts.size() == 1 && annotation_counts.begin()->second.size() == 1)
+		spec.experiment_id = annotation_counts.begin()->second.begin()->first;
+	else {
+		if (subject[0].output_file.empty())
+			throw ns_ex("When multiple experiments are specified, an output file must also be specified.");
+		else spec.experiment_name = subject[0].output_file;
+	}
+	
+	ns_image_server_results_file results((image_server.results_storage.time_path_image_analysis_quantification(spec, "annotation_counts", true, sql, false, false, ns_csv)));
+
+	ns_acquire_for_scope<ns_ostream>  o(results.output());
+	if (o()().fail()) 
+		throw ns_ex("Could not open ") << results.output_filename() << " for output";
+	o()() << "database,";
+	ns_region_metadata::out_JMP_plate_identity_header(o()());
+	o()() << ",Total individuals,Movement Cessation Annotations,Death-Associated expansion annotations, Death-Associated Contraction Annotations,Complete HMM Annotations\n";
+	
+	for (auto db = annotation_counts.begin(); db != annotation_counts.end(); ++db) {
+		ns_select_database_for_scope scope(db->first, sql);
+		for (auto p = db->second.begin(); p != db->second.end(); ++p) {
+			const ns_64_bit experiment_id = p->first;
+			ns_machine_analysis_data_loader machine_annotations;
+			machine_annotations.load(ns_death_time_annotation_set::ns_censoring_and_movement_transitions, 0, 0, experiment_id, sql,true, ns_machine_analysis_region_data::ns_exclude_fast_moving_animals);
+			for (auto r = p->second.begin(); r != p->second.end(); r++) {
+				const ns_death_time_annotation_set* machine_deaths(0);
+				for (unsigned int i = 0; i < machine_annotations.samples.size(); i++) {
+					for (unsigned int j = 0; j < machine_annotations.samples[i].regions.size(); j++)
+						if (machine_annotations.samples[i].regions[j]->metadata.region_id == r->first) {
+							machine_deaths = &machine_annotations.samples[i].regions[j]->death_time_annotation_set;
+							break;
+						}
+					if (machine_deaths != 0) break;
+				}
+			
+				if (machine_deaths == 0)
+					throw ns_ex("Could not find loaded machine deaths!");
+				
+				ns_hand_annotation_loader by_hand_annotations;
+				by_hand_annotations.load_region_annotations(ns_death_time_annotation_set::ns_censoring_and_movement_transitions,
+					r->first,
+					experiment_id,
+					"",
+					metadata[db->first][experiment_id][r->first],
+					sql);
+				by_hand_annotations.annotations.add(*machine_deaths);
+				if (by_hand_annotations.annotations.regions.size() != 1)
+					throw ns_ex("Encountered an unusual region annotation file!");
+				for (auto q = by_hand_annotations.annotations.regions.begin()->second.locations.begin(); q != by_hand_annotations.annotations.regions.begin()->second.locations.end(); ++q) {
+					ns_region_annotation_counts counts;
+					if (q->properties.is_excluded() || q->properties.is_censored())
+						continue;
+					for (unsigned j = 0; j < q->annotations.size(); j++) {
+						if (q->annotations[j].annotation_source == ns_death_time_annotation::ns_storyboard) {
+							if (q->annotations[j].type == ns_movement_cessation)
+								counts.movement_cessation_count++;
+							else if (q->annotations[j].type == ns_death_associated_expansion_start)
+								counts.death_associated_expansion_count++;
+							else if (q->annotations[j].type == ns_death_associated_post_expansion_contraction_start)
+								counts.post_mortem_contraction_count++;
+						}
+					}
+					counts.total_individuals = 1;
+					//don't tally multiple annotations of the same worm.
+					counts.death_associated_expansion_count = counts.death_associated_expansion_count > 0;
+					counts.movement_cessation_count = counts.movement_cessation_count > 0;
+					counts.post_mortem_contraction_count = counts.post_mortem_contraction_count > 0;
+					if (counts.death_associated_expansion_count && counts.movement_cessation_count && counts.post_mortem_contraction_count)
+						counts.complete_hmm_annotation_count = 1;
+					else counts.complete_hmm_annotation_count = 0;
+					r->second += counts;
+				}
+				const ns_region_metadata& m(metadata[db->first][experiment_id][r->first]);
+				o()() << db->first << ",";
+				m.out_JMP_plate_identity_data(o()());
+				o()() << "," << r->second.total_individuals << "," << r->second.movement_cessation_count << "," << r->second.death_associated_expansion_count << "," << r->second.post_mortem_contraction_count << "," << r->second.complete_hmm_annotation_count << "\n";
+				
+			}
+		}
+	}
+}
 
 void ns_worm_learner::generate_survival_curve_from_hand_annotations(const ns_browser_command_subject_set& subject){
 	for (unsigned int i = 0; i < subject.size(); i++) {

@@ -1278,6 +1278,20 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 	static void generate_single_frame_posture_image_pixel_data(const ns_browser_command_subject_set& subject, const std::string & value){
 		worm_learner.generate_single_frame_posture_image_pixel_data((value.find("Plate") != std::string::npos));
 	}
+
+	static void count_by_hand_annotations(const ns_browser_command_subject_set& subject, const std::string& value){
+		if (worm_learner.running_as_gui && value.size() != 0) {
+			ns_browser_command_subject_set sub(1);
+
+			sub[0].subject.database_name = worm_learner.get_sql_connection().database();
+			if (value.find("All") == value.npos)
+				sub[0].subject.experiment_id = worm_learner.data_gui_selector.current_experiment_id();
+			worm_learner.count_by_hand_annotations(sub);
+		}
+		else 
+			worm_learner.count_by_hand_annotations(subject);
+		
+	}
 	static void generate_worm_markov_posture_model_from_by_hand_annotations(const ns_browser_command_subject_set& subject, const std::string& value) {
 		if (subject.empty())
 			return;
@@ -1707,7 +1721,11 @@ public:
 		st2.options.push_back(ns_menu_item_options("Experiment"));
 		st2.options.push_back(ns_menu_item_options("Single Plate"));
 		add(st2);
-		add(ns_menu_item_spec(false, generate_timing_data,"Data Files/_Other Statistics/Generate Scanner Timing Data for Current Experiment"));
+		ns_menu_item_spec st3(false, count_by_hand_annotations, "Data Files/_Other Statistics/_Count By Hand Annotations");
+		st3.options.push_back(ns_menu_item_options("Current Experiment"));
+		st3.options.push_back(ns_menu_item_options("All Experiments"));
+		add(st3);
+		add(ns_menu_item_spec(false, generate_timing_data,"Data Files/Other Statistics/Generate Scanner Timing Data for Current Experiment"));
 		add(ns_menu_item_spec(false, generate_timing_data_all_exp,"Data Files/Other Statistics/_Generate Scanner Timing Data for All Experiments in Group"));
 		add(ns_menu_item_spec(false, generate_region_stats,"Data Files/Other Statistics/Generate Image Statistics for all regions in current Experiment"));
 		add(ns_menu_item_spec(false, generate_region_stats_for_all_regions_in_group,"Data Files/Other Statistics/_Generate Image Statistics for all Regions in current Experiment Group"));
@@ -4170,26 +4188,40 @@ bool ns_parse_commandline_subject(const std::string& subject, ns_image_server_re
 		plate = &s[3];
 		break;
 	default:
-		err = ns_ex("Invalid subject.  Must be in the format database::experiment::sample::region .  Database, sample, and plate specifications are optional.");
+		err = ns_ex("Invalid subject.  Must be in the format database::experiment::sample::region .  Database, experiment, sample, and plate specifications are optional.");
 		return false;
 	}
 	//validate subject
-	if (database != 0) {
+	if (database != 0 || experiment != 0) {
 		sql << "SHOW DATABASES";
 		ns_sql_result res;
 		sql.get_rows(res);
-		bool database_found;
+		bool database_found = false;
+		bool experiment_is_database = false;
 		for (unsigned i = 0; i < res.size(); i++) {
-			if (res[i][0] == *database) {
+			if (database!=0 && res[i][0] == *database) {
 				database_found = true;
 				break;
 			}
+			//the user has specified only a database
+			if (experiment != 0 && res[i][0] == *experiment) {
+				database = experiment;
+				experiment = 0;
+				database_found = true;
+				experiment_is_database = true;
+				break;
+			}
 		}
+
 		if (!database_found) {
-			err = ns_ex("Could not find database '") << *database << "'";
-			return false;
+			if (database != 0) {
+				err = ns_ex("Could not find specified database '") << *database << "'";
+				return false;
+			}
+			else
+				sub.database_name.resize(0);
 		}
-		sub.database_name = *database;
+		else sub.database_name = *database;
 	}
 	else sub.database_name.resize(0);
 	std::string cur_db = sql.database();

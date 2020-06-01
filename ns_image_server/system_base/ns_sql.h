@@ -173,6 +173,8 @@ struct ns_table_to_lock{
 	std::string table_name;
 	bool write;
 };
+//obtains a full table lock, with the guarentee that the lock is 
+//released by the time this object's destructor is called.
 class ns_sql_full_table_lock{
 public:
 	typedef std::vector<ns_table_to_lock> ns_table_list;
@@ -194,6 +196,21 @@ private:
 	ns_sql_connection * sql;
 };
 
+//switches the database, with the guarentee that the sql connection 
+//will return to the original db by the time this object's destructor is called.
+class ns_select_database_for_scope {
+public:
+	ns_select_database_for_scope(const std::string & db,ns_sql_connection& sql):c(&sql) {
+		init_db = sql.database();
+		sql.select_db(db);
+	}
+	~ns_select_database_for_scope() {
+		if (c->database() != init_db)
+			c->select_db(init_db);
+	}
+	std::string init_db;
+	ns_sql_connection* c;
+};
 
 
 #endif

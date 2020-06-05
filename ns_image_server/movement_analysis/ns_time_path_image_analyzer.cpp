@@ -1815,9 +1815,13 @@ bool ns_time_path_image_movement_analyzer<allocator_T>::calculate_optimzation_st
 				e->provide_sub_probability_names(s.animals.rbegin()->state_info_variable_names);
 			}
 
-			
-			
-
+			std::ofstream o("c:\\server\\state_transitions.dot");
+			if (!o.fail()) {
+				std::vector<std::vector<double> > m;
+				hmm_solver.build_state_transition_matrix(*e,m);
+				hmm_solver.output_state_transition_matrix(m, o);
+				o.close();
+			}
 			//first calculate the probabilities of the machine and by hand solutions
 			hmm_solver.probability_of_path_solution(groups[g].paths[p], *e, groups[g].paths[p].movement_analysis_result.machine_movement_state_solution, s.animals.rbegin()->machine_state_info, generate_path_info);
 	
@@ -4165,13 +4169,18 @@ bool ns_analyzed_image_time_path::by_hand_data_specified() const{
 			|| !by_hand_annotation_event_times[(int)ns_fast_movement_cessation].period_end_was_not_observed 
 			);
 }
-ns_death_time_annotation_time_interval ns_analyzed_image_time_path::by_hand_death_time() const{
+ns_death_time_annotation_time_interval ns_analyzed_image_time_path::by_hand_movement_cessation_time() const{
 	if (!by_hand_annotation_event_times[ns_movement_cessation].period_end_was_not_observed)
 		return by_hand_annotation_event_times[ns_movement_cessation];
 	else return ns_death_time_annotation_time_interval::unobserved_interval();
 }
+ns_death_time_annotation_time_interval ns_analyzed_image_time_path::by_hand_death_associated_expansion_time() const {
+	if (!by_hand_annotation_event_times[ns_death_associated_expansion_start].period_end_was_not_observed)
+		return by_hand_annotation_event_times[ns_death_associated_expansion_start];
+	else return ns_death_time_annotation_time_interval::unobserved_interval();
+}
 
-ns_hmm_movement_state ns_analyzed_image_time_path::by_hand_hmm_movement_state(const unsigned long & t, const ns_emperical_posture_quantification_value_estimator & estimator) const {
+ns_hmm_movement_state ns_analyzed_image_time_path::by_hand_hmm_movement_state(const unsigned long & t) const {
 	//For translation and vigorous movement, users often just accept the machine annotations by default.
 	//so, if the user hasn't specified them, we use the machine annotations
 	ns_death_time_annotation_time_interval translation_end(cessation_of_fast_movement_interval());
@@ -4197,11 +4206,14 @@ ns_hmm_movement_state ns_analyzed_image_time_path::by_hand_hmm_movement_state(co
 	//if the worm hasn't arrived yet, it's missing.
 	if (!translation_skipped && t <= translation_end.period_end)
 		return ns_hmm_missing;
+
+	//Ignore by-hand vigorous labels.
+	/*
 	if (!vigorous_skipped && t <= vigorous_end.period_end) {
 		if (estimator.state_defined(ns_hmm_moving_vigorously))
 			return ns_hmm_moving_vigorously;
 		else return ns_hmm_moving_weakly;
-	}
+	}*/
 
 	//if the worm never stops moving, or hasn't stopped moving yet
 	//it is either moving weakly or expanding.
@@ -4742,7 +4754,7 @@ ns_time_path_posture_movement_solution ns_analyzed_image_time_path::reconstruct_
 		translation_cessation.first = movement_analysis_result.state_intervals[(int)ns_translation_cessation].exit_interval.period_start_index;
 		translation_cessation.second = movement_analysis_result.state_intervals[(int)ns_translation_cessation].exit_interval.period_end_index;
 	}
-	if (fast_movement_cessation.first == -1 && fast_movement_cessation.second == -1) {
+	if (0 && fast_movement_cessation.first == -1 && fast_movement_cessation.second == -1) {
 		fast_movement_cessation.first = movement_analysis_result.state_intervals[(int)ns_fast_movement_cessation].exit_interval.period_start_index;
 		fast_movement_cessation.second = movement_analysis_result.state_intervals[(int)ns_fast_movement_cessation].exit_interval.period_end_index;
 	}

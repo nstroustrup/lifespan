@@ -4148,23 +4148,23 @@ bool ns_parse_commandline_subject(const std::string& subject, ns_image_server_re
 			break;
 		case 1: break;
 			if (!colon)
-				err = ns_ex("Invalid subject.  Must be in the format database::experiment::sample::plate .  Database, sample, and plate specifications are optional.");
+				err = ns_ex("Invalid subject: ") << subject << ".  Must be in the format database::experiment::sample::plate .  Database, sample, and plate specifications are optional.";
 			return false;
 		case 2: 
 			if (colon) {
-				err = ns_ex("Invalid subject.  Must be in the format database::experiment::sample::plate .  Database, sample, and plate specifications are optional.");
+				err = ns_ex("Invalid subject: ") << subject << ".  Must be in the format database::experiment::sample::plate .  Database, sample, and plate specifications are optional.";
 				return false;
 			}
 			else {
 				s.resize(s.size() + 1);
-				s.rbegin() += subject[i]; break;
-				num_colons = 0;
+				(*s.rbegin()) += subject[i]; 
+				num_colons = 0; break;
 			}
 		}
 		if (colon) num_colons++;
 	}
 	if (num_colons != 0) {
-		err = ns_ex("Invalid subject.  Must be in the format database::experiment::sample::plate .  Database, sample, and plate specifications are optional.");
+		err = ns_ex("Invalid subject: ") << subject << ".  Must be in the format database::experiment::sample::plate .  Database, sample, and plate specifications are optional.";
 		return false;
 	}
 
@@ -4188,7 +4188,7 @@ bool ns_parse_commandline_subject(const std::string& subject, ns_image_server_re
 		plate = &s[3];
 		break;
 	default:
-		err = ns_ex("Invalid subject.  Must be in the format database::experiment::sample::region .  Database, experiment, sample, and plate specifications are optional.");
+		err = ns_ex("Invalid subject: ") << subject << ".  Must be in the format database::experiment::sample::region .  Database, experiment, sample, and plate specifications are optional.";
 		return false;
 	}
 	//validate subject
@@ -4224,65 +4224,56 @@ bool ns_parse_commandline_subject(const std::string& subject, ns_image_server_re
 		else sub.database_name = *database;
 	}
 	else sub.database_name.resize(0);
-	std::string cur_db = sql.database();
-	if (database != 0) {
-		sql.select_db(*database);
-	}
-	try {
-		if (experiment != 0) {
-			sql << "SELECT id FROM experiments WHERE name = '" << sql.escape_string(*experiment) << "'";
-			ns_sql_result res;
-			sql.get_rows(res);
-			if (res.size() != 1) {
-				err = ns_ex("Could not find experiment '") << *experiment << "'";
-				return false;
-			}
-			sub.experiment_name = *experiment;
-			sub.experiment_id = ns_atoi64(res[0][0].c_str());
-		}
-		else {
-			sub.experiment_id = 0;
-			sub.experiment_name.resize(0);
-		}
-		if (sample != 0 && plate == 0 || sample == 0 && plate != 0) {
-			err = ns_ex("Neither the sample nor region names can be specified without one another");
+	ns_select_database_for_scope db("", sql);
+	if (database != 0) 
+		db.select(*database);
+	
+	if (experiment != 0) {
+		sql << "SELECT id FROM experiments WHERE name = '" << sql.escape_string(*experiment) << "'";
+		ns_sql_result res;
+		sql.get_rows(res);
+		if (res.size() != 1) {
+			err = ns_ex("Could not find experiment '") << *experiment << "'";
 			return false;
 		}
-		if (plate != 0) {
-			if (experiment != 0) {
-				err = ns_ex("Regions cannot be specified without the experiment name.");
-				return false;
-			}
-
-			sql << "SELECT s.id, r.id FROM experiments as e, capture_samples as s, sample_region_image_info as r WHERE "
-				"e.name = '" << sql.escape_string(*experiment)
-				<< "' AND s.name =' " << sql.escape_string(*sample)
-				<< "' AND r.name = " << sql.escape_string(*plate)
-				<< "' AND s.experiment_id = e.id AND r.sample_id = s.id";
-			ns_sql_result res;
-			sql.get_rows(res);
-			if (res.size() != 1) {
-				err = ns_ex("Could not find region '") << *sample << "::" << *plate << " in experiment " << *experiment << " in database " << sql.database();
-				return false;
-			}
-			sub.sample_name = *sample;
-			sub.sample_id = ns_atoi64(res[0][0].c_str());
-			sub.region_name = *plate;
-			sub.region_id = ns_atoi64(res[0][1].c_str());
-		} 
-		else {
-			sub.sample_id = sub.region_id = 0;
-			sub.sample_name.resize(0);
-			sub.region_name.resize(0);
+		sub.experiment_name = *experiment;
+		sub.experiment_id = ns_atoi64(res[0][0].c_str());
+	}
+	else {
+		sub.experiment_id = 0;
+		sub.experiment_name.resize(0);
+	}
+	if (sample != 0 && plate == 0 || sample == 0 && plate != 0) {
+		err = ns_ex("Neither the sample nor region names can be specified without one another");
+		return false;
+	}
+	if (plate != 0) {
+		if (experiment != 0) {
+			err = ns_ex("Regions cannot be specified without the experiment name.");
+			return false;
 		}
+
+		sql << "SELECT s.id, r.id FROM experiments as e, capture_samples as s, sample_region_image_info as r WHERE "
+			"e.name = '" << sql.escape_string(*experiment)
+			<< "' AND s.name =' " << sql.escape_string(*sample)
+			<< "' AND r.name = " << sql.escape_string(*plate)
+			<< "' AND s.experiment_id = e.id AND r.sample_id = s.id";
+		ns_sql_result res;
+		sql.get_rows(res);
+		if (res.size() != 1) {
+			err = ns_ex("Could not find region '") << *sample << "::" << *plate << " in experiment " << *experiment << " in database " << sql.database();
+			return false;
+		}
+		sub.sample_name = *sample;
+		sub.sample_id = ns_atoi64(res[0][0].c_str());
+		sub.region_name = *plate;
+		sub.region_id = ns_atoi64(res[0][1].c_str());
+	} 
+	else {
+		sub.sample_id = sub.region_id = 0;
+		sub.sample_name.resize(0);
+		sub.region_name.resize(0);
 	}
-	catch (...) {
-		if (!cur_db.empty())
-			sql.select_db(cur_db);
-		throw;
-	}
-	if (!cur_db.empty())
-		sql.select_db(cur_db);
 	err = ns_ex();
 	return true;
 }

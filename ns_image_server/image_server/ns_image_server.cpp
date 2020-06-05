@@ -3479,8 +3479,10 @@ void ns_image_server::get_posture_analysis_model_for_region(const ns_64_bit regi
 	if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("get_posture_analysis_model_for_region::directory set"));
 	ns_posture_analysis_model_cache_specification pa_spec(res[0][0], ns_posture_analysis_model::method_from_string(res[0][1]));
 	posture_analysis_model_cache.get_for_read(pa_spec, it, source);
+	if (it().model_specification.posture_analysis_method == ns_posture_analysis_model::ns_hidden_markov || it().model_specification.posture_analysis_method == ns_posture_analysis_model::ns_threshold_and_hmm)
+		it().model_specification.hmm_posture_estimator.validate_model_settings(sql);
+	
 	if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("get_posture_analysis_model_for_region::gotten for read"));
-
 }
 
 

@@ -1082,61 +1082,66 @@ void ns_worm_learner::count_by_hand_annotations(const ns_browser_command_subject
 		ns_select_database_for_scope scope(db->first, sql);
 		for (auto p = db->second.begin(); p != db->second.end(); ++p) {
 			const ns_64_bit experiment_id = p->first;
-			ns_machine_analysis_data_loader machine_annotations;
-			machine_annotations.load(ns_death_time_annotation_set::ns_censoring_and_movement_transitions, 0, 0, experiment_id, sql,true, ns_machine_analysis_region_data::ns_exclude_fast_moving_animals);
-			for (auto r = p->second.begin(); r != p->second.end(); r++) {
-				const ns_death_time_annotation_set* machine_deaths(0);
-				for (unsigned int i = 0; i < machine_annotations.samples.size(); i++) {
-					for (unsigned int j = 0; j < machine_annotations.samples[i].regions.size(); j++)
-						if (machine_annotations.samples[i].regions[j]->metadata.region_id == r->first) {
-							machine_deaths = &machine_annotations.samples[i].regions[j]->death_time_annotation_set;
-							break;
-						}
-					if (machine_deaths != 0) break;
-				}
-			
-				if (machine_deaths == 0)
-					throw ns_ex("Could not find loaded machine deaths!");
-				
-				ns_hand_annotation_loader by_hand_annotations;
-				by_hand_annotations.load_region_annotations(ns_death_time_annotation_set::ns_censoring_and_movement_transitions,
-					r->first,
-					experiment_id,
-					"",
-					metadata[db->first][experiment_id][r->first],
-					sql);
-				by_hand_annotations.annotations.add(*machine_deaths);
-				if (by_hand_annotations.annotations.regions.size() != 1)
-					throw ns_ex("Encountered an unusual region annotation file!");
-				for (auto q = by_hand_annotations.annotations.regions.begin()->second.locations.begin(); q != by_hand_annotations.annotations.regions.begin()->second.locations.end(); ++q) {
-					ns_region_annotation_counts counts;
-					if (q->properties.is_excluded() || q->properties.is_censored())
-						continue;
-					for (unsigned j = 0; j < q->annotations.size(); j++) {
-						if (q->annotations[j].annotation_source == ns_death_time_annotation::ns_storyboard) {
-							if (q->annotations[j].type == ns_movement_cessation)
-								counts.movement_cessation_count++;
-							else if (q->annotations[j].type == ns_death_associated_expansion_start)
-								counts.death_associated_expansion_count++;
-							else if (q->annotations[j].type == ns_death_associated_post_expansion_contraction_start)
-								counts.post_mortem_contraction_count++;
-						}
+			try {
+				ns_machine_analysis_data_loader machine_annotations;
+				machine_annotations.load(ns_death_time_annotation_set::ns_censoring_and_movement_transitions, 0, 0, experiment_id, sql, true, ns_machine_analysis_region_data::ns_exclude_fast_moving_animals);
+				for (auto r = p->second.begin(); r != p->second.end(); r++) {
+					const ns_death_time_annotation_set* machine_deaths(0);
+					for (unsigned int i = 0; i < machine_annotations.samples.size(); i++) {
+						for (unsigned int j = 0; j < machine_annotations.samples[i].regions.size(); j++)
+							if (machine_annotations.samples[i].regions[j]->metadata.region_id == r->first) {
+								machine_deaths = &machine_annotations.samples[i].regions[j]->death_time_annotation_set;
+								break;
+							}
+						if (machine_deaths != 0) break;
 					}
-					counts.total_individuals = 1;
-					//don't tally multiple annotations of the same worm.
-					counts.death_associated_expansion_count = counts.death_associated_expansion_count > 0;
-					counts.movement_cessation_count = counts.movement_cessation_count > 0;
-					counts.post_mortem_contraction_count = counts.post_mortem_contraction_count > 0;
-					if (counts.death_associated_expansion_count && counts.movement_cessation_count && counts.post_mortem_contraction_count)
-						counts.complete_hmm_annotation_count = 1;
-					else counts.complete_hmm_annotation_count = 0;
-					r->second += counts;
+
+					if (machine_deaths == 0)
+						throw ns_ex("Could not find loaded machine deaths!");
+
+					ns_hand_annotation_loader by_hand_annotations;
+					by_hand_annotations.load_region_annotations(ns_death_time_annotation_set::ns_censoring_and_movement_transitions,
+						r->first,
+						experiment_id,
+						"",
+						metadata[db->first][experiment_id][r->first],
+						sql);
+					by_hand_annotations.annotations.add(*machine_deaths);
+					if (by_hand_annotations.annotations.regions.size() != 1)
+						throw ns_ex("Encountered an unusual region annotation file!");
+					for (auto q = by_hand_annotations.annotations.regions.begin()->second.locations.begin(); q != by_hand_annotations.annotations.regions.begin()->second.locations.end(); ++q) {
+						ns_region_annotation_counts counts;
+						if (q->properties.is_excluded() || q->properties.is_censored())
+							continue;
+						for (unsigned j = 0; j < q->annotations.size(); j++) {
+							if (q->annotations[j].annotation_source == ns_death_time_annotation::ns_storyboard) {
+								if (q->annotations[j].type == ns_movement_cessation)
+									counts.movement_cessation_count++;
+								else if (q->annotations[j].type == ns_death_associated_expansion_start)
+									counts.death_associated_expansion_count++;
+								else if (q->annotations[j].type == ns_death_associated_post_expansion_contraction_start)
+									counts.post_mortem_contraction_count++;
+							}
+						}
+						counts.total_individuals = 1;
+						//don't tally multiple annotations of the same worm.
+						counts.death_associated_expansion_count = counts.death_associated_expansion_count > 0;
+						counts.movement_cessation_count = counts.movement_cessation_count > 0;
+						counts.post_mortem_contraction_count = counts.post_mortem_contraction_count > 0;
+						if (counts.death_associated_expansion_count && counts.movement_cessation_count && counts.post_mortem_contraction_count)
+							counts.complete_hmm_annotation_count = 1;
+						else counts.complete_hmm_annotation_count = 0;
+						r->second += counts;
+					}
+					const ns_region_metadata& m(metadata[db->first][experiment_id][r->first]);
+					o()() << db->first << ",";
+					m.out_JMP_plate_identity_data(o()());
+					o()() << "," << r->second.total_individuals << "," << r->second.movement_cessation_count << "," << r->second.death_associated_expansion_count << "," << r->second.post_mortem_contraction_count << "," << r->second.complete_hmm_annotation_count << "\n";
+
 				}
-				const ns_region_metadata& m(metadata[db->first][experiment_id][r->first]);
-				o()() << db->first << ",";
-				m.out_JMP_plate_identity_data(o()());
-				o()() << "," << r->second.total_individuals << "," << r->second.movement_cessation_count << "," << r->second.death_associated_expansion_count << "," << r->second.post_mortem_contraction_count << "," << r->second.complete_hmm_annotation_count << "\n";
-				
+			}
+			catch (ns_ex & ex) {
+				cerr << "Could not load experiment " << db->first << "::" << experiment_id << ":" << ex.text() << "\n";
 			}
 		}
 	}
@@ -2027,6 +2032,17 @@ void ns_worm_learner::output_movement_analysis_optimization_data(const ns_browse
 	}
 }
 
+struct ns_observation_cache {
+	ns_hmm_observation_set* get_new() {
+		o.push_back(new ns_hmm_observation_set);
+		return *o.rbegin();
+	}
+	std::vector<ns_hmm_observation_set*> o;
+	~ns_observation_cache() {
+		for (auto p = o.begin(); p != o.end(); p++)
+			delete (*p);
+	}
+};
 void ns_worm_learner::generate_experiment_movement_image_quantification_analysis_data(const ns_browser_command_subject_set& subject, ns_movement_quantification_type  detail_level, const ns_optimization_subject & subject_flag){
 	std::set < ns_64_bit > experiments_specified;
 	for (unsigned int experiment_i = 0; experiment_i < subject.size(); experiment_i++) {
@@ -2048,10 +2064,9 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 	//hmm_observation_storage_and_model_generators are calculated for each type of plate in the experiment.
 
 	//we need to store plate and db names here, to give them permanant pointers for all the records.
-	std::set<std::string> plate_name_cache;
-	std::set<std::string> database_name_cache;
-	std::map < std::string, ns_emperical_posture_quantification_value_estimator> observations_sorted_by_genotype;
-	std::map<std::string, unsigned long> number_of_individuals_per_genotype;
+	std::set<std::string> string_cache;
+	ns_observation_cache observation_cache;
+	std::map < std::string, ns_cross_replicate_specification> models_to_build;
 	std::map<std::string, unsigned long> device_id_lookup;
 	std::map<unsigned long, std::string> device_id_reverse_lookup;
 	unsigned long max_device_id(0);
@@ -2070,13 +2085,13 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 		if (!subject[experiment_i].subject.database_name.empty()) {
 			if (subject[experiment_i].subject.database_name != sql.database()) {
 				sql.select_db(subject[experiment_i].subject.database_name);
-				database_name_cache.insert(database_name_cache.end(), subject[experiment_i].subject.database_name);
+				string_cache.insert(string_cache.end(), subject[experiment_i].subject.database_name);
 			}
-			database_name = &(*database_name_cache.find(subject[experiment_i].subject.database_name));
+			database_name = &(*string_cache.find(subject[experiment_i].subject.database_name));
 		}
 		else {
-			database_name_cache.insert(database_name_cache.end(), sql.database());
-			database_name = &(*database_name_cache.find(sql.database()));
+			string_cache.insert(string_cache.end(), sql.database());
+			database_name = &(*string_cache.find(sql.database()));
 		}
 
 		try {
@@ -2084,7 +2099,8 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 			bool run_hmm_cross_validation(true);
 			const std::string experiment_name(subject[experiment_i].subject.experiment_name);
 
-			bool test_strict_ordering(true);
+			bool test_strict_ordering(true),
+				test_synchronous_movement_cessatation_and_expansion(true);
 
 			ns_64_bit experiment_id = subject[experiment_i].subject.experiment_id;
 			ns_64_bit plate_id = 0;
@@ -2112,6 +2128,7 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 			}
 
 			if (output_experiment_name.empty()) {
+				output_sub.database_name = *database_name;
 				output_sub.experiment_id = experiment_id;
 				if (plate_id != 0)
 					output_sub.region_id = plate_id;
@@ -2350,7 +2367,8 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 											a.is_censored() ||
 											a.flag.event_should_be_excluded() ||
 											movement_results.samples[i].regions[j]->time_path_image_analyzer->group(g).paths[p].sticky_properties().event_observation_type != ns_death_time_annotation::ns_standard ||
-											movement_results.samples[i].regions[j]->time_path_image_analyzer->group(g).paths[p].by_hand_death_time().fully_unbounded() ||
+											movement_results.samples[i].regions[j]->time_path_image_analyzer->group(g).paths[p].by_hand_movement_cessation_time().fully_unbounded() ||
+											movement_results.samples[i].regions[j]->time_path_image_analyzer->group(g).paths[p].by_hand_death_associated_expansion_time().fully_unbounded() ||
 											movement_results.samples[i].regions[j]->time_path_image_analyzer->group(g).paths[p].sticky_properties().number_of_worms() > 1)
 											continue;
 
@@ -2366,54 +2384,88 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 										std::string experiment_name_to_use;
 										if (experiments_specified.size() > 0)
 											experiment_name_to_use = movement_results.samples[i].regions[j]->metadata.experiment_name;
-										auto plate_name = plate_name_cache.emplace(experiment_name_to_use + "::" + movement_results.samples[i].regions[j]->metadata.plate_name()).first;
+										auto plate_name = string_cache.emplace(experiment_name_to_use + "::" + movement_results.samples[i].regions[j]->metadata.plate_name()).first;
+										auto genotype = string_cache.emplace(movement_results.samples[i].regions[j]->metadata.plate_type_summary("-", true)).first;
+										auto device = string_cache.emplace(movement_results.samples[i].regions[j]->metadata.device).first;
 										if (subject_flag != ns_plate && !filter_by_strain) {
-											observations_sorted_by_genotype["all"].add_observation(NS_CURRENT_POSTURE_MODEL_VERSION, a, path, database_name,movement_results.experiment_id(), &(*plate_name), &movement_results.samples[i].regions[j]->metadata.device);
-											auto c1 = number_of_individuals_per_genotype.find("all");
-											if (c1 == number_of_individuals_per_genotype.end())
-												number_of_individuals_per_genotype["all"] = 1;
-											else c1->second++;
-											//generate an extra model specifically for the current experiment
-											if (experiments_specified.size() > 0) {
-												observations_sorted_by_genotype[experiment_name_to_use + "=all"].add_observation(NS_CURRENT_POSTURE_MODEL_VERSION, a, path, database_name, movement_results.experiment_id(), &(*plate_name), &movement_results.samples[i].regions[j]->metadata.device);
-												auto c1 = number_of_individuals_per_genotype.find(experiment_name_to_use + "=all");
-												if (c1 == number_of_individuals_per_genotype.end())
-													number_of_individuals_per_genotype[experiment_name_to_use + "=all"] = 1;
-												else c1->second++;
+											//first set up model for all experiments being combined together
+											{
+												ns_cross_replicate_specification& standard_model = models_to_build["all=standard"];
+												if (standard_model.observations == 0) {
+													standard_model.cross_replicate_type = ns_cross_replicate_specification::ns_all;
+													standard_model.cross_replicate_estimator_type = ns_cross_replicate_specification::ns_standard;
+													standard_model.observations = observation_cache.get_new();
+												}
+												standard_model.observations->add_observation(NS_CURRENT_POSTURE_MODEL_VERSION, a, path, database_name, movement_results.experiment_id(), &(*plate_name), &(*device), &(*genotype));
+												
+
+												if (test_strict_ordering) {
+													ns_cross_replicate_specification& strict_ordering_model = models_to_build["all=with_strict_event_ordering"];
+													if (strict_ordering_model.observations == 0) {
+														strict_ordering_model.observations = standard_model.observations;
+														strict_ordering_model.cross_replicate_type = ns_cross_replicate_specification::ns_all;
+														strict_ordering_model.cross_replicate_estimator_type = ns_cross_replicate_specification::ns_strict_ordering;
+													}
+												}
+												if (test_synchronous_movement_cessatation_and_expansion) {
+													ns_cross_replicate_specification& strict_ordering_model = models_to_build["all=with_simultaneous_movement_cessation_and_expansion"];
+													if (strict_ordering_model.observations == 0) {
+														strict_ordering_model.observations = standard_model.observations;
+														strict_ordering_model.cross_replicate_type = ns_cross_replicate_specification::ns_all;
+														strict_ordering_model.cross_replicate_estimator_type = ns_cross_replicate_specification::ns_simultaneous_movement_cessation_and_expansion;
+													}
+												}
 											}
-
-										}
-
-										if (test_strict_ordering) {
-											observations_sorted_by_genotype["all_with_strict_event_ordering"].add_observation(NS_CURRENT_POSTURE_MODEL_VERSION, a, path, database_name, movement_results.experiment_id(), &(*plate_name), &movement_results.samples[i].regions[j]->metadata.device);
-											auto c1 = number_of_individuals_per_genotype.find("all_with_strict_event_ordering");
-											if (c1 == number_of_individuals_per_genotype.end())
-												number_of_individuals_per_genotype["all_with_strict_event_ordering"] = 1;
-											else c1->second++;
-
-											if (experiments_specified.size() > 0) {
-												observations_sorted_by_genotype[experiment_name_to_use + "=all_with_strict_event_ordering"].add_observation(NS_CURRENT_POSTURE_MODEL_VERSION, a, path, database_name, movement_results.experiment_id(), &(*plate_name), &movement_results.samples[i].regions[j]->metadata.device);
-												auto c1 = number_of_individuals_per_genotype.find(experiment_name_to_use + "=all_with_strict_event_ordering");
-												if (c1 == number_of_individuals_per_genotype.end())
-													number_of_individuals_per_genotype[experiment_name_to_use + "=all_with_strict_event_ordering"] = 1;
-												else c1->second++;
+											{
+												ns_cross_replicate_specification& genotype_model = models_to_build["all="+plate_type_summary + "=standard"];
+												if (genotype_model.observations == 0) {
+													genotype_model.cross_replicate_type = ns_cross_replicate_specification::ns_genotype_specific;
+													genotype_model.cross_replicate_estimator_type = ns_cross_replicate_specification::ns_standard;
+													genotype_model.observations = observation_cache.get_new();
+													genotype_model.genotype = (*genotype);
+												}
+												genotype_model.observations->add_observation(NS_CURRENT_POSTURE_MODEL_VERSION, a, path, database_name, movement_results.experiment_id(), &(*plate_name), &(*device), &(*genotype));
 											}
+											//now set up model for each experiment individually
+											if (experiments_specified.size() > 1) {
+												ns_cross_replicate_specification& exp_specific_standard_model = models_to_build[experiment_name_to_use + "=standard"];
+												if (exp_specific_standard_model.observations == 0) {
+													exp_specific_standard_model.cross_replicate_type = ns_cross_replicate_specification::ns_all;
+													exp_specific_standard_model.cross_replicate_estimator_type = ns_cross_replicate_specification::ns_standard;
+													exp_specific_standard_model.observations = observation_cache.get_new();
+												}
+												exp_specific_standard_model.observations->add_observation(NS_CURRENT_POSTURE_MODEL_VERSION, a, path, database_name, movement_results.experiment_id(), &(*plate_name), &(*device), &(*genotype));
+												
 
+												if (test_strict_ordering) {
+													ns_cross_replicate_specification& strict_ordering_model = models_to_build[experiment_name_to_use + "=with_strict_event_ordering"];
+													if (strict_ordering_model.observations == 0) {
+														strict_ordering_model.observations = exp_specific_standard_model.observations;
+														strict_ordering_model.cross_replicate_type = ns_cross_replicate_specification::ns_all;
+														strict_ordering_model.cross_replicate_estimator_type = ns_cross_replicate_specification::ns_strict_ordering;
+													}
+												}
+												if (test_synchronous_movement_cessatation_and_expansion) {
+													ns_cross_replicate_specification& strict_ordering_model = models_to_build[experiment_name_to_use + "=with_simultaneous_movement_cessation_and_expansion"];
+													if (strict_ordering_model.observations == 0) {
+														strict_ordering_model.observations = exp_specific_standard_model.observations;
+														strict_ordering_model.cross_replicate_type = ns_cross_replicate_specification::ns_all;
+														strict_ordering_model.cross_replicate_estimator_type = ns_cross_replicate_specification::ns_simultaneous_movement_cessation_and_expansion;
+													}
+												}
+
+												ns_cross_replicate_specification& genotype_model = models_to_build[experiment_name_to_use + "=" + plate_type_summary+"=standard"];
+												if (genotype_model.observations == 0) {
+													genotype_model.cross_replicate_type = ns_cross_replicate_specification::ns_genotype_specific;
+													genotype_model.cross_replicate_estimator_type = ns_cross_replicate_specification::ns_standard;
+													genotype_model.observations = observation_cache.get_new();
+													genotype_model.genotype = (*genotype);
+												}
+												genotype_model.observations->add_observation(NS_CURRENT_POSTURE_MODEL_VERSION, a, path, database_name, movement_results.experiment_id(), &(*plate_name), &(*device), &(*genotype));
+											}
 										}
-										observations_sorted_by_genotype[plate_type_summary].add_observation(NS_CURRENT_POSTURE_MODEL_VERSION, a, path, database_name, movement_results.experiment_id(), &(*plate_name), &movement_results.samples[i].regions[j]->metadata.device);
-										if (experiments_specified.size() > 0) {
-
-											observations_sorted_by_genotype[experiment_name_to_use + "=" + plate_type_summary].add_observation(NS_CURRENT_POSTURE_MODEL_VERSION, a, path, database_name, movement_results.experiment_id(), &(*plate_name), &movement_results.samples[i].regions[j]->metadata.device);
-										}
-
-										auto c2 = number_of_individuals_per_genotype.find(plate_type_summary);
-										if (c2 == number_of_individuals_per_genotype.end())
-											number_of_individuals_per_genotype[plate_type_summary] = 1;
-										else c2->second++;
-
 
 										added_data = true;
-
 
 									}
 								}
@@ -2451,14 +2503,15 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 	if (detail_level == ns_build_worm_markov_posture_model_from_by_hand_annotations) {
 		results_text += "=== Automated Animal Death Time Identification Calibration Results === \n\n";
 		//exclude animal types with too few annotations.
-		for (auto p = number_of_individuals_per_genotype.begin(); p != number_of_individuals_per_genotype.end(); ++p) {
-			if (p->second < 25) {
-				observations_sorted_by_genotype.erase(p->first);
+		for (auto p = models_to_build.begin(); p != models_to_build.end(); ) {
+			if (p->second.observations->volatile_number_of_individuals_fully_annotated < 25) {
 				results_text += "No model was built for animals of type ";
-				results_text += p->first + " because only " + ns_to_string(p->second) + " animals have been annotated.\n";
+				results_text += p->first + " because only " + ns_to_string(p->second.genotype) + " animals have been annotated.\n";
+				p = models_to_build.erase(p);
 			}
+			else ++p;
 		}
-		ns_run_hmm_cross_validation(results_text, output_sub, movement_results, observations_sorted_by_genotype, sql);
+		ns_run_hmm_cross_validation(results_text, output_sub, movement_results, models_to_build, sql);
 		ns_acquire_for_scope<ns_ostream> summary(image_server.results_storage.optimized_posture_analysis_parameter_set(output_sub, "hmm_optimization_summary", sql).output());
 		summary()() << results_text;
 		summary.release();
@@ -2490,6 +2543,8 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 }
 
 void ns_worm_learner::calculate_hmm_from_files(const std::string & path) {
+	throw ns_ex("Depreciated!");
+	/*
 	ns_emperical_posture_quantification_value_estimator estimator;
 	ns_dir dir;
 	std::vector<std::string> files;
@@ -2498,7 +2553,7 @@ void ns_worm_learner::calculate_hmm_from_files(const std::string & path) {
 		if (files[i] == "hmm_model_file.csv")
 			continue;
 		std::ifstream in((path + DIR_CHAR_STR + files[i]).c_str());
-		estimator.read_observation_data(in);
+		estimator-read_observation_data(in);
 	}
 	std::string results_text;
 
@@ -2524,7 +2579,7 @@ void ns_worm_learner::calculate_hmm_from_files(const std::string & path) {
 	td.title = "HMM Model Generation Results";
 	td.w = 1000;
 	td.h = 700;
-	ns_run_in_main_thread_wait_for_close<ns_text_dialog> b(&td);
+	ns_run_in_main_thread_wait_for_close<ns_text_dialog> b(&td);*/
 
 }
 
@@ -7852,6 +7907,7 @@ void ns_worm_learner::navigate_solo_worm_annotation(ns_death_time_solo_posture_a
 			analyze_worm_movement_across_frames(job, &image_server, sql, true, death_time_solo_annotater.current_worm_id.group_id, &path_information);
 			ns_image_server_results_subject subject;
 			subject.region_id = region_id;
+
 			ns_image_server_results_file results((image_server.results_storage.time_path_image_analysis_quantification(subject, std::string("hmm_path=") + "_animal_" + ns_to_string(death_time_solo_annotater.current_worm_id.group_id), true, sql,false,false,ns_csv)));
 			
 			ns_acquire_for_scope<ns_ostream>  path_stats_output(results.output());

@@ -70,9 +70,10 @@ public:
 
 	void build_movement_state_solution_from_movement_transitions(const unsigned long first_stationary_path_index,const std::vector<unsigned long> path_indices, const std::vector<ns_hmm_state_transition_time_path_index > & movement_transitions);
 	
-private:
 	//m[i][j] is the log probabilitiy that an individual in state i transitions to state j.
 	static void build_state_transition_matrix(const ns_emperical_posture_quantification_value_estimator & estimator, std::vector<std::vector<double> > & m);
+
+	static void output_state_transition_matrix(const std::vector<std::vector<double> >& m, std::ostream& o);
 
 	static ns_hmm_movement_state most_probable_state(const std::vector<double> & d);
 

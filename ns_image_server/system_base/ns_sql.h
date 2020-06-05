@@ -202,7 +202,11 @@ class ns_select_database_for_scope {
 public:
 	ns_select_database_for_scope(const std::string & db,ns_sql_connection& sql):c(&sql) {
 		init_db = sql.database();
-		sql.select_db(db);
+		select(db);
+	}
+	void select(const std::string& db) {
+		if (db != init_db && !db.empty())
+			c->select_db(db);
 	}
 	~ns_select_database_for_scope() {
 		if (c->database() != init_db)

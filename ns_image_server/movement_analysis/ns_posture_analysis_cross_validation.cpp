@@ -72,10 +72,11 @@ public:
 				time_path_image_analyzer.add_by_hand_annotations(by_hand_annotations);
 
 			}
+			//time_path_image_analyzer.add_by_hand_annotations(by_hand_annotations);
 			else {
-				//time_path_image_analyzer.add_by_hand_annotations(by_hand_annotations);
 				time_path_image_analyzer.reanalyze_with_different_movement_estimator(time_series_denoising_parameters, &markov_solver);
 			}
+			
 			std::set<ns_stationary_path_id> individuals_to_test;
 			for (auto p = test_set.begin(); p != test_set.end(); p++) {
 				if (*p->database_name == *database && p->region_info_id == region_id)
@@ -382,7 +383,7 @@ struct ns_hmm_cross_validation_manager {
 	}
 
 	void build_models_for_cross_validation(std::string& output) {
-		for (auto validation_approach = validation_runs_sorted_by_validation_type.begin(); validation_approach != validation_runs_sorted_by_validation_type.end(); ++validation_approach) {
+		for (auto validation_approach = validation_runs_sorted_by_validation_type.begin(); validation_approach != validation_runs_sorted_by_validation_type.end();) {
 			ns_hmm_states_permitted state_specification;
 			//ns_emperical_posture_quantification_value_estimator::ns_all_states;
 			switch (validation_approach->second.spec.cross_replicate_estimator_type) {
@@ -393,15 +394,22 @@ struct ns_hmm_cross_validation_manager {
 			default:
 				state_specification = ns_all_states_permitted; break;
 			}
-
+			bool all_replicates_supported_model_building = true;
 			for (auto replicate = validation_approach->second.replicates.begin(); replicate != validation_approach->second.replicates.end(); ++replicate) {
 				try {
 					replicate->model.build_estimator_from_observations(replicate->training_set, output, state_specification);
+					replicate->model_building_completed = true;
 				}
 				catch (ns_ex & ex) {
 					std::cout << "Error building HMM model: " << ex.text() << "\n";
+					replicate->model_building_completed = false;
+					all_replicates_supported_model_building = false;
 				}
 			}
+			//if some of the replicates failed, delete the whole validation approach.
+			if (all_replicates_supported_model_building)
+				++validation_approach;
+			else validation_approach = validation_runs_sorted_by_validation_type.erase(validation_approach);
 
 		}
 	}
@@ -571,24 +579,33 @@ void ns_run_hmm_cross_validation(std::string& results_text, ns_image_server_resu
 	}
 	std::cout << "\nBuilding HMM Models...\n";
 	unsigned long num_built(0);
-	for (auto p = cross_validation_sets.begin(); p != cross_validation_sets.end(); ++p) {
+	const unsigned long num_to_build(cross_validation_sets.size());
+	for (auto p = cross_validation_sets.begin(); p != cross_validation_sets.end(); ) {
 
-		std::cout << ns_to_string_short((100.0 * num_built) / cross_validation_sets.size(), 2) << "%...";
+		std::cout << ns_to_string_short((100.0 * num_built) / num_to_build, 2) << "%...";
 		num_built++;
+		std::string subject;
 		if (p->second.validation_runs_sorted_by_validation_type.begin()->second.spec.cross_replicate_type == ns_cross_replicate_specification::ns_all)
-			model_building_and_testing_info[p->first] = "== HMM model built from all animal types";
+			subject = "all animal types";
 		else
-			model_building_and_testing_info[p->first] = "== HMM model built for " + *(p->second.validation_runs_sorted_by_validation_type.begin()->second.replicates.begin()->training_set.obs.begin()->second.begin()->genotype);
+			subject = *(p->second.validation_runs_sorted_by_validation_type.begin()->second.replicates.begin()->training_set.obs.begin()->second.begin()->genotype);
 		switch (p->second.validation_runs_sorted_by_validation_type.begin()->second.spec.cross_replicate_estimator_type) {
-		case ns_cross_replicate_specification::ns_standard: 
-			model_building_and_testing_info[p->first] += " ==\n"; break;
-		case ns_cross_replicate_specification::ns_strict_ordering: 
-			model_building_and_testing_info[p->first] += " using a restricted state ordering scheme ==\n"; break;
-		case ns_cross_replicate_specification::ns_simultaneous_movement_cessation_and_expansion: 
-			model_building_and_testing_info[p->first] = " assuming synchronous death expansion ==\n"; break;
+			case ns_cross_replicate_specification::ns_standard: 
+				break;
+			case ns_cross_replicate_specification::ns_strict_ordering: 
+				subject += " using a restricted state ordering scheme ==\n"; break;
+			case ns_cross_replicate_specification::ns_simultaneous_movement_cessation_and_expansion: 
+				subject +=" assuming synchronous death expansion ==\n"; break;
 		}
 		p->second.build_models_for_cross_validation(model_building_and_testing_info[p->first]);
-		
+		//if none of the validation approaches could be used for building a model, delete this whole cross validation set.
+		if (p->second.validation_runs_sorted_by_validation_type.empty()) {
+			model_building_and_testing_info[p->first] = "Not enough annotations were present to build a model for " + subject + "\n";
+			p = cross_validation_sets.erase(p);
+			continue;
+		}
+		else
+			model_building_and_testing_info[p->first] = "== HMM model built for " + subject + " ==\n";
 
 		if (p->second.all_vs_all_exists()) {
 			ns_select_database_for_scope db("", sql);
@@ -610,6 +627,10 @@ void ns_run_hmm_cross_validation(std::string& results_text, ns_image_server_resu
 
 		}
 		else model_filenames[p->first] = "(Not Written)";
+		++p;
+	}
+	if (cross_validation_sets.empty()) {
+		throw ns_ex("No model files could be built from this data set.");
 	}
 
 

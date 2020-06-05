@@ -185,6 +185,9 @@ double ns_hmm_solver::run_viterbi(const ns_analyzed_image_time_path & path, cons
 	const int number_of_states((int)ns_hmm_unknown_state);
 	std::vector<std::vector<double> > state_transition_matrix;
 	build_state_transition_matrix(estimator, state_transition_matrix);
+	//std::ofstream out("c:\\server\\state_transition_dot.txt");
+	//output_state_transition_matrix(state_transition_matrix, out);
+	//out.close();
 	for (unsigned int i = 0; i < state_transition_matrix.size(); i++)
 		for (unsigned int j = 0; j < state_transition_matrix[i].size(); j++)
 			state_transition_matrix[i][j] = log(state_transition_matrix[i][j]);
@@ -217,6 +220,7 @@ double ns_hmm_solver::run_viterbi(const ns_analyzed_image_time_path & path, cons
 		path_forbidden[ns_hmm_contracting_post_expansion] = 1; //do not allow animals to start as contracting post-expansion.  They can only start weakly /pre-expansion/ if the expansion was not observed!
 		if (!allow_weakly) path_forbidden[ns_hmm_moving_weakly] = 1;
 		ns_forbid_requested_hmm_states(estimator, 0, path_forbidden);
+
 		
 		if (first_appearance_id == 0) //if the animal is present in the first frame, disallow "missing"
 			emission_log_probabilities[ns_hmm_missing] = 0;
@@ -260,7 +264,8 @@ double ns_hmm_solver::run_viterbi(const ns_analyzed_image_time_path & path, cons
 				max_prev_i = 0;
 				bool found_valid = false;
 				for (i = 0; i < mstat; i++) {
-					if (state_transition_matrix[i][j] == 0 || !std::isfinite(emission_log_probabilities[j]) || path_forbidden[mstat*(t - 1) + i])
+					//was a bug here, state_transition_matrix[i][j]==0, causing problems all allong?  
+					if (!std::isfinite(state_transition_matrix[i][j])  || !std::isfinite(emission_log_probabilities[j]) || path_forbidden[mstat*(t - 1) + i])
 						continue;
 					//calculate probability of moving from state i at time t-1 to state j now
 					const double cur = probabilitiy_of_path[mstat*(t - 1)+i] + state_transition_matrix[i][j] + emission_log_probabilities[j];
@@ -338,7 +343,7 @@ double ns_hmm_solver::run_viterbi(const ns_analyzed_image_time_path & path, cons
 		if (s != movement_transitions.rbegin()->first)
 			movement_transitions.push_back(ns_hmm_state_transition_time_path_index(s, i));
 	}
-	if (0 && movement_transitions.size() >= 2 && movement_transitions[0].first == ns_hmm_missing && movement_transitions[1].first == ns_hmm_moving_weakly_post_expansion) {
+	if (0 && movement_transitions.size() == 1) {
 		std::ofstream out("c:\\server\\dbg.csv");
 		out << "t,R";
 		for (unsigned int j = 0; j < mstat; j++)

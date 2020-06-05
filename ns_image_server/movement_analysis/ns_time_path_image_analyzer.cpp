@@ -1780,8 +1780,9 @@ bool operator!=(const ns_analyzed_image_specification& a, const ns_analyzed_imag
 
 
 template<class allocator_T>
-bool ns_time_path_image_movement_analyzer<allocator_T>::calculate_optimzation_stats_for_current_hmm_estimator(const std::string * database_name,ns_hmm_movement_analysis_optimizatiom_stats & s, const ns_emperical_posture_quantification_value_estimator * e, std::set<ns_stationary_path_id> & paths_to_test, bool generate_path_info) {
+bool ns_time_path_image_movement_analyzer<allocator_T>::calculate_optimzation_stats_for_current_hmm_estimator(const std::string * database_name,ns_hmm_movement_analysis_optimizatiom_stats & output_stats, const ns_emperical_posture_quantification_value_estimator * e, std::set<ns_stationary_path_id> & paths_to_test, bool generate_path_info) {
 	bool found_worm(false);
+	output_stats.animals.reserve(groups.size());
 	for (unsigned long g = 0; g < groups.size(); g++)
 		for (unsigned long p = 0; p < groups[g].paths.size(); p++) {
 			if (ns_skip_low_density_paths && groups[g].paths[p].is_low_density_path() || !groups[g].paths[p].by_hand_data_specified() ||
@@ -1804,30 +1805,30 @@ bool ns_time_path_image_movement_analyzer<allocator_T>::calculate_optimzation_st
 				//cout << "Encountered a by hand annotation in which the animal never slowed: " << g << "\n";
 			//	continue;
 			//}
-			s.animals.resize(s.animals.size() + 1);
-
+			output_stats.animals.resize(output_stats.animals.size() + 1);
+			ns_hmm_movement_analysis_optimizatiom_stats_record& stat(*output_stats.animals.rbegin());
 			//set upstructures for debug output
 			ns_hmm_solver hmm_solver;
 			if (generate_path_info) {
-				s.animals.rbegin()->state_info_times.resize(groups[g].paths[p].element_count());
-				for (unsigned int i = 0; i < s.animals.rbegin()->state_info_times.size(); i++)
-					s.animals.rbegin()->state_info_times[i] = groups[g].paths[p].element(i).absolute_time;
-				e->provide_sub_probability_names(s.animals.rbegin()->state_info_variable_names);
+				stat.state_info_times.resize(groups[g].paths[p].element_count());
+				for (unsigned int i = 0; i < stat.state_info_times.size(); i++)
+					stat.state_info_times[i] = groups[g].paths[p].element(i).absolute_time;
+				e->provide_sub_probability_names(stat.state_info_variable_names);
 			}
 
-			std::ofstream o("c:\\server\\state_transitions.dot");
+			/*std::ofstream o("c:\\server\\state_transitions.dot");
 			if (!o.fail()) {
 				std::vector<std::vector<double> > m;
 				hmm_solver.build_state_transition_matrix(*e,m);
 				hmm_solver.output_state_transition_matrix(m, o);
 				o.close();
-			}
+			}*/
 			//first calculate the probabilities of the machine and by hand solutions
-			hmm_solver.probability_of_path_solution(groups[g].paths[p], *e, groups[g].paths[p].movement_analysis_result.machine_movement_state_solution, s.animals.rbegin()->machine_state_info, generate_path_info);
+			hmm_solver.probability_of_path_solution(groups[g].paths[p], *e, groups[g].paths[p].movement_analysis_result.machine_movement_state_solution, stat.machine_state_info, generate_path_info);
 	
-			hmm_solver.probability_of_path_solution(groups[g].paths[p], *e, by_hand_posture_movement_solution, s.animals.rbegin()->by_hand_state_info, generate_path_info);
+			hmm_solver.probability_of_path_solution(groups[g].paths[p], *e, by_hand_posture_movement_solution, stat.by_hand_state_info, generate_path_info);
 			
-			s.animals.rbegin()->solution_loglikelihood = groups[g].paths[p].movement_analysis_result.machine_movement_state_solution.loglikelihood_of_solution;
+			stat.solution_loglikelihood = groups[g].paths[p].movement_analysis_result.machine_movement_state_solution.loglikelihood_of_solution;
 		
 			
 			//now go through and calculate the errors betweeen the machine and by hand calculations
@@ -1837,26 +1838,26 @@ bool ns_time_path_image_movement_analyzer<allocator_T>::calculate_optimzation_st
 				const ns_death_time_annotation_time_interval machine_result = groups[g].paths[p].machine_event_time(st, machine_skipped);
 				const ns_death_time_annotation_time_interval by_hand_result = groups[g].paths[p].by_hand_annotation_event_times[st];
 
-				s.animals.rbegin()->database_name = database_name;
-				s.animals.rbegin()->properties = groups[g].paths[p].censoring_and_flag_details;
-				s.animals.rbegin()->properties.stationary_path_id = ns_stationary_path_id(g, p, this->analysis_id);
-				s.animals.rbegin()->path_id = ns_stationary_path_id(g, p, this->analysis_id);
-				s.animals.rbegin()->properties.region_info_id = this->region_info_id;
-				ns_hmm_movement_analysis_optimizatiom_stats_event_annotation * result = &(s.animals.rbegin()->measurements[st]);
+				stat.database_name = database_name;
+				stat.properties = groups[g].paths[p].censoring_and_flag_details;
+				stat.properties.stationary_path_id = ns_stationary_path_id(g, p, this->analysis_id);
+				stat.path_id = ns_stationary_path_id(g, p, this->analysis_id);
+				stat.properties.region_info_id = this->region_info_id;
+				ns_hmm_movement_analysis_optimizatiom_stats_event_annotation & result = stat.measurements[st];
 
-				result->by_hand_identified = !by_hand_result.fully_unbounded() && groups[g].paths[p].by_hand_annotation_event_explicitness[st] != ns_death_time_annotation::ns_explicitly_not_observed;
+				result.by_hand_identified = !by_hand_result.fully_unbounded() && groups[g].paths[p].by_hand_annotation_event_explicitness[st] != ns_death_time_annotation::ns_explicitly_not_observed;
 				
-				if (result->by_hand_identified)
-					result->by_hand = by_hand_result;
-				if (result->by_hand_identified && result->by_hand.best_estimate_event_time_for_possible_partially_unbounded_interval() == 0) {
+				if (result.by_hand_identified)
+					result.by_hand = by_hand_result;
+				if (result.by_hand_identified && result.by_hand.best_estimate_event_time_for_possible_partially_unbounded_interval() == 0) {
 					std::cerr << "The worm browser generated a spurious storyboard annotation that has been ignored.\n";
 					//These enter the pipeline in
 					//ns_analyzed_image_time_path::add_by_hand_annotations()
-					result->by_hand_identified = false;
+					result.by_hand_identified = false;
 				}
-				result->machine_identified = !machine_skipped;
-				if (result->machine_identified)
-					result->machine = machine_result;
+				result.machine_identified = !machine_skipped;
+				if (result.machine_identified)
+					result.machine = machine_result;
 
 			}
 

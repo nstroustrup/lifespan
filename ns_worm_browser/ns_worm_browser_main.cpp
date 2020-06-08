@@ -605,10 +605,15 @@ protected:
 		ns_browser_command_subject_set subject(1);
 		if (worm_learner.data_gui_selector.experiment_selected()) {
 			subject[0].subject.experiment_id = worm_learner.data_gui_selector.current_experiment_id();
-			if (worm_learner.data_gui_selector.sample_selected())
+			subject[0].subject.experiment_name = worm_learner.data_gui_selector.current_experiment_name();
+			if (worm_learner.data_gui_selector.sample_selected()) {
 				subject[0].subject.sample_id = worm_learner.data_gui_selector.current_sample().sample_id;
-			if (worm_learner.data_gui_selector.region_selected())
+				subject[0].subject.sample_name = worm_learner.data_gui_selector.current_sample().sample_name;
+			}
+			if (worm_learner.data_gui_selector.region_selected()) {
 				subject[0].subject.region_id = worm_learner.data_gui_selector.current_region().region_id;
+				subject[0].subject.region_name = worm_learner.data_gui_selector.current_region().region_name;
+			}
 			if (worm_learner.data_gui_selector.strain_selected())
 				subject[0].subject.strain = worm_learner.data_gui_selector.current_strain();
 		}

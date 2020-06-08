@@ -114,13 +114,13 @@ void ns_bulk_experiment_mask_manager::process_mask_file(ns_image_standard & mask
 	}
 }
 
-void ns_bulk_experiment_mask_manager::produce_mask_file(const ns_mask_type & mask_type, const unsigned int experiment_id, const std::string metadata_output_filename, ns_image_stream_file_sink<ns_8_bit> & reciever, ns_sql & sql, const unsigned long mask_time ) {
+void ns_bulk_experiment_mask_manager::produce_mask_file(const ns_mask_type & mask_type, const std::string &db, const unsigned int experiment_id, const std::string metadata_output_filename, ns_image_stream_file_sink<ns_8_bit> & reciever, ns_sql & sql, const unsigned long mask_time ) {
 
 	bool output_region_label_mask(mask_type == ns_subregion_label_mask);
 	ofstream metadata_output(metadata_output_filename.c_str());
 	if (metadata_output.fail())
 		throw ns_ex("Could not open metadata file ") << metadata_output_filename;
-
+	ns_select_database_for_scope db_select(db, sql);
 	const string subject_type = (output_region_label_mask) ? "region" : "sample";
 	if (image_server.verbose_debug_output())
 		cerr << "Loading sample info...\n";
@@ -274,6 +274,7 @@ void ns_bulk_experiment_mask_manager::produce_mask_file(const ns_mask_type & mas
 		collage_info_manager.collage_info[i].experiment_id = experiment_id;
 		collage_info_manager.collage_info[i].position.x = current_x;
 		collage_info_manager.collage_info[i].position.y = current_y;
+		collage_info_manager.collage_info[i].database = db;
 		if (output_region_label_mask) {
 			collage_info_manager.collage_info[i].region_id = ns_atoi64(subjects[i][1].c_str());
 			collage_info_manager.collage_info[i].sample_name = subjects[i][3];
@@ -454,7 +455,7 @@ bool ns_bulk_experiment_mask_manager::submit_subregion_label_masks_to_cluster(bo
 
 		if (collage_info_manager.collage_info[i].region_id == 0)
 			throw ns_ex("Attempting to submit an experiment plate reigon mask as a subregion label mask!");
-
+		ns_select_database_for_scope db(collage_info_manager.collage_info[i].database, sql);
 		sql << "SELECT " << ns_processing_step_db_column_name(ns_process_subregion_label_mask) << " FROM sample_region_image_info WHERE id = " << collage_info_manager.collage_info[i].region_id;
 		ns_sql_result res;
 		sql.get_rows(res);
@@ -473,6 +474,8 @@ bool ns_bulk_experiment_mask_manager::submit_subregion_label_masks_to_cluster(bo
 		region_image.region_info_id = collage_info_manager.collage_info[i].region_id;
 		region_image.sample_id = collage_info_manager.collage_info[i].sample_id;
 		region_image.experiment_id = collage_info_manager.collage_info[i].experiment_id;
+
+		ns_select_database_for_scope db(collage_info_manager.collage_info[i].database, sql);
 		sql << "SELECT r.name,s.name,e.name FROM sample_region_image_info as r, capture_samples as s, experiments as e WHERE r.id = " << collage_info_manager.collage_info[i].region_id 
 			<< " AND s.id = " << collage_info_manager.collage_info[i].sample_id << " AND e.id = " << collage_info_manager.collage_info[i].experiment_id;
 		ns_sql_result info;
@@ -525,6 +528,7 @@ bool ns_bulk_experiment_mask_manager::submit_plate_region_masks_to_cluster(bool 
 			if (collage_info_manager.collage_info[i].region_id != 0)
 				throw ns_ex("Attempting to submit a subregion label mask as an experiment plate reigon mask!");
 
+			ns_select_database_for_scope db(collage_info_manager.collage_info[i].database, sql);
 			sql << "SELECT mask_id, name FROM capture_samples WHERE id = " << collage_info_manager.collage_info[i].sample_id;
 			ns_sql_result res;
 			sql.get_rows(res);
@@ -546,19 +550,6 @@ bool ns_bulk_experiment_mask_manager::submit_plate_region_masks_to_cluster(bool 
 					sql.send_query();
 				}
 			}
-			//Connecting to image server
-			/*	cerr << "Connecting to image server...";
-			ns_socket socket;
-			ns_socket_connection c;
-			try{
-			c = socket.connect(ip_address,port);
-			}
-			catch(...){
-			ex_not_ok = true;
-			throw;
-			}*/
-			//Updating database
-			//cerr << "\nUpdating database....";
 			ns_64_bit image_id = image_server.make_record_for_new_sample_mask(collage_info_manager.collage_info[i].sample_id, sql);
 			sql << "INSERT INTO image_masks SET image_id = " << image_id << ", processed='0',resize_factor=" << resize_factor;
 			ns_64_bit mask_id = sql.send_query_get_id();

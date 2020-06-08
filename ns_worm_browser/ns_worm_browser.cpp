@@ -81,8 +81,8 @@ void ns_worm_learner::produce_mask_file(const ns_browser_command_subject& subjec
 		ns_image_stream_file_sink<ns_8_bit> file_sink(subject.output_file, tiff_out, 1024, 1.0);
 
 		cerr << "writing: " << subject.output_file << "\n";
-
 		ns_sql& sql = get_sql_connection();
+		ns_select_database_for_scope db(subject.subject.database_name, sql);
 		sql << "SELECT mask_time FROM experiments WHERE id = " << experiment_id;
 		unsigned long mask_time = sql.get_ulong_value();
 		cerr << "Generating mask";
@@ -90,7 +90,7 @@ void ns_worm_learner::produce_mask_file(const ns_browser_command_subject& subjec
 			cerr << " using images up until" << ns_format_time_string_for_human(mask_time);
 		const std::string metadata_output_filename(ns_bulk_experiment_mask_manager::metadata_filename(subject.output_file));
 
-		mask_manager.produce_mask_file(mask_type, experiment_id, metadata_output_filename, file_sink, sql, mask_time);
+		mask_manager.produce_mask_file(mask_type, subject.subject.database_name,experiment_id, metadata_output_filename, file_sink, sql, mask_time);
 }
 
 

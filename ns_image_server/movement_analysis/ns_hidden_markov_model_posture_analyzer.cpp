@@ -1726,6 +1726,8 @@ void ns_emperical_posture_quantification_value_estimator::build_estimator_from_o
 		p2->second = new ns_emission_probability_model_to_use;
 		p2->second->build_from_data(q->second);
 	}
+	
+		
 
 	std::vector<ns_hmm_movement_state> required_states;
 	required_states.reserve(3);
@@ -1733,6 +1735,7 @@ void ns_emperical_posture_quantification_value_estimator::build_estimator_from_o
 	required_states.push_back(ns_hmm_not_moving_dead);
 	if (states_permitted_ != ns_require_movement_expansion_synchronicity)
 		required_states.push_back(ns_hmm_moving_weakly);
+
 	ns_ex ex;
 	//output+= "By hand annotation entries per HMM state:\n";
 	//for (unsigned int i = 0; i < state_counts.size(); i++) 
@@ -1757,6 +1760,24 @@ void ns_emperical_posture_quantification_value_estimator::build_estimator_from_o
 		state_counts[ns_hmm_not_moving_expanding] >= minimum_number_of_observations && state_counts[ns_hmm_not_moving_alive] < minimum_number_of_observations)
 		throw ns_ex("In order to detect movement cessation and death-time expansion as distinct events, observations are required for the time in-between these events.  Only ") << state_counts[ns_hmm_not_moving_alive] << " observations were provided, so a model cannot be built.";
 	
+	//sometimes the number of by hand annotations for states allows models to be built for only a subset of states.
+	//forbid unusual combinations of states, so we don't generate weird models where worms can only enter certain states that don't make sense in combination
+	if (emission_probability_models.find(ns_hmm_moving_weakly) == emission_probability_models.end() &&
+		(emission_probability_models.find(ns_hmm_moving_weakly_expanding) != emission_probability_models.end()
+			|| emission_probability_models.find(ns_hmm_moving_weakly_post_expansion) != emission_probability_models.end())) {
+		emission_probability_models.erase(ns_hmm_moving_weakly_expanding);
+		emission_probability_models.erase(ns_hmm_moving_weakly_post_expansion);
+		std::cout << "Excluding expansion while weakly moving states because no annotations are provided for weakly moving.\n";
+	}
+
+	if ((emission_probability_models.find(ns_hmm_moving_weakly_post_expansion) != emission_probability_models.end() ||
+		emission_probability_models.find(ns_hmm_contracting_post_expansion) != emission_probability_models.end()) &&
+		emission_probability_models.find(ns_hmm_not_moving_expanding) == emission_probability_models.end()) {
+		emission_probability_models.erase(ns_hmm_moving_weakly_post_expansion);
+		emission_probability_models.erase(ns_hmm_contracting_post_expansion);
+		std::cout << "Post-expansion states are defined but expansion is not.\n";
+	}
+
 	if (!ex.text().empty())
 		throw ex;
 }

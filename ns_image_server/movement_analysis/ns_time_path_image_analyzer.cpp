@@ -1800,7 +1800,7 @@ bool ns_time_path_image_movement_analyzer<allocator_T>::calculate_optimzation_st
 			if (!paths_to_test.empty() && paths_to_test.find(this->generate_stationary_path_id(g, p)) == paths_to_test.end())
 				continue;
 			found_worm = true;
-			ns_time_path_posture_movement_solution by_hand_posture_movement_solution(groups[g].paths[p].reconstruct_movement_state_solution_from_annotations(groups[g].paths[p].movement_analysis_result.first_valid_element_id.period_start_index, groups[g].paths[p].movement_analysis_result.last_valid_element_id.period_end_index, groups[g].paths[p].by_hand_annotation_event_times));
+			ns_time_path_posture_movement_solution by_hand_posture_movement_solution(groups[g].paths[p].reconstruct_movement_state_solution_from_annotations(groups[g].paths[p].movement_analysis_result.first_valid_element_id.period_start_index, groups[g].paths[p].movement_analysis_result.last_valid_element_id.period_end_index, e, groups[g].paths[p].by_hand_annotation_event_times));
 			//if (by_hand_posture_movement_solution.moving.skipped) {
 				//cout << "Encountered a by hand annotation in which the animal never slowed: " << g << "\n";
 			//	continue;
@@ -4698,7 +4698,7 @@ void ns_time_path_image_movement_analyzer<allocator_T>::add_by_hand_annotations(
 }
 
 std::pair<long, long> ns_find_index_for_time(const ns_death_time_annotation_time_interval & interval, const ns_analyzed_image_time_path & path) {
-	std::pair<unsigned long, unsigned long> p(-1, -1);
+	std::pair<long, long> p(-1, -1);
 	if (interval.fully_unbounded())
 		return p;
 	std::pair<bool, bool> found(false, false);
@@ -4731,13 +4731,15 @@ ns_movement_state_observation_boundaries ns_set_boundary(const ns_death_time_ann
 	return b;
 }
 
-ns_time_path_posture_movement_solution ns_analyzed_image_time_path::reconstruct_movement_state_solution_from_annotations(const unsigned long first_index, const unsigned long last_index, const std::vector<ns_death_time_annotation_time_interval> & time_intervals) const {
+ns_time_path_posture_movement_solution ns_analyzed_image_time_path::reconstruct_movement_state_solution_from_annotations(const unsigned long first_index, const unsigned long last_index, const ns_emperical_posture_quantification_value_estimator * e, const std::vector<ns_death_time_annotation_time_interval> & time_intervals) const {
 	ns_time_path_posture_movement_solution s;
 	if (time_intervals[(ns_translation_cessation)].fully_unbounded()) {
 		s.moving.skipped = true;
 		//std::cout << "Encountered an animal that never slowed\n";
 		return s;
 	}
+
+	const std::pair< long, long> undefined(-1, -1);
 	//these variables tell the start and stop indicies of the time period between observations during which the specified event happened.
 	//we need to translate this into the intervals during which animals were in a given state.
 	std::pair<long, long>
@@ -4749,19 +4751,41 @@ ns_time_path_posture_movement_solution ns_analyzed_image_time_path::reconstruct_
 		post_expansion_contraction_start(ns_find_index_for_time(time_intervals[(int)ns_death_associated_post_expansion_contraction_start], *this)),
 		post_expansion_contraction_end(ns_find_index_for_time(time_intervals[(int)ns_death_associated_post_expansion_contraction_stop], *this));
 
-
+	
+	
 	//use the machine annotations for translation and fast movement cessation if not specified explicitly
-	if (translation_cessation.first == -1 && translation_cessation.second == -1) {
+	if (translation_cessation == undefined) {
 		translation_cessation.first = movement_analysis_result.state_intervals[(int)ns_translation_cessation].exit_interval.period_start_index;
 		translation_cessation.second = movement_analysis_result.state_intervals[(int)ns_translation_cessation].exit_interval.period_end_index;
 	}
-	if (0 && fast_movement_cessation.first == -1 && fast_movement_cessation.second == -1) {
-		fast_movement_cessation.first = movement_analysis_result.state_intervals[(int)ns_fast_movement_cessation].exit_interval.period_start_index;
-		fast_movement_cessation.second = movement_analysis_result.state_intervals[(int)ns_fast_movement_cessation].exit_interval.period_end_index;
-	}
-
 	if (translation_cessation.second == -1)
 		throw ns_ex("Worm never stopped!");
+
+
+	//we can only use by hand annotations that have corresponding states defined by the current hmm estimator.  
+	//Estimators will lack states if the user has no by-hand annotations in the data set used to fit the hmm estimator, so we need to be flexible.
+	//If extra by-hand states exist in the by-hand annotations not found in the estimator, we need to ignore them.
+	{
+		if (!e->state_defined(ns_hmm_moving_weakly) && movement_cessation != undefined) {
+			fast_movement_cessation = undefined;
+			translation_cessation.second = movement_cessation.first;
+		}
+
+		//if animals can't expand before death, truncate expansion at movement cessation time
+		if (!e->state_defined(ns_hmm_moving_weakly_expanding) || !e->state_defined(ns_hmm_moving_weakly_post_expansion) || !e->state_defined(ns_hmm_not_moving_alive)) {
+			if (expansion_end.second != -1 && movement_cessation.second != -1) {
+				if (expansion_end.second < movement_cessation.second)  //if all expansion happens before movement cessation, eliminate the expansion entirely
+					expansion_start = expansion_end = undefined;
+				if (expansion_start.second != -1 && expansion_start.second < movement_cessation.second)
+					expansion_start = movement_cessation;	//truncate expansion at movement cessation time
+			}
+		}
+		if (!e->state_defined(ns_hmm_not_moving_expanding)) 
+			expansion_start = expansion_end = undefined;
+
+		if (!e->state_defined(ns_hmm_contracting_post_expansion))
+			post_expansion_contraction_start = post_expansion_contraction_end = undefined;
+	}
 
 	if (expansion_end.first != -1 && expansion_end.second == -1)
 		throw ns_ex("Unbounded expansion end interval!");

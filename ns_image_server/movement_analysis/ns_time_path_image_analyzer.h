@@ -616,7 +616,7 @@ private:
 	
 	std::vector<ns_death_time_annotation_time_interval> by_hand_annotation_event_times;
 	std::vector<ns_death_time_annotation::ns_event_explicitness> by_hand_annotation_event_explicitness;
-	ns_time_path_posture_movement_solution reconstruct_movement_state_solution_from_annotations(const unsigned long first_index, const unsigned long last_index,const std::vector<ns_death_time_annotation_time_interval> & intervals) const;
+	ns_time_path_posture_movement_solution reconstruct_movement_state_solution_from_annotations(const unsigned long first_index, const unsigned long last_index, const ns_emperical_posture_quantification_value_estimator * e, const std::vector<ns_death_time_annotation_time_interval> & intervals) const;
 
 
 	void quantify_movement(const ns_analyzed_time_image_chunk & chunk);

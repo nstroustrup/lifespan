@@ -2083,10 +2083,10 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 		const std::string* database_name;
 
 		if (!subject[experiment_i].subject.database_name.empty()) {
-			if (subject[experiment_i].subject.database_name != sql.database()) {
+			if (subject[experiment_i].subject.database_name != sql.database()) 
 				sql.select_db(subject[experiment_i].subject.database_name);
-				string_cache.insert(string_cache.end(), subject[experiment_i].subject.database_name);
-			}
+			
+			string_cache.insert(string_cache.end(), subject[experiment_i].subject.database_name);
 			database_name = &(*string_cache.find(subject[experiment_i].subject.database_name));
 		}
 		else {
@@ -2128,7 +2128,9 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 			}
 
 			if (output_experiment_name.empty()) {
-				output_sub.database_name = *database_name;
+				if (database_name != 0)
+					output_sub.database_name = *database_name;
+				else output_sub.database_name = sql.database();
 				output_sub.experiment_id = experiment_id;
 				if (plate_id != 0)
 					output_sub.region_id = plate_id;

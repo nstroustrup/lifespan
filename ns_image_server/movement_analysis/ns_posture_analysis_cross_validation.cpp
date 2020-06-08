@@ -9,6 +9,7 @@
 #include <map>
 #include <set>
 #include <random>
+#include <tuple>
 
 struct ns_hmm_test_subject {
 	ns_hmm_test_subject():region_name(0) {}
@@ -105,13 +106,16 @@ public:
 };
 
 struct ns_plate_replicate_generator {
-	typedef std::string index_type;
+	typedef std::pair<const std::string *,const std::string *> index_type;
 	typedef std::size_t subgroup_index_type;
-	static index_type get_index_for_observation(const ns_hmm_emission& e) { return *e.region_name; }
+	static index_type get_index_for_observation(const ns_hmm_emission& e) { return index_type(e.database_name,e.region_name); }
 	static int minimum_population_size() { return 10; }	//don't use plates with fewer than 10 individuals.
 	static subgroup_index_type get_index_for_subgroup(const ns_hmm_emission& e) { return 0; }
 	static int minimum_number_of_subgroups() { return 0; }	//no subgroup requirements
 }; 
+std::string ns_to_string(const ns_plate_replicate_generator::index_type& i) {
+	return *i.first + "::" + *i.second;
+}
 struct ns_genotype_replicate_generator {
 	typedef std::string index_type;
 	typedef std::size_t subgroup_index_type;
@@ -125,15 +129,19 @@ struct ns_genotype_replicate_generator {
 	static int minimum_number_of_subgroups() { return 0; }	//no subgroup requirements
 };
 struct ns_device_replicate_generator {
-	typedef std::string index_type;
+	typedef std::tuple<const std::string *,ns_64_bit,const std::string *> index_type;
 	typedef std::string subgroup_index_type;
 	static index_type get_index_for_observation(const ns_hmm_emission& e) {
-		return *e.device_name;
+		return index_type(e.database_name, e.experiment_id, e.device_name);
 	}
 	static int minimum_population_size() { return 20; }
 	static subgroup_index_type get_index_for_subgroup(const ns_hmm_emission& e) { return *e.region_name; }
 	static int minimum_number_of_subgroups() { return 2; }	//don't use devices with fewer than two plates. (this leads to overfitting on specific plates)
 };
+
+std::string ns_to_string(const ns_device_replicate_generator::index_type& i) {
+	return *std::get<0>(i) + "::" + ns_to_string(std::get<1>(i)) + "::" + *std::get<2>(i);
+}
 struct ns_individual_replicate_generator {
 	typedef ns_hmm_test_subject index_type;
 	typedef std::size_t subgroup_index_type;
@@ -345,13 +353,15 @@ private:
 					continue;	//observations from devices that have been discarded for having too few individuals
 				//for each replicate, each observation either gets added to the testing or the training sets.
 				for (unsigned int i = 0; i < replicates.size(); i++) {
-					if (rep_id->second == i)
+					if (rep_id->second == i) {
 						replicates[i].training_set.obs[observation_list->first].push_back(*observation);
+					}
 					else replicates[i].test_set.emplace(ns_hmm_test_subject(observation->database_name,observation->experiment_id,observation->region_name,observation->region_info_id, observation->path_id.group_id));
 				}
 			}
 		}
 		for (unsigned int i = 0; i < replicates.size(); i++) {
+			replicates[i].training_set.volatile_number_of_individuals_fully_annotated = replicates[i].training_set.volatile_number_of_individuals_observed = number_of_worms_in_replicate[i];
 			replicates[i].replicate_id = i;
 			for (unsigned int d = 0; d < devices_to_use.size(); d++) {
 				auto rep_id = replicate_id_lookup_for_training.find(devices_to_use[d]);
@@ -554,9 +564,12 @@ void ns_run_hmm_cross_validation(std::string& results_text, ns_image_server_resu
 	//set up models for cross validation
 	estimators_compiled = 0;
 	for (auto p = models_to_fit.begin(); p != models_to_fit.end(); p++) {
+		int this_k_fold_validation = k_fold_validation;
+		if (p->second.observations->volatile_number_of_individuals_fully_annotated < 50)
+			this_k_fold_validation = 2;
 		std::cout << ns_to_string_short((100.0 * estimators_compiled) / models_to_fit.size(), 2) << "%...";
 		estimators_compiled++;
-		cross_validation_sets[p->first].generate_cross_validations_to_test(k_fold_validation, p->second, test_different_state_restrictions_on_viterbi_algorithm);
+		cross_validation_sets[p->first].generate_cross_validations_to_test(this_k_fold_validation, p->second, test_different_state_restrictions_on_viterbi_algorithm);
 	}
 
 	//cross validate across genotypes
@@ -773,7 +786,7 @@ void ns_run_hmm_cross_validation(std::string& results_text, ns_image_server_resu
 			for (auto r = p->second.validation_runs_sorted_by_validation_type.begin(); r != p->second.validation_runs_sorted_by_validation_type.end(); ++r) {
 				if (r->second.replicates.empty())
 					continue;
-				if (!r->second.replicates[0].results.animals.empty()) {
+				if (!r->second.replicates[0].results.animals.empty() && !r->second.replicates[0].results.animals[0].state_info_variable_names.empty()) {
 					measurement_names = r->second.replicates[0].results.animals[0].state_info_variable_names;
 					break;
 				}
@@ -786,6 +799,8 @@ void ns_run_hmm_cross_validation(std::string& results_text, ns_image_server_resu
 					}
 				}
 			}
+			else 
+				std::cerr << "Could not find state info variable names!\n";
 			performance_stats_output.release();
 
 

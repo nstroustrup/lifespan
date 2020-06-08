@@ -1192,35 +1192,41 @@ ns_64_bit ns_processing_job_maintenance_processor::run_job(ns_sql & sql) {
 }
 #ifndef NS_ONLY_IMAGE_ACQUISITION
 ns_64_bit ns_processing_job_image_processor::run_job(ns_sql & sql){
-	if (job.mask_id == 0)
-		throw ns_ex("ns_processing_job_scheduler::run_job_from_push_queue()::Operation not implemented.");
-	ns_image_server_image source_image;
-	source_image.id = job.image_id;
-	const float image_resolution(pipeline->process_mask(source_image,job.mask_id,sql));
+	try {
+		if (job.mask_id == 0)
+			throw ns_ex("ns_processing_job_scheduler::run_job_from_push_queue()::Operation not implemented.");
+		ns_image_server_image source_image;
+		source_image.id = job.image_id;
+		const float image_resolution(pipeline->process_mask(source_image, job.mask_id, sql));
 
-	//if the mask is assigned to a capture sample, use it to generate regions for that sample.
-	sql << "SELECT id FROM capture_samples WHERE mask_id = " << job.mask_id;
-	ns_sql_result res;
-	sql.get_rows(res);
-	if (res.size() > 0) {
-		vector<ns_ex> exceptions;
-		for (std::vector<ns_ex>::size_type i = 0; i < res.size(); i++) {
-			try {
-				pipeline->generate_sample_regions_from_mask(ns_atoi64(res[i][0].c_str()), image_resolution, sql);
+		//if the mask is assigned to a capture sample, use it to generate regions for that sample.
+		sql << "SELECT id FROM capture_samples WHERE mask_id = " << job.mask_id;
+		ns_sql_result res;
+		sql.get_rows(res);
+		if (res.size() == 0)
+			throw ns_ex("Analyze mask step yielded no masks!");
+		if (res.size() > 0) {
+			vector<ns_ex> exceptions;
+			for (std::vector<ns_ex>::size_type i = 0; i < res.size(); i++) {
+				try {
+					pipeline->generate_sample_regions_from_mask(ns_atoi64(res[i][0].c_str()), image_resolution, sql);
+				}
+				catch (ns_ex & ex) {
+					exceptions.push_back(ex);
+				}
 			}
-			catch (ns_ex & ex) {
-				exceptions.push_back(ex);
+			if (!exceptions.empty()) {
+				ns_64_bit id;
+				for (std::vector<ns_ex>::size_type i = 0; i < exceptions.size(); i++) {
+					id = image_server->register_server_event(exceptions[i], &sql);
+				}
+				return id;
 			}
-		}
-		if (!exceptions.empty()) {
-			ns_64_bit id;
-			for (std::vector<ns_ex>::size_type i = 0; i < exceptions.size(); i++) {
-				id = image_server->register_server_event(exceptions[i], &sql);
-			}
-			return id;
 		}
 	}
-
+	catch (ns_ex & ex) {
+		image_server_const.register_server_event(ns_ex("Error processing mask: ") << ex.text(),&sql);
+	}
 	return 0;
 }
 #endif

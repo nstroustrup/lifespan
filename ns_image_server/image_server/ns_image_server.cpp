@@ -609,9 +609,9 @@ ns_64_bit ns_image_server::make_record_for_new_sample_mask(const ns_64_bit sampl
 	path += "region_masks";
 	std::string filename = "mask_";
 	filename += sample_name + ".tif";
-
+	std::string partition = image_server.image_storage.get_partition_for_experiment(ns_atoi64(experiment_id.c_str()), &sql);
 	sql << "INSERT INTO images SET host_id = " << host_id() << ", creation_time=" << ns_current_time() << ", currently_under_processing=0, "
-		<< "path = '" << sql.escape_string(path) << "', filename='" << sql.escape_string(filename) << "', `partition`='" << image_server.image_storage.get_partition_for_experiment(ns_atoi64(experiment_id.c_str()),&sql) << "'";
+		<< "path = '" << sql.escape_string(path) << "', filename='" << sql.escape_string(filename) << "', `partition`='" << sql.escape_string(partition) << "'";
 //	cerr << sql.query() << "\n";
 	ns_64_bit id = sql.send_query_get_id();
 	sql.send_query("COMMIT");

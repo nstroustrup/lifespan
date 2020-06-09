@@ -1,8 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <LocalDebuggerCommandArguments>
-    </LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>"Calibration/Posture Analaysis/Build new HMM Model from storyboard annnotations" image_server::2019_12_20_AMP101_Thermotolerance image_server::2019_07_11_Thermotolerance_TS image_server::2019_03_29_lincRNA_tt image_server::2020_02_14_QZ0_AMP101_Thermotolerance -o 2020_06_02=tt_hmm </LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">

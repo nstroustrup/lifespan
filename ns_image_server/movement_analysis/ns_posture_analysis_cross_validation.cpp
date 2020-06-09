@@ -33,6 +33,7 @@ public:
   ns_cross_validation_replicate() : generate_detailed_path_info(false), states_permitted(ns_all_states_permitted),replicate_id(0) {}
 	std::set<ns_hmm_test_subject> test_set;
 	ns_hmm_observation_set training_set;
+	std::set< ns_hmm_test_subject> training_set_individuals;
 
 	ns_emperical_posture_quantification_value_estimator model;
 
@@ -162,6 +163,7 @@ struct ns_cross_validation_sub_result {
 };
 struct ns_cross_validation_results {
 	ns_cross_validation_sub_result movement, expansion;
+	double mean_training_set_N, mean_test_set_N, var_training_set_N, var_test_set_N;
 };
 
 typedef std::map<std::string, std::map<ns_64_bit, ns_region_metadata>> ns_metadata_cache;
@@ -200,10 +202,31 @@ public:
 				replicates[0].test_set.emplace(ns_hmm_test_subject(observation->database_name,observation->experiment_id,observation->region_name,observation->region_info_id, observation->path_id.group_id));
 			}
 		}
+		replicates[0].training_set_individuals = replicates[0].test_set;
 	}
 
 	ns_cross_validation_results calculate_error() {
 		ns_cross_validation_results results;
+
+		results.mean_test_set_N = results.mean_training_set_N = results.var_test_set_N = results.var_training_set_N = 0;
+
+		for (unsigned int e = 0; e < replicates.size(); e++) {
+			results.mean_training_set_N += replicates[e].training_set_individuals.size();
+			results.mean_test_set_N += replicates[e].test_set.size();
+		}
+		if (replicates.size() > 0) {
+			results.mean_training_set_N /= replicates.size();
+			results.mean_test_set_N /= replicates.size();
+		}
+		for (unsigned int e = 0; e < replicates.size(); e++) {
+			results.var_training_set_N += pow(replicates[e].training_set_individuals.size() - results.mean_training_set_N, 2);
+			results.var_test_set_N += pow(replicates[e].test_set.size() - results.mean_test_set_N, 2);
+		}
+		if (replicates.size() > 0) {
+			results.var_training_set_N = sqrt(results.var_training_set_N / replicates.size());
+			results.var_test_set_N = sqrt(results.var_test_set_N / replicates.size());
+		}
+
 		ns_cross_validation_sub_result* sub_r[2] = { &results.movement,&results.expansion };
 		const ns_movement_event step[2] = { ns_movement_cessation,ns_death_associated_expansion_start };
 		for (unsigned int m = 0; m < 2; m++) {
@@ -243,7 +266,7 @@ public:
 			}
 			r.mean_err /= replicates.size();
 			r.mean_N /= replicates.size();
-			r.mean_event_not_found / replicates.size();
+			r.mean_event_not_found /= replicates.size();
 
 			for (unsigned int i = 0; i < replicates.size(); i++) {
 				r.var_err += (r.err[i] - r.mean_err) * (r.err[i] - r.mean_err);
@@ -259,7 +282,7 @@ public:
 
 private:
 	template<class ns_replicate_generator>
-	bool build_independent_replicates(int k_fold_validation, const ns_hmm_observation_set& all_observations) {
+	bool build_independent_replicates(int training_to_test_set_size_ratio, const ns_hmm_observation_set& all_observations) {
 
 		//build a randomly shuffled list of all unique observation labels.
 		//for devices, this will be a list of all unique devices, for plates it will be plates, for individuals it will be each individual
@@ -306,22 +329,22 @@ private:
 		std::shuffle(devices_to_use.begin(), devices_to_use.end(), g);
 
 		//group devices into k independent sets (accounting for the fact that there might not be exactly equal set sizes)
-		unsigned long set_size = devices_to_use.size() / k_fold_validation;
-		if (set_size == 0)
-			set_size = 1;
+		unsigned long test_set_size = devices_to_use.size() / (1 + training_to_test_set_size_ratio);
+		if (test_set_size == 0)
+			test_set_size = 1;
 
-		//it may be that having this many replicates leaves too few worms per replicate.
-		//therefore, we shrink the replicate number until we have at least 10 individuals per replicate.
+		//it may be that having this many replicates leaves too few animals in the test set
+		//therefore, we shrink the replicate number until we have at least 10 individuals in the test set per replicate.
 		std::vector<unsigned long> number_of_worms_in_replicate;
 		unsigned long number_of_replicates;
 		bool found_enough_worms_in_each_replicate(false);
-		for (; set_size >= 1; set_size--) {
-			number_of_replicates = devices_to_use.size() / set_size + ((devices_to_use.size() % set_size) ? 1 : 0);
+		for (; test_set_size >= 1; test_set_size--) {
+			number_of_replicates = devices_to_use.size() / test_set_size + ((devices_to_use.size() % test_set_size) ? 1 : 0);
 			if (number_of_replicates < 2)
 				break;
 			number_of_worms_in_replicate.resize(number_of_replicates, 0);
 			for (unsigned int i = 0; i < devices_to_use.size(); i++)
-				number_of_worms_in_replicate[i / set_size] += individuals_on_each_device[devices_to_use[i]].size();
+				number_of_worms_in_replicate[i / test_set_size] += individuals_on_each_device[devices_to_use[i]].size();
 			unsigned long min_replicate_size = 10000;
 			for (unsigned int i = 0; i < number_of_worms_in_replicate.size(); i++)
 				if (number_of_worms_in_replicate[i] < min_replicate_size)
@@ -335,41 +358,46 @@ private:
 
 		if (!found_enough_worms_in_each_replicate)
 			return false;
-		//each replicate gets set_size devices in its training set.  All devices not in the training set get added to the test set.
-		//to set this up, we first make a mapping for each device to the replicate id in which it in is the training set.
+		//each replicate gets set_size devices in its test set.  All devices not in the test set get added to the training set.
+		//to make this happen, we first make a mapping for each device to the replicate id in which it in is the test set.
 		replicates.resize(number_of_replicates);
-		std::map<typename ns_replicate_generator::index_type, unsigned long> replicate_id_lookup_for_training;
+		std::map<typename ns_replicate_generator::index_type, unsigned long> replicate_for_which_device_is_in_the_test_set;
 		for (unsigned int i = 0; i < devices_to_use.size(); i++)
-			replicate_id_lookup_for_training[devices_to_use[i]] = i / set_size;
+			replicate_for_which_device_is_in_the_test_set[devices_to_use[i]] = i / test_set_size;
+
+		//just to re-count number of individuals in each training set.
+		std::vector<std::set< ns_hmm_test_subject> > individuals_in_training_sets(replicates.size());
 
 		//now load all observations into the training or test sets
 		for (auto observation_list = all_observations.obs.begin(); observation_list != all_observations.obs.end(); observation_list++) {
 			//find appropriate movement state list in this estimator  
 			//go through each observation
 			for (auto observation = observation_list->second.begin(); observation != observation_list->second.end(); observation++) {
-				auto rep_id = replicate_id_lookup_for_training.find(ns_replicate_generator::get_index_for_observation(*observation));
+				const auto rep_id = replicate_for_which_device_is_in_the_test_set.find(ns_replicate_generator::get_index_for_observation(*observation));
 
-				if (rep_id == replicate_id_lookup_for_training.end())
+				if (rep_id == replicate_for_which_device_is_in_the_test_set.end())
 					continue;	//observations from devices that have been discarded for having too few individuals
 				//for each replicate, each observation either gets added to the testing or the training sets.
+				const ns_hmm_test_subject subject(observation->database_name, observation->experiment_id, observation->region_name, observation->region_info_id, observation->path_id.group_id);
 				for (unsigned int i = 0; i < replicates.size(); i++) {
-					if (rep_id->second == i) {
+					if (rep_id->second != i) {
 						replicates[i].training_set.obs[observation_list->first].push_back(*observation);
+						replicates[i].training_set_individuals.emplace(subject);
 					}
-					else replicates[i].test_set.emplace(ns_hmm_test_subject(observation->database_name,observation->experiment_id,observation->region_name,observation->region_info_id, observation->path_id.group_id));
+					else replicates[i].test_set.emplace(subject);
 				}
 			}
 		}
 		for (unsigned int i = 0; i < replicates.size(); i++) {
-			replicates[i].training_set.volatile_number_of_individuals_fully_annotated = replicates[i].training_set.volatile_number_of_individuals_observed = number_of_worms_in_replicate[i];
+			replicates[i].training_set.volatile_number_of_individuals_fully_annotated = replicates[i].training_set.volatile_number_of_individuals_observed = replicates[i].training_set_individuals.size();
 			replicates[i].replicate_id = i;
 			for (unsigned int d = 0; d < devices_to_use.size(); d++) {
-				auto rep_id = replicate_id_lookup_for_training.find(devices_to_use[d]);
-				if (rep_id == replicate_id_lookup_for_training.end())
+				auto rep_id = replicate_for_which_device_is_in_the_test_set.find(devices_to_use[d]);
+				if (rep_id == replicate_for_which_device_is_in_the_test_set.end())
 					replicates[i].replicate_skipped_groups.push_back(ns_to_string(devices_to_use[d]));
 				else if (rep_id->second == i)
-					replicates[i].replicate_training_groups.push_back(ns_to_string(devices_to_use[d]));
-				else replicates[i].replicate_testing_groups.push_back(ns_to_string(devices_to_use[d]));
+					replicates[i].replicate_testing_groups.push_back(ns_to_string(devices_to_use[d]));
+				else replicates[i].replicate_training_groups.push_back(ns_to_string(devices_to_use[d]));
 			}
 
 		}
@@ -470,8 +498,13 @@ struct ns_hmm_cross_validation_manager {
 	}
 };
 
-
-void ns_run_hmm_cross_validation(std::string& results_text, ns_image_server_results_subject sub, ns_machine_analysis_data_loader& movement_results, const std::map < std::string, ns_cross_replicate_specification>& models_to_fit, ns_sql& sql) {
+struct ns_results_info {
+	ns_results_info() :failed(false) {}
+	ns_results_info(const std::string& r, bool f) :result(r), failed(f) {}
+	std::string result;
+	bool failed;
+};
+void ns_run_hmm_cross_validation(std::string& results_summary, ns_image_server_results_subject sub, ns_machine_analysis_data_loader& movement_results, const std::map < std::string, ns_cross_replicate_specification>& models_to_fit, ns_sql& sql) {
 	const bool run_hmm_cross_validation = true;
 	const bool test_different_state_restrictions_on_viterbi_algorithm = false;
 
@@ -542,24 +575,27 @@ void ns_run_hmm_cross_validation(std::string& results_text, ns_image_server_resu
 
 	std::map<std::string, ns_hmm_cross_validation_manager> cross_validation_sets;
 
-	std::map<std::string, std::string> model_building_and_testing_info;
+	std::map<std::string, ns_results_info> model_building_and_testing_info;
 	std::map<std::string, std::string> model_filenames;
-	std::cout << "Writing state emission data to disk...\n";
-	//for each type of plate, build an estimator from the observations collected.
 	unsigned long estimators_compiled(0);
-	for (auto p = models_to_fit.begin(); p != models_to_fit.end(); p++) {
-		std::cout << ns_to_string_short((100.0 * estimators_compiled) / models_to_fit.size(), 2) << "%...";
-		estimators_compiled++;
-		//all estimator types share the same input data--we don't need to write multiple times.
-		if (p->second.cross_replicate_estimator_type != ns_cross_replicate_specification::ns_standard)
-			continue;
-		ns_select_database_for_scope db("", sql);
-		if (!sub.database_name.empty())
-			db.select(sub.database_name);
-		ns_acquire_for_scope<ns_ostream> all_observations(image_server.results_storage.time_path_image_analysis_quantification(sub, std::string("hmm_obs=") + p->first, true, sql).output());
-		p->second.observations->write(all_observations()(), sub.experiment_name);
-		all_observations.release();
+	if (0) {
+		std::cout << "Writing state emission data to disk...\n";
+		//for each type of plate, build an estimator from the observations collected.
+		for (auto p = models_to_fit.begin(); p != models_to_fit.end(); p++) {
+			std::cout << ns_to_string_short((100.0 * estimators_compiled) / models_to_fit.size(), 2) << "%...";
+			estimators_compiled++;
+			//all estimator types share the same input data--we don't need to write multiple times.
+			if (p->second.cross_replicate_estimator_type != ns_cross_replicate_specification::ns_standard)
+				continue;
+			ns_select_database_for_scope db("", sql);
+			if (!sub.database_name.empty())
+				db.select(sub.database_name);
+			ns_acquire_for_scope<ns_ostream> all_observations(image_server.results_storage.time_path_image_analysis_quantification(sub, std::string("hmm_obs=") + p->first, true, sql).output());
+			p->second.observations->write(all_observations()(), sub.experiment_name);
+			all_observations.release();
+		}
 	}
+	else std::cout << "Skipping state emission data output.\n";
 	std::cout << "\nPrepping for Cross Validation...\n";
 	//set up models for cross validation
 	estimators_compiled = 0;
@@ -578,17 +614,17 @@ void ns_run_hmm_cross_validation(std::string& results_text, ns_image_server_resu
 			continue;
 		cross_validation_sets[p->first].generate_genotype_cross_validations_to_test(k_fold_validation, p->second);
 	} 
-	if (cross_validation_sets.size() == 0)
-		results_text += "No HMM models were built";
+	if (cross_validation_sets.size() == 0) {
+		results_summary += "No HMM models could be built";
+		return;
+	}
 	else {
-		results_text += ns_to_string(cross_validation_sets.size()) + " HMM model";
 		if (cross_validation_sets.size() > 1)
-			results_text += "s were";
-		else results_text += " was ";
+			results_summary += "== Attempting to build HMM models on " + ns_to_string(cross_validation_sets.size()) + " different subsets of animals. ==\n";
+		else
+			results_summary += "== Attempting to build an HMM model using all animals. ==\n";
 
-		results_text += " built.\n";
-
-		results_text += "All data was collated and analyzed at " + ns_format_time_string_for_human(ns_current_time()) + "\n\n";
+		results_summary += "All data was collated and analyzed at " + ns_format_time_string_for_human(ns_current_time()) + "\n\n";
 	}
 	std::cout << "\nBuilding HMM Models...\n";
 	unsigned long num_built(0);
@@ -598,27 +634,33 @@ void ns_run_hmm_cross_validation(std::string& results_text, ns_image_server_resu
 		std::cout << ns_to_string_short((100.0 * num_built) / num_to_build, 2) << "%...";
 		num_built++;
 		std::string subject;
-		if (p->second.validation_runs_sorted_by_validation_type.begin()->second.spec.cross_replicate_type == ns_cross_replicate_specification::ns_all)
+		if (p->second.validation_runs_sorted_by_validation_type.begin()->second.spec.cross_replicate_type == ns_cross_replicate_specification::ns_all_data ||
+			p->second.validation_runs_sorted_by_validation_type.begin()->second.spec.cross_replicate_type == ns_cross_replicate_specification::ns_experiment_specific)
 			subject = "all animal types";
 		else
 			subject = *(p->second.validation_runs_sorted_by_validation_type.begin()->second.replicates.begin()->training_set.obs.begin()->second.begin()->genotype);
+		if (!p->second.validation_runs_sorted_by_validation_type.begin()->second.spec.subject.empty())
+			subject += " in " + p->second.validation_runs_sorted_by_validation_type.begin()->second.spec.subject;
 		switch (p->second.validation_runs_sorted_by_validation_type.begin()->second.spec.cross_replicate_estimator_type) {
 			case ns_cross_replicate_specification::ns_standard: 
-				break;
+				subject += " using a flexible state ordering scheme"; break;
 			case ns_cross_replicate_specification::ns_strict_ordering: 
-				subject += " using a restricted state ordering scheme ==\n"; break;
+				subject += " using a restricted state ordering scheme"; break;
 			case ns_cross_replicate_specification::ns_simultaneous_movement_cessation_and_expansion: 
-				subject +=" assuming synchronous death expansion ==\n"; break;
+				subject +=" requiring synchronous movement cessation and expansion "; break;
 		}
-		p->second.build_models_for_cross_validation(model_building_and_testing_info[p->first]);
+		p->second.build_models_for_cross_validation(model_building_and_testing_info[p->first].result);
 		//if none of the validation approaches could be used for building a model, delete this whole cross validation set.
 		if (p->second.validation_runs_sorted_by_validation_type.empty()) {
-			model_building_and_testing_info[p->first] = "Not enough annotations were present to build a model for " + subject + "\n";
+			model_building_and_testing_info[p->first].result = " No model could be built for " + subject + " because the existing annotations were insufficient for cross-validation. \n" + model_building_and_testing_info[p->first].result;
+			model_building_and_testing_info[p->first].failed = true;
 			p = cross_validation_sets.erase(p);
 			continue;
 		}
-		else
-			model_building_and_testing_info[p->first] = "== HMM model built for " + subject + " ==\n";
+		else {
+			model_building_and_testing_info[p->first].result = "== HMM model built for " + subject + " ==\n";
+			model_building_and_testing_info[p->first].failed = false;
+		}
 
 		if (p->second.all_vs_all_exists()) {
 			ns_select_database_for_scope db("", sql);
@@ -730,7 +772,9 @@ void ns_run_hmm_cross_validation(std::string& results_text, ns_image_server_resu
 
 				for (auto p = cross_validation_sets.begin(); p != cross_validation_sets.end(); p++) {
 					const ns_cross_replicate_specification& spec(p->second.validation_runs_sorted_by_validation_type.begin()->second.spec);
-					if (spec.cross_replicate_type == ns_cross_replicate_specification::ns_all || spec.genotype == plate_type_summary) {
+					if ((spec.cross_replicate_type != ns_cross_replicate_specification::ns_genotype_specific &&
+						 spec.cross_replicate_type != ns_cross_replicate_specification::ns_genotype_experiment_specific) ||
+						spec.genotype == plate_type_summary) {
 						for (auto cross_validation_runs = p->second.validation_runs_sorted_by_validation_type.begin(); cross_validation_runs != p->second.validation_runs_sorted_by_validation_type.end(); ++cross_validation_runs) {
 
 							//xxx 
@@ -764,20 +808,27 @@ void ns_run_hmm_cross_validation(std::string& results_text, ns_image_server_resu
 			for (auto validation_run = p->second.validation_runs_sorted_by_validation_type.begin(); validation_run != p->second.validation_runs_sorted_by_validation_type.end(); ++validation_run) {
 				ns_cross_validation_results results = validation_run->second.calculate_error();
 
-				model_building_and_testing_info[p->first] += "= Cross validation strategy: " + validation_run->second.description + " =:\n";
-				model_building_and_testing_info[p->first] += "= " + ns_to_string(validation_run->second.replicates.size()) + "-fold cross validation =:\n";
-
+				const bool many_movement_failures(results.movement.mean_event_not_found > results.movement.mean_N / 10),
+					many_expansion_failures(results.expansion.mean_event_not_found > results.expansion.mean_N / 10);
+				std::string& txt(model_building_and_testing_info[p->first].result);
+				txt += "= ";
+				if (validation_run->second.replicates.size() > 1)
+					txt += ns_to_string(validation_run->second.replicates.size()) + "-fold ";
+				txt += validation_run->second.description + " =\n";
+				txt += "Each replicate trained on " + ns_to_string_short(results.mean_training_set_N) + "+-" + ns_to_string_short(results.var_training_set_N) + " animals and was tested on " + ns_to_string_short(results.mean_test_set_N) + "+-" + ns_to_string_short(results.var_test_set_N) + " animals.\n";
 				if (results.movement.mean_N + results.movement.mean_event_not_found > 0)
-					model_building_and_testing_info[p->first] += "[Movement cessation]:   Average error: " + ns_to_string_short(results.movement.mean_err, 2) + "+-" + ns_to_string_short(results.movement.var_err, 2) + " days across " + ns_to_string((int)results.movement.mean_N) + " animals, with " + ns_to_string((int)results.movement.mean_event_not_found) + " animals movement cessation remaining unidentifiable.\n";
+					txt += "[Movement cessation]:   Average error: " + ns_to_string_short(results.movement.mean_err, 2) + "+-" + ns_to_string_short(results.movement.var_err, 2) + " days across " + ns_to_string((int)results.movement.mean_N) + " animals, with " + ns_to_string((int)results.movement.mean_event_not_found) + "+-" + ns_to_string((int)results.movement.var_event_not_found) + " animals' movement cessation remaining unidentifiable.\n";
 				if (results.expansion.mean_N + results.expansion.mean_event_not_found > 0)
-					model_building_and_testing_info[p->first] += "[Death-Associated expansion]: Average error: " + ns_to_string_short(results.expansion.mean_err, 2) + " +-" + ns_to_string_short(results.expansion.var_err, 2) + " days across " + ns_to_string((int)results.expansion.mean_N) + " animals, with " + ns_to_string((int)results.expansion.mean_event_not_found) + " animals expansion times remaining unidentifiable.\n";
-				if (results.movement.mean_N < 50 || results.expansion.mean_N < 50)
-					model_building_and_testing_info[p->first] += "Warning: These results will not be meaningful until ~50 animals are annotated by hand.\n";		
-				if (results.movement.mean_event_not_found > results.movement.mean_N/10)
-					model_building_and_testing_info[p->first] += "Movement cessation times could not be found for more than 10% of animals.  This is probably not a useful model file.\n";
-				if (results.expansion.mean_event_not_found > results.expansion.mean_N / 10)
-					model_building_and_testing_info[p->first] += "Death-associated expansion times could not be found for more than 10% of animals.  This is probably not a useful model file.\n";
-				model_building_and_testing_info[p->first] += "The model file was written to \"" + model_filenames[p->first] + "\"\n";
+					txt += "[Death-Associated expansion]: Average error: " + ns_to_string_short(results.expansion.mean_err, 2) + " +-" + ns_to_string_short(results.expansion.var_err, 2) + " days across " + ns_to_string((int)results.expansion.mean_N) + " animals, with " + ns_to_string((int)results.expansion.mean_event_not_found) + "+-" + ns_to_string((int)results.expansion.var_event_not_found) + " animals' expansion times remaining unidentifiable.\n";
+	
+				if (many_movement_failures)
+					txt += "Movement cessation times could not be found for more than 10% of animals.  This is probably not a useful model file.\n";
+				if (many_expansion_failures)
+					txt += "Death-associated expansion times could not be found for more than 10% of animals.  This is probably not a useful model file.\n";
+				if (!many_movement_failures && !many_expansion_failures && (results.movement.mean_N < 50 || results.expansion.mean_N < 50))
+					txt += "Warning: These results will not be meaningful until ~50 animals are annotated by hand.\n";
+				txt += "The model file was written to \"" + model_filenames[p->first] + "\"\n";
+				txt += "\n";
 
 			}
 			//output performance statistics
@@ -838,9 +889,14 @@ void ns_run_hmm_cross_validation(std::string& results_text, ns_image_server_resu
 			replicate_info_output.release();
 		}
 	}
-
+	//write info about successful models first
 	for (auto p = model_building_and_testing_info.begin(); p != model_building_and_testing_info.end(); p++)
-		results_text += model_building_and_testing_info[p->first] + "\n";
+		if (!model_building_and_testing_info[p->first].failed)
+		results_summary += model_building_and_testing_info[p->first].result + "\n";
+	results_summary += "== Models that could not be built ==\n";
+	for (auto p = model_building_and_testing_info.begin(); p != model_building_and_testing_info.end(); p++)
+		if (model_building_and_testing_info[p->first].failed)
+			results_summary += model_building_and_testing_info[p->first].result + "\n";
 }
 
 struct ns_parameter_set_optimization_record {

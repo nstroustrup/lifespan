@@ -4549,7 +4549,7 @@ void ns_hmm_movement_analysis_optimizatiom_stats::write_error_data(std::ostream 
 		if (db_m == metadata_cache.end())
 			throw ns_ex("Could not find metadata for database  ") << *animals[k].database_name;
 		auto m = db_m->second.find( animals[k].properties.region_info_id);
-		if (m == db_m->second.end())	///XXX The problem is here!  
+		if (m == db_m->second.end())	
 			throw ns_ex("Could not find metadata for region  ") << animals[k].properties.region_info_id;
 			   
 		//ns_acquire_for_scope<ostream> all_observations(image_server.results_storage.time_path_image_analysis_quantification(sub, "hmm_obs", false, sql()).output());

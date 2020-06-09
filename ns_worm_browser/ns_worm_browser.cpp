@@ -2392,48 +2392,53 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 										if (subject_flag != ns_plate && !filter_by_strain) {
 											//first set up model for all experiments being combined together
 											{
-												ns_cross_replicate_specification& standard_model = models_to_build["all=standard"];
+												ns_cross_replicate_specification& standard_model = models_to_build["all_genotypes=flexible"];
 												if (standard_model.observations == 0) {
-													standard_model.cross_replicate_type = ns_cross_replicate_specification::ns_all;
+													standard_model.cross_replicate_type = ns_cross_replicate_specification::ns_all_data;
 													standard_model.cross_replicate_estimator_type = ns_cross_replicate_specification::ns_standard;
 													standard_model.observations = observation_cache.get_new();
+													standard_model.subject = "all_experiments";
 												}
 												standard_model.observations->add_observation(NS_CURRENT_POSTURE_MODEL_VERSION, a, path, database_name, movement_results.experiment_id(), &(*plate_name), &(*device), &(*genotype));
 												
 
 												if (test_strict_ordering) {
-													ns_cross_replicate_specification& strict_ordering_model = models_to_build["all=with_strict_event_ordering"];
+													ns_cross_replicate_specification& strict_ordering_model = models_to_build["all_genotypes=with_strict_event_ordering"];
 													if (strict_ordering_model.observations == 0) {
 														strict_ordering_model.observations = standard_model.observations;
-														strict_ordering_model.cross_replicate_type = ns_cross_replicate_specification::ns_all;
+														strict_ordering_model.cross_replicate_type = ns_cross_replicate_specification::ns_all_data;
 														strict_ordering_model.cross_replicate_estimator_type = ns_cross_replicate_specification::ns_strict_ordering;
+														strict_ordering_model.subject = "all_experiments";
 													}
 												}
 												if (test_synchronous_movement_cessatation_and_expansion) {
-													ns_cross_replicate_specification& strict_ordering_model = models_to_build["all=with_simultaneous_movement_cessation_and_expansion"];
+													ns_cross_replicate_specification& strict_ordering_model = models_to_build["all_genotypes=with_simultaneous_movement_cessation_and_expansion"];
 													if (strict_ordering_model.observations == 0) {
 														strict_ordering_model.observations = standard_model.observations;
-														strict_ordering_model.cross_replicate_type = ns_cross_replicate_specification::ns_all;
+														strict_ordering_model.cross_replicate_type = ns_cross_replicate_specification::ns_all_data;
 														strict_ordering_model.cross_replicate_estimator_type = ns_cross_replicate_specification::ns_simultaneous_movement_cessation_and_expansion;
+														strict_ordering_model.subject = "all_experiments";
 													}
 												}
 											}
 											{
-												ns_cross_replicate_specification& genotype_model = models_to_build["all="+plate_type_summary + "=standard"];
+												ns_cross_replicate_specification& genotype_model = models_to_build["all_genotypes="+plate_type_summary + "=flexible"];
 												if (genotype_model.observations == 0) {
 													genotype_model.cross_replicate_type = ns_cross_replicate_specification::ns_genotype_specific;
 													genotype_model.cross_replicate_estimator_type = ns_cross_replicate_specification::ns_standard;
 													genotype_model.observations = observation_cache.get_new();
 													genotype_model.genotype = (*genotype);
+													genotype_model.subject = "all_experiments";
 												}
 												genotype_model.observations->add_observation(NS_CURRENT_POSTURE_MODEL_VERSION, a, path, database_name, movement_results.experiment_id(), &(*plate_name), &(*device), &(*genotype));
 											}
 											//now set up model for each experiment individually
 											if (experiments_specified.size() > 1) {
-												ns_cross_replicate_specification& exp_specific_standard_model = models_to_build[experiment_name_to_use + "=standard"];
+												ns_cross_replicate_specification& exp_specific_standard_model = models_to_build[experiment_name_to_use + "=flexible"];
 												if (exp_specific_standard_model.observations == 0) {
-													exp_specific_standard_model.cross_replicate_type = ns_cross_replicate_specification::ns_all;
+													exp_specific_standard_model.cross_replicate_type = ns_cross_replicate_specification::ns_experiment_specific;
 													exp_specific_standard_model.cross_replicate_estimator_type = ns_cross_replicate_specification::ns_standard;
+													exp_specific_standard_model.subject = experiment_name_to_use;
 													exp_specific_standard_model.observations = observation_cache.get_new();
 												}
 												exp_specific_standard_model.observations->add_observation(NS_CURRENT_POSTURE_MODEL_VERSION, a, path, database_name, movement_results.experiment_id(), &(*plate_name), &(*device), &(*genotype));
@@ -2443,7 +2448,8 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 													ns_cross_replicate_specification& strict_ordering_model = models_to_build[experiment_name_to_use + "=with_strict_event_ordering"];
 													if (strict_ordering_model.observations == 0) {
 														strict_ordering_model.observations = exp_specific_standard_model.observations;
-														strict_ordering_model.cross_replicate_type = ns_cross_replicate_specification::ns_all;
+														strict_ordering_model.cross_replicate_type = ns_cross_replicate_specification::ns_experiment_specific;
+														strict_ordering_model.subject = experiment_name_to_use;
 														strict_ordering_model.cross_replicate_estimator_type = ns_cross_replicate_specification::ns_strict_ordering;
 													}
 												}
@@ -2451,15 +2457,17 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 													ns_cross_replicate_specification& strict_ordering_model = models_to_build[experiment_name_to_use + "=with_simultaneous_movement_cessation_and_expansion"];
 													if (strict_ordering_model.observations == 0) {
 														strict_ordering_model.observations = exp_specific_standard_model.observations;
-														strict_ordering_model.cross_replicate_type = ns_cross_replicate_specification::ns_all;
+														strict_ordering_model.cross_replicate_type = ns_cross_replicate_specification::ns_experiment_specific;
+														strict_ordering_model.subject = experiment_name_to_use;
 														strict_ordering_model.cross_replicate_estimator_type = ns_cross_replicate_specification::ns_simultaneous_movement_cessation_and_expansion;
 													}
 												}
 
-												ns_cross_replicate_specification& genotype_model = models_to_build[experiment_name_to_use + "=" + plate_type_summary+"=standard"];
+												ns_cross_replicate_specification& genotype_model = models_to_build[experiment_name_to_use + "=" + plate_type_summary+"=flexible"];
 												if (genotype_model.observations == 0) {
-													genotype_model.cross_replicate_type = ns_cross_replicate_specification::ns_genotype_specific;
+													genotype_model.cross_replicate_type = ns_cross_replicate_specification::ns_genotype_experiment_specific;
 													genotype_model.cross_replicate_estimator_type = ns_cross_replicate_specification::ns_standard;
+													genotype_model.subject = experiment_name_to_use;
 													genotype_model.observations = observation_cache.get_new();
 													genotype_model.genotype = (*genotype);
 												}
@@ -2498,22 +2506,35 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 		}
 	}
 
-	std::string results_text;
-	for (unsigned int i = 0; i < errors.size(); ++i)
-		results_text += errors[i].text() + "\n";
+	std::string results_text, fail_text;
+	if (!errors.empty())
+		fail_text = "==Some problems were encountered loading data from disk==\n";
+	for (unsigned int i = 0; i < errors.size(); ++i) 
+		fail_text += errors[i].text() + "\n";
+	fail_text += "\n";
 
 	if (detail_level == ns_build_worm_markov_posture_model_from_by_hand_annotations) {
 		results_text += "=== Automated Animal Death Time Identification Calibration Results === \n\n";
 		//exclude animal types with too few annotations.
 		for (auto p = models_to_build.begin(); p != models_to_build.end(); ) {
 			if (p->second.observations->volatile_number_of_individuals_fully_annotated < 25) {
-				results_text += "No model was built for animals of type ";
-				results_text += p->first + " because only " + ns_to_string(p->second.genotype) + " animals have been annotated.\n";
+				fail_text += "No model was built for ";
+				fail_text += p->first + " because ";
+				if (p->second.observations->volatile_number_of_individuals_fully_annotated > 0)
+					fail_text += "only ";
+				fail_text += ns_to_string(p->second.observations->volatile_number_of_individuals_fully_annotated);
+				if (p->second.observations->volatile_number_of_individuals_fully_annotated == 1)
+					fail_text += " animal has ";
+				else fail_text += " animals have ";
+				fail_text += "been annotated.\n";
 				p = models_to_build.erase(p);
 			}
 			else ++p;
 		}
 		ns_run_hmm_cross_validation(results_text, output_sub, movement_results, models_to_build, sql);
+		if (!fail_text.empty())
+			results_text += "==Interesting subsets of data for which not enough by-hand annotations were available==\n";
+		results_text += fail_text;
 		ns_acquire_for_scope<ns_ostream> summary(image_server.results_storage.optimized_posture_analysis_parameter_set(output_sub, "hmm_optimization_summary", sql).output());
 		summary()() << results_text;
 		summary.release();

@@ -66,7 +66,8 @@ public:
 	const std::string & name() const {return sample_name_;}
 	const std::string & device_name() const {return device_name_;}
 	void set_id(const ns_64_bit id){sample_id_ =id;}
-	void clear() { sample_id_ = 0; device_name_.clear(); sample_name_.clear(); for (unsigned int i = 0; i < regions.size(); i++) ns_safe_delete(regions[i]); regions.clear(); }
+	void clear() { sample_id_ = 0; device_name_.clear(); sample_name_.clear(); for (unsigned int i = 0; i < regions.size(); i++) ns_safe_delete(regions[i]); regions.clear();}
+	~ns_machine_analysis_sample_data() { clear(); }
 private:
 	std::string device_name_;
 	std::string sample_name_;

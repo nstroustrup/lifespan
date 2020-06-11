@@ -2392,7 +2392,7 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 										if (subject_flag != ns_plate && !filter_by_strain) {
 											//first set up model for all experiments being combined together
 											{
-												ns_cross_replicate_specification& standard_model = models_to_build["all_genotypes=flexible"];
+												ns_cross_replicate_specification& standard_model = models_to_build["all_experiments=all_strains=flexible_model"];
 												if (standard_model.observations == 0) {
 													standard_model.cross_replicate_type = ns_cross_replicate_specification::ns_all_data;
 													standard_model.cross_replicate_estimator_type = ns_cross_replicate_specification::ns_standard;
@@ -2403,7 +2403,7 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 												
 
 												if (test_strict_ordering) {
-													ns_cross_replicate_specification& strict_ordering_model = models_to_build["all_genotypes=with_strict_event_ordering"];
+													ns_cross_replicate_specification& strict_ordering_model = models_to_build["all_experiments=all_strains=with_strict_event_ordering"];
 													if (strict_ordering_model.observations == 0) {
 														strict_ordering_model.observations = standard_model.observations;
 														strict_ordering_model.cross_replicate_type = ns_cross_replicate_specification::ns_all_data;
@@ -2412,7 +2412,7 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 													}
 												}
 												if (test_synchronous_movement_cessatation_and_expansion) {
-													ns_cross_replicate_specification& strict_ordering_model = models_to_build["all_genotypes=with_simultaneous_movement_cessation_and_expansion"];
+													ns_cross_replicate_specification& strict_ordering_model = models_to_build["all_experiments=all_strains=with_simultaneous_movement_cessation_and_expansion"];
 													if (strict_ordering_model.observations == 0) {
 														strict_ordering_model.observations = standard_model.observations;
 														strict_ordering_model.cross_replicate_type = ns_cross_replicate_specification::ns_all_data;
@@ -2422,7 +2422,7 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 												}
 											}
 											{
-												ns_cross_replicate_specification& genotype_model = models_to_build["all_genotypes="+plate_type_summary + "=flexible"];
+												ns_cross_replicate_specification& genotype_model = models_to_build["all_experiments="+plate_type_summary + "=flexible_model"];
 												if (genotype_model.observations == 0) {
 													genotype_model.cross_replicate_type = ns_cross_replicate_specification::ns_genotype_specific;
 													genotype_model.cross_replicate_estimator_type = ns_cross_replicate_specification::ns_standard;
@@ -2434,7 +2434,7 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 											}
 											//now set up model for each experiment individually
 											if (experiments_specified.size() > 1) {
-												ns_cross_replicate_specification& exp_specific_standard_model = models_to_build[experiment_name_to_use + "=flexible"];
+												ns_cross_replicate_specification& exp_specific_standard_model = models_to_build[experiment_name_to_use + "=all_strains=flexible_model"];
 												if (exp_specific_standard_model.observations == 0) {
 													exp_specific_standard_model.cross_replicate_type = ns_cross_replicate_specification::ns_experiment_specific;
 													exp_specific_standard_model.cross_replicate_estimator_type = ns_cross_replicate_specification::ns_standard;
@@ -2445,7 +2445,7 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 												
 
 												if (test_strict_ordering) {
-													ns_cross_replicate_specification& strict_ordering_model = models_to_build[experiment_name_to_use + "=with_strict_event_ordering"];
+													ns_cross_replicate_specification& strict_ordering_model = models_to_build[experiment_name_to_use + "=all_strains=with_strict_event_ordering"];
 													if (strict_ordering_model.observations == 0) {
 														strict_ordering_model.observations = exp_specific_standard_model.observations;
 														strict_ordering_model.cross_replicate_type = ns_cross_replicate_specification::ns_experiment_specific;
@@ -2454,7 +2454,7 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 													}
 												}
 												if (test_synchronous_movement_cessatation_and_expansion) {
-													ns_cross_replicate_specification& strict_ordering_model = models_to_build[experiment_name_to_use + "=with_simultaneous_movement_cessation_and_expansion"];
+													ns_cross_replicate_specification& strict_ordering_model = models_to_build[experiment_name_to_use + "=all_strains=with_simultaneous_movement_cessation_and_expansion"];
 													if (strict_ordering_model.observations == 0) {
 														strict_ordering_model.observations = exp_specific_standard_model.observations;
 														strict_ordering_model.cross_replicate_type = ns_cross_replicate_specification::ns_experiment_specific;
@@ -2463,7 +2463,7 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 													}
 												}
 
-												ns_cross_replicate_specification& genotype_model = models_to_build[experiment_name_to_use + "=" + plate_type_summary+"=flexible"];
+												ns_cross_replicate_specification& genotype_model = models_to_build[experiment_name_to_use + "=" + plate_type_summary+"=flexible_model"];
 												if (genotype_model.observations == 0) {
 													genotype_model.cross_replicate_type = ns_cross_replicate_specification::ns_genotype_experiment_specific;
 													genotype_model.cross_replicate_estimator_type = ns_cross_replicate_specification::ns_standard;

@@ -212,6 +212,7 @@ double ns_hmm_solver::run_viterbi(const ns_analyzed_image_time_path & path, cons
 		std::vector<double> renormalization_factors(nobs,0);
 		previous_state.resize(0);
 		previous_state.resize(nobs*mstat, 0);
+		path_forbidden.resize(0);
 		path_forbidden.resize(nobs*mstat, 0);
 		
 		std::vector<double> emission_log_probabilities;
@@ -337,6 +338,7 @@ double ns_hmm_solver::run_viterbi(const ns_analyzed_image_time_path & path, cons
 	if (optimal_path_state.empty())
 		throw ns_ex("Empty path state!");
 	//now find transition of times between states
+	movement_transitions.resize(0);
 	movement_transitions.push_back(ns_hmm_state_transition_time_path_index((ns_hmm_movement_state)optimal_path_state[0], 0));
 	for (unsigned int i = 1; i < optimal_path_state.size(); i++) {
 		const ns_hmm_movement_state s = (ns_hmm_movement_state)optimal_path_state[i];

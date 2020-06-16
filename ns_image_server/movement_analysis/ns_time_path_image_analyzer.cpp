@@ -548,7 +548,7 @@ void ns_time_path_image_movement_analyzer<allocator_T>::finish_up_and_write_to_l
 	}
 
 	std::vector<ns_64_bit> tmp1, tmp2;
-	groups[group_id].paths[path_id].denoise_movement_series_and_calculate_intensity_slopes(0, *shared_state->time_series_denoising_parameters,tmp1,tmp2);
+	groups[group_id].paths[path_id].denoise_movement_series_and_calculate_intensity_slopes(*shared_state->time_series_denoising_parameters,tmp1,tmp2);
 }
 
 template<class allocator_T>
@@ -1889,6 +1889,7 @@ void ns_time_path_image_movement_analyzer<allocator_T>::reanalyze_with_different
 			}
 		}
 	}
+	generate_movement_description_series();
 }
 
 template<class allocator_T>
@@ -1971,9 +1972,8 @@ bool ns_time_path_image_movement_analyzer<allocator_T>::load_image_quantificatio
 			if (debug_specific_worm != -1) {
 				if (debug_specific_worm != g)
 					continue;
-				else
-					//for debug, recalculate the smoothed data
-					groups[g].paths[p].denoise_movement_series_and_calculate_intensity_slopes(0, times_series_denoising_parameters,tmp1,tmp2);
+				//for debug, recalculate the smoothed data
+				groups[g].paths[p].denoise_movement_series_and_calculate_intensity_slopes(times_series_denoising_parameters,tmp1,tmp2);
 			}
 			groups[g].paths[p].analyze_movement(e, ns_stationary_path_id(g, p, analysis_id), last_timepoint_in_analysis_);
 			groups[g].paths[p].calculate_movement_quantification_summary(groups[g].paths[p].movement_analysis_result);
@@ -2045,7 +2045,7 @@ bool ns_time_path_image_movement_analyzer<allocator_T>::load_completed_analysis_
 				continue;
 			}
 	
-			//groups[g].paths[p].denoise_movement_series_and_calculate_intensity_slopes(0,times_series_denoising_parameters);
+			//groups[g].paths[p].denoise_movement_series_and_calculate_intensity_slopes(times_series_denoising_parameters);
 		}
 	
 	for (unsigned long g = 0; g < groups.size(); g++)
@@ -5280,7 +5280,7 @@ public:
 	}
 };
 
-void ns_analyzed_image_time_path::denoise_movement_series_and_calculate_intensity_slopes(const unsigned long change_time_in_seconds, const ns_time_series_denoising_parameters & times_series_denoising_parameters, std::vector<ns_64_bit >& tmp1, std::vector<ns_64_bit >& tmp2){
+void ns_analyzed_image_time_path::denoise_movement_series_and_calculate_intensity_slopes(const ns_time_series_denoising_parameters & times_series_denoising_parameters, std::vector<ns_64_bit >& tmp1, std::vector<ns_64_bit >& tmp2){
 	if (elements.size() == 0)
 		return;
 
@@ -7520,7 +7520,6 @@ void ns_time_path_image_movement_analyzer<allocator_T>::reanalyze_stored_aligned
 		load_stored_movement_analysis_results(sql, ns_only_quantification);
 		posture_model_version_used = NS_CURRENT_POSTURE_MODEL_VERSION;
 		ns_64_bit file_specified_analysis_id = this->analysis_id;
-		//xxxxxx disabled for debug
 		obtain_analysis_id_and_save_movement_data(region_id, sql, ns_require_existing_record, ns_do_not_write_data);
 		if (file_specified_analysis_id != this->analysis_id)
 			throw ns_ex("Movement analysis ID specified on disk (") << file_specified_analysis_id << ") does not agree with the ID  specified in database (" << this->analysis_id << ")";
@@ -7542,11 +7541,6 @@ void ns_time_path_image_movement_analyzer<allocator_T>::reanalyze_stored_aligned
 				
 				ns_image_storage_source_handle<float> flow_storage(0);
 				if (flow_handling_approach  == ns_ignore || flow_handling_approach == ns_create) {
-						/*	bool had_to_use_volatile_storage;
-							groups[i].paths[j].flow_output_reciever = new ns_image_storage_reciever_handle<float>(image_server_const.image_storage.request_storage_float(groups[i].paths[j].flow_output_image, ns_tiff_zip, 1024, &sql, had_to_use_volatile_storage, false, false));
-							ns_image_properties prop(storage.input_stream().properties());
-							prop.components = 3;
-							groups[i].paths[j].flow_output_reciever->output_stream().init(prop);*/
 							groups[i].paths[j].initialize_movement_image_loading_no_flow(storage,false);
 				}
 				else {
@@ -7600,7 +7594,7 @@ void ns_time_path_image_movement_analyzer<allocator_T>::reanalyze_stored_aligned
 				//}
 				clear_images_for_group(i, image_cache);
 				groups[i].paths[j].end_movement_image_loading();
-				groups[i].paths[j].denoise_movement_series_and_calculate_intensity_slopes(0,times_series_denoising_parameters, tmp1, tmp2);
+				groups[i].paths[j].denoise_movement_series_and_calculate_intensity_slopes(times_series_denoising_parameters, tmp1, tmp2);
 			
 				//groups[i].paths[j].analyze_movement(e,generate_stationary_path_id(i,j));
 				
@@ -7621,8 +7615,8 @@ void ns_time_path_image_movement_analyzer<allocator_T>::reanalyze_stored_aligned
 			}
 		}
 		memory_pool.clear();
-		image_server_const.add_subtext_to_current_event("\n", &sql);
 		generate_movement_description_series();
+		image_server_const.add_subtext_to_current_event("\n", &sql);
 	}
 	catch(...){
 		//delete_from_db(region_id,sql);
@@ -7671,6 +7665,7 @@ void ns_time_path_image_movement_analyzer<allocator_T>::normalize_movement_score
 		return;
 	image_server.register_server_event(ns_image_server_event("Ignoring depreciated denosing parameter specification!!"),&sql);
 	return;
+	/*
 	if (param.movement_score_normalization == ns_time_series_denoising_parameters::ns_subtract_out_device_median)
 		return;
 
@@ -7757,7 +7752,7 @@ void ns_time_path_image_movement_analyzer<allocator_T>::normalize_movement_score
 				m_pos++;
 			}
 		}
-	}
+	}*/
 }
 
 
@@ -7814,7 +7809,7 @@ void ns_time_path_image_movement_analyzer<allocator_T>::match_plat_areas_to_path
 template<class allocator_T>
 void ns_time_path_image_movement_analyzer<allocator_T>::generate_movement_description_series(){
 	//group sizes and position
-	
+	description_series.items.resize(0);
 	description_series.items.resize(groups.size());
 	for (unsigned int i = 0; i < groups.size(); i++){
 		description_series.items[i].path_id.group_id = i;
@@ -7833,6 +7828,7 @@ void ns_time_path_image_movement_analyzer<allocator_T>::generate_movement_descri
 
 
 	//populate timepoints from solution
+	description_series.timepoints.resize(0);
 	description_series.timepoints.resize(solution->timepoints.size());
 	for (unsigned int i = 0; i < solution->timepoints.size(); i++){
 		description_series.timepoints[i].time = solution->timepoints[i].time;

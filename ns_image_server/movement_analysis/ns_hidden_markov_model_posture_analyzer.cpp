@@ -406,7 +406,9 @@ void ns_hmm_solver::build_movement_state_solution_from_movement_transitions(cons
 				movement_state_solution.moving.skipped = false;
 				movement_state_solution.moving.end_index = path_indices[movement_transitions[i].second];
 			}
-			else movement_state_solution.moving.skipped = true;
+			else 
+				movement_state_solution.moving.skipped = true;
+			
 			m = ns_movement_slow;
 			movement_state_solution.slowing.start_index = path_indices[movement_transitions[i].second];
 			movement_state_solution.slowing.end_index = *path_indices.rbegin();
@@ -418,10 +420,13 @@ void ns_hmm_solver::build_movement_state_solution_from_movement_transitions(cons
 			movement_transitions[i].first != ns_hmm_moving_weakly_post_expansion)) {
 			if (path_indices[movement_transitions[i].second] != movement_state_solution.slowing.start_index)
 				movement_state_solution.slowing.end_index = path_indices[movement_transitions[i].second];
-			else movement_state_solution.slowing.skipped = true;
+			else {
+				movement_state_solution.slowing.end_index = movement_state_solution.slowing.start_index = 0;
+				movement_state_solution.slowing.skipped = true;
+			}
 			m = ns_movement_stationary;
-			movement_state_solution.dead.start_index = path_indices[movement_transitions[i].second];
-			movement_state_solution.dead.end_index = *path_indices.rbegin();
+				movement_state_solution.dead.start_index = path_indices[movement_transitions[i].second];
+				movement_state_solution.dead.end_index = *path_indices.rbegin();
 			movement_state_solution.dead.skipped = movement_state_solution.dead.start_index == movement_state_solution.dead.end_index;
 		}
 		//now we handle expansions
@@ -429,7 +434,6 @@ void ns_hmm_solver::build_movement_state_solution_from_movement_transitions(cons
 		case 0:
 			if (movement_transitions[i].first == ns_hmm_moving_weakly_expanding ||
 				movement_transitions[i].first == ns_hmm_not_moving_expanding) {
-				movement_state_solution.expanding.skipped = false;
 				movement_state_solution.expanding.start_index = path_indices[movement_transitions[i].second];
 				movement_state_solution.expanding.end_index = *path_indices.rbegin();
 				movement_state_solution.expanding.skipped = movement_state_solution.expanding.start_index == movement_state_solution.expanding.end_index;
@@ -466,7 +470,6 @@ void ns_hmm_solver::build_movement_state_solution_from_movement_transitions(cons
 			if (movement_transitions[i].first == ns_hmm_contracting_post_expansion) {
 				//if (expanding_state == 0)
 				//	throw ns_ex("Encountered a contracting animal that had not first expanded.");
-				movement_state_solution.post_expansion_contracting.skipped = false;
 				movement_state_solution.post_expansion_contracting.start_index = path_indices[movement_transitions[i].second];
 				movement_state_solution.post_expansion_contracting.end_index = *path_indices.rbegin();
 				movement_state_solution.post_expansion_contracting.skipped = movement_state_solution.post_expansion_contracting.start_index == movement_state_solution.post_expansion_contracting.end_index;
@@ -487,6 +490,17 @@ void ns_hmm_solver::build_movement_state_solution_from_movement_transitions(cons
 			throw ns_ex("Failure to die after contraction");
 		}
 	}
+	//zero out for neatness.  These values shouldn't be used, but leaving them set can be confusing during debugging.
+	if (movement_state_solution.moving.skipped)
+		movement_state_solution.moving.start_index = movement_state_solution.moving.end_index = 0;
+	if (movement_state_solution.slowing.skipped)
+		movement_state_solution.slowing.start_index = movement_state_solution.slowing.end_index = 0;
+	if (movement_state_solution.dead.skipped)
+		movement_state_solution.dead.start_index = movement_state_solution.dead.end_index = 0;
+	if (movement_state_solution.expanding.skipped)
+		movement_state_solution.expanding.start_index = movement_state_solution.expanding.end_index = 0;
+	if (movement_state_solution.post_expansion_contracting.skipped)
+		movement_state_solution.post_expansion_contracting.start_index = movement_state_solution.post_expansion_contracting.end_index = 0;
 
 	//if (movement_transitions.size() == 1)
 	//	std::cerr << "Singleton transition encountered\n";

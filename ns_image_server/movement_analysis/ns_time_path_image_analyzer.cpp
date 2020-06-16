@@ -3744,26 +3744,26 @@ void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_fr
 		ns_death_time_annotation e1(ns_death_associated_expansion_start,
 			0, region_info_id,
 			ns_death_time_annotation_time_interval(0, 0),
-			elements[expansion_interval_including_missed_states.entrance_interval.period_end_index].region_offset_in_source_image(),
-			elements[expansion_interval_including_missed_states.entrance_interval.period_end_index].worm_region_size(),
+			elements[slow_moving_interval_including_missed_states.entrance_interval.period_end_index].region_offset_in_source_image(),
+			elements[slow_moving_interval_including_missed_states.entrance_interval.period_end_index].worm_region_size(),
 			exclusion_type,
 			ns_death_time_annotation_event_count(1 + number_of_extra_worms_in_path, 0), current_time, ns_death_time_annotation::ns_lifespan_machine,
 			part_of_a_multiple_worm_disambiguation_group ? ns_death_time_annotation::ns_part_of_a_mutliple_worm_disambiguation_cluster : ns_death_time_annotation::ns_single_worm,
-			path_id, part_of_a_full_trace, elements[expansion_interval_including_missed_states.entrance_interval.period_end_index].inferred_animal_location,
-			elements[expansion_interval_including_missed_states.entrance_interval.period_end_index].subregion_info, ns_death_time_annotation::ns_explicitly_not_observed,
+			path_id, part_of_a_full_trace, elements[slow_moving_interval_including_missed_states.entrance_interval.period_end_index].inferred_animal_location,
+			elements[slow_moving_interval_including_missed_states.entrance_interval.period_end_index].subregion_info, ns_death_time_annotation::ns_explicitly_not_observed,
 			reason_to_be_censored, loglikelihood_of_solution, longest_skipped_interval_before_death);
 		analysis_result.death_time_annotation_set.add(e1);
 
 		ns_death_time_annotation e2(ns_death_associated_expansion_stop,
 			0, region_info_id,
 			ns_death_time_annotation_time_interval(0,0),
-			elements[expansion_interval_including_missed_states.entrance_interval.period_end_index].region_offset_in_source_image(),
-			elements[expansion_interval_including_missed_states.entrance_interval.period_end_index].worm_region_size(),
+			elements[slow_moving_interval_including_missed_states.entrance_interval.period_end_index].region_offset_in_source_image(),
+			elements[slow_moving_interval_including_missed_states.entrance_interval.period_end_index].worm_region_size(),
 			exclusion_type,
 			ns_death_time_annotation_event_count(1 + number_of_extra_worms_in_path, 0), current_time, ns_death_time_annotation::ns_lifespan_machine,
 			part_of_a_multiple_worm_disambiguation_group ? ns_death_time_annotation::ns_part_of_a_mutliple_worm_disambiguation_cluster : ns_death_time_annotation::ns_single_worm,
-			path_id, part_of_a_full_trace, elements[expansion_interval_including_missed_states.entrance_interval.period_end_index].inferred_animal_location,
-			elements[expansion_interval_including_missed_states.entrance_interval.period_end_index].subregion_info, ns_death_time_annotation::ns_explicitly_not_observed, reason_to_be_censored, loglikelihood_of_solution, longest_skipped_interval_before_death);
+			path_id, part_of_a_full_trace, elements[slow_moving_interval_including_missed_states.entrance_interval.period_end_index].inferred_animal_location,
+			elements[slow_moving_interval_including_missed_states.entrance_interval.period_end_index].subregion_info, ns_death_time_annotation::ns_explicitly_not_observed, reason_to_be_censored, loglikelihood_of_solution, longest_skipped_interval_before_death);
 		analysis_result.death_time_annotation_set.add(e2);
 	}
 	if (!post_expansion_contraction_interval_including_missed_states.skipped) {
@@ -3797,26 +3797,26 @@ void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_fr
 		ns_death_time_annotation e1(ns_death_associated_post_expansion_contraction_start,
 			0, region_info_id,
 			ns_death_time_annotation_time_interval(0, 0),
-			elements[post_expansion_contraction_interval_including_missed_states.entrance_interval.period_end_index].region_offset_in_source_image(),
-			elements[post_expansion_contraction_interval_including_missed_states.entrance_interval.period_end_index].worm_region_size(),
+			elements[slow_moving_interval_including_missed_states.entrance_interval.period_end_index].region_offset_in_source_image(),
+			elements[slow_moving_interval_including_missed_states.entrance_interval.period_end_index].worm_region_size(),
 			exclusion_type,
 			ns_death_time_annotation_event_count(1 + number_of_extra_worms_in_path, 0), current_time, ns_death_time_annotation::ns_lifespan_machine,
 			part_of_a_multiple_worm_disambiguation_group ? ns_death_time_annotation::ns_part_of_a_mutliple_worm_disambiguation_cluster : ns_death_time_annotation::ns_single_worm,
-			path_id, part_of_a_full_trace, elements[post_expansion_contraction_interval_including_missed_states.entrance_interval.period_end_index].inferred_animal_location,
-			elements[post_expansion_contraction_interval_including_missed_states.entrance_interval.period_end_index].subregion_info, ns_death_time_annotation::ns_explicitly_not_observed,
+			path_id, part_of_a_full_trace, elements[slow_moving_interval_including_missed_states.entrance_interval.period_end_index].inferred_animal_location,
+			elements[slow_moving_interval_including_missed_states.entrance_interval.period_end_index].subregion_info, ns_death_time_annotation::ns_explicitly_not_observed,
 			reason_to_be_censored, loglikelihood_of_solution, longest_skipped_interval_before_death);
 		analysis_result.death_time_annotation_set.add(e1);
 
 		ns_death_time_annotation e2(ns_death_associated_post_expansion_contraction_stop,
 			0, region_info_id,
 			ns_death_time_annotation_time_interval(0, 0),
-			elements[post_expansion_contraction_interval_including_missed_states.entrance_interval.period_end_index].region_offset_in_source_image(),
-			elements[post_expansion_contraction_interval_including_missed_states.entrance_interval.period_end_index].worm_region_size(),
+			elements[slow_moving_interval_including_missed_states.entrance_interval.period_end_index].region_offset_in_source_image(),
+			elements[slow_moving_interval_including_missed_states.entrance_interval.period_end_index].worm_region_size(),
 			exclusion_type,
 			ns_death_time_annotation_event_count(1 + number_of_extra_worms_in_path, 0), current_time, ns_death_time_annotation::ns_lifespan_machine,
 			part_of_a_multiple_worm_disambiguation_group ? ns_death_time_annotation::ns_part_of_a_mutliple_worm_disambiguation_cluster : ns_death_time_annotation::ns_single_worm,
-			path_id, part_of_a_full_trace, elements[post_expansion_contraction_interval_including_missed_states.entrance_interval.period_end_index].inferred_animal_location,
-			elements[post_expansion_contraction_interval_including_missed_states.entrance_interval.period_end_index].subregion_info, ns_death_time_annotation::ns_explicitly_not_observed, reason_to_be_censored, loglikelihood_of_solution, longest_skipped_interval_before_death);
+			path_id, part_of_a_full_trace, elements[slow_moving_interval_including_missed_states.entrance_interval.period_end_index].inferred_animal_location,
+			elements[slow_moving_interval_including_missed_states.entrance_interval.period_end_index].subregion_info, ns_death_time_annotation::ns_explicitly_not_observed, reason_to_be_censored, loglikelihood_of_solution, longest_skipped_interval_before_death);
 		analysis_result.death_time_annotation_set.add(e2);
 	}
 	

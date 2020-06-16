@@ -3272,6 +3272,7 @@ void ns_output_error() {
 
 }
 void ns_handle_worm_selection_button(Fl_Widget *w, void * data) {
+	try{
 	if (!worm_learner.data_gui_selector.region_selected()) {
 		std::cout << "Individual worms can be selected only in single-region storyboards.";
 	}
@@ -3299,56 +3300,94 @@ void ns_handle_worm_selection_button(Fl_Widget *w, void * data) {
 		ns_launch_worm_window_for_worm(worm_learner.data_gui_selector.current_region().region_id, path_id, time);
 	}
 
+	}
+	catch (ns_ex & ex) {
+		cerr << "Error while selecting worm: " << ex.text() << "\n";
+	}
+	catch (...) {
+		cerr << "Unknown error while selecting worm.\n";
+	}
 }
 void ns_handle_death_time_annotation_button(Fl_Widget * w, void * data){
-	ns_image_series_annotater::ns_image_series_annotater_action action(*static_cast<ns_image_series_annotater::ns_image_series_annotater_action *>(data));
-	if (action == ns_image_series_annotater::ns_save){
-		ns_thread t(ns_asynch_annotation_saver::run_asynch,0);
-		t.detach();
-		return;
+	try {
+		ns_image_series_annotater::ns_image_series_annotater_action action(*static_cast<ns_image_series_annotater::ns_image_series_annotater_action*>(data));
+		if (action == ns_image_series_annotater::ns_save) {
+			ns_thread t(ns_asynch_annotation_saver::run_asynch, 0);
+			t.detach();
+			return;
+		}
+		worm_learner.navigate_death_time_annotation(action);
+		report_changes_made_to_screen();
 	}
-	worm_learner.navigate_death_time_annotation(action);
-	report_changes_made_to_screen();
+	catch (ns_ex & ex) {
+		cerr << "Error while pressing button: " << ex.text() << "\n";
+	}
+	catch (...) {
+		cerr << "Unknown error when pressing button\n";
+	}
 }
-void ns_handle_death_time_solo_annotation_button(Fl_Widget * w, void * data){
-	
-	ns_death_time_solo_posture_annotater::ns_image_series_annotater_action * a = static_cast<ns_death_time_solo_posture_annotater::ns_image_series_annotater_action *>(data);
-	ns_death_time_solo_posture_annotater::ns_image_series_annotater_action action(*a);
-	//delete a;
-	ns_acquire_lock_for_scope storyboard_lock(worm_learner.storyboard_lock,__FILE__,__LINE__);
-	worm_learner.navigate_solo_worm_annotation(action);
-	worm_learner.storyboard_annotater.request_refresh();
-	worm_learner.death_time_solo_annotater.request_refresh();
-	storyboard_lock.release();
-	report_changes_made_to_screen();
-	//Fl::focus(main_window->gl_window);
+void ns_handle_death_time_solo_annotation_button(Fl_Widget* w, void* data) {
+	try {
+		ns_death_time_solo_posture_annotater::ns_image_series_annotater_action* a = static_cast<ns_death_time_solo_posture_annotater::ns_image_series_annotater_action*>(data);
+		ns_death_time_solo_posture_annotater::ns_image_series_annotater_action action(*a);
+		//delete a;
+		ns_acquire_lock_for_scope storyboard_lock(worm_learner.storyboard_lock, __FILE__, __LINE__);
+		worm_learner.navigate_solo_worm_annotation(action);
+		worm_learner.storyboard_annotater.request_refresh();
+		worm_learner.death_time_solo_annotater.request_refresh();
+		storyboard_lock.release();
+		report_changes_made_to_screen();
+		//Fl::focus(main_window->gl_window);
+	}
+	catch (ns_ex & ex) {
+		cerr << "Error while pressing button: " << ex.text() << "\n";
+	}
+	catch (...) {
+		cerr << "Unknown error when pressing button\n";
+	}
 }
 void ns_handle_stats_annotation_button(Fl_Widget* w, void* data) {
-	ns_image_series_annotater::ns_image_series_annotater_action action(*static_cast<ns_image_series_annotater::ns_image_series_annotater_action*>(data));
-	ns_set_menu_bar_activity(false);
-	switch (action) {
-	case ns_image_series_annotater::ns_recalculate:
-		image_server.register_server_event_no_db(ns_image_server_event("Re-calculating survival statistics"));
-		worm_learner.storyboard_annotater.rebuild_telemetry_with_by_hand_annotations();
-		break;
-	case ns_image_series_annotater::ns_switch_grouping:
-		break;
-	case ns_image_series_annotater::ns_cycle_graphs:
-		break;
+	try {
+		ns_image_series_annotater::ns_image_series_annotater_action action(*static_cast<ns_image_series_annotater::ns_image_series_annotater_action*>(data));
+		ns_set_menu_bar_activity(false);
+		switch (action) {
+		case ns_image_series_annotater::ns_recalculate:
+			image_server.register_server_event_no_db(ns_image_server_event("Re-calculating survival statistics"));
+			worm_learner.storyboard_annotater.rebuild_telemetry_with_by_hand_annotations();
+			break;
+		case ns_image_series_annotater::ns_switch_grouping:
+			break;
+		case ns_image_series_annotater::ns_cycle_graphs:
+			break;
+		}
+		ns_set_menu_bar_activity(true);
+		report_changes_made_to_screen();
 	}
-	ns_set_menu_bar_activity(true);
-	report_changes_made_to_screen();
+	catch (ns_ex & ex) {
+		cerr << "Error while pressing button: " << ex.text() << "\n";
+	}
+	catch (...) {
+		cerr << "Unknown error when pressing button\n";
+	}
 }
 
 void all_menu_callback(Fl_Widget*w, void*data) {
- 	ns_menu_organizer_callback_data  ww (*static_cast<ns_menu_organizer_callback_data *>(data));
-	char pn[512];
-	
-	int ret(ww.bar->item_pathname(pn,512));
-	if (ret == 0) ww.organizer->dispatch_request_asynch(pn);
-	else if (ret == -1) throw ns_ex("Could not identify requested menu item");
-	else if (ret == -2) throw ns_ex("Menu item is larger than buffer provided");
-	else throw ns_ex("FLTK returned a cryptic error while processing menu request");
+	try {
+		ns_menu_organizer_callback_data  ww(*static_cast<ns_menu_organizer_callback_data*>(data));
+		char pn[512];
+
+		int ret(ww.bar->item_pathname(pn, 512));
+		if (ret == 0) ww.organizer->dispatch_request_asynch(pn);
+		else if (ret == -1) throw ns_ex("Could not identify requested menu item");
+		else if (ret == -2) throw ns_ex("Menu item is larger than buffer provided");
+		else throw ns_ex("FLTK returned a cryptic error while processing menu request");
+	}
+	catch (ns_ex & ex) {
+		cerr << "Error while selecting menu " << ex.text() << "\n";
+	}
+	catch (...) {
+		cerr << "Unknown error when selecting menu\n";
+	}
 }
 /*
 void redraw_screen(){

@@ -1952,9 +1952,9 @@ bool ns_time_path_image_movement_analyzer<allocator_T>::load_image_quantificatio
 	normalize_movement_scores_over_all_paths(e->software_version_number(), times_series_denoising_parameters, sql);
 	if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Calculating quantifications"));
 	std::vector< ns_64_bit> tmp1, tmp2;
-	ofstream o("c:\\server\\debug_" + ns_format_time_string(ns_current_time()));
-	groups[0].paths[0].write_detailed_movement_quantification_analysis_header(o);
-	o << "\n";
+	//ofstream o("c:\\server\\debug_" + ns_format_time_string(ns_current_time()));
+	//groups[0].paths[0].write_detailed_movement_quantification_analysis_header(o);
+	//o << "\n";
 	for (unsigned long g = 0; g < groups.size(); g++){
 		for (unsigned long p = 0; p < groups[g].paths.size(); p++) {
 			unsigned long number_of_valid_points(0);
@@ -1977,14 +1977,14 @@ bool ns_time_path_image_movement_analyzer<allocator_T>::load_image_quantificatio
 				groups[g].paths[p].denoise_movement_series_and_calculate_intensity_slopes(times_series_denoising_parameters, tmp1, tmp2);
 			}
 			//xxx
-			ns_region_metadata m;
-			if (g == 17)
-				groups[g].paths[p].write_detailed_movement_quantification_analysis_data(m, g, p, o, false, false);
-			groups[g].paths[p].analyze_movement(e, ns_stationary_path_id(g, p, analysis_id), last_timepoint_in_analysis_);
-			groups[g].paths[p].calculate_movement_quantification_summary(groups[g].paths[p].movement_analysis_result);
+			//ns_region_metadata m;
+			//if (g == 17)
+			//	groups[g].paths[p].write_detailed_movement_quantification_analysis_data(m, g, p, o, false, false);
+			//groups[g].paths[p].analyze_movement(e, ns_stationary_path_id(g, p, analysis_id), last_timepoint_in_analysis_);
+			//groups[g].paths[p].calculate_movement_quantification_summary(groups[g].paths[p].movement_analysis_result);
 		}
 	}
-	o.close();
+	//o.close();
 
 
 	if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Done"));
@@ -7619,22 +7619,22 @@ void ns_time_path_image_movement_analyzer<allocator_T>::reanalyze_stored_aligned
 			}
 		}
 		normalize_movement_scores_over_all_paths(e->software_version_number(),times_series_denoising_parameters,sql);
-		ofstream o("c:\\server\\debug_" + ns_format_time_string(ns_current_time()));
-		groups[0].paths[0].write_detailed_movement_quantification_analysis_header(o);
-		o << "\n";
+		//ofstream o("c:\\server\\debug_" + ns_format_time_string(ns_current_time()));
+		//groups[0].paths[0].write_detailed_movement_quantification_analysis_header(o);
+		//o << "\n";
 		for (unsigned int i = 0; i < groups.size(); i++){
 			for (unsigned int j = 0; j < groups[i].paths.size(); j++){
 				if (ns_skip_low_density_paths && groups[i].paths[j].is_low_density_path())
 					continue;
 				groups[i].paths[j].analyze_movement(e,generate_stationary_path_id(i,j),last_timepoint_in_analysis_);
-				ns_region_metadata m;
-				if (i == 17)
-					groups[i].paths[j].write_detailed_movement_quantification_analysis_data(m, i, j, o, false, false);
+			//	ns_region_metadata m;
+			//	if (i == 17)
+			//		groups[i].paths[j].write_detailed_movement_quantification_analysis_data(m, i, j, o, false, false);
 
 				groups[i].paths[j].calculate_movement_quantification_summary(groups[i].paths[j].movement_analysis_result);
 			}
 		}
-		o.close();
+		//o.close();
 		memory_pool.clear();
 		generate_movement_description_series();
 

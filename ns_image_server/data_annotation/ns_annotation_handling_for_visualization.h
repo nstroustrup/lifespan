@@ -435,6 +435,7 @@ struct ns_animal_list_at_position {
 	ns_animal_list_at_position() :stationary_path_id(-1, -1, 0) {}
 	ns_stationary_path_id stationary_path_id;
 	typedef std::vector<ns_death_timing_data> ns_animal_list;  //positions can hold multiple animals
+
 	ns_animal_list animals;
 };
 
@@ -449,6 +450,14 @@ public:
 		}
 		ns_death_time_annotation_compiler c;
 		c.add(set, ns_region_metadata());
+		load_timing_data_from_set(c, ignore_unuseful_annotations, timing_data, orphaned_events, error_message);
+	}
+	bool load_timing_data_from_set(const ns_death_time_annotation_compiler& c, const bool ignore_unuseful_annotations, timing_data_container& timing_data, std::vector<ns_death_time_annotation>& orphaned_events, std::string& error_message) {
+		//use the compiler to recognize all the stationary worms and put all the annotations together.
+		if (c.regions.size() == 0) {
+			error_message = "Found an empty annotation file";
+			return false;
+		}
 		if (c.regions.size() > 1)
 			throw ns_ex("ns_timing_data_and_death_time_annotation_matcher()::Found multiple regions in death time annotation set!");
 		if (c.regions.empty())
@@ -460,7 +469,7 @@ public:
 			group_lookup[timing_data[i].stationary_path_id.group_id] = &timing_data[i].animals;
 
 		unsigned int location_id(0);
-		for (ns_death_time_annotation_compiler_region::ns_location_list::iterator p = c.regions.begin()->second.locations.begin(); p != c.regions.begin()->second.locations.end(); p++) {
+		for (ns_death_time_annotation_compiler_region::ns_location_list::const_iterator p = c.regions.begin()->second.locations.begin(); p != c.regions.begin()->second.locations.end(); p++) {
 			if (!p->properties.stationary_path_id.specified())
 				continue;
 			//find the correct entry in the timing data structure for the current location

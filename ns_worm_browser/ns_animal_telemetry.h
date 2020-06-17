@@ -125,18 +125,13 @@ public:
 			}
 		}
 		//load machine annotations
-		ns_machine_analysis_data_loader machine_annotations;
-		machine_annotations.load(ns_death_time_annotation_set::ns_censoring_and_movement_transitions, metadata.region_id, 0, 0, sql, true);
-		if (machine_annotations.samples.size() != 0 && machine_annotations.samples.begin()->regions.size() != 0) {
-			std::vector<ns_death_time_annotation> _unused_orphaned_events;
-			std::string _unused_error_message;
-			matcher.load_timing_data_from_set((*machine_annotations.samples.begin()->regions.begin())->death_time_annotation_set, true,
-				machine_timing_data, _unused_orphaned_events, _unused_error_message);
-			return true;
-		}
-
-
-
+		std::vector<ns_death_time_annotation> _unused_orphaned_events;
+		std::string _unused_error_message;
+		ns_death_time_annotation_compiler compiler;
+		for (unsigned int i = 0; i < this->movement_analyzer.size(); i++)
+			compiler.add(this->movement_analyzer.group(i).paths.begin()->movement_analysis_result.death_time_annotation_set);
+		matcher.load_timing_data_from_set(compiler, true,
+			machine_timing_data, _unused_orphaned_events, _unused_error_message); 
 		return could_load_by_hand;
 	}
 	void add_annotations_to_set(ns_death_time_annotation_set & set, std::vector<ns_death_time_annotation> & orphaned_events) {

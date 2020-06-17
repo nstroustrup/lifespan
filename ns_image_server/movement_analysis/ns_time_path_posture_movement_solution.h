@@ -4,6 +4,7 @@
 #include "ns_get_double.h"
 
 struct ns_movement_state_observation_boundaries{
+	ns_movement_state_observation_boundaries() :start_index(0), end_index(0), skipped(true), longest_observation_gap_within_interval(0) {}
 	long start_index,
 				  end_index; //one past the last valid point in the interval
 	bool skipped;

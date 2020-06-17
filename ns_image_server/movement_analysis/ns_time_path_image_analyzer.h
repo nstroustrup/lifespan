@@ -725,7 +725,7 @@ struct ns_movement_analysis_shared_state;
 template<class allocator_T>
 class ns_time_path_image_movement_analyzer {
 public:
-	enum { ns_spatially_averaged_movement_threshold = 4, ns_spatially_averaged_movement_kernal_half_size=2};
+	enum { ns_spatially_averaged_movement_threshold = 3, ns_spatially_averaged_movement_kernal_half_size=2};
 	ns_time_path_image_movement_analyzer(ns_time_path_image_movement_analysis_memory_pool<allocator_T> & memory_pool_):paths_loaded_from_solution(false),
 		region_info_id(0),last_timepoint_in_analysis_(0), _number_of_invalid_images_encountered(0),image_cache(1024*1024*64),
 		number_of_timepoints_in_analysis_(0),image_db_info_loaded(false),externally_specified_plate_observation_interval(0,ULONG_MAX),posture_model_version_used(NS_CURRENT_POSTURE_MODEL_VERSION),

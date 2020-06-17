@@ -64,7 +64,7 @@ public:
 
 
 	//run the viterbi algorithm using the specified indicies of the path
-	static double run_viterbi(const ns_analyzed_image_time_path & path, const ns_emperical_posture_quantification_value_estimator & estimator, const std::vector<unsigned long> path_indices,
+	static double run_viterbi(const ns_analyzed_image_time_path & path, const ns_emperical_posture_quantification_value_estimator & estimator, const std::vector<unsigned long> & path_indices,
 		std::vector<ns_hmm_state_transition_time_path_index > &movement_transitions,
 		std::vector<double > & tmp_storage_1, std::vector<unsigned long > & tmp_storage_2);
 

@@ -26,7 +26,6 @@ double inline ns_truncate_negatives(const double & d){
 
 void ns_hmm_solver::solve(const ns_analyzed_image_time_path & path, const ns_emperical_posture_quantification_value_estimator & estimator,
 	std::vector<double > & tmp_storage_1, std::vector<unsigned long > & tmp_storage_2) {
-	ns_time_path_posture_movement_solution solution;
 	bool found_start_time(false);
 	unsigned long start_time_i(0);
 	const unsigned long first_stationary_timepoint = path.first_stationary_timepoint();
@@ -47,6 +46,7 @@ void ns_hmm_solver::solve(const ns_analyzed_image_time_path & path, const ns_emp
 	if (first_stationary_timepoint_index == -1)
 		first_stationary_timepoint_index = 0;
 	std::vector<ns_hmm_state_transition_time_path_index > movement_transitions;
+	movement_state_solution = ns_time_path_posture_movement_solution();
 	movement_state_solution.loglikelihood_of_solution = run_viterbi(path, estimator, path_indices, movement_transitions, tmp_storage_1, tmp_storage_2);
 	build_movement_state_solution_from_movement_transitions(first_stationary_timepoint_index,path_indices, movement_transitions);
 }
@@ -180,7 +180,7 @@ void ns_forbid_requested_hmm_states(const ns_emperical_posture_quantification_va
 	}
 }
 
-double ns_hmm_solver::run_viterbi(const ns_analyzed_image_time_path & path, const ns_emperical_posture_quantification_value_estimator & estimator, const std::vector<unsigned long> path_indices,
+double ns_hmm_solver::run_viterbi(const ns_analyzed_image_time_path & path, const ns_emperical_posture_quantification_value_estimator & estimator, const std::vector<unsigned long> &path_indices,
 	std::vector<ns_hmm_state_transition_time_path_index > &movement_transitions, std::vector<double > & probabilitiy_of_path, std::vector<unsigned long > & previous_state) {
 	const int number_of_states((int)ns_hmm_unknown_state);
 	std::vector<std::vector<double> > state_transition_matrix;
@@ -928,7 +928,8 @@ struct ns_intensity_accessor_4x : public ns_measurement_accessor {
 
 struct ns_movement_accessor : public ns_measurement_accessor {
 	const double operator()(const ns_analyzed_image_time_path_element_measurements & e) const {
-		const double d = e.death_time_posture_analysis_measure_v2_cropped()+1;
+		//this defines the movement score used by the HMM model!
+		const double d = e.death_time_posture_analysis_measure_v2_uncropped()+.1;
 		if (d <= 0) return -DBL_MAX;
 		return log(d);
 	}

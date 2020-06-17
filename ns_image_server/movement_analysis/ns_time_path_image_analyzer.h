@@ -10,7 +10,7 @@
 #include "ns_analyzed_image_time_path_element_measurements.h"
 #include "ns_hidden_markov_model_posture_analyzer.h"
 
-#define NS_CURRENT_POSTURE_MODEL_VERSION "2.1"
+#define NS_CURRENT_POSTURE_MODEL_VERSION "2.2"
 #undef NS_CALCULATE_OPTICAL_FLOW
 #define NS_USE_FAST_IMAGE_REGISTRATION
 #undef NS_CALCULATE_SLOW_IMAGE_REGISTRATION

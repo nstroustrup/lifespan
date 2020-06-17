@@ -667,7 +667,7 @@ void ns_time_path_image_movement_analyzer<allocator_T>::process_raw_images(const
 																const ns_analyzed_image_time_path_death_time_estimator * e,ns_sql & sql, const long group_number,const bool write_status_to_db,
 																const ns_analysis_db_options &id_reanalysis_options){
 	if (e->software_version_number() != NS_CURRENT_POSTURE_MODEL_VERSION)
-	  throw ns_ex("This software, which is running posture analysis version ") << ns_to_string(NS_CURRENT_POSTURE_MODEL_VERSION) << ", cannot use the incompatible posture analysis parameter set " << e->name << ", which is version " << e->software_version_number();
+	  throw ns_ex("This software, which is running threshold posture analysis version ") << ns_to_string(NS_CURRENT_POSTURE_MODEL_VERSION) << ", cannot use the incompatible posture analysis parameter set " << e->name << ", which is version " << e->software_version_number();
 	region_info_id = region_id; 
 	obtain_analysis_id_and_save_movement_data(region_id, sql, id_reanalysis_options,ns_do_not_write_data);
 	if (analysis_id == 0)
@@ -1870,7 +1870,7 @@ void ns_time_path_image_movement_analyzer<allocator_T>::reanalyze_with_different
 	if (posture_model_version_used != e->software_version_number()){
 	  //for (unsigned int i = 0; i <posture_model_version_used.size(); i++)
 	  //cout << (int)posture_model_version_used[i];
-	  throw ns_ex("This region's movement analysis was run using posture analysis version \"") << ns_to_string(posture_model_version_used) << "\".  This is incompatible with the posture analysis file you have specified, \"" << e->name << "\" which is v " << e->software_version_number() << ".  You can fix this by running the job \"Analyze Worm Movement using Cached Images\" which will preserve all by hand annotations.";
+	  throw ns_ex("This region's movement analysis was run using threshold posture analysis version \"") << ns_to_string(posture_model_version_used) << "\".  This is incompatible with the posture analysis file you have specified, \"" << e->name << "\" which is v " << e->software_version_number() << ".  You can fix this by running the job \"Analyze Worm Movement using Cached Images\" which will preserve all by hand annotations.";
 	}
 
 
@@ -1913,7 +1913,7 @@ bool ns_time_path_image_movement_analyzer<allocator_T>::load_image_quantificatio
 
 	if (posture_model_version_used != e->software_version_number()) {
 		cout << posture_model_version_used << "\n";
-		throw ns_ex("This region's movement analysis was run using posture analysis version \"") << ns_to_string(posture_model_version_used) << "\".  This is incompatible with the movement analysis model you have specified, \"" << e->name << "\" which is v " << e->software_version_number() << ".  You can fix this by running the job \"Analyze Worm Movement using Cached Images\" which will preserve all by hand annotations.";
+		throw ns_ex("This region's movement analysis was run using threshold posture analysis version \"") << ns_to_string(posture_model_version_used) << "\".  This is incompatible with the movement analysis model you have specified, \"" << e->name << "\" which is v " << e->software_version_number() << ".  You can fix this by running the job \"Analyze Worm Movement using Cached Images\" which will preserve all by hand annotations.";
 	}
 
 
@@ -2017,7 +2017,7 @@ bool ns_time_path_image_movement_analyzer<allocator_T>::load_completed_analysis_
 
 	if (posture_model_version_used != e->software_version_number()){
 	  cout << posture_model_version_used << "\n";
-	  throw ns_ex("This region's movement analysis was run using posture analysis version \"") << ns_to_string(posture_model_version_used) << "\".  This is incompatible with the movement analysis model you have specified, \"" << e->name << "\" which is v " << e->software_version_number() << ".  You can fix this by running the job \"Analyze Worm Movement using Cached Images\" which will preserve all by hand annotations.";
+	  throw ns_ex("This region's movement analysis was run using threshold posture analysis version \"") << ns_to_string(posture_model_version_used) << "\".  This is incompatible with the movement analysis model you have specified, \"" << e->name << "\" which is v " << e->software_version_number() << ".  You can fix this by running the job \"Analyze Worm Movement using Cached Images\" which will preserve all by hand annotations.";
 	}
 
 
@@ -7488,7 +7488,7 @@ template<class allocator_T>
 void ns_time_path_image_movement_analyzer<allocator_T>::reanalyze_stored_aligned_images(const ns_64_bit region_id,const ns_time_path_solution & solution_,const ns_time_series_denoising_parameters & times_series_denoising_parameters,const ns_analyzed_image_time_path_death_time_estimator * e,ns_sql & sql,const bool load_images_after_last_valid_sample,const bool recalculate_flow_images){
 
 	if (e->software_version_number() != NS_CURRENT_POSTURE_MODEL_VERSION)
-		throw ns_ex("This software, which is running posture analysis version ") << NS_CURRENT_POSTURE_MODEL_VERSION << ", cannot use the incompatible posture analysis parameter set " << e->name << ", which is version " << e->software_version_number();
+		throw ns_ex("This software, which is running threshold posture analysis version ") << NS_CURRENT_POSTURE_MODEL_VERSION << ", cannot use the incompatible posture analysis parameter set " << e->name << ", which is version " << e->software_version_number();
 
 	#ifndef NS_CALCULATE_OPTICAL_FLOW
 	if (recalculate_flow_images)

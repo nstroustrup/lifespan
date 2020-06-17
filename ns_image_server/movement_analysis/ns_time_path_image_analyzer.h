@@ -10,7 +10,9 @@
 #include "ns_analyzed_image_time_path_element_measurements.h"
 #include "ns_hidden_markov_model_posture_analyzer.h"
 
+//posture version specifically for threshold models.
 #define NS_CURRENT_POSTURE_MODEL_VERSION "2.2"
+
 #undef NS_CALCULATE_OPTICAL_FLOW
 #define NS_USE_FAST_IMAGE_REGISTRATION
 #undef NS_CALCULATE_SLOW_IMAGE_REGISTRATION

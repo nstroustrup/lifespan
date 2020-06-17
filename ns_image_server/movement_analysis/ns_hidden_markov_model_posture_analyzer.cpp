@@ -5,7 +5,7 @@
 #include "ns_threshold_and_hmm_posture_analyzer.h"
 #include "GMM.h"
 	
-#define NS_HMM_VERSION "2.4"
+#define NS_HMM_VERSION "2.5"
 
 typedef ns_emission_probabiliy_gaussian_diagonal_covariance_model ns_emission_probability_model_to_use;
 //typedef ns_emission_probabiliy_independent_gaussian_model ns_emission_probability_model_to_use;

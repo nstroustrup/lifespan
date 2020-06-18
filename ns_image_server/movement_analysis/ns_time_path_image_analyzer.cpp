@@ -1980,8 +1980,8 @@ bool ns_time_path_image_movement_analyzer<allocator_T>::load_image_quantificatio
 			//ns_region_metadata m;
 			//if (g == 17)
 			//	groups[g].paths[p].write_detailed_movement_quantification_analysis_data(m, g, p, o, false, false);
-			//groups[g].paths[p].analyze_movement(e, ns_stationary_path_id(g, p, analysis_id), last_timepoint_in_analysis_);
-			//groups[g].paths[p].calculate_movement_quantification_summary(groups[g].paths[p].movement_analysis_result);
+			groups[g].paths[p].analyze_movement(e, ns_stationary_path_id(g, p, analysis_id), last_timepoint_in_analysis_);
+			groups[g].paths[p].calculate_movement_quantification_summary(groups[g].paths[p].movement_analysis_result);
 		}
 	}
 	//o.close();

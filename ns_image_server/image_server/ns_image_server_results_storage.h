@@ -6,6 +6,7 @@
 #include "ns_image_storage.h"
 #include "ns_sql.h"
 #include "ns_iostream.h"
+#include "ns_region_metadata.h"
 
 class ns_image_server_results_subject{
 	std::string add_if_extant(const std::string & s){if (s.size() > 0)return s+"="; return "";}
@@ -19,6 +20,11 @@ class ns_image_server_results_subject{
 				  region_id;
 	std::string device_name;
 
+	std::string database_name;	//this field is only used in the worm browser commandline for aggregating experiments.
+								//it is currently ignored elsewhere
+	ns_region_metadata strain;	//this field is only used in the worm browser commandline for aggregating experiments.
+								//it is currently ignored elsewhere
+
 	unsigned long start_time,
 				   stop_time;
 
@@ -27,16 +33,31 @@ class ns_image_server_results_subject{
 				region_name;
 
 	void get_names(ns_sql & sql){
-		if (region_id != 0 && 
-			(sample_id == 0 || experiment_id == 0 ||
-			region_name.size() == 0 || sample_name.size() == 0 || experiment_name.size() == 0))
-			ns_region_info_lookup::get_region_info(region_id,&sql, region_name, sample_name,sample_id, experiment_name,experiment_id);
-		if (sample_id != 0 && (
-			experiment_id == 0 ||
-			sample_name.size() == 0 || experiment_name.size() == 0))
-			ns_region_info_lookup::get_sample_info(sample_id,&sql, sample_name, experiment_name,experiment_id);
-		if (experiment_id != 0 && experiment_name.size() == 0)
-			ns_region_info_lookup::get_experiment_info(experiment_id,&sql, experiment_name);
+		const std::string init_db(sql.database());
+		bool switched_db = !database_name.empty() && database_name != init_db;
+		if (switched_db) {
+			sql.select_db(database_name);
+		}
+		try {
+			if (region_id != 0 &&
+				(sample_id == 0 || experiment_id == 0 ||
+					region_name.size() == 0 || sample_name.size() == 0 || experiment_name.size() == 0))
+				ns_region_info_lookup::get_region_info(region_id, &sql, region_name, sample_name, sample_id, experiment_name, experiment_id);
+			if (sample_id != 0 && (
+				experiment_id == 0 ||
+				sample_name.size() == 0 || experiment_name.size() == 0))
+				ns_region_info_lookup::get_sample_info(sample_id, &sql, sample_name, experiment_name, experiment_id);
+			if (experiment_id != 0 && experiment_name.size() == 0)
+				ns_region_info_lookup::get_experiment_info(experiment_id, &sql, experiment_name);
+
+			if (switched_db)
+				sql.select_db(init_db);
+		}
+		catch (...) {
+			if (switched_db)
+				sql.select_db(init_db);
+			throw;
+		}
 	}
 	std::string region_filename(unsigned int max_length=40){
 		return 	add_if_extant(ns_image_server_results_subject::create_short_name(experiment_name,max_length)) + add_if_extant(experiment_id) +

@@ -609,9 +609,9 @@ ns_64_bit ns_image_server::make_record_for_new_sample_mask(const ns_64_bit sampl
 	path += "region_masks";
 	std::string filename = "mask_";
 	filename += sample_name + ".tif";
-
+	std::string partition = image_server.image_storage.get_partition_for_experiment(ns_atoi64(experiment_id.c_str()), &sql);
 	sql << "INSERT INTO images SET host_id = " << host_id() << ", creation_time=" << ns_current_time() << ", currently_under_processing=0, "
-		<< "path = '" << sql.escape_string(path) << "', filename='" << sql.escape_string(filename) << "', `partition`='" << image_server.image_storage.get_partition_for_experiment(ns_atoi64(experiment_id.c_str()),&sql) << "'";
+		<< "path = '" << sql.escape_string(path) << "', filename='" << sql.escape_string(filename) << "', `partition`='" << sql.escape_string(partition) << "'";
 //	cerr << sql.query() << "\n";
 	ns_64_bit id = sql.send_query_get_id();
 	sql.send_query("COMMIT");
@@ -1957,6 +1957,7 @@ bool ns_update_db_using_experimental_data_from_file(const std::string new_databa
 	}
 	if (!database_exists)
 		need_to_create_schema = true;
+
 	if (database_exists && !use_existing_database) {
 		//don't overwrite databases that have any existing tables.
 		sql << "USE " << new_database << "";
@@ -1996,6 +1997,8 @@ bool ns_update_db_using_experimental_data_from_file(const std::string new_databa
 		vector<std::string> create_commands(tables.size());
 		for (unsigned int i = 0; i < tables.size(); i++)
 				ns_get_table_create(tables[i][0],create_commands[i],sql);
+		if (tables.size() == 0)
+			throw ns_ex("Before importing, please set the default/current database to one that already has the schema set up!");
 		if (!database_exists) {
 			sql << "CREATE DATABASE " << new_database << "";
 			sql.send_query();
@@ -2187,7 +2190,7 @@ void ns_write_experimental_data_in_database_to_file(const unsigned long experime
 
 	ns_sql_result image_ids2;
 	sql << "SELECT d.data_storage_on_disk_id FROM worm_detection_results as d, sample_region_images as m, sample_region_image_info as i, capture_samples as s "
-		"WHERE d.id = m.worm_detection_results_id AND m.region_info_id = i.id AND i.sample_id = s.id AND s.experiment_id = " << experiment_id;
+		"WHERE (d.id = m.worm_detection_results_id OR d.id = m.worm_interpolation_results_id) AND m.region_info_id = i.id AND i.sample_id = s.id AND s.experiment_id = " << experiment_id;
 	sql.get_rows(image_ids2);
 	ns_concatenate_results(image_ids2,image_ids);
 
@@ -2377,16 +2380,10 @@ void ns_image_server::load_quotes(std::vector<std::pair<std::string,std::string>
 	}
 }
 bool ns_image_server::new_software_release_available(){
-	ns_sql * con = new_sql_connection(__FILE__,__LINE__);
-	try{
-		bool res = new_software_release_available(*con);
-		delete con;
-		return res;
-	}
-	catch(...){
-		delete con;
-		throw;
-	}
+	ns_acquire_for_scope<ns_sql> sql(new_sql_connection(__FILE__,__LINE__));
+	bool res = new_software_release_available(sql());
+	sql.release();
+	return res;
 }
 
 void ns_image_server::wait_for_pending_threads(){
@@ -3482,8 +3479,10 @@ void ns_image_server::get_posture_analysis_model_for_region(const ns_64_bit regi
 	if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("get_posture_analysis_model_for_region::directory set"));
 	ns_posture_analysis_model_cache_specification pa_spec(res[0][0], ns_posture_analysis_model::method_from_string(res[0][1]));
 	posture_analysis_model_cache.get_for_read(pa_spec, it, source);
+	if (it().model_specification.posture_analysis_method == ns_posture_analysis_model::ns_hidden_markov || it().model_specification.posture_analysis_method == ns_posture_analysis_model::ns_threshold_and_hmm)
+		it().model_specification.hmm_posture_estimator.validate_model_settings(sql);
+	
 	if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("get_posture_analysis_model_for_region::gotten for read"));
-
 }
 
 

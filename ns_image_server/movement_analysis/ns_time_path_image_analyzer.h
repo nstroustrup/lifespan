@@ -10,7 +10,9 @@
 #include "ns_analyzed_image_time_path_element_measurements.h"
 #include "ns_hidden_markov_model_posture_analyzer.h"
 
-#define NS_CURRENT_POSTURE_MODEL_VERSION "2.1"
+//posture version specifically for threshold models.
+#define NS_CURRENT_THRESHOLD_POSTURE_MODEL_VERSION "2.2"
+
 #undef NS_CALCULATE_OPTICAL_FLOW
 #define NS_USE_FAST_IMAGE_REGISTRATION
 #undef NS_CALCULATE_SLOW_IMAGE_REGISTRATION
@@ -462,7 +464,7 @@ public:
 	void release_images(ns_time_path_image_movement_analysis_memory_pool<allocator_T> & pool);
 
 	unsigned long number_of_elements_not_processed_correctly() const;
-	void denoise_movement_series_and_calculate_intensity_slopes(const unsigned long change_time_in_seconds,const ns_time_series_denoising_parameters &, std::vector<ns_64_bit > &tmp1, std::vector<ns_64_bit >& tmp2);
+	void denoise_movement_series_and_calculate_intensity_slopes(const ns_time_series_denoising_parameters &, std::vector<ns_64_bit > &tmp1, std::vector<ns_64_bit >& tmp2);
 
 	void find_first_labeled_stationary_timepoint() {
 		first_stationary_timepoint_ = 0;
@@ -484,11 +486,12 @@ public:
 	ns_movement_state explicitly_recognized_movement_state(const unsigned long & t) const;
 	//best_guess_movement_state simply makes the best guess as to a worm's state at the specificied time
 	ns_movement_state best_guess_movement_state(const unsigned long & t) const;
-	ns_death_time_annotation_time_interval by_hand_death_time() const;
+	ns_death_time_annotation_time_interval by_hand_movement_cessation_time() const;
+	ns_death_time_annotation_time_interval by_hand_death_associated_expansion_time() const;
 	ns_death_time_annotation_time_interval machine_event_time(const ns_movement_event & e, bool & skipped) const;
 
 	ns_movement_state by_hand_movement_state(const unsigned long & t) const;
-	ns_hmm_movement_state by_hand_hmm_movement_state(const unsigned long & t, const ns_emperical_posture_quantification_value_estimator & estimator) const;
+	ns_hmm_movement_state by_hand_hmm_movement_state(const unsigned long & t) const;
 	void add_death_time_events_to_set(ns_death_time_annotation_set & set) const;
 	const ns_death_time_annotation_set & death_time_annotations() const { return movement_analysis_result.death_time_annotation_set; }
 
@@ -615,7 +618,7 @@ private:
 	
 	std::vector<ns_death_time_annotation_time_interval> by_hand_annotation_event_times;
 	std::vector<ns_death_time_annotation::ns_event_explicitness> by_hand_annotation_event_explicitness;
-	ns_time_path_posture_movement_solution reconstruct_movement_state_solution_from_annotations(const unsigned long first_index, const unsigned long last_index,const std::vector<ns_death_time_annotation_time_interval> & intervals) const;
+	ns_time_path_posture_movement_solution reconstruct_movement_state_solution_from_annotations(const unsigned long first_index, const unsigned long last_index, const ns_emperical_posture_quantification_value_estimator * e, const std::vector<ns_death_time_annotation_time_interval> & intervals) const;
 
 
 	void quantify_movement(const ns_analyzed_time_image_chunk & chunk);
@@ -724,10 +727,10 @@ struct ns_movement_analysis_shared_state;
 template<class allocator_T>
 class ns_time_path_image_movement_analyzer {
 public:
-	enum { ns_spatially_averaged_movement_threshold = 4, ns_spatially_averaged_movement_kernal_half_size=2};
+	enum { ns_spatially_averaged_movement_threshold = 3, ns_spatially_averaged_movement_kernal_half_size=2};
 	ns_time_path_image_movement_analyzer(ns_time_path_image_movement_analysis_memory_pool<allocator_T> & memory_pool_):paths_loaded_from_solution(false),
 		region_info_id(0),last_timepoint_in_analysis_(0), _number_of_invalid_images_encountered(0),image_cache(1024*1024*64),
-		number_of_timepoints_in_analysis_(0),image_db_info_loaded(false),externally_specified_plate_observation_interval(0,ULONG_MAX),posture_model_version_used(NS_CURRENT_POSTURE_MODEL_VERSION),
+		number_of_timepoints_in_analysis_(0),image_db_info_loaded(false),externally_specified_plate_observation_interval(0,ULONG_MAX),posture_model_version_used(NS_CURRENT_THRESHOLD_POSTURE_MODEL_VERSION),
 		memory_pool(memory_pool_),asynch_group_loading_is_running(false),cancel_asynch_group_load(false), asynch_group_loading_failed(false){}
 
 	~ns_time_path_image_movement_analyzer(){
@@ -759,7 +762,7 @@ public:
 																												  //understand how this might effect all other cached data!
 	void reanalyze_stored_aligned_images(const ns_64_bit region_id,const ns_time_path_solution & solution_,const ns_time_series_denoising_parameters &,const ns_analyzed_image_time_path_death_time_estimator * e,ns_sql & sql,const bool load_images_after_last_valid_sample, const bool recalculate_flow_images);
 	bool load_image_quantification_and_rerun_death_time_detection(const ns_64_bit region_id, const ns_time_path_solution & solution_, const ns_time_series_denoising_parameters &, const ns_analyzed_image_time_path_death_time_estimator * e, ns_sql & sql,unsigned long debug_specific_worm=-1);
-	bool load_completed_analysis_(const ns_64_bit region_id, const ns_time_path_solution& solution_, const ns_time_series_denoising_parameters&, const ns_analyzed_image_time_path_death_time_estimator* e, ns_sql& sql, bool exclude_movement_quantification = false);
+	bool load_completed_analysis(const ns_64_bit region_id, const ns_time_path_solution& solution_,  ns_sql& sql, bool exclude_movement_quantification = false);
 
 	void reanalyze_with_different_movement_estimator(const ns_time_series_denoising_parameters &,const ns_analyzed_image_time_path_death_time_estimator * e);
 
@@ -859,7 +862,7 @@ public:
 	template<class T2>friend class ns_worm_morphology_data_integrator;
 	std::string posture_model_version_used;
 
-	bool calculate_optimzation_stats_for_current_hmm_estimator(ns_hmm_movement_analysis_optimizatiom_stats & s, const ns_emperical_posture_quantification_value_estimator * e, std::set<ns_stationary_path_id> & paths_to_test, bool generate_path_info);
+	bool calculate_optimzation_stats_for_current_hmm_estimator(const std::string* database_name, ns_hmm_movement_analysis_optimizatiom_stats & s, const ns_emperical_posture_quantification_value_estimator * e, std::set<ns_stationary_path_id> & paths_to_test, bool generate_path_info);
 private:
 
 	unsigned long _number_of_invalid_images_encountered;

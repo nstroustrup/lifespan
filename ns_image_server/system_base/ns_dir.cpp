@@ -381,13 +381,12 @@ void ns_dir::load(const string & dir){
 void ns_dir::load_masked(const string & dir, const string & mask, vector<string> & m_files){
 
 	load(dir);
-	vector<string> f;
+	m_files.resize(0);
+	m_files.reserve(files.size());
 	for (unsigned int i = 0; i < files.size(); i++){
 		if (to_lower(files[i]).find(mask) != files[i].npos)
-			f.push_back(files[i]);
+			m_files.push_back(files[i]);
 	}
-	m_files.resize(0);
-	m_files.insert(m_files.begin(),f.begin(),f.end());
 
 }
 #ifdef _WIN32 

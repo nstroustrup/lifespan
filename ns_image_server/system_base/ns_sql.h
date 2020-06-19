@@ -129,7 +129,8 @@ class ns_sql_connection{
   ns_sql_connection & operator<<(const T & s){current_query << s;return *this;}
   ns_sql_connection & write_data(const char *, const unsigned long length);
 
-  std::string query() const{ return current_query.to_str();}
+  const std::string & query() const{ return current_query.to_str();}
+  const std::string& database() const { return _database; }
 
   std::string escape_string(const std::string & str);
 
@@ -154,8 +155,9 @@ class ns_sql_connection{
    bool commit;
 
    std::string _server_name,
-			_user_id,
-			_password;
+	   _user_id,
+	   _password,
+	   _database;
 	unsigned int _retry_count;
 
 	std::string latest_error(const bool lock_needed=true);
@@ -171,6 +173,8 @@ struct ns_table_to_lock{
 	std::string table_name;
 	bool write;
 };
+//obtains a full table lock, with the guarentee that the lock is 
+//released by the time this object's destructor is called.
 class ns_sql_full_table_lock{
 public:
 	typedef std::vector<ns_table_to_lock> ns_table_list;
@@ -192,6 +196,25 @@ private:
 	ns_sql_connection * sql;
 };
 
+//switches the database, with the guarentee that the sql connection 
+//will return to the original db by the time this object's destructor is called.
+class ns_select_database_for_scope {
+public:
+	ns_select_database_for_scope(const std::string & db,ns_sql_connection& sql):c(&sql) {
+		init_db = sql.database();
+		select(db);
+	}
+	void select(const std::string& db) {
+		if (db != init_db && !db.empty())
+			c->select_db(db);
+	}
+	~ns_select_database_for_scope() {
+		if (c->database() != init_db)
+			c->select_db(init_db);
+	}
+	std::string init_db;
+	ns_sql_connection* c;
+};
 
 
 #endif

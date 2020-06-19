@@ -66,7 +66,8 @@ public:
 	const std::string & name() const {return sample_name_;}
 	const std::string & device_name() const {return device_name_;}
 	void set_id(const ns_64_bit id){sample_id_ =id;}
-	void clear() { sample_id_ = 0; device_name_.clear(); sample_name_.clear(); for (unsigned int i = 0; i < regions.size(); i++) ns_safe_delete(regions[i]); regions.clear(); }
+	void clear() { sample_id_ = 0; device_name_.clear(); sample_name_.clear(); for (unsigned int i = 0; i < regions.size(); i++) ns_safe_delete(regions[i]); regions.clear();}
+	~ns_machine_analysis_sample_data() { clear(); }
 private:
 	std::string device_name_;
 	std::string sample_name_;
@@ -90,6 +91,11 @@ public:
 	const std::string & experiment_name(){return experiment_name_;}
 	const ns_64_bit experiment_id(){return experiment_id_;}
 	std::vector<ns_machine_analysis_sample_data> samples;
+	~ns_machine_analysis_data_loader() {
+		//we need to do this in the correct order--erase memory pool afte rsamples as samples contains links to the pool.
+		samples.clear();
+		memory_pool.clear();
+	}
 private:
 	bool be_quiet;
 	void set_up_spec_to_load(const ns_64_bit & region_id, ns_64_bit &sample_id, ns_64_bit & experiment_id_a, ns_sql & sql, const bool load_excluded_regions);

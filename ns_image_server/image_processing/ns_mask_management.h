@@ -11,7 +11,7 @@ struct ns_mask_collage_info{
 	ns_64_bit experiment_id,
 		sample_id,
 		region_id;
-	std::string sample_name;
+	std::string database,sample_name;
 	ns_vector_2i position,
 				 dimentions;
 
@@ -35,6 +35,7 @@ public:
 			xml.add_tag("y",collage_info[i].position.y);
 			xml.add_tag("w",collage_info[i].dimentions.x);
 			xml.add_tag("h",collage_info[i].dimentions.y);
+			xml.add_tag("db", collage_info[i].database);
 			xml.end_group();
 		}
 		xml.add_footer();
@@ -54,6 +55,7 @@ public:
 			collage_info[i].dimentions.x = atol(reader.objects[i].tag("w").c_str());
 			collage_info[i].dimentions.y = atol(reader.objects[i].tag("h").c_str());
 			collage_info[i].region_id = 0;
+			reader.objects[i].assign_if_present("db", collage_info[i].database);
 			reader.objects[i].assign_if_present("r_id", collage_info[i].region_id);
 		}
 	}
@@ -71,7 +73,7 @@ public:
 
 	typedef enum { ns_plate_region_mask, ns_subregion_label_mask } ns_mask_type;
 
-	void produce_mask_file(const ns_mask_type & mask_type,const unsigned int experiment_id, const std::string metadata_output_filename, ns_image_stream_file_sink<ns_8_bit> & reciever, ns_sql & sql, const unsigned long mask_time=0);
+	void produce_mask_file(const ns_mask_type & mask_type,const std::string &db, unsigned int experiment_id, const std::string metadata_output_filename, ns_image_stream_file_sink<ns_8_bit> & reciever, ns_sql & sql, const unsigned long mask_time=0);
 	static std::string metadata_filename(const std::string & image_filename) {
 		std::string ret = image_filename;
 		ret += ".xmp";

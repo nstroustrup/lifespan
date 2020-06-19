@@ -26,23 +26,24 @@ public:
 			return;
 
 		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Loading time series denoising parameters"));
-		const ns_time_series_denoising_parameters time_series_denoising_parameters(ns_time_series_denoising_parameters::load_from_db(region_id_, sql));
-		ns_image_server::ns_posture_analysis_model_cache::const_handle_t handle;
+		//const ns_time_series_denoising_parameters time_series_denoising_parameters(ns_time_series_denoising_parameters::load_from_db(region_id_, sql));
+		//ns_image_server::ns_posture_analysis_model_cache::const_handle_t handle;
 		try{
+			/*
 		  image_server.get_posture_analysis_model_for_region(region_id_, handle, sql);
 		  //cout << "Using model " << handle().name << "\n";
 		  ns_acquire_for_scope<ns_analyzed_image_time_path_death_time_estimator> death_time_estimator(
 													      ns_get_death_time_estimator_from_posture_analysis_model(handle().model_specification
 																				      ));
 		  handle.release();
-		  
+		  */
 		  if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Loading completed analysis"));
-		  loaded_path_data_successfully = movement_analyzer.load_completed_analysis_(region_id_, solution, time_series_denoising_parameters, &death_time_estimator(), sql, !load_movement_quantification);
-		  death_time_estimator.release();
+		  loaded_path_data_successfully = movement_analyzer.load_completed_analysis(region_id_, solution, sql, !load_movement_quantification);
+		  //death_time_estimator.release();
 		}
 		catch(ns_ex & ex){
-		  if (handle.is_valid())
-		    handle.release();
+		 // if (handle.is_valid())
+		  //  handle.release();
 		  throw ns_ex("Error while loading worm movement information: ") << ex.text();
 
 		}
@@ -125,18 +126,13 @@ public:
 			}
 		}
 		//load machine annotations
-		ns_machine_analysis_data_loader machine_annotations;
-		machine_annotations.load(ns_death_time_annotation_set::ns_censoring_and_movement_transitions, metadata.region_id, 0, 0, sql, true);
-		if (machine_annotations.samples.size() != 0 && machine_annotations.samples.begin()->regions.size() != 0) {
-			std::vector<ns_death_time_annotation> _unused_orphaned_events;
-			std::string _unused_error_message;
-			matcher.load_timing_data_from_set((*machine_annotations.samples.begin()->regions.begin())->death_time_annotation_set, true,
-				machine_timing_data, _unused_orphaned_events, _unused_error_message);
-			return true;
-		}
-
-
-
+		std::vector<ns_death_time_annotation> _unused_orphaned_events;
+		std::string _unused_error_message;
+		ns_death_time_annotation_compiler compiler;
+		for (unsigned int i = 0; i < this->movement_analyzer.size(); i++)
+			compiler.add(this->movement_analyzer.group(i).paths.begin()->movement_analysis_result.death_time_annotation_set);
+		matcher.load_timing_data_from_set(compiler, true,
+			machine_timing_data, _unused_orphaned_events, _unused_error_message); 
 		return could_load_by_hand;
 	}
 	void add_annotations_to_set(ns_death_time_annotation_set & set, std::vector<ns_death_time_annotation> & orphaned_events) {

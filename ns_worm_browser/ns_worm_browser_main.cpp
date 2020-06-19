@@ -550,17 +550,19 @@ struct ns_menu_item_options{
 	std::string text;
 	bool inactive;
 };
-typedef void (*ns_menu_action)(const std::string & data);
+typedef void (*ns_menu_action)(const ns_browser_command_subject_set & subject,const std::string & data);
 struct ns_menu_item_spec{
   ns_menu_item_spec():flags(0),shortcut(0),action(0){}
-	ns_menu_item_spec(const ns_menu_action a,const std::string & t,const int s=0,const int f=0):
-		action(a),title(t),shortcut(s),flags(f){}
+	ns_menu_item_spec(bool gui_only_,const ns_menu_action a,const std::string & t,const int s=0,const int f=0):
+		action(a),title(t),shortcut(s),flags(f),gui_only(gui_only_){}
 
 	ns_menu_action action;
 	const std::string title;
 	std::vector<ns_menu_item_options> options;
 	int shortcut;
 	int flags;
+
+	bool gui_only;
 };
 
 Fl_Menu_Bar * get_menu_bar();
@@ -599,6 +601,22 @@ protected:
 
 	static ns_thread_return_type handle_dispatch_request_asynch(void * request){
 
+		//get the subject of the job, as selected using the gui menus.
+		ns_browser_command_subject_set subject(1);
+		if (worm_learner.data_gui_selector.experiment_selected()) {
+			subject[0].subject.experiment_id = worm_learner.data_gui_selector.current_experiment_id();
+			subject[0].subject.experiment_name = worm_learner.data_gui_selector.current_experiment_name();
+			if (worm_learner.data_gui_selector.sample_selected()) {
+				subject[0].subject.sample_id = worm_learner.data_gui_selector.current_sample().sample_id;
+				subject[0].subject.sample_name = worm_learner.data_gui_selector.current_sample().sample_name;
+			}
+			if (worm_learner.data_gui_selector.region_selected()) {
+				subject[0].subject.region_id = worm_learner.data_gui_selector.current_region().region_id;
+				subject[0].subject.region_name = worm_learner.data_gui_selector.current_region().region_name;
+			}
+			if (worm_learner.data_gui_selector.strain_selected())
+				subject[0].subject.strain = worm_learner.data_gui_selector.current_strain();
+		}
 		ns_asynch_menu_request * r(static_cast<ns_asynch_menu_request *>(request));
 		try{
 			if(!r->organizer->asynch_lock.try_to_acquire(__FILE__,__LINE__)){
@@ -608,7 +626,7 @@ protected:
 			}
 			ns_set_menu_bar_activity(false);
 			try{
-				r->organizer->dispatch_request(r->request);
+				r->organizer->dispatch_request(subject,r->request);
 			}
 			catch(...){
 			  r->organizer->asynch_lock.release();
@@ -639,6 +657,25 @@ protected:
 public:
 	ns_menu_organizer():asynch_lock("menu_organizer_asynch_lock"){}
 
+	//remove nice formatting characters to allow easier text search
+	void strip_text_decorations() {
+		for (unsigned int i = 0; i < menu_ordering.size(); i++) {
+			std::string new_label;
+			const std::string& old_title(menu_ordering[i]->title);
+			new_label.reserve(old_title.size());
+			for (unsigned int j = 0; j < old_title.size(); j++) {
+				if (old_title[j] != '_' && old_title[j] != '&')
+					new_label += old_title[j];
+			}
+			ns_menu_item_spec new_item(menu_ordering[i]->gui_only,menu_ordering[i]->action, new_label, menu_ordering[i]->shortcut, menu_ordering[i]->flags);
+			auto p = menu_actions.find(old_title);
+			if (p != menu_actions.end())
+				menu_actions.erase(p);
+			menu_ordering[i] = &(menu_actions.insert(std::pair<string, ns_menu_item_spec>(new_item.title, new_item)).first->second);
+		}
+
+	}
+
 	void build_menus(Fl_Menu_Bar & bar){
 		callback_data.organizer = this;
 		callback_data.bar = &bar;
@@ -659,6 +696,13 @@ public:
 		}
 		return ret;
 	}
+
+	void output_possible_actions(ostream & o) const {
+		for (unsigned int i = 0; i < menu_ordering.size(); i++) {
+			if (!menu_ordering[i]->gui_only)
+			o << "\t" << menu_ordering[i]->title << "\n";
+		}
+	}
 	void dispatch_request_asynch(const std::string & request){
 	//		cerr << "To Many things at once.\n";
 	//		return;
@@ -668,14 +712,14 @@ public:
 		thread.run(handle_dispatch_request_asynch,req);
 	}
 
-	void dispatch_request(const std::string & request) const{
+	void dispatch_request(const ns_browser_command_subject_set & subject,const std::string & request) const{
 		
 
 		try{
 			for (ns_menu_actions::const_iterator p = menu_actions.begin(); p != menu_actions.end(); ++p){
 				if (remove_menu_formatting(p->second.title) == request){
-					cerr << "Action: " << request << "\n";
-					p->second.action("");
+					image_server.register_server_event_no_db(ns_image_server_event() << "Action: " << request);
+					p->second.action(subject,"");
 					return;
 				}
 			}
@@ -685,20 +729,22 @@ public:
 				string::size_type l(request.find(suffix));
 				if (l != string::npos){
 					string::size_type d(request.find_last_of("/"));
-					cerr << "Action: " << request << "\n";
-					p->second.action(request.substr(d+1,string::npos));
+					image_server.register_server_event_no_db(ns_image_server_event() << "Action: " << request);
+					p->second.action(subject,request.substr(d+1,string::npos));
 					return;
 				}
 			}
 			throw ns_ex("Could not handle menu request:: ") << request;
 		}
 		catch(ns_ex & ex){
-			cerr << "Error: " << ex.text();
-			ns_alert_dialog d;
-			d.text = ex.text();
-			// d.act();
-			ns_run_in_main_thread<ns_alert_dialog> dd(&d);
-			
+			if (worm_learner.running_as_gui) {
+				cerr << "Error: " << ex.text();
+				ns_alert_dialog d;
+				d.text = ex.text();
+				// d.act();
+				ns_run_in_main_thread<ns_alert_dialog> dd(&d);
+			}
+			else throw;
 			/*MessageBox(
 				0,
 				ex.text().c_str(),
@@ -765,16 +811,16 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 	/*****************************
 	Worm Detection Tasks
 	*****************************/
-	static void calculate_erosion_gradient(const std::string & value){worm_learner.calculate_erosion_gradient();}
-	static void show_objects(const std::string & value){worm_learner.detect_and_output_objects();}
-	static void detect_worms(const std::string & value){worm_learner.process_contiguous_regions();}
-	static void show_region_edges(const std::string & value){worm_learner.show_edges();}
-	static void view_region_collage(const std::string & value){worm_learner.make_object_collage();}
-	static void view_spine_collage(const std::string & value){worm_learner.make_spine_collage(worm_learner.output_svg_spines);}
-	static void view_spine_collage_stats(const std::string & value){worm_learner.make_spine_collage_with_stats(worm_learner.output_svg_spines);}
-	static void view_reject_spine_collage(const std::string & value){worm_learner.make_reject_spine_collage(worm_learner.output_svg_spines);}
-	static void view_reject_spine_collage_stats(const std::string & value){worm_learner.make_reject_spine_collage_with_stats(worm_learner.output_svg_spines,worm_learner.worm_visualization_directory());}
-	static void output_feature_distributions(const std::string & value){
+	static void calculate_erosion_gradient(const ns_browser_command_subject_set& subject,const std::string & value){worm_learner.calculate_erosion_gradient();}
+	static void show_objects(const ns_browser_command_subject_set& subject, const std::string & value){worm_learner.detect_and_output_objects();}
+	static void detect_worms(const ns_browser_command_subject_set& subject, const std::string & value){worm_learner.process_contiguous_regions();}
+	static void show_region_edges(const ns_browser_command_subject_set& subject, const std::string & value){worm_learner.show_edges();}
+	static void view_region_collage(const ns_browser_command_subject_set& subject, const std::string & value){worm_learner.make_object_collage();}
+	static void view_spine_collage(const ns_browser_command_subject_set& subject, const std::string & value){worm_learner.make_spine_collage(worm_learner.output_svg_spines);}
+	static void view_spine_collage_stats(const ns_browser_command_subject_set& subject, const std::string & value){worm_learner.make_spine_collage_with_stats(worm_learner.output_svg_spines);}
+	static void view_reject_spine_collage(const ns_browser_command_subject_set& subject, const std::string & value){worm_learner.make_reject_spine_collage(worm_learner.output_svg_spines);}
+	static void view_reject_spine_collage_stats(const ns_browser_command_subject_set& subject, const std::string & value){worm_learner.make_reject_spine_collage_with_stats(worm_learner.output_svg_spines,worm_learner.worm_visualization_directory());}
+	static void output_feature_distributions(const ns_browser_command_subject_set& subject, const std::string & value){
 
 		ns_image_file_chooser im_cc;
 		im_cc.choose_directory();
@@ -785,7 +831,7 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 		worm_learner.output_distributions_of_detected_objects(im_cc.result);
 	
 	}
-	static void calculate_slow_movement(const std::string & value){
+	static void calculate_slow_movement(const ns_browser_command_subject_set& subject, const std::string & value){
 		ns_image_file_chooser im_cc;
 		ns_run_in_main_thread<ns_image_file_chooser> run_mt(&im_cc);
 		/*std::vector<dialog_file_type> foo;
@@ -801,10 +847,10 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 	Machine Learning Tasks
 	*****************************/
 
-	static void start_death_aligned_posture_annotation(const std::string & value){
+	static void start_death_aligned_posture_annotation(const ns_browser_command_subject_set& subject, const std::string & value){
 		ns_start_death_time_annotation(ns_worm_learner::ns_annotate_death_times_in_death_aligned_posture,ns_experiment_storyboard_spec::ns_number_of_flavors);
 	}		
-	static void start_time_aligned_posture_annotation(const std::string & value){
+	static void start_time_aligned_posture_annotation(const ns_browser_command_subject_set& subject, const std::string & value){
 		ns_start_death_time_annotation(ns_worm_learner::ns_annotate_death_times_in_time_aligned_posture,ns_experiment_storyboard_spec::ns_number_of_flavors);
 	}	
 	static void start_storyboard_annotation(const string & flavor_str, const std::string & subject){
@@ -837,40 +883,40 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 		else throw ns_ex("Unknown Storyboard Subject type:") << subject;
 
 	}
-	static void start_storyboard_annotation_whole_experiment(const std::string & value){
+	static void start_storyboard_annotation_whole_experiment(const ns_browser_command_subject_set& subject, const std::string & value){
 		start_storyboard_annotation(value,"Experiment");
 	}
-	static void start_storyboard_annotation_testing(const std::string & value) {
+	static void start_storyboard_annotation_testing(const ns_browser_command_subject_set& subject, const std::string & value) {
 		start_storyboard_annotation("", "Testing");
 	}
-	static void start_storyboard_annotation_plate(const std::string & value){
+	static void start_storyboard_annotation_plate(const ns_browser_command_subject_set& subject, const std::string & value){
 		start_storyboard_annotation(value,"Single Plate");
 	}
 
-	static void start_death_time_region_annotation(const std::string & value){
+	static void start_death_time_region_annotation(const ns_browser_command_subject_set& subject, const std::string & value){
 		cerr << "Nothing here yet.\n";
 	}
-	static void stop_posture_annotation(const std::string & value){
+	static void stop_posture_annotation(const ns_browser_command_subject_set& subject, const std::string & value){
 		worm_learner.stop_death_time_annotation();
 		//refresh_main_window();
 	}
 
-	static void compare_machine_and_by_hand_annotations(const std::string & value){
-		worm_learner.compare_machine_and_by_hand_annotations();
+	static void compare_machine_and_by_hand_annotations(const ns_browser_command_subject_set& subject, const std::string & value){
+		worm_learner.compare_machine_and_by_hand_annotations(subject);
 	}
-	static void generate_survival_curve_from_hand_annotations(const std::string & value){
-		worm_learner.generate_survival_curve_from_hand_annotations();
+	static void generate_survival_curve_from_hand_annotations(const ns_browser_command_subject_set& subject, const std::string & value){
+		worm_learner.generate_survival_curve_from_hand_annotations(subject);
 	}
-	static void generate_detailed_animal_data_file(const std::string & value){
+	static void generate_detailed_animal_data_file(const ns_browser_command_subject_set& subject, const std::string & value){
 		worm_learner.generate_detailed_animal_data_file();
 	}
 
-	static void output_learning_set(const std::string & value){
+	static void output_learning_set(const ns_browser_command_subject_set& subject, const std::string & value){
 		ns_image_file_chooser im_cc;
 		ns_run_in_main_thread<ns_image_file_chooser> run_mt(&im_cc);
 		if (im_cc.chosen) worm_learner.output_learning_set(im_cc.result);		
 	}
-	static void auto_output_learning_set(const std::string & value){
+	static void auto_output_learning_set(const ns_browser_command_subject_set& subject, const std::string & value){
 		// Again, there must be a better place to put these than the root dir
 		#ifdef _WIN32
 		std::string path = "c:\\worm_detection\\training_set\\a";
@@ -879,7 +925,7 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 		#endif
 		worm_learner.output_learning_set(path,true);
 		}
-	static void rethreshold_image_set(const std::string & value){
+	static void rethreshold_image_set(const ns_browser_command_subject_set& subject, const std::string & value){
 		/*std::vector<dialog_file_type> foo;
 		foo.push_back(dialog_file_type("(*.*)","*"));
 		std::string filename = open_file_dialog("Load File",foo);
@@ -890,12 +936,13 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 			worm_learner.training_file_generator.re_threshold_training_set(im_cc.result,worm_learner.get_svm_model_specification());
 	}
 
-	static void analyze_worm_position(const std::string & value){
-		worm_learner.analyze_time_path(worm_learner.data_selector.current_region().region_id);
+	static void analyze_worm_position(const ns_browser_command_subject_set& subject, const std::string & value){
+		for (unsigned int i = 0; i < subject.size(); i++)
+			worm_learner.analyze_time_path(subject[i].subject.region_id);
 	}
-	static void generate_training_set(const std::string & value){worm_learner.generate_training_set_image();}
-	static void process_training_set(const std::string & value){worm_learner.process_training_set_image();}
-	static void annotate_worm_detection_training_set(const std::string& value) {
+	static void generate_training_set(const ns_browser_command_subject_set& subject, const std::string & value){worm_learner.generate_training_set_image();}
+	static void process_training_set(const ns_browser_command_subject_set& subject, const std::string & value){worm_learner.process_training_set_image();}
+	static void annotate_worm_detection_training_set(const ns_browser_command_subject_set& subject, const std::string& value) {
 		ns_image_file_chooser im_cc;
 		ns_run_in_main_thread<ns_image_file_chooser> run_mt(&im_cc);
 		if (im_cc.chosen) {
@@ -904,7 +951,7 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 		}
 	
 	}
-	static void generate_SVM_training_data(const std::string & value){
+	static void generate_SVM_training_data(const ns_browser_command_subject_set& subject, const std::string & value){
 		/*std::vector<dialog_file_type> foo;
 		foo.push_back(dialog_file_type("(*.*)","*"));*/
 		ns_image_file_chooser im_cc;
@@ -914,14 +961,14 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 			worm_learner.train_from_data(*filename);
 		else delete filename;
 	}
-	static void split_results(const std::string & value){
+	static void split_results(const ns_browser_command_subject_set& subject, const std::string & value){
 		ns_file_chooser im_cc;
 		im_cc.title = "Choose Result File";
 		ns_run_in_main_thread<ns_file_chooser> run_mt(&im_cc);
 		if (im_cc.chosen)
 			worm_learner.training_file_generator.split_training_set_into_different_regions(im_cc.result);
 	}
-	static void fix_headers_for_svm_training_set_images(const std::string & value){
+	static void fix_headers_for_svm_training_set_images(const ns_browser_command_subject_set& subject, const std::string & value){
 		
 		std::string problem_directory,reference_directory;
 		{
@@ -946,7 +993,7 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 		gen.repair_xml_metadata(problem_directory,reference_directory,output_directory);
 
 	}
-	static void analyze_svm_results(const std::string & value){
+	static void analyze_svm_results(const ns_browser_command_subject_set& subject, const std::string & value){
 		ns_file_chooser im_cc;
 		im_cc.title = "Choose Result File";
 		ns_run_in_main_thread<ns_file_chooser> run_mt(&im_cc);
@@ -956,31 +1003,31 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 		else delete filename;
 	}
 //	static void run_temporal_inference(const std::string & value){worm_learner.run_temporal_inference();}
-	static void remove_duplicates_from_training_set(const std::string & value){
+	static void remove_duplicates_from_training_set(const ns_browser_command_subject_set& subject, const std::string & value){
 		ns_file_chooser im_cc;
 		im_cc.title = "Load Directory";
 		ns_run_in_main_thread<ns_file_chooser> run_mt(&im_cc);
 		worm_learner.training_file_generator.mark_duplicates_in_training_set(im_cc.result);
 	}
-	static void generate_region_subset_time_series(const std::string & value){
+	static void generate_region_subset_time_series(const ns_browser_command_subject_set& subject, const std::string & value){
 		ns_file_chooser im_cc;
 		im_cc.title = "Load Directory";
 		ns_run_in_main_thread<ns_file_chooser> run_mt(&im_cc);
 		worm_learner.output_subregion_as_test_set(im_cc.result);
 	}
-	static void load_region_as_new_experiment(const std::string & value){
+	static void load_region_as_new_experiment(const ns_browser_command_subject_set& subject, const std::string & value){
 		ns_file_chooser im_cc;
 		im_cc.title = "Load Directory";
 		ns_run_in_main_thread<ns_file_chooser> run_mt(&im_cc);
 		worm_learner.input_subregion_as_new_experiment(im_cc.result);
 	}
-	static void create_decimated_subset(const std::string & value){
+	static void create_decimated_subset(const ns_browser_command_subject_set& subject, const std::string & value){
 	ns_file_chooser im_cc;
 		im_cc.title = "Load Directory";
 		ns_run_in_main_thread<ns_file_chooser> run_mt(&im_cc);
 		worm_learner.decimate_folder(im_cc.result);
 	}
-	static void translate_fscore(const std::string & value){
+	static void translate_fscore(const ns_browser_command_subject_set& subject, const std::string & value){
 		ns_file_chooser im_cc;
 		im_cc.title = "Load Directory";
 		ns_run_in_main_thread<ns_file_chooser> run_mt(&im_cc);
@@ -989,37 +1036,47 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 	/*****************************
 	Copy and Paste
 	*****************************/
-	static void clipboard_copy(const std::string & value){
+	static void clipboard_copy(const ns_browser_command_subject_set& subject, const std::string & value){
 
 		worm_learner.copy_to_clipboard();
 	}
-	static void clipboard_paste(const std::string & value){worm_learner.paste_from_clipboard();}
+	static void clipboard_paste(const ns_browser_command_subject_set& subject, const std::string & value){worm_learner.paste_from_clipboard();}
 	/*****************************
 	Mask Management
 	*****************************/
-	static void masks_generate_composite(const std::string & value){
-		const bool subregion_label_mask(value.find("ubregion") != value.npos);
-		ns_file_chooser im_cc;
-		im_cc.save_file();
-		im_cc.title = "Save Experiment Region Mask";
-		if (subregion_label_mask)
-			im_cc.title = "Save Subregion Label Mask";
-		im_cc.filters.push_back(ns_file_chooser_file_type("TIF","tif"));
-		im_cc.default_filename = worm_learner.data_selector.current_experiment_name();
-		if (subregion_label_mask)
-			im_cc.default_filename += "_subregion_label_mask.tif";
-		else
-			im_cc.default_filename +="_experiment_mask.tif";
-		ns_run_in_main_thread<ns_file_chooser> run_mt(&im_cc);
-		if (im_cc.chosen) {
-			if (subregion_label_mask)
-				worm_learner.produce_mask_file(ns_bulk_experiment_mask_manager::ns_subregion_label_mask  ,im_cc.result);
-			else 
-				worm_learner.produce_mask_file(ns_bulk_experiment_mask_manager::ns_plate_region_mask, im_cc.result);
+	static void masks_generate_composite(const ns_browser_command_subject_set& subject, const std::string & value){
+		for (unsigned int i = 0; i < subject.size(); i++) {
+			const bool subregion_label_mask(value.find("ubregion") != value.npos);
 
+			ns_browser_command_subject sub(subject[i]);
+			if (worm_learner.running_as_gui) {
+				ns_file_chooser im_cc;
+				im_cc.save_file();
+				im_cc.title = "Save Experiment Region Mask";
+				if (subregion_label_mask)
+					im_cc.title = "Save Subregion Label Mask";
+				im_cc.filters.push_back(ns_file_chooser_file_type("TIF", "tif"));
+				im_cc.default_filename = subject[i].subject.experiment_name;
+				if (subregion_label_mask)
+					im_cc.default_filename += "_subregion_label_mask.tif";
+				else
+					im_cc.default_filename += "_experiment_mask.tif";
+				ns_run_in_main_thread<ns_file_chooser> run_mt(&im_cc);
+				if (im_cc.chosen)
+					sub.output_file = im_cc.result;
+				else return;
+			}
+			else if (sub.output_file.empty()) throw ns_ex("No output file specified");
+			
+			if (subregion_label_mask)
+				worm_learner.produce_mask_file(sub,ns_bulk_experiment_mask_manager::ns_subregion_label_mask);
+			else
+				worm_learner.produce_mask_file(sub,ns_bulk_experiment_mask_manager::ns_plate_region_mask);
+
+			
 		}
 	}
-	static void masks_process_composite(const std::string & value){
+	static void masks_process_composite(const ns_browser_command_subject_set& subject, const std::string & value){
 		
 		ns_file_chooser im_cc;
 		im_cc.title = "Load Image Mask";
@@ -1027,14 +1084,14 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 		ns_run_in_main_thread<ns_file_chooser> run_mt(&im_cc);
 		if (im_cc.chosen) worm_learner.decode_mask_file(im_cc.result,im_cc.result+"_vis.tif");
 	}
-	static void masks_submit_composite(const std::string & value){
+	static void masks_submit_composite(const ns_browser_command_subject_set& subject, const std::string & value){
 		const bool subregion_label_mask(value.find("ubregion") != value.npos); 
 		if (subregion_label_mask)
 			worm_learner.submit_mask_file_to_cluster(ns_bulk_experiment_mask_manager::ns_subregion_label_mask);
 		else worm_learner.submit_mask_file_to_cluster(ns_bulk_experiment_mask_manager::ns_plate_region_mask);
 	}
 
-	static void open_individual_mask(const std::string & value){
+	static void open_individual_mask(const ns_browser_command_subject_set& subject, const std::string & value){
 		ns_file_chooser im_cc;
 		im_cc.title = "Load Image Mask";
 		im_cc.filters.push_back(ns_file_chooser_file_type("TIF","tif"));
@@ -1042,13 +1099,13 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 		if (im_cc.chosen)
 			worm_learner.load_mask(im_cc.result);
 	}
-	static void view_current_mask(const std::string & value){worm_learner.view_current_mask();}
+	static void view_current_mask(const ns_browser_command_subject_set& subject, const std::string & value){worm_learner.view_current_mask();}
 
-	static void apply_mask_on_current(const std::string & value){
+	static void apply_mask_on_current(const ns_browser_command_subject_set& subject, const std::string & value){
 		worm_learner.apply_mask_on_current_image();
 	}
 
-	static void submit_individual_mask_to_server(const std::string & value){
+	static void submit_individual_mask_to_server(const ns_browser_command_subject_set& subject, const std::string & value){
 		ns_image_server_captured_image im;
 		try{
 			int offset;
@@ -1076,16 +1133,16 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 	/*****************************
 	Samle Region Selection
 	*****************************/
-	static void save_current_areas(const std::string & value){
+	static void save_current_areas(const ns_browser_command_subject_set& subject, const std::string & value){
 		worm_learner.save_current_area_selections();
 	}
-	static void clear_current_areas(const std::string & value){worm_learner.clear_areas();
+	static void clear_current_areas(const ns_browser_command_subject_set& subject, const std::string & value){worm_learner.clear_areas();
 																worm_learner.main_window.redraw_screen();}
 	/*****************************
 	Movement Detection Tasks
 	*****************************/
 
-	static std::string movement_type_menu_label(const ns_movement_data_source_type::type t){
+	static std::string movement_type_menu_label(const ns_browser_command_subject_set& subject, const ns_movement_data_source_type::type t){
 		switch(t){
 			case ns_movement_data_source_type::ns_time_path_image_analysis_data:	return "Time Path Image Analysis";
 			case ns_movement_data_source_type::ns_time_path_analysis_data:			return "Time Path Spline Analysis";
@@ -1094,7 +1151,7 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 		}
 		return "";
 	}
-	static void generate_area_movement(const std::string & value){
+	static void generate_area_movement(const ns_browser_command_subject_set& subject, const std::string & value){
 		ns_movement_data_source_type::type t;
 		//if (value == movement_type_menu_label(ns_movement_data_source_type::ns_time_path_image_analysis_data))
 			t = ns_movement_data_source_type::ns_time_path_image_analysis_data;
@@ -1106,59 +1163,70 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 			t = ns_movement_data_source_type::ns_triplet_interpolated_data;
 		else throw ns_ex("Unknown movement option: ") << value;*/
 		
-			worm_learner.compile_experiment_survival_and_movement_data(true,ns_movement_area_plot,t);
+			worm_learner.compile_experiment_survival_and_movement_data(subject,true,ns_movement_area_plot,t);
 		
 	}
-	static void generate_survival_curves(const std::string & value){
-		worm_learner.compile_experiment_survival_and_movement_data(true,ns_survival_curve,ns_movement_data_source_type::ns_all_data);
+	static void generate_survival_curves(const ns_browser_command_subject_set& subject, const std::string & value){
+		worm_learner.compile_experiment_survival_and_movement_data(subject,true,ns_survival_curve,ns_movement_data_source_type::ns_all_data);
 	}	
-	static void generate_survival_curves_for_experiment_group(const std::string & value){
-		ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
-		ns_experiment_region_selector_experiment_info info;
-		worm_learner.data_selector.get_experiment_info(worm_learner.data_selector.current_experiment_id(),info);
-		for (unsigned int i = 0; i < worm_learner.data_selector.experiment_groups.size(); i++){
-			if (worm_learner.data_selector.experiment_groups.size() == 0)
+	static void generate_survival_curves_for_experiment_group(const ns_browser_command_subject_set& subject, const std::string & value){
+		//user should select a single experiment, and the worm browsers will automatically output all experiments in the same group as the one selected.
+		//this can be done more precicely at the commandline, but this command works OK for users only using gui)
+		if (subject.size() > 1)
+			throw ns_ex("Select only one experiment");
+
+		ns_sql& sql(worm_learner.get_sql_connection());
+		ns_experiment_region_gui_selector_experiment_info info;
+		worm_learner.data_gui_selector.get_experiment_info(subject[0].subject.experiment_id,info);
+		for (unsigned int i = 0; i < worm_learner.data_gui_selector.experiment_groups.size(); i++){
+			if (worm_learner.data_gui_selector.experiment_groups.size() == 0)
 				continue;
-			else if (worm_learner.data_selector.experiment_groups[i][0].experiment_group_id != info.experiment_group_id)
+			else if (worm_learner.data_gui_selector.experiment_groups[i][0].experiment_group_id != info.experiment_group_id)
 				continue;
-			for (unsigned int j = 0; j < worm_learner.data_selector.experiment_groups[i].size(); j++){
-				try{
-					worm_learner.data_selector.set_current_experiment(worm_learner.data_selector.experiment_groups[i][j].experiment_id,sql());
-					cerr << "Loading information for experiment " << worm_learner.data_selector.current_experiment_name() << " (" << (j+1) << "/" << worm_learner.data_selector.experiment_groups[i].size() << ")\n";
-					worm_learner.compile_experiment_survival_and_movement_data(true,ns_survival_curve,ns_movement_data_source_type::ns_all_data);
+			ns_browser_command_subject_set group_subs(worm_learner.data_gui_selector.experiment_groups[i].size());
+			for (unsigned int j = 0; j < worm_learner.data_gui_selector.experiment_groups[i].size(); j++){
+				try {
+					group_subs[i].subject.experiment_id = worm_learner.data_gui_selector.experiment_groups[i][j].experiment_id;
+					group_subs[i].subject.get_names(sql);
 				}
 				catch(ns_ex & ex){
 					cerr << "Error: " << ex.text() << "\n";
 				}
 			}
+			worm_learner.compile_experiment_survival_and_movement_data(group_subs, true, ns_survival_curve, ns_movement_data_source_type::ns_all_data);
 			return;
 		}
 		throw ns_ex("Could not find experiment group in cache");
 	}
 	
-	static void generate_location_plot(const std::string & value){worm_learner.compile_experiment_survival_and_movement_data(true,ns_movement_3d_path_plot,ns_movement_data_source_type::ns_time_path_analysis_data);}
-	static void generate_posture_plot(const std::string & value){worm_learner.compile_experiment_survival_and_movement_data(true,ns_movement_3d_movement_plot,ns_movement_data_source_type::ns_time_path_analysis_data);}
-	static void generate_timing_data(const std::string & value){
-		worm_learner.output_device_timing_data(worm_learner.data_selector.current_experiment_id(),0);
+	static void generate_location_plot(const ns_browser_command_subject_set& subject, const std::string & value){worm_learner.compile_experiment_survival_and_movement_data(subject,true,ns_movement_3d_path_plot,ns_movement_data_source_type::ns_time_path_analysis_data);}
+	static void generate_posture_plot(const ns_browser_command_subject_set& subject, const std::string & value){worm_learner.compile_experiment_survival_and_movement_data(subject, true,ns_movement_3d_movement_plot,ns_movement_data_source_type::ns_time_path_analysis_data);}
+	static void generate_timing_data(const ns_browser_command_subject_set& subject, const std::string & value){
+		for(unsigned int i = 0; i < subject.size(); i++)
+			worm_learner.output_device_timing_data(subject[i].subject.experiment_id,0);
 	}
-	static void simulate_multiple_worm_clusters(const std::string & value){
+	static void simulate_multiple_worm_clusters(const ns_browser_command_subject_set& subject, const std::string & value){
 		if (value == slow_moving_name())
-		worm_learner.simulate_multiple_worm_clumps(true,true);
+		worm_learner.simulate_multiple_worm_clumps(subject,true,true);
 		else
-		worm_learner.simulate_multiple_worm_clumps(false,false);
+		worm_learner.simulate_multiple_worm_clumps(subject, false,false);
 	}
-	static void generate_timing_data_all_exp(const std::string & value){
-		ns_experiment_region_selector_experiment_info info;
-		worm_learner.data_selector.get_experiment_info(worm_learner.data_selector.current_experiment_id(),info);
-		worm_learner.output_device_timing_data(0,info.experiment_group_id);
+	static void generate_timing_data_all_exp(const ns_browser_command_subject_set& subject, const std::string & value){
+		for (unsigned int i = 0; i < subject.size(); i++) {
+			ns_experiment_region_gui_selector_experiment_info info;
+			worm_learner.data_gui_selector.get_experiment_info(subject[i].subject.experiment_id, info);
+			worm_learner.output_device_timing_data(0, info.experiment_group_id);
+		}
 	}
-	static void generate_region_stats(const std::string & value){
-		worm_learner.output_region_statistics(worm_learner.data_selector.current_experiment_id(),0);
+	static void generate_region_stats(const ns_browser_command_subject_set& subject, const std::string & value){
+		for (unsigned int i = 0; i < subject.size(); i++) 
+			worm_learner.output_region_statistics(subject[i].subject.experiment_id,0);
 	}
-	static void export_experiment_data(const std::string & value){
-		worm_learner.export_experiment_data(worm_learner.data_selector.current_experiment_id());
+	static void export_experiment_data(const ns_browser_command_subject_set& subject, const std::string & value){
+		for (unsigned int i = 0; i < subject.size(); i++)
+		worm_learner.export_experiment_data(subject[i].subject.experiment_id);
 	}
-	static void import_experiment_data(const std::string & value){
+	static void import_experiment_data(const ns_browser_command_subject_set& subject, const std::string & value){
 		ns_file_chooser d;
 		d.dialog_type = Fl_Native_File_Chooser::BROWSE_DIRECTORY;
 		d.title = "Locate the experiment's backup directory";
@@ -1196,25 +1264,98 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 			
 		}
 	}
-	static void generate_region_stats_for_all_regions_in_group(const std::string & value){
-		ns_experiment_region_selector_experiment_info info;
-		worm_learner.data_selector.get_experiment_info(worm_learner.data_selector.current_experiment_id(),info);
+	static void generate_region_stats_for_all_regions_in_group(const ns_browser_command_subject_set& subject, const std::string & value){
+		if (subject.size() != 1)
+			throw ns_ex("Only specifiy one subject");
+		ns_experiment_region_gui_selector_experiment_info info;
+		worm_learner.data_gui_selector.get_experiment_info(subject[0].subject.experiment_id,info);
 		worm_learner.output_region_statistics(0,info.experiment_group_id);
 	}
-	static void generate_morphology_stats(const std::string & value) {
-		worm_learner.generate_morphology_statistics(worm_learner.data_selector.current_experiment_id());
+	static void generate_morphology_stats(const ns_browser_command_subject_set& subject, const std::string & value) {
+		for (unsigned int i = 0; i < subject.size(); i++)
+		worm_learner.generate_morphology_statistics(subject[i].subject.experiment_id);
 	}
 
 
-	static void generate_experiment_detailed_w_by_hand_movement_image_quantification_analysis_data(const std::string & value){worm_learner.generate_experiment_movement_image_quantification_analysis_data(ns_worm_learner::ns_quantification_by_hand, ns_worm_learner::ns_whole_experiment);	}
-	static void generate_experiment_abbreviated_movement_image_quantification_analysis_data(const std::string & value){worm_learner.generate_experiment_movement_image_quantification_analysis_data(ns_worm_learner::ns_quantification_abbreviated_by_hand_machine, ns_worm_learner::ns_whole_experiment);	}
-	static void generate_path_path_classification_diagnostics(const std::string& value) { worm_learner.generate_experiment_movement_image_quantification_analysis_data(ns_worm_learner::ns_quantification_path_classification_diagnostics, ns_worm_learner::ns_whole_experiment); }
-	static void generate_single_frame_posture_image_pixel_data(const std::string & value){
+	static void generate_experiment_detailed_w_by_hand_movement_image_quantification_analysis_data(const ns_browser_command_subject_set& subject, const std::string & value){worm_learner.generate_experiment_movement_image_quantification_analysis_data(subject,ns_worm_learner::ns_quantification_by_hand, ns_worm_learner::ns_whole_experiment);	}
+	static void generate_experiment_abbreviated_movement_image_quantification_analysis_data(const ns_browser_command_subject_set& subject, const std::string & value){worm_learner.generate_experiment_movement_image_quantification_analysis_data(subject, ns_worm_learner::ns_quantification_abbreviated_by_hand_machine, ns_worm_learner::ns_whole_experiment);	}
+	static void generate_path_path_classification_diagnostics(const ns_browser_command_subject_set& subject, const std::string& value) { worm_learner.generate_experiment_movement_image_quantification_analysis_data(subject,ns_worm_learner::ns_quantification_path_classification_diagnostics, ns_worm_learner::ns_whole_experiment); }
+	static void generate_single_frame_posture_image_pixel_data(const ns_browser_command_subject_set& subject, const std::string & value){
 		worm_learner.generate_single_frame_posture_image_pixel_data((value.find("Plate") != std::string::npos));
 	}
-	static void generate_worm_markov_posture_model_from_by_hand_annotations(const std::string & value){
-		if (value.find("experiment") != value.npos) {
 
+	static void count_by_hand_annotations(const ns_browser_command_subject_set& subject, const std::string& value){
+		if (worm_learner.running_as_gui && value.size() != 0) {
+			ns_browser_command_subject_set sub(1);
+
+			sub[0].subject.database_name = worm_learner.get_sql_connection().database();
+			if (value.find("All") == value.npos)
+				sub[0].subject.experiment_id = worm_learner.data_gui_selector.current_experiment_id();
+			worm_learner.count_by_hand_annotations(sub);
+		}
+		else 
+			worm_learner.count_by_hand_annotations(subject);
+		
+	}
+	static void generate_worm_markov_posture_model_from_by_hand_annotations(const ns_browser_command_subject_set& subject, const std::string& value) {
+		if (subject.empty())
+			return;
+		ns_worm_learner::ns_optimization_subject translated_flag;
+		ns_worm_learner::ns_optimization_subject gui_sub(ns_worm_learner::ns_unknown);
+
+		if (worm_learner.running_as_gui) {
+			//if (value.find("experiment") != value.npos) {
+				std::string flag;
+				if (subject.size() != 1)
+					throw ns_ex("Can only specify one experiment via GUI");
+				if (gui_sub == ns_worm_learner::ns_unknown) {
+					ns_choice_dialog c;
+					c.title = "What subject should be used?";
+					c.option_1 = "Current Plate";
+					c.option_2 = "Current Device";
+					c.option_3 = "All Devices";
+					ns_run_in_main_thread<ns_choice_dialog> b(&c);
+					if (c.result == 0)
+						return;
+					switch (c.result) {
+					case 1: gui_sub = ns_worm_learner::ns_plate; break;
+					case 2: gui_sub = ns_worm_learner::ns_device; break;
+					case 3: gui_sub = ns_worm_learner::ns_whole_experiment; break;
+					default: throw ns_ex("Unknown option");
+					}
+				}
+				translated_flag = gui_sub;
+			//}
+		}
+		else {
+			if (subject[0].flag == "device")
+				translated_flag = ns_worm_learner::ns_device;
+			else translated_flag = ns_worm_learner::ns_whole_experiment;
+		}
+			
+		bool posture_req = value.find("Posture") != value.npos;
+		bool size_req = value.find("Size") != value.npos;
+		worm_learner.generate_experiment_movement_image_quantification_analysis_data(subject, ns_worm_learner::ns_build_worm_markov_posture_model_from_by_hand_annotations, translated_flag);
+		
+	
+	}
+	
+	static void generate_experiment_detailed_movement_image_quantification_analysis_data(const ns_browser_command_subject_set& subject, const std::string & value){worm_learner.generate_experiment_movement_image_quantification_analysis_data(subject,ns_worm_learner::ns_quantification_raw_machine, ns_worm_learner::ns_whole_experiment);	}
+	
+	static void generate_experiment_summary_movement_image_quantification_analysis_data(const ns_browser_command_subject_set& subject, const std::string & value){worm_learner.generate_experiment_movement_image_quantification_analysis_data(subject, ns_worm_learner::ns_quantification_summary, ns_worm_learner::ns_whole_experiment);	}
+	
+	static void test_time_path_analysis_parameters(const ns_browser_command_subject_set& subject, const std::string & value){
+		for (unsigned int i = 0; i < subject.size(); i++)
+			worm_learner.test_time_path_analysis_parameters(subject[i].subject.region_id);
+	}
+	static void generate_movement_image_analysis_optimization_data(const ns_browser_command_subject_set& subject, const std::string & value){
+
+		bool posture_req = value.find("Posture") != value.npos;
+		bool size_req = value.find("Size") != value.npos;
+
+		if (worm_learner.running_as_gui) {
+			if (subject.size() != 1)
+				throw ns_ex("Can only specify one subject via GUI");
 			ns_choice_dialog c;
 			c.title = "What subject should be used?";
 			c.option_1 = "Current Plate";
@@ -1228,159 +1369,156 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 			case 3: sub = ns_worm_learner::ns_whole_experiment; break;
 			default: throw ns_ex("Unknown option");
 			}
-
-			bool posture_req = value.find("Posture") != value.npos;
-			bool size_req = value.find("Size") != value.npos;
-			worm_learner.generate_experiment_movement_image_quantification_analysis_data(ns_worm_learner::ns_build_worm_markov_posture_model_from_by_hand_annotations, sub);
+			worm_learner.output_movement_analysis_optimization_data(subject,sub, ns_v2, posture_req, size_req);
 		}
 		else {
-			ns_file_chooser cc;
-			cc.choose_directory();
-			cc.title = "Choose the directory that holds HMM observation files ";
-			cc.default_directory = image_server.long_term_storage_directory;
-			ns_run_in_main_thread<ns_file_chooser> e(&cc);
-			if (!cc.chosen)
+			if (subject.empty())
 				return;
-			if (cc.result.empty())
-				return;
-			worm_learner.calculate_hmm_from_files(cc.result);
-		};
-	
-	}
-	
-	static void generate_experiment_detailed_movement_image_quantification_analysis_data(const std::string & value){worm_learner.generate_experiment_movement_image_quantification_analysis_data(ns_worm_learner::ns_quantification_raw_machine, ns_worm_learner::ns_whole_experiment);	}
-	
-	static void generate_experiment_summary_movement_image_quantification_analysis_data(const std::string & value){worm_learner.generate_experiment_movement_image_quantification_analysis_data(ns_worm_learner::ns_quantification_summary, ns_worm_learner::ns_whole_experiment);	}
-	
-	static void test_time_path_analysis_parameters(const std::string & value){
-		worm_learner.test_time_path_analysis_parameters(worm_learner.data_selector.current_region().region_id);
-	}
-	static void generate_movement_image_analysis_optimization_data(const std::string & value){
-
-		ns_choice_dialog c;
-		c.title = "What subject should be used?";
-		c.option_1 = "Current Plate";
-		c.option_2 = "Current Device";
-		c.option_3 = "All Devices";
-		ns_run_in_main_thread<ns_choice_dialog> b(&c);
-		ns_worm_learner::ns_optimization_subject sub;
-		switch(c.result) {
-		case 1: sub = ns_worm_learner::ns_plate; break;
-		case 2: sub = ns_worm_learner::ns_device; break;
-		case 3: sub = ns_worm_learner::ns_whole_experiment; break;
-		default: throw ns_ex("Unknown option");
+			ns_worm_learner::ns_optimization_subject sub;
+			if (subject[0].flag == "plate")
+				sub = ns_worm_learner::ns_plate;
+			else if (subject[0].flag == "device")
+				sub = ns_worm_learner::ns_device;
+			else sub = ns_worm_learner::ns_whole_experiment;
+			worm_learner.output_movement_analysis_optimization_data(subject,sub, ns_v2, posture_req, size_req);
 		}
-
-		bool posture_req = value.find("Posture") != value.npos;
-		bool size_req = value.find("Size") != value.npos;
-		worm_learner.output_movement_analysis_optimization_data(sub,ns_v2,posture_req,size_req);
 	}
 
-	static void generate_training_set_from_by_hand_annotations(const std::string & value){worm_learner.generate_training_set_from_by_hand_annotation();}
+	static void generate_training_set_from_by_hand_annotations(const ns_browser_command_subject_set& subject, const std::string & value){worm_learner.generate_training_set_from_by_hand_annotation(subject);}
 	
 	
 	/*****************************
 	Configuration Tasks
 	*****************************/
 	
-	static void precache_storyboard_images(const std::string& value) { worm_learner.precache_solo_worm_images = value.find("Pre-Cache") != value.npos; }
-	static void generate_mp4(const std::string & value){worm_learner.generate_mp4(value=="MP4");}
-	static void update_sql_schema(const std::string & value){worm_learner.upgrade_tables();}
+	static void precache_storyboard_images(const ns_browser_command_subject_set& subject, const std::string& value) { worm_learner.precache_solo_worm_images = value.find("Pre-Cache") != value.npos; }
+	static void generate_mp4(const ns_browser_command_subject_set& subject, const std::string & value){worm_learner.generate_mp4(value=="MP4");}
+	static void update_sql_schema(const ns_browser_command_subject_set& subject, const std::string & value){worm_learner.upgrade_tables();}
 	
-	static void create_experiment_from_filenames(const std::string & value){
-		ns_choice_dialog c;
-		c.title = "Rebuilding experiment metadata from disk may corrupt any existing database contents for this experiment.\nYou should back up the database prior to attempting this.";
-		c.option_1 = "Continue";
-		c.option_2 = "Cancel";
-		ns_run_in_main_thread<ns_choice_dialog> b(&c);
-		if (c.result != 1)
-			return;
-		ns_file_chooser cc;
-		cc.choose_directory();
-		cc.title = "Choose the directory that holds experiment data";
-		cc.default_directory = image_server.long_term_storage_directory;
-		ns_run_in_main_thread<ns_file_chooser> e(&cc);
-		if (!cc.chosen)
-			return;
-		if (cc.result.empty())
-			return;
-		ns_64_bit new_experiment_id = worm_learner.create_experiment_from_directory_structure(cc.result,true);
-		worm_learner.rebuild_experiment_samples_from_disk(new_experiment_id);
-		worm_learner.rebuild_experiment_regions_from_disk(new_experiment_id);
+	static void create_experiment_from_filenames(const ns_browser_command_subject_set& subject, const std::string & value){
+		if (worm_learner.running_as_gui) {
+			ns_choice_dialog c;
+			c.title = "Rebuilding experiment metadata from disk may corrupt any existing database contents for this experiment.\nYou should back up the database prior to attempting this.";
+			c.option_1 = "Continue";
+			c.option_2 = "Cancel";
+			ns_run_in_main_thread<ns_choice_dialog> b(&c);
+			if (c.result != 1)
+				return;
+			ns_file_chooser cc;
+			cc.choose_directory();
+			cc.title = "Choose the directory that holds experiment data";
+			cc.default_directory = image_server.long_term_storage_directory;
+			ns_run_in_main_thread<ns_file_chooser> e(&cc);
+			if (!cc.chosen)
+				return;
+			if (cc.result.empty())
+				return;
+			ns_64_bit new_experiment_id = worm_learner.create_experiment_from_directory_structure(cc.result, true);
+			worm_learner.rebuild_experiment_samples_from_disk(new_experiment_id);
+			worm_learner.rebuild_experiment_regions_from_disk(new_experiment_id);
+		}
+		else {
+			for (unsigned int i = 0; i < subject.size(); i++) {
+				if (subject[i].input_file.empty())
+					throw ns_ex("Input file must be specified!");
+				ns_64_bit new_experiment_id = worm_learner.create_experiment_from_directory_structure(subject[i].input_file, true);
+				worm_learner.rebuild_experiment_samples_from_disk(new_experiment_id);
+				worm_learner.rebuild_experiment_regions_from_disk(new_experiment_id);
+			}
+		}
 	}
 
-	static void rebuild_db_sample_data_from_filenames(const std::string & value){
-		ns_choice_dialog c;
-		c.title = "Rebuilding experiment metadata from disk may corrupt any existing database contents for this experiment.\nYou should back up the database prior to attempting this.";
-		c.option_1 = "Continue";
-		c.option_2 = "Cancel";
-		ns_run_in_main_thread<ns_choice_dialog> b(&c);
-		if (c.result != 1)
-			return;
-		worm_learner.rebuild_experiment_samples_from_disk(worm_learner.data_selector.current_experiment_id());
+	static void rebuild_db_sample_data_from_filenames(const ns_browser_command_subject_set& subject, const std::string & value){
+		if (worm_learner.running_as_gui) {
+			ns_choice_dialog c;
+			c.title = "Rebuilding experiment metadata from disk may corrupt any existing database contents for this experiment.\nYou should back up the database prior to attempting this.";
+			c.option_1 = "Continue";
+			c.option_2 = "Cancel";
+			ns_run_in_main_thread<ns_choice_dialog> b(&c);
+			if (c.result != 1)
+				return;
+			worm_learner.rebuild_experiment_samples_from_disk(worm_learner.data_gui_selector.current_experiment_id());
+		}
+		else {
+
+			for (unsigned int i = 0; i < subject.size(); i++) 
+				worm_learner.rebuild_experiment_samples_from_disk(subject[i].subject.experiment_id);
+		}
 	}
-	static void repair_captured_image_transfer_errors(const std::string & value) {
-		ns_choice_dialog c;
-		c.title = "Repairing experiment metadata from disk may corrupt any existing database contents for this experiment.\nYou should back up the database prior to attempting this.";
-		c.option_1 = "Continue";
-		c.option_2 = "Cancel";
-		ns_run_in_main_thread<ns_choice_dialog> b(&c);
-		if (c.result != 1)
-			return;
-		worm_learner.repair_captured_image_transfer_errors(worm_learner.data_selector.current_experiment_id());
+	static void repair_captured_image_transfer_errors(const ns_browser_command_subject_set& subject, const std::string & value) {
+		if (worm_learner.running_as_gui) {
+			ns_choice_dialog c;
+			c.title = "Repairing experiment metadata from disk may corrupt any existing database contents for this experiment.\nYou should back up the database prior to attempting this.";
+			c.option_1 = "Continue";
+			c.option_2 = "Cancel";
+			ns_run_in_main_thread<ns_choice_dialog> b(&c);
+			if (c.result != 1)
+				return;
+			worm_learner.repair_captured_image_transfer_errors(worm_learner.data_gui_selector.current_experiment_id());
+		}
+		else {
+			for (unsigned int i = 0; i < subject.size(); i++)
+				worm_learner.repair_captured_image_transfer_errors(subject[i].subject.experiment_id);
+		}
 
 	}
-	static void rebuild_db_region_data_from_filenames(const std::string & value){
-		ns_choice_dialog c;
-		c.title = "Rebuilding experiment metadata from disk may corrupt any existing database contents for this experiment.\nYou should back up the database prior to attempting this.";
-		c.option_1 = "Continue";
-		c.option_2 = "Cancel";
-		ns_run_in_main_thread<ns_choice_dialog> b(&c);
-		if (c.result != 1)
-			return;
-		worm_learner.rebuild_experiment_regions_from_disk(worm_learner.data_selector.current_experiment_id());
+	static void rebuild_db_region_data_from_filenames(const ns_browser_command_subject_set& subject, const std::string & value){
+		if (worm_learner.running_as_gui) {
+			ns_choice_dialog c;
+			c.title = "Rebuilding experiment metadata from disk may corrupt any existing database contents for this experiment.\nYou should back up the database prior to attempting this.";
+			c.option_1 = "Continue";
+			c.option_2 = "Cancel";
+			ns_run_in_main_thread<ns_choice_dialog> b(&c);
+			if (c.result != 1)
+				return;
+			worm_learner.rebuild_experiment_regions_from_disk(worm_learner.data_gui_selector.current_experiment_id());
+		}
+		else {
+			for (unsigned int i = 0; i < subject.size(); i++)
+				worm_learner.rebuild_experiment_regions_from_disk(subject[i].subject.experiment_id);
+		}
 	}
 	/*****************************
 	Image Processing Tasks
 	*****************************/
-	static void spatial_median(const std::string & value){worm_learner.apply_spatial_average();}
-	static void difference_threshold(const std::string & value){worm_learner.difference_threshold();}
-	static void adaptive_threshold(const std::string & value){worm_learner.apply_threshold();}
-	static void movement_threshold(const std::string & value){
+	static void spatial_median(const ns_browser_command_subject_set& subject, const std::string & value){worm_learner.apply_spatial_average();}
+	static void difference_threshold(const ns_browser_command_subject_set& subject, const std::string & value){worm_learner.difference_threshold();}
+	static void adaptive_threshold(const ns_browser_command_subject_set& subject, const std::string & value){worm_learner.apply_threshold();}
+	static void movement_threshold(const ns_browser_command_subject_set& subject, const std::string & value){
 		ns_image_file_chooser im_cc;
 		ns_run_in_main_thread<ns_file_chooser> run_mt(&im_cc);
 		if (im_cc.chosen) worm_learner.calculate_movement_threshold(im_cc.result);
 	}
-	static void movement_threshold_vis(const std::string & value){
+	static void movement_threshold_vis(const ns_browser_command_subject_set& subject, const std::string & value){
 		ns_image_file_chooser im_cc;
 		ns_run_in_main_thread<ns_file_chooser> run_mt(&im_cc);
 		if (im_cc.chosen)worm_learner.calculate_movement_threshold(im_cc.result,true);
 	}
-	static void two_stage_threshold(const std::string & value){worm_learner.two_stage_threshold();}
-	static void two_stage_threshold_vis(const std::string & value){worm_learner.two_stage_threshold(true);}
-	static void remove_large_objects(const std::string & value){worm_learner.remove_large_objects();}
-	static void morph_manip(const std::string & value){worm_learner.run_binary_morpholgical_manipulations();}
-	static void zhang_thinning(const std::string & value){worm_learner.zhang_thinning();}
-	static void stretch_lossless(const std::string & value){worm_learner.stretch_levels();}
-	static void stretch_lossy(const std::string & value){worm_learner.stretch_levels_approx();}
-	static void compress_dark(const std::string & value){worm_learner.compress_dark_noise();}
-	static void grayscale_from_blue(const std::string & value){worm_learner.grayscale_from_blue();}
-	static void vertical_offset(const std::string & value){
+	static void two_stage_threshold(const ns_browser_command_subject_set& subject, const std::string & value){worm_learner.two_stage_threshold();}
+	static void two_stage_threshold_vis(const ns_browser_command_subject_set& subject, const std::string & value){worm_learner.two_stage_threshold(true);}
+	static void remove_large_objects(const ns_browser_command_subject_set& subject, const std::string & value){worm_learner.remove_large_objects();}
+	static void morph_manip(const ns_browser_command_subject_set& subject, const std::string & value){worm_learner.run_binary_morpholgical_manipulations();}
+	static void zhang_thinning(const ns_browser_command_subject_set& subject, const std::string & value){worm_learner.zhang_thinning();}
+	static void stretch_lossless(const ns_browser_command_subject_set& subject, const std::string & value){worm_learner.stretch_levels();}
+	static void stretch_lossy(const ns_browser_command_subject_set& subject, const std::string & value){worm_learner.stretch_levels_approx();}
+	static void compress_dark(const ns_browser_command_subject_set& subject, const std::string & value){worm_learner.compress_dark_noise();}
+	static void grayscale_from_blue(const ns_browser_command_subject_set& subject, const std::string & value){worm_learner.grayscale_from_blue();}
+	static void vertical_offset(const ns_browser_command_subject_set& subject, const std::string & value){
 		ns_image_file_chooser im_cc;
 		ns_run_in_main_thread<ns_file_chooser> run_mt(&im_cc);
 		if (im_cc.chosen)worm_learner.calculate_vertical_offset(im_cc.result);
 	}
-	static void heat_map_overlay(const std::string & value){worm_learner.calculate_heatmap_overlay();}
-	static void test_resample(const std::string & value){worm_learner.resize_image();}
-	static void sharpen(const std::string & value){worm_learner.sharpen();}
+	static void heat_map_overlay(const ns_browser_command_subject_set& subject, const std::string & value){worm_learner.calculate_heatmap_overlay();}
+	static void test_resample(const ns_browser_command_subject_set& subject, const std::string & value){worm_learner.resize_image();}
+	static void sharpen(const ns_browser_command_subject_set& subject, const std::string & value){worm_learner.sharpen();}
 	/*****************************
 	Experiment and Model Selection
 	*****************************/
-	static void select_experiment(const std::string & value){
+	static void select_experiment(const ns_browser_command_subject_set& subject, const std::string & value){
 		ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__,__LINE__));
 		
-		worm_learner.data_selector.set_current_experiment(value,sql());
-		worm_learner.statistics_data_selector.set_current_experiment(value, sql());
+		worm_learner.data_gui_selector.set_current_experiment(value,sql());
+		worm_learner.statistics_data_gui_selector.set_current_experiment(value, sql());
 		sql.release();
 		update_region_choice_menu();
 		update_strain_choice_menu();
@@ -1388,7 +1526,7 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 		ns_update_main_information_bar("");
 	}
 	
-	static void specifiy_model(const std::string & value){
+	static void specifiy_model(const ns_browser_command_subject_set& subject, const std::string & value){
 		for (unsigned int i = 0; i < worm_learner.model_specifications.size(); ++i){
 			if (worm_learner.model_specifications[i]().model_specification.model_name == value){
 				worm_learner.set_svm_model_specification(worm_learner.model_specifications[i]);
@@ -1401,12 +1539,12 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 	File Tasks
 	*****************************/
 	
-	static void set_database(const std::string & data){
+	static void set_database(const ns_browser_command_subject_set& subject, const std::string & data){
 		image_server.set_sql_database(data,false,&worm_learner.get_sql_connection());
 		worm_learner.reset_sql_connections();
 
-		worm_learner.data_selector.load_experiment_names(worm_learner.get_sql_connection());
-		worm_learner.statistics_data_selector.load_experiment_names(worm_learner.get_sql_connection());
+		worm_learner.data_gui_selector.load_experiment_names(worm_learner.get_sql_connection());
+		worm_learner.statistics_data_gui_selector.load_experiment_names(worm_learner.get_sql_connection());
 		cerr << "Switching to database " << data << "\n";
 		//ns_thread::sleep(15);
 		get_menu_handler()->update_experiment_choice(*get_menu_bar());
@@ -1418,7 +1556,7 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 			image_server.register_server_event(ex, &worm_learner.get_sql_connection());
 		}
 	}
-	static void file_open(const std::string & data){
+	static void file_open(const ns_browser_command_subject_set& subject, const std::string & data){
 		//cout << ns_get_input_string("TITLE","GOBER");
 		/*std::vector<dialog_file_type> foo;
 		foo.push_back(dialog_file_type("TIF (*.tif)","tif"));
@@ -1437,14 +1575,14 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 			worm_learner.draw();
 		}
 	}
-	static void file_open_xml(const std::string & data){
+	static void file_open_xml(const ns_browser_command_subject_set& subject, const std::string & data){
 		ns_file_chooser x;
 		x.title = "Load XML Experiment Specification";
 		x.filters.push_back(ns_file_chooser_file_type("XML","xml"));
 		ns_run_in_main_thread<ns_file_chooser> run_mt(&x);
 		if (x.chosen) worm_learner.handle_file_request(x.result);
 	}
-	static void file_save(const std::string & data){
+	static void file_save(const ns_browser_command_subject_set& subject, const std::string & data){
 		/*std::vector<dialog_file_type> foo;
 		foo.push_back(dialog_file_type("TIF (*.tif)","tif"));
 		foo.push_back(dialog_file_type("JPEG (*.jpg)","jpg"));
@@ -1459,7 +1597,7 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 			worm_learner.save_current_image(im_cc.result);
 	}
 	static void show_worm(const std::string & data);
-	static void file_open_16_bit_dark(const std::string & data){
+	static void file_open_16_bit_dark(const ns_browser_command_subject_set& subject, const std::string & data){
 		/*std::vector<dialog_file_type> foo;
 		foo.push_back(dialog_file_type("TIF (*.tif)","tif"));
 		foo.push_back(dialog_file_type("JPEG (*.jpg)","jpg"));
@@ -1470,17 +1608,17 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 		if (im_cc.chosen)
 			worm_learner.load_16_bit<ns_features_are_dark>(im_cc.result);
 	}
-	static void file_open_16_bit_light(const std::string & data){
+	static void file_open_16_bit_light(const ns_browser_command_subject_set& subject, const std::string & data){
 		ns_image_file_chooser im_cc;
 		ns_run_in_main_thread<ns_image_file_chooser> run_mt(&im_cc);
 		if (im_cc.chosen)
 			worm_learner.load_16_bit<ns_features_are_light>(im_cc.result);
 	}
-	static void file_quit(const std::string & data){
+	static void file_quit(const ns_browser_command_subject_set& subject, const std::string & data){
 		ns_quit();
 	}
 
-	static void upload_strain_metadata(const std::string & data){
+	static void upload_strain_metadata(const ns_browser_command_subject_set& subject, const std::string & data){
 		/*std::vector<dialog_file_type> foo;
 		foo.push_back(dialog_file_type("comma-separated value file (*.csv)","csv"));
 		std::string filename = open_file_dialog("Load Strain Metadata File",foo);
@@ -1496,7 +1634,7 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 
 public:
 
-	static void show_extra_menus(const std::string& value);
+	static void show_extra_menus(const ns_browser_command_subject_set& subject, const std::string& value);
 
 	/*****************************
 	Menu Specification
@@ -1514,8 +1652,8 @@ public:
 		menu_bar_processing_lock.mute_debug_output = true;
 		ns_acquire_lock_for_scope lock(menu_bar_processing_lock,__FILE__,__LINE__);
 
-		worm_learner.data_selector.load_experiment_names(sql);
-		worm_learner.data_selector.set_current_experiment(-1,sql);
+		worm_learner.data_gui_selector.load_experiment_names(sql);
+		worm_learner.data_gui_selector.set_current_experiment(-1,sql);
 		redraw_menus(bar);
 	}
 
@@ -1527,109 +1665,104 @@ public:
 
 	void add_menus(){
 
-		ns_menu_item_spec exp_spec(select_experiment,"&File/_Select Current Experiment");
+		ns_menu_item_spec exp_spec(true,select_experiment,"&File/_Select Current Experiment");
 
-		for (unsigned int i = 0; i < worm_learner.data_selector.experiment_groups.size(); i++){
-			for (unsigned int j = 0; j < worm_learner.data_selector.experiment_groups[i].size(); j++){
-				const bool last_in_group( j +1 ==  worm_learner.data_selector.experiment_groups[i].size());
-				const bool last_group_in_list(i+1 == worm_learner.data_selector.experiment_groups.size());
+		for (unsigned int i = 0; i < worm_learner.data_gui_selector.experiment_groups.size(); i++){
+			for (unsigned int j = 0; j < worm_learner.data_gui_selector.experiment_groups[i].size(); j++){
+				const bool last_in_group( j +1 ==  worm_learner.data_gui_selector.experiment_groups[i].size());
+				const bool last_group_in_list(i+1 == worm_learner.data_gui_selector.experiment_groups.size());
 				const std::string div((last_in_group&&!last_group_in_list)?"_":"");
-				exp_spec.options.push_back(worm_learner.data_selector.experiment_groups[i][j].experiment_group_name + "/" + div + worm_learner.data_selector.experiment_groups[i][j].name);
+				exp_spec.options.push_back(worm_learner.data_gui_selector.experiment_groups[i][j].experiment_group_name + "/" + div + worm_learner.data_gui_selector.experiment_groups[i][j].name);
 			}
 		}
 		
 		add(exp_spec);
 
 		
-	//	add(ns_menu_item_spec(run_animation_trial,"File/_Run Animation Trial"));
-		add(ns_menu_item_spec(file_open,"File/Open Image",FL_CTRL+'o'));
-		//add(ns_menu_item_spec(file_open_16_bit_dark,"File/Open 16-bit Image (dark)"));
-		//add(ns_menu_item_spec(file_open_16_bit_light,"File/_Open 16-bit Image (light)"));
-		add(ns_menu_item_spec(file_save,"File/_Save Image",FL_CTRL+'s'));
-		//add(ns_menu_item_spec(show_worm, "File/Show worm window", FL_CTRL + 's'));
-		add(ns_menu_item_spec(file_quit,"File/Quit",FL_CTRL+'q'));
+		add(ns_menu_item_spec(true, file_open,"File/Open Image",FL_CTRL+'o'));
+		add(ns_menu_item_spec(true, file_save,"File/_Save Image",FL_CTRL+'s'));
+		add(ns_menu_item_spec(true, file_quit,"File/Quit",FL_CTRL+'q'));
 		
-		add(ns_menu_item_spec(file_open_xml,"&Image Acquisition/_Submit Experiment Schedule"));
-		add(ns_menu_item_spec(save_current_areas,"Image Acquisition/Define Scan Areas/(Open Preview Capture Image and Draw Scan Areas)",0,FL_MENU_INACTIVE));
-		add(ns_menu_item_spec(save_current_areas,"Image Acquisition/Define Scan Areas/Save Selected Scan Areas to Disk"));
-		add(ns_menu_item_spec(clear_current_areas,"Image Acquisition/Define Scan Areas/Clear Selected Scan Areas"));
+		add(ns_menu_item_spec(false,file_open_xml,"&Image Acquisition/_Submit Experiment Schedule"));
+		add(ns_menu_item_spec(true, save_current_areas,"Image Acquisition/Define Scan Areas/(Open Preview Capture Image and Draw Scan Areas)",0,FL_MENU_INACTIVE));
+		add(ns_menu_item_spec(true, save_current_areas,"Image Acquisition/Define Scan Areas/Save Selected Scan Areas to Disk"));
+		add(ns_menu_item_spec(true,clear_current_areas,"Image Acquisition/Define Scan Areas/Clear Selected Scan Areas"));
 
 		//add(ns_menu_item_spec(clipboard_copy,"Clipboard/Copy",FL_CTRL+'c'));
 		//add(ns_menu_item_spec(clipboard_paste,"Clipboard/Paste",FL_CTRL+'v'));
 
-		add(ns_menu_item_spec(masks_generate_composite,"Image Acquisition/Define Sample Masks/Generate Experiment Mask Composite"));
-		add(ns_menu_item_spec(masks_generate_composite,"Image Acquisition/Define Sample Masks/(Draw Plate Locations on Mask using Photoshop)",0,FL_MENU_INACTIVE));
-		add(ns_menu_item_spec(masks_process_composite,"Image Acquisition/Define Sample Masks/Analyze Plate Locations Drawn on Experiment Mask Composite"));
-		add(ns_menu_item_spec(masks_submit_composite,"Image Acquisition/Define Sample Masks/_Submit Analyzed Experiment Mask Composite to Cluster"));
-		add(ns_menu_item_spec(open_individual_mask,"Image Acquisition/Define Sample Masks/Individual Sample Masks/Analyze Mask"));
-	//	add(ns_menu_item_spec(view_current_mask,"Plate Locations/Define Sample Masks/Individual Sample Masks/View Current Mask"));
-	//	add(ns_menu_item_spec(apply_mask_on_current,"Masks/Mask Analysis/Individual Masks/Apply Mask on Current Image"));
-		add(ns_menu_item_spec(submit_individual_mask_to_server,"Image Acquisition/Define Sample Masks/Individual Sample Masks/Submit Analyzed Mask to Cluster"));
+		add(ns_menu_item_spec(false, masks_generate_composite,"Image Acquisition/Define Sample Masks/Generate Experiment Mask Composite"));
+		add(ns_menu_item_spec(true,masks_generate_composite,"Image Acquisition/Define Sample Masks/(Draw Plate Locations on Mask using Photoshop)",0,FL_MENU_INACTIVE));
+		add(ns_menu_item_spec(true,masks_process_composite,"Image Acquisition/Define Sample Masks/Analyze Plate Locations Drawn on Experiment Mask Composite"));
+		add(ns_menu_item_spec(true,masks_submit_composite,"Image Acquisition/Define Sample Masks/_Submit Analyzed Experiment Mask Composite to Cluster"));
+		add(ns_menu_item_spec(true,open_individual_mask,"Image Acquisition/Define Sample Masks/Individual Sample Masks/Analyze Mask"));
+		add(ns_menu_item_spec(true, submit_individual_mask_to_server,"Image Acquisition/Define Sample Masks/Individual Sample Masks/Submit Analyzed Mask to Cluster"));
 		
-		add(ns_menu_item_spec(start_storyboard_annotation_whole_experiment,"&Validation/(Generate Storyboards Prior to Annotation)",0,FL_MENU_INACTIVE));
-		ns_menu_item_spec st_an(start_storyboard_annotation_whole_experiment,"Validation/Browse Entire Experiment");
+		add(ns_menu_item_spec(true, start_storyboard_annotation_whole_experiment,"&Validation/(Generate Storyboards Prior to Annotation)",0,FL_MENU_INACTIVE));
+		ns_menu_item_spec st_an(true,start_storyboard_annotation_whole_experiment,"Validation/Browse Entire Experiment");
 		st_an.options.push_back(ns_menu_item_options("Immediately After Each Worm's Death"));
 		st_an.options.push_back(ns_menu_item_options("After All Worms Have Died"));
 		add(st_an);
 	//	add(ns_menu_item_spec(start_storyboard_annotation_whole_experiment, "&Validation/Test for storyboard memory bugs"));
 
-		ns_menu_item_spec st_an2(start_storyboard_annotation_plate,"Validation/_Browse Single Plate");
+		ns_menu_item_spec st_an2(true,start_storyboard_annotation_plate,"Validation/_Browse Single Plate");
 		st_an2.options.push_back(ns_menu_item_options("Immediately After Each Worm's Death"));
 		st_an2.options.push_back(ns_menu_item_options("After All Worms Have Died"));
 		add(st_an2);
-		add(ns_menu_item_spec(stop_posture_annotation,"Validation/Stop Annotation")); 
+		add(ns_menu_item_spec(true,stop_posture_annotation,"Validation/Stop Annotation"));
 	//	add(ns_menu_item_spec(start_storyboard_annotation_testing, "Validation/Test for memory errors"));
 
-		add(ns_menu_item_spec(generate_survival_curves,"&Data Files/_Death Times/Generate Death Times for Current Experiment"));
-		add(ns_menu_item_spec(generate_survival_curves_for_experiment_group,"Data Files/Death Times/Generate Death Times for all Experiment in Experiment Group"));			 
+		add(ns_menu_item_spec(false,generate_survival_curves,"&Data Files/_Death Times/Generate Death Times for Current Experiment"));
+		add(ns_menu_item_spec(false,generate_survival_curves_for_experiment_group,"Data Files/Death Times/Generate Death Times for all Experiment in Experiment Group"));			 
 
-		add(ns_menu_item_spec(generate_area_movement,"Data Files/Movement Data/_Generate Movement State Time Series"));
+		add(ns_menu_item_spec(false,generate_area_movement,"Data Files/Movement Data/_Generate Movement State Time Series"));
 		//add(ns_menu_item_spec(generate_experiment_summary_movement_image_quantification_analysis_data,"Data/Movement/Generate Summary Time Path Image Analysis Quantification Data"));
-		add(ns_menu_item_spec(generate_experiment_abbreviated_movement_image_quantification_analysis_data, "Data Files/Movement Data/Generate Posture Analysis Data/All Individuals, Machine and By Hand (Abbreviated Format)"));
-		add(ns_menu_item_spec(generate_experiment_detailed_w_by_hand_movement_image_quantification_analysis_data, "Data Files/Movement Data/Generate Posture Analysis Data/Only By Hand Annotated Individuals"));
-		add(ns_menu_item_spec(generate_experiment_detailed_movement_image_quantification_analysis_data,"Data Files/Movement Data/Generate Posture Analysis Data/_All Individuals (No by hand annotations)"));
-		add(ns_menu_item_spec(generate_path_path_classification_diagnostics, "Data Files/Movement Data/Generate Posture Analysis Data/Classification Diagnostics"));
+		add(ns_menu_item_spec(false, generate_experiment_abbreviated_movement_image_quantification_analysis_data, "Data Files/Movement Data/Generate Posture Analysis Data/All Individuals, Machine and By Hand (Abbreviated Format)"));
+		add(ns_menu_item_spec(false, generate_experiment_detailed_w_by_hand_movement_image_quantification_analysis_data, "Data Files/Movement Data/Generate Posture Analysis Data/Only By Hand Annotated Individuals"));
+		add(ns_menu_item_spec(false, generate_experiment_detailed_movement_image_quantification_analysis_data,"Data Files/Movement Data/Generate Posture Analysis Data/_All Individuals (No by hand annotations)"));
+		add(ns_menu_item_spec(false, generate_path_path_classification_diagnostics, "Data Files/Movement Data/Generate Posture Analysis Data/Classification Diagnostics"));
 	
-		ns_menu_item_spec st2(generate_single_frame_posture_image_pixel_data,"Data Files/Movement Data/Generate Single Frame Posture Image Data");
+		ns_menu_item_spec st2(false, generate_single_frame_posture_image_pixel_data,"Data Files/Movement Data/Generate Single Frame Posture Image Data");
 		st2.options.push_back(ns_menu_item_options("Experiment"));
 		st2.options.push_back(ns_menu_item_options("Single Plate"));
 		add(st2);
-		add(ns_menu_item_spec(generate_timing_data,"Data Files/_Other Statistics/Generate Scanner Timing Data for Current Experiment"));
-		add(ns_menu_item_spec(generate_timing_data_all_exp,"Data Files/Other Statistics/_Generate Scanner Timing Data for All Experiments in Group"));
-		add(ns_menu_item_spec(generate_region_stats,"Data Files/Other Statistics/Generate Image Statistics for all regions in current Experiment"));
-		add(ns_menu_item_spec(generate_region_stats_for_all_regions_in_group,"Data Files/Other Statistics/_Generate Image Statistics for all Regions in current Experiment Group"));
-		add(ns_menu_item_spec(generate_morphology_stats,"Data Files/Other Statistics/Compile Worm Morphology Statistics for Current Experiment"));
+		ns_menu_item_spec st3(false, count_by_hand_annotations, "Data Files/_Other Statistics/_Count By Hand Annotations");
+		st3.options.push_back(ns_menu_item_options("Current Experiment"));
+		st3.options.push_back(ns_menu_item_options("All Experiments"));
+		add(st3);
+		add(ns_menu_item_spec(false, generate_timing_data,"Data Files/Other Statistics/Generate Scanner Timing Data for Current Experiment"));
+		add(ns_menu_item_spec(false, generate_timing_data_all_exp,"Data Files/Other Statistics/_Generate Scanner Timing Data for All Experiments in Group"));
+		add(ns_menu_item_spec(false, generate_region_stats,"Data Files/Other Statistics/Generate Image Statistics for all regions in current Experiment"));
+		add(ns_menu_item_spec(false, generate_region_stats_for_all_regions_in_group,"Data Files/Other Statistics/_Generate Image Statistics for all Regions in current Experiment Group"));
+		add(ns_menu_item_spec(false, generate_morphology_stats,"Data Files/Other Statistics/Compile Worm Morphology Statistics for Current Experiment"));
 
 		//add(ns_menu_item_spec(generate_survival_curve_from_hand_annotations,"&Calibration/Generate Survival Curves from by hand annotations"));
 
-		add(ns_menu_item_spec(generate_movement_image_analysis_optimization_data, "Calibration/Posture Analaysis/Build new Threshold model from storyboard annnotations"));
-		ns_menu_item_spec st3(generate_worm_markov_posture_model_from_by_hand_annotations, "Calibration/Posture Analaysis/_Build new HMM Model from storyboard annnotations");
-		st3.options.push_back(ns_menu_item_options("From this experiment"));
-		st3.options.push_back(ns_menu_item_options("From observation Files"));
-		add(st3);
-		add(ns_menu_item_spec(compare_machine_and_by_hand_annotations, "&Calibration/Posture Analaysis/_Compare Storyboard annotations to fully-automated results"));
+		add(ns_menu_item_spec(false, generate_movement_image_analysis_optimization_data, "Calibration/Posture Analaysis/Build new Threshold model from storyboard annnotations"));
+		add(ns_menu_item_spec(false,generate_worm_markov_posture_model_from_by_hand_annotations, "Calibration/Posture Analaysis/_Build new HMM Model from storyboard annnotations"));
+		add(ns_menu_item_spec(false, compare_machine_and_by_hand_annotations, "&Calibration/Posture Analaysis/_Compare Storyboard annotations to fully-automated results"));
 
 
-		add(ns_menu_item_spec(annotate_worm_detection_training_set, "Calibration/Worm Detection/_Annotate Worm Detection Training Set"));
-		add(ns_menu_item_spec(generate_SVM_training_data, "Calibration/Worm Detection/Process annotated images to produce SVM Training Data"));
-		add(ns_menu_item_spec(analyze_svm_results, "Calibration/Worm Detection/_Analyze SVM Training Results"));
-		add(ns_menu_item_spec(generate_training_set_from_by_hand_annotations, "Calibration/Worm Detection/_Generate Training Set from By Hand Movement Annotations"));
+		add(ns_menu_item_spec(true, annotate_worm_detection_training_set, "Calibration/Worm Detection/_Annotate Worm Detection Training Set"));
+		add(ns_menu_item_spec(false,generate_SVM_training_data, "Calibration/Worm Detection/Process annotated images to produce SVM Training Data"));
+		add(ns_menu_item_spec(false, analyze_svm_results, "Calibration/Worm Detection/_Analyze SVM Training Results"));
+		add(ns_menu_item_spec(false, generate_training_set_from_by_hand_annotations, "Calibration/Worm Detection/_Generate Training Set from By Hand Movement Annotations"));
 
-		add(ns_menu_item_spec(generate_movement_image_analysis_optimization_data, "Calibration/Worm Detection/_Build new posture analysis model from storyboard annotations/Threshold Model/Death Time Posture Changes"));
-		add(ns_menu_item_spec(masks_generate_composite, "Calibration/_Define Subregions/Generate Subregion Mask Composite"));
-		add(ns_menu_item_spec(masks_generate_composite, "Calibration/_Define Subregions/(Draw Plate Locations on Subregion Mask using Photoshop)", 0, FL_MENU_INACTIVE));
-		add(ns_menu_item_spec(masks_process_composite, "Calibration/_Define Subregions/Analyze Subregion Labels Drawn on Subregion Mask Composite"));
-		add(ns_menu_item_spec(masks_submit_composite, "Calibration/_Define Subregions/_Submit Analyzed Subregion Mask Composite to Cluster"));
+		add(ns_menu_item_spec(false, generate_movement_image_analysis_optimization_data, "Calibration/Worm Detection/_Build new posture analysis model from storyboard annotations/Threshold Model/Death Time Posture Changes"));
+		add(ns_menu_item_spec(false, masks_generate_composite, "Calibration/_Define Subregions/Generate Subregion Mask Composite"));
+		add(ns_menu_item_spec(false, masks_generate_composite, "Calibration/_Define Subregions/(Draw Plate Locations on Subregion Mask using Photoshop)", 0, FL_MENU_INACTIVE));
+		add(ns_menu_item_spec(false, masks_process_composite, "Calibration/_Define Subregions/Analyze Subregion Labels Drawn on Subregion Mask Composite"));
+		add(ns_menu_item_spec(false, masks_submit_composite, "Calibration/_Define Subregions/_Submit Analyzed Subregion Mask Composite to Cluster"));
 
-		add(ns_menu_item_spec(test_time_path_analysis_parameters, "Calibration/Test various Position Analysis Models"));
+		add(ns_menu_item_spec(false, test_time_path_analysis_parameters, "Calibration/Test various Position Analysis Models"));
 
 
-		add(ns_menu_item_spec(export_experiment_data, "&Backup/Backup Database Contents for Current Experiment"));
-		add(ns_menu_item_spec(import_experiment_data, "Backup/_Import Experiment from Backup"));
-		add(ns_menu_item_spec(create_experiment_from_filenames, "Backup/Database Repair/_Create a new experiment in the database from images on disk"));
-		add(ns_menu_item_spec(rebuild_db_sample_data_from_filenames, "Backup/Database Repair/Add missing sample images on disk into current experiment"));
-		add(ns_menu_item_spec(rebuild_db_region_data_from_filenames, "Backup/Database Repair/Add missing region images on disk into current experiment"));
-		add(ns_menu_item_spec(repair_captured_image_transfer_errors, "Backup/Database Repair/Fix captured image transfer errors"));
+		add(ns_menu_item_spec(false, export_experiment_data, "&Backup/Backup Database Contents for Current Experiment"));
+		add(ns_menu_item_spec(false, import_experiment_data, "Backup/_Import Experiment from Backup"));
+		add(ns_menu_item_spec(false, create_experiment_from_filenames, "Backup/Database Repair/_Create a new experiment in the database from images on disk"));
+		add(ns_menu_item_spec(false, rebuild_db_sample_data_from_filenames, "Backup/Database Repair/Add missing sample images on disk into current experiment"));
+		add(ns_menu_item_spec(false, rebuild_db_region_data_from_filenames, "Backup/Database Repair/Add missing region images on disk into current experiment"));
+		add(ns_menu_item_spec(false, repair_captured_image_transfer_errors, "Backup/Database Repair/Fix captured image transfer errors"));
 		//st4.options.push_back(ns_menu_item_options("Using Thermotolerance Parameter Range"));
 		//st4.options.push_back(ns_menu_item_options("Using Lifespan Parameter Range"));
 		//st4.options.push_back(ns_menu_item_options("Using Quiecent Lifespan Parameter Range"));
@@ -1637,79 +1770,79 @@ public:
 		
 
 		if (worm_learner.show_testing_menus) {
-			ns_menu_item_spec model_spec(specifiy_model, "&Testing/Worm Detection/Specify SVM Model");
+			ns_menu_item_spec model_spec(true, specifiy_model, "&Testing/Worm Detection/Specify SVM Model");
 			for (unsigned int i = 0; i < worm_learner.model_specifications.size(); i++)
 				model_spec.options.push_back(ns_menu_item_options(worm_learner.model_specifications[i]().model_specification.model_name));
 
 			add(model_spec);
-			add(ns_menu_item_spec(spatial_median, "Testing/Image Processing/Spatial Median Filter"));
+			add(ns_menu_item_spec(true, spatial_median, "Testing/Image Processing/Spatial Median Filter"));
 			//add(ns_menu_item_spec(difference_threshold,"Testing/Image Processing/Difference Threshold"));
 			//add(ns_menu_item_spec(adaptive_threshold,"Testing/Image Processing/Adaptive Threshold"));
 			//add(ns_menu_item_spec(movement_threshold,"Testing/Image Processing/Movement Threshold"));
 			//add(ns_menu_item_spec(movement_threshold_vis,"Testing/Image Processing/Movement Threshold (vis)"));
-			add(ns_menu_item_spec(two_stage_threshold, "Testing/Image Processing/Two Stage Threshold"));
-			add(ns_menu_item_spec(two_stage_threshold_vis, "Testing/Image Processing/_Two Stage Threshold (vis)"));
-			add(ns_menu_item_spec(remove_large_objects, "Testing/Image Processing/Remove Large Objects"));
-			add(ns_menu_item_spec(morph_manip, "Testing/Image Processing/Morphological Manipulations"));
-			add(ns_menu_item_spec(zhang_thinning, "Testing/Image Processing/_Zhang Thinning"));
-			add(ns_menu_item_spec(stretch_lossless, "Testing/Image Processing/Stretch Dynamic Range (Lossless)"));
-			add(ns_menu_item_spec(stretch_lossy, "Testing/Image Processing/_Stretch Dynamic Range (Lossy)"));
-			add(ns_menu_item_spec(compress_dark, "Testing/Image Processing/Compress Dark Noise"));
-			add(ns_menu_item_spec(grayscale_from_blue, "Testing/Image Processing/Grayscale from Blue Chanel"));
-			add(ns_menu_item_spec(vertical_offset, "Testing/Image Processing/Calculate Vertical offset"));
-			add(ns_menu_item_spec(heat_map_overlay, "Testing/Image Processing/_Calculate heat map overlay"));
-			add(ns_menu_item_spec(test_resample, "Testing/Image Processing/Test Resample"));
-			add(ns_menu_item_spec(sharpen, "Testing/Image Processing/Sharpen"));
-			add(ns_menu_item_spec(calculate_erosion_gradient, "Testing/Image Processing/Calculate Erosion Gradient"));
+			add(ns_menu_item_spec(true, two_stage_threshold, "Testing/Image Processing/Two Stage Threshold"));
+			add(ns_menu_item_spec(true, two_stage_threshold_vis, "Testing/Image Processing/_Two Stage Threshold (vis)"));
+			add(ns_menu_item_spec(true, remove_large_objects, "Testing/Image Processing/Remove Large Objects"));
+			add(ns_menu_item_spec(true, morph_manip, "Testing/Image Processing/Morphological Manipulations"));
+			add(ns_menu_item_spec(true, zhang_thinning, "Testing/Image Processing/_Zhang Thinning"));
+			add(ns_menu_item_spec(true, stretch_lossless, "Testing/Image Processing/Stretch Dynamic Range (Lossless)"));
+			add(ns_menu_item_spec(true, stretch_lossy, "Testing/Image Processing/_Stretch Dynamic Range (Lossy)"));
+			add(ns_menu_item_spec(true, compress_dark, "Testing/Image Processing/Compress Dark Noise"));
+			add(ns_menu_item_spec(true, grayscale_from_blue, "Testing/Image Processing/Grayscale from Blue Chanel"));
+			add(ns_menu_item_spec(true, vertical_offset, "Testing/Image Processing/Calculate Vertical offset"));
+			add(ns_menu_item_spec(true, heat_map_overlay, "Testing/Image Processing/_Calculate heat map overlay"));
+			add(ns_menu_item_spec(true, test_resample, "Testing/Image Processing/Test Resample"));
+			add(ns_menu_item_spec(true, sharpen, "Testing/Image Processing/Sharpen"));
+			add(ns_menu_item_spec(true, calculate_erosion_gradient, "Testing/Image Processing/Calculate Erosion Gradient"));
 
-			add(ns_menu_item_spec(show_objects, "Testing/Worm Detection/Show objects in image"));
-			add(ns_menu_item_spec(detect_worms, "Testing/Worm Detection/Detect Worms"));
-			add(ns_menu_item_spec(show_region_edges, "Testing/Worm Detection/Show Region Edges"));
-			add(ns_menu_item_spec(view_region_collage, "Testing/Worm Detection/View Region Collage"));
-			add(ns_menu_item_spec(view_spine_collage, "Testing/Worm Detection/View Spine Collage"));
-			add(ns_menu_item_spec(view_spine_collage_stats, "Testing/Worm Detection/View Spine Collage with stats"));
-			add(ns_menu_item_spec(view_reject_spine_collage, "Testing/Worm Detection/View Reject Spine Collage"));
-			add(ns_menu_item_spec(view_reject_spine_collage_stats, "Testing/Worm Detection/View Reject Spine Collage with stats"));
-			add(ns_menu_item_spec(output_feature_distributions, "Testing/Worm Detection/Output feature distributions"));
+			add(ns_menu_item_spec(true, show_objects, "Testing/Worm Detection/Show objects in image"));
+			add(ns_menu_item_spec(true, detect_worms, "Testing/Worm Detection/Detect Worms"));
+			add(ns_menu_item_spec(true, show_region_edges, "Testing/Worm Detection/Show Region Edges"));
+			add(ns_menu_item_spec(true, view_region_collage, "Testing/Worm Detection/View Region Collage"));
+			add(ns_menu_item_spec(true, view_spine_collage, "Testing/Worm Detection/View Spine Collage"));
+			add(ns_menu_item_spec(true, view_spine_collage_stats, "Testing/Worm Detection/View Spine Collage with stats"));
+			add(ns_menu_item_spec(true, view_reject_spine_collage, "Testing/Worm Detection/View Reject Spine Collage"));
+			add(ns_menu_item_spec(true, view_reject_spine_collage_stats, "Testing/Worm Detection/View Reject Spine Collage with stats"));
+			add(ns_menu_item_spec(true, output_feature_distributions, "Testing/Worm Detection/Output feature distributions"));
 			//add(ns_menu_item_spec(calculate_slow_movement, "Testing/Worm Detection/Calculate Slow Movement"));
 
 
-			add(ns_menu_item_spec(split_results, "Testing/Worm Detection Model Etc/Split results into multiple regions"));
-			add(ns_menu_item_spec(output_learning_set, "Testing/Worm Detection Model Etc/Output Learning Image Set"));
-			add(ns_menu_item_spec(auto_output_learning_set, "Testing/Worm Detection Model Etc/Auto Output Learning Image Set"));
-			add(ns_menu_item_spec(rethreshold_image_set, "Testing/Worm Detection Model Etc/_Rethreshold Learning Image Set "));
-			add(ns_menu_item_spec(generate_training_set, "Testing/Worm Detection Model Etc/Generate worm training set image"));
-			add(ns_menu_item_spec(process_training_set, "Testing/Worm Detection Model Etc/_Process worm training set image"));
-			add(ns_menu_item_spec(fix_headers_for_svm_training_set_images, "Testing/Worm Detection Model Etc/Fix Scrambled Training Set Metadata"));
+			add(ns_menu_item_spec(true, split_results, "Testing/Worm Detection Model Etc/Split results into multiple regions"));
+			add(ns_menu_item_spec(true, output_learning_set, "Testing/Worm Detection Model Etc/Output Learning Image Set"));
+			add(ns_menu_item_spec(true, auto_output_learning_set, "Testing/Worm Detection Model Etc/Auto Output Learning Image Set"));
+			add(ns_menu_item_spec(true, rethreshold_image_set, "Testing/Worm Detection Model Etc/_Rethreshold Learning Image Set "));
+			add(ns_menu_item_spec(true, generate_training_set, "Testing/Worm Detection Model Etc/Generate worm training set image"));
+			add(ns_menu_item_spec(true, process_training_set, "Testing/Worm Detection Model Etc/_Process worm training set image"));
+			add(ns_menu_item_spec(true, fix_headers_for_svm_training_set_images, "Testing/Worm Detection Model Etc/Fix Scrambled Training Set Metadata"));
 			//	add(ns_menu_item_spec(run_temporal_inference,"Testing/Machine Learning/Run temporal inference"));
-			add(ns_menu_item_spec(remove_duplicates_from_training_set, "Testing/Worm Detection Model Etc/_Remove duplicates from training set"));
-			add(ns_menu_item_spec(generate_region_subset_time_series, "Testing/Worm Detection Model Etc/Generate Region Subset time series"));
-			add(ns_menu_item_spec(load_region_as_new_experiment, "Testing/Worm Detection Model Etc/_Load Region Subset time series as new experiment"));
-			add(ns_menu_item_spec(create_decimated_subset, "Testing/Worm Detection Model Etc/Create decimated subset of directory"));
-			add(ns_menu_item_spec(translate_fscore, "Testing/Worm Detection Model Etc/_translate f-score file"));
+			add(ns_menu_item_spec(true, remove_duplicates_from_training_set, "Testing/Worm Detection Model Etc/_Remove duplicates from training set"));
+			add(ns_menu_item_spec(true, generate_region_subset_time_series, "Testing/Worm Detection Model Etc/Generate Region Subset time series"));
+			add(ns_menu_item_spec(true, load_region_as_new_experiment, "Testing/Worm Detection Model Etc/_Load Region Subset time series as new experiment"));
+			add(ns_menu_item_spec(true, create_decimated_subset, "Testing/Worm Detection Model Etc/Create decimated subset of directory"));
+			add(ns_menu_item_spec(true, translate_fscore, "Testing/Worm Detection Model Etc/_translate f-score file"));
 
-			add(ns_menu_item_spec(analyze_worm_position, "Testing/Movement Analysis/Analyze worm positions for current region"));
+			add(ns_menu_item_spec(true, analyze_worm_position, "Testing/Movement Analysis/Analyze worm positions for current region"));
 		}
 		string version("Worm Browser v");
 		version = version + ns_to_string(image_server.software_version_major()) + "." + ns_to_string(image_server.software_version_minor()) + "." + ns_to_string(image_server.software_version_compile()) + " (2019)";
-		add(ns_menu_item_spec(set_database,string("&Config/") + version,0,FL_MENU_INACTIVE));
-		add(ns_menu_item_spec(set_database,string("Config/_Nicholas Stroustrup, CRG"),0,FL_MENU_INACTIVE));
+		add(ns_menu_item_spec(true, set_database,string("&Config/") + version,0,FL_MENU_INACTIVE));
+		add(ns_menu_item_spec(true, set_database,string("Config/_Nicholas Stroustrup, CRG"),0,FL_MENU_INACTIVE));
 		//add(ns_menu_item_spec(set_database,string("Config/_ "),0,FL_MENU_INACTIVE));
-		ns_menu_item_spec db_spec(set_database,"&Config/_Set Database");
+		ns_menu_item_spec db_spec(true, set_database,"&Config/_Set Database");
 		for (unsigned int i = 0; i < worm_learner.databases_available.size(); i++)
 			db_spec.options.push_back(worm_learner.databases_available[i]);
 		add(db_spec);
-		add(ns_menu_item_spec(show_extra_menus, "Config/_Set Behavior/_Show Image Analysis Diagnostic Tools"));
-		ns_menu_item_spec caching(precache_storyboard_images, "Config/Set Behavior/_Storyboard pre-caching");
+		add(ns_menu_item_spec(true, show_extra_menus, "Config/_Set Behavior/_Show Image Analysis Diagnostic Tools"));
+		ns_menu_item_spec caching(true, precache_storyboard_images, "Config/Set Behavior/_Storyboard pre-caching");
 		caching.options.push_back(std::string("Pre-Cache to speed up image loading"));
 		caching.options.push_back(std::string("Do not cache"));
 		add(caching);
-		ns_menu_item_spec video (generate_mp4,"Config/Set Behavior/_Video Output Encoding");
+		ns_menu_item_spec video (true, generate_mp4,"Config/Set Behavior/_Video Output Encoding");
 		video.options.push_back(std::string("MP4"));
 		video.options.push_back(std::string("WMV"));
 		add(video);
-		add(ns_menu_item_spec(upload_strain_metadata,"Config/_Set Behavior/Upload Strain Metadata to the Database"));
-		add(ns_menu_item_spec(update_sql_schema,"Config/Update database schema"));
+		add(ns_menu_item_spec(true, upload_strain_metadata,"Config/_Set Behavior/Upload Strain Metadata to the Database"));
+		add(ns_menu_item_spec(false,update_sql_schema,"Config/Update database schema"));
 }
 
 	
@@ -1717,7 +1850,7 @@ public:
 };
 
 class ns_stats_survival_grouping_menu_organizer : public ns_menu_organizer {
-	static void select_spec(const std::string& s) {
+	static void select_spec(const ns_browser_command_subject_set& subject, const std::string& s) {
 		ns_set_menu_bar_activity(false);
 		worm_learner.storyboard_annotater.population_telemetry.survival_grouping = ns_population_telemetry::survival_grouping_type(s);
 		::update_stats_menus();
@@ -1738,7 +1871,7 @@ public:
 		bar.redraw();
 	}
 	void update_menus() {
-		ns_menu_item_spec spec(select_spec, "Survival Grouping");
+		ns_menu_item_spec spec(true,select_spec, "Survival Grouping");
 
 		if (worm_learner.current_behavior_mode() != ns_worm_learner::ns_annotate_storyboard_region) {
 			for (unsigned int i = 0; i < (int)ns_population_telemetry::ns_survival_grouping_num; i++) {
@@ -1757,7 +1890,7 @@ public:
 	}
 };
 class ns_death_types_plotting_menu_organizer : public ns_menu_organizer {
-	static void select_spec(const std::string& s) {
+	static void select_spec(const ns_browser_command_subject_set& subject, const std::string& s) {
 		ns_set_menu_bar_activity(false);
 		worm_learner.storyboard_annotater.population_telemetry.death_plot = ns_population_telemetry::death_plot_type(s);
 		::update_stats_menus();
@@ -1778,7 +1911,7 @@ public:
 		bar.redraw();
 	}
 	void update_menus() {
-		ns_menu_item_spec spec(select_spec,"Death type");
+		ns_menu_item_spec spec(true, select_spec,"Death type");
 
 		for (unsigned int i = 0; i < (int)ns_population_telemetry::ns_death_plot_num; i++) {
 			ns_population_telemetry::ns_death_plot_type g = (ns_population_telemetry::ns_death_plot_type)i;
@@ -1790,7 +1923,7 @@ public:
 	}
 };
 class ns_movement_graph_plotting_menu_organizer : public ns_menu_organizer {
-	static void select_spec(const std::string& s) {
+	static void select_spec(const ns_browser_command_subject_set& subject, const std::string& s) {
 
 		ns_set_menu_bar_activity(false);
 		std::string::size_type p = s.find("Plot");
@@ -1822,7 +1955,7 @@ public:
 		update_menus();
 	}
 	void update_menus() {
-		ns_menu_item_spec spec(select_spec, "Scatter Plot");
+		ns_menu_item_spec spec(true, select_spec, "Scatter Plot");
 
 		for (unsigned int i = 0; i < (int)ns_population_telemetry::ns_movement_plot_num; i++) {
 			ns_population_telemetry::ns_movement_plot_type g = (ns_population_telemetry::ns_movement_plot_type)i;
@@ -1837,9 +1970,9 @@ public:
 };
 
 class ns_worm_terminal_exclusion_menu_organizer : public ns_menu_organizer{
-	static void pick_exclusion(const std::string & value){
+	static void pick_exclusion(const ns_browser_command_subject_set& subject, const std::string & value){
 
-		worm_learner.data_selector.set_censor_masking(ns_experiment_region_selector::censor_masking_from_string(value));
+		worm_learner.data_gui_selector.set_censor_masking(ns_experiment_region_gui_selector::censor_masking_from_string(value));
 		::update_exclusion_choice_menu();
 	}
 public:
@@ -1847,33 +1980,33 @@ public:
 	void update_exclusion_choice(Fl_Menu_Bar & bar){
 		bar.menu(NULL);
 		clear();
-		if (!worm_learner.data_selector.experiment_selected()){
+		if (!worm_learner.data_gui_selector.experiment_selected()){
 			bar.deactivate();
 			return;
 		}
-		if (worm_learner.data_selector.samples.size() == 0){
+		if (worm_learner.data_gui_selector.samples.size() == 0){
 			bar.deactivate();
 			return;
 		}
-		if (!worm_learner.data_selector.region_selected()){
-			if (!worm_learner.data_selector.select_default_sample_and_region()){
+		if (!worm_learner.data_gui_selector.region_selected()){
+			if (!worm_learner.data_gui_selector.select_default_sample_and_region()){
 				bar.deactivate();
 				return;
 			}
 		}
 		bar.activate();
 		string title("");
-		ns_experiment_region_selector::ns_censor_masking cur_masking(worm_learner.data_selector.censor_masking());
-		ns_menu_item_spec spec(pick_exclusion,ns_experiment_region_selector::censor_masking_string(cur_masking));
+		ns_experiment_region_gui_selector::ns_censor_masking cur_masking(worm_learner.data_gui_selector.censor_masking());
+		ns_menu_item_spec spec(true, pick_exclusion,ns_experiment_region_gui_selector::censor_masking_string(cur_masking));
 		string sep;
-		ns_experiment_region_selector::ns_censor_masking op[3] = {ns_experiment_region_selector::ns_show_all,
-			ns_experiment_region_selector::ns_hide_censored,
-			ns_experiment_region_selector::ns_hide_uncensored};
+		ns_experiment_region_gui_selector::ns_censor_masking op[3] = {ns_experiment_region_gui_selector::ns_show_all,
+			ns_experiment_region_gui_selector::ns_hide_censored,
+			ns_experiment_region_gui_selector::ns_hide_uncensored};
 
 		for (unsigned int i = 0; i < 3; i++){
 			if (op[i] == cur_masking)
 				continue;
-			else spec.options.push_back(ns_menu_item_options(ns_experiment_region_selector::censor_masking_string(op[i])));
+			else spec.options.push_back(ns_menu_item_options(ns_experiment_region_gui_selector::censor_masking_string(op[i])));
 		}
 		add(spec);
 		build_menus(bar);
@@ -1904,7 +2037,7 @@ private:
 class ns_stats_strain_asynch_picker : public ns_asynch_menu_picker {
 
 	void launch(const std::string& value) {
-		worm_learner.statistics_data_selector.select_strain(value);
+		worm_learner.statistics_data_gui_selector.select_strain(value);
 
 		::update_strain_choice_menu();
 		::update_region_choice_menu();
@@ -1913,7 +2046,7 @@ class ns_stats_strain_asynch_picker : public ns_asynch_menu_picker {
 class ns_storyboard_strain_asynch_picker : public ns_asynch_menu_picker {
 
 	void launch(const std::string& value) {
-		worm_learner.data_selector.select_strain(value);
+		worm_learner.data_gui_selector.select_strain(value);
 
 
 		::update_strain_choice_menu();
@@ -1925,13 +2058,13 @@ class ns_storyboard_strain_asynch_picker : public ns_asynch_menu_picker {
 
 template<class ns_asynch_picker>
 class ns_worm_terminal_strain_menu_organizer : public ns_menu_organizer {
-	static void pick_strain(const std::string& value) {
+	static void pick_strain(const ns_browser_command_subject_set& subject,const std::string& value) {
 		ns_asynch_picker* picker = new ns_asynch_picker;
 		picker->run(value);
 	}
-	ns_experiment_region_selector & data_selector;
+	ns_experiment_region_gui_selector & data_selector;
 public:
-	ns_worm_terminal_strain_menu_organizer(ns_experiment_region_selector& selector_to_use):data_selector(selector_to_use){}
+	ns_worm_terminal_strain_menu_organizer(ns_experiment_region_gui_selector& selector_to_use):data_selector(selector_to_use){}
 	std::string strain_menu_name() { return "File/_Select Current Strain"; }
 	void update_strain_choice(Fl_Menu_Bar& bar) {
 		bar.menu(NULL);
@@ -1949,11 +2082,11 @@ public:
 		if (data_selector.strain_selected())
 			title = data_selector.current_strain().device_regression_match_description();
 		else title = "All Strains";
-		ns_menu_item_spec spec(pick_strain, title);
+		ns_menu_item_spec spec(true,pick_strain, title);
 		string sep;
 		if (data_selector.strain_selected())
 			spec.options.push_back(ns_menu_item_options("All Strains"));
-		for (ns_experiment_region_selector::ns_experiment_strain_list::iterator p = data_selector.experiment_strains.begin(); p != data_selector.experiment_strains.end(); p++) {
+		for (ns_experiment_region_gui_selector::ns_experiment_strain_list::iterator p = data_selector.experiment_strains.begin(); p != data_selector.experiment_strains.end(); p++) {
 			if (p->first == title)
 				continue;
 			else spec.options.push_back(ns_menu_item_options(p->first));
@@ -1974,7 +2107,7 @@ public:
 
 class ns_storyboard_strain_menu_organizer : public ns_worm_terminal_strain_menu_organizer< ns_storyboard_strain_asynch_picker> {
 public:
-	ns_storyboard_strain_menu_organizer(ns_experiment_region_selector& selector_to_use) :ns_worm_terminal_strain_menu_organizer< ns_storyboard_strain_asynch_picker>(selector_to_use) {}
+	ns_storyboard_strain_menu_organizer(ns_experiment_region_gui_selector& selector_to_use) :ns_worm_terminal_strain_menu_organizer< ns_storyboard_strain_asynch_picker>(selector_to_use) {}
 	void on_select() const {
 
 	}
@@ -1986,7 +2119,7 @@ public:
 
 class ns_stats_strain_menu_organizer : public ns_worm_terminal_strain_menu_organizer< ns_stats_strain_asynch_picker> {
 public:
-	ns_stats_strain_menu_organizer(ns_experiment_region_selector& selector_to_use) :ns_worm_terminal_strain_menu_organizer< ns_stats_strain_asynch_picker>(selector_to_use) {}
+	ns_stats_strain_menu_organizer(ns_experiment_region_gui_selector& selector_to_use) :ns_worm_terminal_strain_menu_organizer< ns_stats_strain_asynch_picker>(selector_to_use) {}
 	void on_select() const {
 		if (worm_learner.current_behavior_mode() != ns_worm_learner::ns_annotate_storyboard_region &&
 			worm_learner.current_behavior_mode() != ns_worm_learner::ns_annotate_storyboard_sample &&
@@ -1996,10 +2129,10 @@ public:
 		ns_set_menu_bar_activity(false);
 		ns_64_bit region_id = 0;
 		ns_region_metadata strain;
-		if (worm_learner.statistics_data_selector.region_selected())
-			worm_learner.statistics_data_selector.current_region().region_id;
-		if (worm_learner.statistics_data_selector.strain_selected())
-			strain = worm_learner.statistics_data_selector.current_strain();
+		if (worm_learner.statistics_data_gui_selector.region_selected())
+			worm_learner.statistics_data_gui_selector.current_region().region_id;
+		if (worm_learner.statistics_data_gui_selector.strain_selected())
+			strain = worm_learner.statistics_data_gui_selector.current_strain();
 		worm_learner.storyboard_annotater.population_telemetry.set_subject(region_id, strain);
 		worm_learner.storyboard_annotater.replot_telemetry();
 		//worm_learner.storyboard_annotater.draw_telemetry();
@@ -2016,14 +2149,14 @@ private:
 
 template<class storyboard_picker_t>
 class ns_worm_terminal_region_menu_organizer : public ns_menu_organizer {
-	static void pick_region(const std::string & value) {
+	static void pick_region(const ns_browser_command_subject_set& subject,const std::string & value) {
 
 		storyboard_picker_t* picker = new storyboard_picker_t();
 		picker->run(value);
 	}
-	ns_experiment_region_selector & data_selector;
+	ns_experiment_region_gui_selector & data_selector;
 public:
-	ns_worm_terminal_region_menu_organizer(ns_experiment_region_selector& selector_to_use) :data_selector(selector_to_use){}
+	ns_worm_terminal_region_menu_organizer(ns_experiment_region_gui_selector& selector_to_use) :data_selector(selector_to_use){}
 	std::string region_menu_name() { return "File/_Select Current Region"; }
 	void update_region_choice(Fl_Menu_Bar& bar) {
 		bar.menu(NULL);
@@ -2058,7 +2191,7 @@ public:
 		std::string menu_name = "All Regions";
 		if (data_selector.region_selected())
 			menu_name = data_selector.current_region().display_name;
-		ns_menu_item_spec spec(pick_region, menu_name);
+		ns_menu_item_spec spec(true,pick_region, menu_name);
 		string sep;
 
 		for (unsigned int i = 0; i < data_selector.samples.size(); i++) {
@@ -2122,14 +2255,14 @@ struct ns_storyboard_annotation_region_picker : public ns_asynch_menu_picker {
 				if (!worm_learner.prompt_to_save_death_time_annotations())
 					return;
 				worm_learner.stop_death_time_annotation();
-				worm_learner.data_selector.select_region(region_name);
+				worm_learner.data_gui_selector.select_region(region_name);
 				::update_region_choice_menu();
 				worm_learner.start_death_time_annotation(ns_worm_learner::ns_annotate_storyboard_region, worm_learner.current_storyboard_flavor);
 				report_changes_made_to_screen();
 				return;
 			}
 			else {
-				worm_learner.data_selector.select_region(region_name);
+				worm_learner.data_gui_selector.select_region(region_name);
 				::update_region_choice_menu();
 			}
 		}
@@ -2143,7 +2276,7 @@ struct ns_storyboard_annotation_region_picker : public ns_asynch_menu_picker {
 };
 class ns_storyboard_region_selector : public ns_worm_terminal_region_menu_organizer<ns_storyboard_annotation_region_picker>{
 public:
-	ns_storyboard_region_selector(ns_experiment_region_selector& selector_to_use) :ns_worm_terminal_region_menu_organizer<ns_storyboard_annotation_region_picker>(selector_to_use) {}
+	ns_storyboard_region_selector(ns_experiment_region_gui_selector& selector_to_use) :ns_worm_terminal_region_menu_organizer<ns_storyboard_annotation_region_picker>(selector_to_use) {}
 
 	void on_select() {
 		if (worm_learner.current_behavior_mode() == ns_worm_learner::ns_annotate_death_times_in_time_aligned_posture)
@@ -2162,7 +2295,7 @@ private:
 struct ns_stats_region_picker : public ns_asynch_menu_picker {
 	void launch(const std::string& region_name) {
 		try {
-				worm_learner.statistics_data_selector.select_region(region_name);
+				worm_learner.statistics_data_gui_selector.select_region(region_name);
 				::update_region_choice_menu();
 		}
 		catch (ns_ex& ex) {
@@ -2172,7 +2305,7 @@ struct ns_stats_region_picker : public ns_asynch_menu_picker {
 };
 class ns_stats_region_selector : public ns_worm_terminal_region_menu_organizer<ns_stats_region_picker> {
 public:
-	ns_stats_region_selector(ns_experiment_region_selector& selector_to_use) :ns_worm_terminal_region_menu_organizer<ns_stats_region_picker>(selector_to_use) {}
+	ns_stats_region_selector(ns_experiment_region_gui_selector& selector_to_use) :ns_worm_terminal_region_menu_organizer<ns_stats_region_picker>(selector_to_use) {}
 
 	void on_select() {
 		if (worm_learner.current_behavior_mode() != ns_worm_learner::ns_annotate_storyboard_region &&
@@ -2182,10 +2315,10 @@ public:
 		ns_set_menu_bar_activity(false);
 		ns_64_bit region_id = 0;
 		ns_region_metadata strain;
-		if (worm_learner.statistics_data_selector.region_selected())
-			region_id = worm_learner.statistics_data_selector.current_region().region_id;
-		if (worm_learner.statistics_data_selector.strain_selected())
-			strain = worm_learner.statistics_data_selector.current_strain();
+		if (worm_learner.statistics_data_gui_selector.region_selected())
+			region_id = worm_learner.statistics_data_gui_selector.current_region().region_id;
+		if (worm_learner.statistics_data_gui_selector.strain_selected())
+			strain = worm_learner.statistics_data_gui_selector.current_strain();
 		worm_learner.storyboard_annotater.population_telemetry.set_subject(region_id, strain);
 		worm_learner.storyboard_annotater.replot_telemetry();
 		//worm_learner.storyboard_annotater.draw_telemetry();
@@ -2449,7 +2582,7 @@ public:
 	}
 
 	void update_information_bar(const std::string & status="-1"){
-		experiment_name_bar->value(worm_learner.data_selector.current_experiment_name().c_str());
+		experiment_name_bar->value(worm_learner.data_gui_selector.current_experiment_name().c_str());
 	/*	if (worm_learner.data_selector.region_selected() && worm_learner.data_selector.sample_selected()){
 			region_name_bar->value((worm_learner.data_selector.current_sample().sample_name + "::" + 
 								   worm_learner.data_selector.current_region().region_name).c_str());
@@ -2489,7 +2622,7 @@ public:
 		region_menu->textsize((region_menu->textsize() - 4)*menu_d);
 		region_menu->textfont(FL_HELVETICA);
 
-		region_menu_handler = new ns_storyboard_region_selector(worm_learner.data_selector);
+		region_menu_handler = new ns_storyboard_region_selector(worm_learner.data_gui_selector);
 		region_menu_handler->update_region_choice(*region_menu);
 
 		strain_menu = new Fl_Menu_Bar(   (int)(d*experiment_bar_width() + menu_d*region_name_bar_width()),												   (int)(H - menu_d*info_bar_height()), (int)(menu_d*strain_bar_width()),    (int)(menu_d*info_bar_height()));
@@ -2497,7 +2630,7 @@ public:
 		worm_id_selector = new Fl_Button((int)(d*experiment_bar_width() + menu_d * (region_name_bar_width() + strain_bar_width()+ exclusion_bar_width())), (int)(H - menu_d*info_bar_height()), (int)(menu_d*worm_input_width()), (int)(menu_d*info_bar_height()),"w");
 		worm_id_selector->callback(ns_handle_worm_selection_button);
 		worm_id_selector->deactivate();
-		strain_menu_handler = new ns_storyboard_strain_menu_organizer(worm_learner.data_selector);
+		strain_menu_handler = new ns_storyboard_strain_menu_organizer(worm_learner.data_gui_selector);
 		strain_menu_handler->update_strain_choice(*strain_menu);
 		exclusion_menu_handler = new ns_worm_terminal_exclusion_menu_organizer();
 		exclusion_menu_handler->update_exclusion_choice(*exclusion_menu);
@@ -2534,7 +2667,7 @@ public:
 
 	
 
-		experiment_name_bar->value(worm_learner.data_selector.current_experiment_name().c_str());
+		experiment_name_bar->value(worm_learner.data_gui_selector.current_experiment_name().c_str());
 
 		info_bar->value("Welcome!");
 
@@ -2950,13 +3083,13 @@ public:
 
 		region_menu = new Fl_Menu_Bar(menu_d * region_button_offset, worm_learner.stats_window.gl_image_size.y, menu_d * region_name_bar_width(), menu_d * ns_death_event_solo_annotation_group::button_height);
 
-		region_menu_handler = new ns_stats_region_selector(worm_learner.statistics_data_selector);
+		region_menu_handler = new ns_stats_region_selector(worm_learner.statistics_data_gui_selector);
 		region_menu_handler->update_region_choice(*region_menu);
 
 		strain_menu = new Fl_Menu_Bar(menu_d * (region_button_offset + region_name_bar_width()), worm_learner.stats_window.gl_image_size.y, menu_d * strain_bar_width(), menu_d * info_bar_height());
 
 		
-		strain_menu_handler = new ns_stats_strain_menu_organizer(worm_learner.statistics_data_selector);
+		strain_menu_handler = new ns_stats_strain_menu_organizer(worm_learner.statistics_data_gui_selector);
 		strain_menu_handler->update_strain_choice(*strain_menu);
 		
 		Fl_Menu_Bar* all_menus[5] = { survival_grouping_menu ,movement_graph_menu,death_type_menu,region_menu,strain_menu };
@@ -3139,7 +3272,8 @@ void ns_output_error() {
 
 }
 void ns_handle_worm_selection_button(Fl_Widget *w, void * data) {
-	if (!worm_learner.data_selector.region_selected()) {
+	try{
+	if (!worm_learner.data_gui_selector.region_selected()) {
 		std::cout << "Individual worms can be selected only in single-region storyboards.";
 	}
 	const char * result = fl_input("Enter the worm ID you would like to view:");
@@ -3163,59 +3297,97 @@ void ns_handle_worm_selection_button(Fl_Widget *w, void * data) {
 		if (division_id != 0)
 			worm_learner.storyboard_annotater.jump_to_position(division_id, ns_output_error, worm_learner.worm_window.display_rescale_factor);
 
-		ns_launch_worm_window_for_worm(worm_learner.data_selector.current_region().region_id, path_id, time);
+		ns_launch_worm_window_for_worm(worm_learner.data_gui_selector.current_region().region_id, path_id, time);
 	}
 
+	}
+	catch (ns_ex & ex) {
+		cerr << "Error while selecting worm: " << ex.text() << "\n";
+	}
+	catch (...) {
+		cerr << "Unknown error while selecting worm.\n";
+	}
 }
 void ns_handle_death_time_annotation_button(Fl_Widget * w, void * data){
-	ns_image_series_annotater::ns_image_series_annotater_action action(*static_cast<ns_image_series_annotater::ns_image_series_annotater_action *>(data));
-	if (action == ns_image_series_annotater::ns_save){
-		ns_thread t(ns_asynch_annotation_saver::run_asynch,0);
-		t.detach();
-		return;
+	try {
+		ns_image_series_annotater::ns_image_series_annotater_action action(*static_cast<ns_image_series_annotater::ns_image_series_annotater_action*>(data));
+		if (action == ns_image_series_annotater::ns_save) {
+			ns_thread t(ns_asynch_annotation_saver::run_asynch, 0);
+			t.detach();
+			return;
+		}
+		worm_learner.navigate_death_time_annotation(action);
+		report_changes_made_to_screen();
 	}
-	worm_learner.navigate_death_time_annotation(action);
-	report_changes_made_to_screen();
+	catch (ns_ex & ex) {
+		cerr << "Error while pressing button: " << ex.text() << "\n";
+	}
+	catch (...) {
+		cerr << "Unknown error when pressing button\n";
+	}
 }
-void ns_handle_death_time_solo_annotation_button(Fl_Widget * w, void * data){
-	
-	ns_death_time_solo_posture_annotater::ns_image_series_annotater_action * a = static_cast<ns_death_time_solo_posture_annotater::ns_image_series_annotater_action *>(data);
-	ns_death_time_solo_posture_annotater::ns_image_series_annotater_action action(*a);
-	//delete a;
-	ns_acquire_lock_for_scope storyboard_lock(worm_learner.storyboard_lock,__FILE__,__LINE__);
-	worm_learner.navigate_solo_worm_annotation(action);
-	worm_learner.storyboard_annotater.request_refresh();
-	worm_learner.death_time_solo_annotater.request_refresh();
-	storyboard_lock.release();
-	report_changes_made_to_screen();
-	//Fl::focus(main_window->gl_window);
+void ns_handle_death_time_solo_annotation_button(Fl_Widget* w, void* data) {
+	try {
+		ns_death_time_solo_posture_annotater::ns_image_series_annotater_action* a = static_cast<ns_death_time_solo_posture_annotater::ns_image_series_annotater_action*>(data);
+		ns_death_time_solo_posture_annotater::ns_image_series_annotater_action action(*a);
+		//delete a;
+		ns_acquire_lock_for_scope storyboard_lock(worm_learner.storyboard_lock, __FILE__, __LINE__);
+		worm_learner.navigate_solo_worm_annotation(action);
+		worm_learner.storyboard_annotater.request_refresh();
+		worm_learner.death_time_solo_annotater.request_refresh();
+		storyboard_lock.release();
+		report_changes_made_to_screen();
+		//Fl::focus(main_window->gl_window);
+	}
+	catch (ns_ex & ex) {
+		cerr << "Error while pressing button: " << ex.text() << "\n";
+	}
+	catch (...) {
+		cerr << "Unknown error when pressing button\n";
+	}
 }
 void ns_handle_stats_annotation_button(Fl_Widget* w, void* data) {
-	ns_image_series_annotater::ns_image_series_annotater_action action(*static_cast<ns_image_series_annotater::ns_image_series_annotater_action*>(data));
-	ns_set_menu_bar_activity(false);
-	switch (action) {
-	case ns_image_series_annotater::ns_recalculate:
-		image_server.register_server_event_no_db(ns_image_server_event("Re-calculating survival statistics"));
-		worm_learner.storyboard_annotater.rebuild_telemetry_with_by_hand_annotations();
-		break;
-	case ns_image_series_annotater::ns_switch_grouping:
-		break;
-	case ns_image_series_annotater::ns_cycle_graphs:
-		break;
+	try {
+		ns_image_series_annotater::ns_image_series_annotater_action action(*static_cast<ns_image_series_annotater::ns_image_series_annotater_action*>(data));
+		ns_set_menu_bar_activity(false);
+		switch (action) {
+		case ns_image_series_annotater::ns_recalculate:
+			image_server.register_server_event_no_db(ns_image_server_event("Re-calculating survival statistics"));
+			worm_learner.storyboard_annotater.rebuild_telemetry_with_by_hand_annotations();
+			break;
+		case ns_image_series_annotater::ns_switch_grouping:
+			break;
+		case ns_image_series_annotater::ns_cycle_graphs:
+			break;
+		}
+		ns_set_menu_bar_activity(true);
+		report_changes_made_to_screen();
 	}
-	ns_set_menu_bar_activity(true);
-	report_changes_made_to_screen();
+	catch (ns_ex & ex) {
+		cerr << "Error while pressing button: " << ex.text() << "\n";
+	}
+	catch (...) {
+		cerr << "Unknown error when pressing button\n";
+	}
 }
 
 void all_menu_callback(Fl_Widget*w, void*data) {
- 	ns_menu_organizer_callback_data  ww (*static_cast<ns_menu_organizer_callback_data *>(data));
-	char pn[512];
-	
-	int ret(ww.bar->item_pathname(pn,512));
-	if (ret == 0) ww.organizer->dispatch_request_asynch(pn);
-	else if (ret == -1) throw ns_ex("Could not identify requested menu item");
-	else if (ret == -2) throw ns_ex("Menu item is larger than buffer provided");
-	else throw ns_ex("FLTK returned a cryptic error while processing menu request");
+	try {
+		ns_menu_organizer_callback_data  ww(*static_cast<ns_menu_organizer_callback_data*>(data));
+		char pn[512];
+
+		int ret(ww.bar->item_pathname(pn, 512));
+		if (ret == 0) ww.organizer->dispatch_request_asynch(pn);
+		else if (ret == -1) throw ns_ex("Could not identify requested menu item");
+		else if (ret == -2) throw ns_ex("Menu item is larger than buffer provided");
+		else throw ns_ex("FLTK returned a cryptic error while processing menu request");
+	}
+	catch (ns_ex & ex) {
+		cerr << "Error while selecting menu " << ex.text() << "\n";
+	}
+	catch (...) {
+		cerr << "Unknown error when selecting menu\n";
+	}
 }
 /*
 void redraw_screen(){
@@ -3876,10 +4048,17 @@ void ns_run_startup_routines() {
 
 	//ns_update_sample_info(sql());
 	ns_worm_browser_output_debug(__LINE__, __FILE__, "Checking for new release");
-	ns_alert_dialog d;
-	d.text = "This version of the Worm Browser is outdated.  Please update it.";
-	if (image_server.new_software_release_available())
-		d.act();
+	
+	std::string err("This version of the Worm Browser is outdated.  Please update it.");
+	ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__, __LINE__));
+	if (image_server.new_software_release_available(sql())){
+		if (worm_learner.running_as_gui) {
+			ns_alert_dialog d;
+			d.text = err;
+			d.act();
+		}
+		else throw ns_ex(err);
+	}
 
 	ns_worm_browser_output_debug(__LINE__, __FILE__, "Loading detection models");
 	try {
@@ -3892,7 +4071,6 @@ void ns_run_startup_routines() {
 		//	image_server.set_sql_database("image_server_archive");
 
 		ns_worm_browser_output_debug(__LINE__, __FILE__, "Getting flags from db");
-		ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__, __LINE__));
 		ns_death_time_annotation_flag::get_flags_from_db(&sql());
 
 
@@ -3903,12 +4081,12 @@ void ns_run_startup_routines() {
 		ns_death_time_annotation_flag::get_flags_from_db(&sql());
 
 		cerr << "Loading the experiment list...";
-		worm_learner.data_selector.load_experiment_names(sql());
+		worm_learner.data_gui_selector.load_experiment_names(sql());
 		worm_learner.load_databases(sql());
 		try {
 			ns_worm_browser_output_debug(__LINE__, __FILE__, "Setting current experiment");
-			worm_learner.data_selector.set_current_experiment(-1, sql());
-			worm_learner.statistics_data_selector = worm_learner.data_selector;
+			worm_learner.data_gui_selector.set_current_experiment(-1, sql());
+			worm_learner.statistics_data_gui_selector = worm_learner.data_gui_selector;
 		}
 		catch (ns_ex & ex) {
 			ns_worm_browser_output_debug(__LINE__, __FILE__, std::string("Error setting experiment: ") + ex.text());
@@ -3969,30 +4147,279 @@ void ns_run_startup_routines() {
 		ns_worm_browser_output_debug(__LINE__, __FILE__, "Setting svm model specification");
 		worm_learner.set_svm_model_specification(worm_learner.model_specifications[0]);
 	}
+	if (worm_learner.running_as_gui) {
+		ns_worm_browser_output_debug(__LINE__, __FILE__, "Setting current experiment");
+		//image_server.set_sql_database("image_server_archive_2017", false, &worm_learner.get_sql_connection());
+		get_menu_handler()->update_experiment_choice(*get_menu_bar());
+		//worm_learner.data_selector.set_current_experiment(109, worm_learner.get_sql_connection());
+		//get_menu_handler()->show_extra_menus("");
+		//worm_learner.data_selector.set_current_experiment(77, worm_learner.get_sql_connection());
+		update_region_choice_menu();
+		update_strain_choice_menu();
+		update_exclusion_choice_menu();
+		ns_update_main_information_bar("");
 
-	ns_worm_browser_output_debug(__LINE__, __FILE__, "Setting current experiment");
-	//image_server.set_sql_database("image_server_archive_2017", false, &worm_learner.get_sql_connection());
-	get_menu_handler()->update_experiment_choice(*get_menu_bar());
-	//worm_learner.data_selector.set_current_experiment(109, worm_learner.get_sql_connection());
-	//get_menu_handler()->show_extra_menus("");
-	//worm_learner.data_selector.set_current_experiment(77, worm_learner.get_sql_connection());
-	update_region_choice_menu();
-	update_strain_choice_menu();
-	update_exclusion_choice_menu();
-	ns_update_main_information_bar("");
+		ns_worm_browser_output_debug(__LINE__, __FILE__, "Setting default sample and region");
+		worm_learner.data_gui_selector.select_default_sample_and_region();
+		//worm_learner.data_selector.select_region("azure_a::3");
+	//	worm_learner.data_selector.select_region("ken_a::3");
 
-	ns_worm_browser_output_debug(__LINE__, __FILE__, "Setting default sample and region");
-	worm_learner.data_selector.select_default_sample_and_region();
-	//worm_learner.data_selector.select_region("azure_a::3");
-//	worm_learner.data_selector.select_region("ken_a::3");
+		ns_worm_browser_output_debug(__LINE__, __FILE__, "Updating information bar");
+		main_window->update_information_bar();
 
-	ns_worm_browser_output_debug(__LINE__, __FILE__, "Updating information bar");
-	main_window->update_information_bar();
-
+	}
 	
 }
+void write_commandline_usage(const ns_worm_terminal_main_menu_organizer & organizer) {
+	cout << "usage: ns_worm_browser [command] [database::experiment::sample::plate] -i [input_file] -o [output_file] -f [flag]\n";
+	cout << "Database, sample, and plate specifications are optional.  Multiple subjects can be specified.\n";
+	cout << "Available Commands:\n";
+	organizer.output_possible_actions(cout);
+	cout << "\n";
+}
+bool ns_parse_commandline_subject(const std::string& subject, ns_image_server_results_subject & sub, ns_sql & sql, ns_ex & err) {
+	std::vector<std::string> s;
+	s.reserve(4);
+	s.resize(1);
+	int num_colons(0);
+	//split the string
+	for (unsigned int i = 0; i < subject.size(); i++) {
+		const bool colon = subject[i] == ':';
+		switch (num_colons) {
+		case 0:
+			if (!colon)
+				(*s.rbegin()) += subject[i]; 
+			break;
+		case 1: break;
+			if (!colon)
+				err = ns_ex("Invalid subject: ") << subject << ".  Must be in the format database::experiment::sample::plate .  Database, sample, and plate specifications are optional.";
+			return false;
+		case 2: 
+			if (colon) {
+				err = ns_ex("Invalid subject: ") << subject << ".  Must be in the format database::experiment::sample::plate .  Database, sample, and plate specifications are optional.";
+				return false;
+			}
+			else {
+				s.resize(s.size() + 1);
+				(*s.rbegin()) += subject[i]; 
+				num_colons = 0; break;
+			}
+		}
+		if (colon) num_colons++;
+	}
+	if (num_colons != 0) {
+		err = ns_ex("Invalid subject: ") << subject << ".  Must be in the format database::experiment::sample::plate .  Database, sample, and plate specifications are optional.";
+		return false;
+	}
 
-int main() {
+	const std::string* database(0), * experiment(0), * sample(0), * plate(0);
+	switch(s.size()){
+	case 1:
+		experiment = &s[0]; break;
+	case 2:
+		database = &s[0];
+		experiment = &s[1];
+		break;
+	case 3:
+		experiment = &s[0];
+		sample = &s[1];
+		plate = &s[2];
+		break;
+	case 4:
+		database = &s[0];
+		experiment = &s[1];
+		sample = &s[2];
+		plate = &s[3];
+		break;
+	default:
+		err = ns_ex("Invalid subject: ") << subject << ".  Must be in the format database::experiment::sample::region .  Database, experiment, sample, and plate specifications are optional.";
+		return false;
+	}
+	//validate subject
+	if (database != 0 || experiment != 0) {
+		sql << "SHOW DATABASES";
+		ns_sql_result res;
+		sql.get_rows(res);
+		bool database_found = false;
+		bool experiment_is_database = false;
+		for (unsigned i = 0; i < res.size(); i++) {
+			if (database!=0 && res[i][0] == *database) {
+				database_found = true;
+				break;
+			}
+			//the user has specified only a database
+			if (experiment != 0 && res[i][0] == *experiment) {
+				database = experiment;
+				experiment = 0;
+				database_found = true;
+				experiment_is_database = true;
+				break;
+			}
+		}
+
+		if (!database_found) {
+			if (database != 0) {
+				err = ns_ex("Could not find specified database '") << *database << "'";
+				return false;
+			}
+			else
+				sub.database_name.resize(0);
+		}
+		else sub.database_name = *database;
+	}
+	else sub.database_name.resize(0);
+	ns_select_database_for_scope db("", sql);
+	if (database != 0) 
+		db.select(*database);
+	
+	if (experiment != 0) {
+		sql << "SELECT id FROM experiments WHERE name = '" << sql.escape_string(*experiment) << "'";
+		ns_sql_result res;
+		sql.get_rows(res);
+		if (res.size() != 1) {
+			err = ns_ex("Could not find experiment '") << *experiment << "'";
+			return false;
+		}
+		sub.experiment_name = *experiment;
+		sub.experiment_id = ns_atoi64(res[0][0].c_str());
+	}
+	else {
+		sub.experiment_id = 0;
+		sub.experiment_name.resize(0);
+	}
+	if (sample != 0 && plate == 0 || sample == 0 && plate != 0) {
+		err = ns_ex("Neither the sample nor region names can be specified without one another");
+		return false;
+	}
+	if (plate != 0) {
+		if (experiment != 0) {
+			err = ns_ex("Regions cannot be specified without the experiment name.");
+			return false;
+		}
+
+		sql << "SELECT s.id, r.id FROM experiments as e, capture_samples as s, sample_region_image_info as r WHERE "
+			"e.name = '" << sql.escape_string(*experiment)
+			<< "' AND s.name =' " << sql.escape_string(*sample)
+			<< "' AND r.name = " << sql.escape_string(*plate)
+			<< "' AND s.experiment_id = e.id AND r.sample_id = s.id";
+		ns_sql_result res;
+		sql.get_rows(res);
+		if (res.size() != 1) {
+			err = ns_ex("Could not find region '") << *sample << "::" << *plate << " in experiment " << *experiment << " in database " << sql.database();
+			return false;
+		}
+		sub.sample_name = *sample;
+		sub.sample_id = ns_atoi64(res[0][0].c_str());
+		sub.region_name = *plate;
+		sub.region_id = ns_atoi64(res[0][1].c_str());
+	} 
+	else {
+		sub.sample_id = sub.region_id = 0;
+		sub.sample_name.resize(0);
+		sub.region_name.resize(0);
+	}
+	err = ns_ex();
+	return true;
+}
+
+void ns_process_commandline_arguments(const int argc,  char** argv, ns_browser_command_subject_set& subjects,ns_sql & sql) {
+	subjects.reserve(10);
+	std::string cur_output_file, cur_flag;
+	unsigned long number_of_output_files_specified(0), number_of_flags_specified(0);
+	for (unsigned int i = 2; i < argc; ){
+		const std::string arg(argv[i]);
+		if (arg == "-o") {
+			if (i + 1 == argc)
+				throw ns_ex("-o specified with no argument.");
+			if (subjects.empty())
+				throw ns_ex("A subject or input file must be specified before the -o argument.");
+			subjects.rbegin()->output_file = cur_output_file = argv[i + 1];
+			if (!ns_dir::file_is_writeable(cur_output_file))
+				throw ns_ex("Could not write to output file ") << cur_output_file;
+			i += 2;
+			number_of_output_files_specified++;
+			
+			continue;
+		}
+		if (arg == "-i") {
+			if (i + 1 == argc)
+				throw ns_ex("-i specified with no argument.");
+			if (subjects.empty()) 
+				subjects.resize(1);
+			subjects.rbegin()->input_file = argv[i + 1];
+			if (!ns_dir::file_exists(argv[i + 1]))
+				throw ns_ex("Could not open input file ") << argv[i + 1];
+			i += 2;
+			continue;
+		}
+		if (arg == "-f") {
+			if (i + 1 == argc)
+				throw ns_ex("-f specified with no argument.");
+			if (subjects.empty())
+				throw ns_ex("A subject or input file must be specified before the -f argument.");
+			subjects.rbegin()->flag = cur_flag = argv[i + 1];
+			i += 2;
+			number_of_flags_specified++;
+			continue;
+		}
+		subjects.resize(subjects.size() + 1);
+		ns_ex err;
+		const bool is_subject(ns_parse_commandline_subject(arg, subjects.rbegin()->subject, sql, err));
+		if (is_subject) {
+			++i;
+			continue;
+		}
+		throw err;
+	}
+	if (number_of_output_files_specified == 1)
+		for (unsigned int i = 0; i < subjects.size(); i++)
+			subjects[i].output_file = cur_output_file;
+
+	if (number_of_flags_specified == 1)
+		for (unsigned int i = 0; i < subjects.size(); i++)
+			subjects[i].flag = cur_flag;
+}
+
+int main(int argc, char** argv) {
+	if (argc > 1)
+		worm_learner.running_as_gui = false;
+	if (!worm_learner.running_as_gui) {
+		try {
+			ns_run_startup_routines();
+
+			ns_worm_terminal_main_menu_organizer menu_organizer;
+			//remove formatting characters that make pretty menus, so we can search the raw text.
+			menu_organizer.strip_text_decorations();
+			
+			std::string command(argv[1]);
+			if (command == "help") {
+				write_commandline_usage(menu_organizer);
+				return 0;
+			}
+			ns_browser_command_subject_set subject_set;
+			ns_sql& sql(worm_learner.get_sql_connection());
+			ns_process_commandline_arguments(argc, argv, subject_set, sql);
+			try {
+				menu_organizer.dispatch_request(subject_set, command);
+			}
+			catch (ns_ex & ex) {
+				std::cout << "Error: " << ex.text() << "\n";
+				write_commandline_usage(menu_organizer);
+				return 1;
+			}
+		}
+
+		catch (ns_ex & ex) {
+			cerr << "Error: " << ex.text() << "\n";
+			for (unsigned int i = 0; i < 5; i++) {
+				cerr << (5 - i) << "...";
+				ns_thread::sleep(2);
+			}
+			return 1;
+		}
+		return 0;
+	}
+
 	main_window = new ns_worm_terminal_main_window(1000, 1000, "Worm Browser");
 	worm_window = new ns_worm_terminal_worm_window(100, 100, "Inspect Worm");
 	stats_window = new ns_worm_terminal_stats_window(100, 100, "Population Statistics");
@@ -4068,6 +4495,7 @@ int main() {
 		mw_lock.release();
 	}
 	catch(ns_ex & ex){
+		cout << ex.text() << "\n";
 		ns_alert_dialog d;
 		d.text = ex.text();
 		d.act();
@@ -4356,7 +4784,7 @@ void ns_quit(){
 }
 
 
-void ns_worm_terminal_main_menu_organizer::show_extra_menus(const std::string & value) {
+void ns_worm_terminal_main_menu_organizer::show_extra_menus(const ns_browser_command_subject_set& subject, const std::string & value) {
 	worm_learner.show_testing_menus = !worm_learner.show_testing_menus;
 
 

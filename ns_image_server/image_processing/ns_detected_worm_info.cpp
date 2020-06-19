@@ -2056,13 +2056,16 @@ void ns_image_worm_detection_results::load_from_db_internal(const bool load_worm
 			in.attach(image_server.image_storage.request_metadata_from_disk(data_storage_on_disk,true,&sql,true));
 		}
 		catch(...){
+			std::string column = "worm_detection_results";
+			if (images_comes_from_interpolated_annotations)
+				column = "worm_interpolation_results_id";
 			if (delete_from_db_on_error){
 				sql << "UPDATE sample_region_images SET " << ns_processing_step_db_column_name(	ns_process_worm_detection) << "=0,"
 					<< ns_processing_step_db_column_name(ns_process_worm_detection_labels) << "=0,"
 					<< ns_processing_step_db_column_name(ns_process_worm_detection_with_graph) << "=0,"
 					<< ns_processing_step_db_column_name(ns_process_region_vis) << "=0,"
 					<< ns_processing_step_db_column_name(ns_process_region_interpolation_vis) << "=0,"
-					<< "worm_detection_results_id = 0 WHERE id = " << source_image_id;
+					<< column << " = 0 WHERE id = " << source_image_id;
 				sql.send_query();
 				sql << "DELETE FROM worm_detection_results WHERE id = " << detection_results_id;
 				sql.send_query();

@@ -99,6 +99,7 @@ void ns_sql_connection::select_db(const std::string & db_name){
   ns_acquire_lock_for_scope lock(get_lock(__FILE__, __LINE__));
   if (mysql_select_db(&mysql,db_name.c_str()))
     throw ns_ex() << "ns_sql_connection::Could not select database: " << db_name << ns_sql_fatal;
+  _database = db_name;
   lock.release();
 }
 

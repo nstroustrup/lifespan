@@ -5,7 +5,7 @@
 #include "ns_threshold_and_hmm_posture_analyzer.h"
 #include "GMM.h"
 	
-#define NS_HMM_VERSION "2.4"
+#define NS_HMM_VERSION "2.5"
 
 typedef ns_emission_probabiliy_gaussian_diagonal_covariance_model ns_emission_probability_model_to_use;
 //typedef ns_emission_probabiliy_independent_gaussian_model ns_emission_probability_model_to_use;
@@ -26,7 +26,6 @@ double inline ns_truncate_negatives(const double & d){
 
 void ns_hmm_solver::solve(const ns_analyzed_image_time_path & path, const ns_emperical_posture_quantification_value_estimator & estimator,
 	std::vector<double > & tmp_storage_1, std::vector<unsigned long > & tmp_storage_2) {
-	ns_time_path_posture_movement_solution solution;
 	bool found_start_time(false);
 	unsigned long start_time_i(0);
 	const unsigned long first_stationary_timepoint = path.first_stationary_timepoint();
@@ -47,6 +46,7 @@ void ns_hmm_solver::solve(const ns_analyzed_image_time_path & path, const ns_emp
 	if (first_stationary_timepoint_index == -1)
 		first_stationary_timepoint_index = 0;
 	std::vector<ns_hmm_state_transition_time_path_index > movement_transitions;
+	movement_state_solution = ns_time_path_posture_movement_solution();
 	movement_state_solution.loglikelihood_of_solution = run_viterbi(path, estimator, path_indices, movement_transitions, tmp_storage_1, tmp_storage_2);
 	build_movement_state_solution_from_movement_transitions(first_stationary_timepoint_index,path_indices, movement_transitions);
 }
@@ -165,26 +165,34 @@ void ns_hmm_solver::solve(const ns_analyzed_image_time_path & path, const ns_emp
 void ns_forbid_requested_hmm_states(const ns_emperical_posture_quantification_value_estimator & e, const unsigned long offset, std::vector<char > & forbidden) {
 
 	switch (e.states_permitted()) {
-		case ns_emperical_posture_quantification_value_estimator::ns_all_states: break;
-		case ns_emperical_posture_quantification_value_estimator::no_expansion_while_alive_nor_contraction:
+		case ns_all_states_permitted: break;
+		case no_expansion_while_alive_nor_contraction:
 			forbidden[offset + ns_hmm_contracting_post_expansion] = 1; //deliberate readthrough
-		case ns_emperical_posture_quantification_value_estimator::ns_no_expansion_while_alive:
+		case ns_no_expansion_while_alive:
 			forbidden[offset + ns_hmm_moving_weakly_expanding] = 1;
 			forbidden[offset + ns_hmm_moving_weakly_post_expansion] = 1; break;
-		case ns_emperical_posture_quantification_value_estimator::ns_no_expansion_nor_contraction:
+		case ns_no_expansion_nor_contraction:
 			forbidden[offset + ns_hmm_moving_weakly_expanding] = 1;
 			forbidden[offset + ns_hmm_moving_weakly_post_expansion] = 1;
 			forbidden[offset + ns_hmm_not_moving_expanding] = 1;	//deliberate case readthrough
-		case ns_emperical_posture_quantification_value_estimator::ns_no_post_expansion_contraction:
+		case ns_no_post_expansion_contraction:
 			forbidden[offset + ns_hmm_contracting_post_expansion] = 1; break;
+		case ns_require_movement_expansion_synchronicity:
+			forbidden[offset + ns_hmm_moving_weakly_expanding] = 1;
+			forbidden[offset + ns_hmm_moving_weakly_post_expansion] = 1; 
+			forbidden[offset + ns_hmm_not_moving_alive] = 1; break;
+		default: throw ns_ex("Invalid state permission flag: ") << (int)e.states_permitted();
 	}
 }
 
-double ns_hmm_solver::run_viterbi(const ns_analyzed_image_time_path & path, const ns_emperical_posture_quantification_value_estimator & estimator, const std::vector<unsigned long> path_indices,
+double ns_hmm_solver::run_viterbi(const ns_analyzed_image_time_path & path, const ns_emperical_posture_quantification_value_estimator & estimator, const std::vector<unsigned long> &path_indices,
 	std::vector<ns_hmm_state_transition_time_path_index > &movement_transitions, std::vector<double > & probabilitiy_of_path, std::vector<unsigned long > & previous_state) {
 	const int number_of_states((int)ns_hmm_unknown_state);
 	std::vector<std::vector<double> > state_transition_matrix;
 	build_state_transition_matrix(estimator, state_transition_matrix);
+	//std::ofstream out("c:\\server\\state_transition_dot.txt");
+	//output_state_transition_matrix(state_transition_matrix, out);
+	//out.close();
 	for (unsigned int i = 0; i < state_transition_matrix.size(); i++)
 		for (unsigned int j = 0; j < state_transition_matrix[i].size(); j++)
 			state_transition_matrix[i][j] = log(state_transition_matrix[i][j]);
@@ -209,6 +217,7 @@ double ns_hmm_solver::run_viterbi(const ns_analyzed_image_time_path & path, cons
 		std::vector<double> renormalization_factors(nobs,0);
 		previous_state.resize(0);
 		previous_state.resize(nobs*mstat, 0);
+		path_forbidden.resize(0);
 		path_forbidden.resize(nobs*mstat, 0);
 		
 		std::vector<double> emission_log_probabilities;
@@ -217,6 +226,7 @@ double ns_hmm_solver::run_viterbi(const ns_analyzed_image_time_path & path, cons
 		path_forbidden[ns_hmm_contracting_post_expansion] = 1; //do not allow animals to start as contracting post-expansion.  They can only start weakly /pre-expansion/ if the expansion was not observed!
 		if (!allow_weakly) path_forbidden[ns_hmm_moving_weakly] = 1;
 		ns_forbid_requested_hmm_states(estimator, 0, path_forbidden);
+
 		
 		if (first_appearance_id == 0) //if the animal is present in the first frame, disallow "missing"
 			emission_log_probabilities[ns_hmm_missing] = 0;
@@ -260,7 +270,8 @@ double ns_hmm_solver::run_viterbi(const ns_analyzed_image_time_path & path, cons
 				max_prev_i = 0;
 				bool found_valid = false;
 				for (i = 0; i < mstat; i++) {
-					if (state_transition_matrix[i][j] == 0 || !std::isfinite(emission_log_probabilities[j]) || path_forbidden[mstat*(t - 1) + i])
+					//was a bug here, state_transition_matrix[i][j]==0, causing problems all allong?  
+					if (!std::isfinite(state_transition_matrix[i][j])  || !std::isfinite(emission_log_probabilities[j]) || path_forbidden[mstat*(t - 1) + i])
 						continue;
 					//calculate probability of moving from state i at time t-1 to state j now
 					const double cur = probabilitiy_of_path[mstat*(t - 1)+i] + state_transition_matrix[i][j] + emission_log_probabilities[j];
@@ -332,13 +343,14 @@ double ns_hmm_solver::run_viterbi(const ns_analyzed_image_time_path & path, cons
 	if (optimal_path_state.empty())
 		throw ns_ex("Empty path state!");
 	//now find transition of times between states
+	movement_transitions.resize(0);
 	movement_transitions.push_back(ns_hmm_state_transition_time_path_index((ns_hmm_movement_state)optimal_path_state[0], 0));
 	for (unsigned int i = 1; i < optimal_path_state.size(); i++) {
 		const ns_hmm_movement_state s = (ns_hmm_movement_state)optimal_path_state[i];
 		if (s != movement_transitions.rbegin()->first)
 			movement_transitions.push_back(ns_hmm_state_transition_time_path_index(s, i));
 	}
-	if (0 && movement_transitions.size() >= 2 && movement_transitions[0].first == ns_hmm_missing && movement_transitions[1].first == ns_hmm_moving_weakly_post_expansion) {
+	if (0 && movement_transitions.size() == 1) {
 		std::ofstream out("c:\\server\\dbg.csv");
 		out << "t,R";
 		for (unsigned int j = 0; j < mstat; j++)
@@ -401,7 +413,9 @@ void ns_hmm_solver::build_movement_state_solution_from_movement_transitions(cons
 				movement_state_solution.moving.skipped = false;
 				movement_state_solution.moving.end_index = path_indices[movement_transitions[i].second];
 			}
-			else movement_state_solution.moving.skipped = true;
+			else 
+				movement_state_solution.moving.skipped = true;
+			
 			m = ns_movement_slow;
 			movement_state_solution.slowing.start_index = path_indices[movement_transitions[i].second];
 			movement_state_solution.slowing.end_index = *path_indices.rbegin();
@@ -413,10 +427,13 @@ void ns_hmm_solver::build_movement_state_solution_from_movement_transitions(cons
 			movement_transitions[i].first != ns_hmm_moving_weakly_post_expansion)) {
 			if (path_indices[movement_transitions[i].second] != movement_state_solution.slowing.start_index)
 				movement_state_solution.slowing.end_index = path_indices[movement_transitions[i].second];
-			else movement_state_solution.slowing.skipped = true;
+			else {
+				movement_state_solution.slowing.end_index = movement_state_solution.slowing.start_index = 0;
+				movement_state_solution.slowing.skipped = true;
+			}
 			m = ns_movement_stationary;
-			movement_state_solution.dead.start_index = path_indices[movement_transitions[i].second];
-			movement_state_solution.dead.end_index = *path_indices.rbegin();
+				movement_state_solution.dead.start_index = path_indices[movement_transitions[i].second];
+				movement_state_solution.dead.end_index = *path_indices.rbegin();
 			movement_state_solution.dead.skipped = movement_state_solution.dead.start_index == movement_state_solution.dead.end_index;
 		}
 		//now we handle expansions
@@ -424,7 +441,6 @@ void ns_hmm_solver::build_movement_state_solution_from_movement_transitions(cons
 		case 0:
 			if (movement_transitions[i].first == ns_hmm_moving_weakly_expanding ||
 				movement_transitions[i].first == ns_hmm_not_moving_expanding) {
-				movement_state_solution.expanding.skipped = false;
 				movement_state_solution.expanding.start_index = path_indices[movement_transitions[i].second];
 				movement_state_solution.expanding.end_index = *path_indices.rbegin();
 				movement_state_solution.expanding.skipped = movement_state_solution.expanding.start_index == movement_state_solution.expanding.end_index;
@@ -461,7 +477,6 @@ void ns_hmm_solver::build_movement_state_solution_from_movement_transitions(cons
 			if (movement_transitions[i].first == ns_hmm_contracting_post_expansion) {
 				//if (expanding_state == 0)
 				//	throw ns_ex("Encountered a contracting animal that had not first expanded.");
-				movement_state_solution.post_expansion_contracting.skipped = false;
 				movement_state_solution.post_expansion_contracting.start_index = path_indices[movement_transitions[i].second];
 				movement_state_solution.post_expansion_contracting.end_index = *path_indices.rbegin();
 				movement_state_solution.post_expansion_contracting.skipped = movement_state_solution.post_expansion_contracting.start_index == movement_state_solution.post_expansion_contracting.end_index;
@@ -482,13 +497,38 @@ void ns_hmm_solver::build_movement_state_solution_from_movement_transitions(cons
 			throw ns_ex("Failure to die after contraction");
 		}
 	}
+	//zero out for neatness.  These values shouldn't be used, but leaving them set can be confusing during debugging.
+	if (movement_state_solution.moving.skipped)
+		movement_state_solution.moving.start_index = movement_state_solution.moving.end_index = 0;
+	if (movement_state_solution.slowing.skipped)
+		movement_state_solution.slowing.start_index = movement_state_solution.slowing.end_index = 0;
+	if (movement_state_solution.dead.skipped)
+		movement_state_solution.dead.start_index = movement_state_solution.dead.end_index = 0;
+	if (movement_state_solution.expanding.skipped)
+		movement_state_solution.expanding.start_index = movement_state_solution.expanding.end_index = 0;
+	if (movement_state_solution.post_expansion_contracting.skipped)
+		movement_state_solution.post_expansion_contracting.start_index = movement_state_solution.post_expansion_contracting.end_index = 0;
 
 	//if (movement_transitions.size() == 1)
 	//	std::cerr << "Singleton transition encountered\n";
 }
 
+
+void ns_hmm_solver::output_state_transition_matrix(const std::vector<std::vector<double> >& m, std::ostream& o) {
+	o << "digraph state_transition_matrix {\n";
+	o << "forcelabels=true;\n";
+	for (unsigned int i = 0; i < m.size(); i++) 
+		o << "a_" << i << " [label=\"" << ns_hmm_movement_state_to_string((ns_hmm_movement_state)i) << "\"];\n";
+	
+	for (unsigned int i = 0; i < m.size(); i++) {
+		for (unsigned int j = 0; j < m[i].size(); j++)
+			if (m[i][j] != 0)
+				o << "a_" << i << " -> " << "a_" << j << " [label=\"" << ns_to_string_scientific(m[i][j]) << "\"];\n";
+	}
+	o << "}";
+}
 //m[i][j] is the log probabilitiy that an individual in state i transitions to state j.
-void ns_hmm_solver::build_state_transition_matrix(const ns_emperical_posture_quantification_value_estimator & estimator, std::vector<std::vector<double> > & m) {
+void ns_hmm_solver::build_state_transition_matrix(const ns_emperical_posture_quantification_value_estimator & estimator, std::vector<std::vector<double> > & m)  {
 	m.resize((int)ns_hmm_unknown_state);
 
 	const double penalized_transition = 1e-5;
@@ -502,12 +542,18 @@ void ns_hmm_solver::build_state_transition_matrix(const ns_emperical_posture_qua
 	std::set<ns_hmm_movement_state> defined_states;
 	estimator.defined_states(defined_states);
 	const bool allow_weakly = defined_states.find(ns_hmm_moving_weakly) != defined_states.end();
+//	ns_all_states_permitted, ns_no_post_expansion_contraction, ns_no_expansion_while_alive, no_expansion_while_alive_nor_contraction, ns_no_expansion_nor_contraction, ns_require_movement_expansion_synchronicity, ns_number_of_state_settings
 
-	const bool allow_expansion = estimator.states_permitted() != ns_emperical_posture_quantification_value_estimator::ns_no_expansion_nor_contraction;
-	const bool all_expansion_while_alive = (estimator.states_permitted() != ns_emperical_posture_quantification_value_estimator::ns_no_expansion_while_alive &&
+
+
+	const bool allow_expansion = estimator.states_permitted() != ns_no_expansion_nor_contraction;
+	const bool all_expansion_while_alive = (estimator.states_permitted() != ns_no_expansion_while_alive && 
+											estimator.states_permitted() != ns_require_movement_expansion_synchronicity &&
+											estimator.states_permitted() != no_expansion_while_alive_nor_contraction &&
 										 allow_expansion && allow_weakly);
-	const bool allow_contraction = allow_expansion && estimator.states_permitted() != ns_emperical_posture_quantification_value_estimator::ns_no_post_expansion_contraction;
+	const bool allow_contraction = allow_expansion && estimator.states_permitted() != ns_no_post_expansion_contraction;
 
+	const bool allow_not_moving_alive = estimator.states_permitted() != ns_require_movement_expansion_synchronicity;
 
 
 	//if there are any loops anywhere here, the approach will not function
@@ -517,7 +563,8 @@ void ns_hmm_solver::build_state_transition_matrix(const ns_emperical_posture_qua
 	if (allow_weakly) m[ns_hmm_missing][ns_hmm_moving_weakly] = 1;
 	if (all_expansion_while_alive) m[ns_hmm_missing][ns_hmm_moving_weakly_expanding] = 1;
 	if (allow_expansion) {
-		m[ns_hmm_missing][ns_hmm_not_moving_alive] = 1;
+		if (allow_not_moving_alive)
+			m[ns_hmm_missing][ns_hmm_not_moving_alive] = 1;
 		m[ns_hmm_missing][ns_hmm_not_moving_expanding] = 1;
 	}
 	m[ns_hmm_missing][ns_hmm_not_moving_dead] = penalized_transition;	//we penalize any path that skips death time expansion
@@ -525,7 +572,8 @@ void ns_hmm_solver::build_state_transition_matrix(const ns_emperical_posture_qua
 	if (all_expansion_while_alive) m[ns_hmm_moving_vigorously][ns_hmm_moving_weakly_expanding] = 1;
 	m[ns_hmm_moving_vigorously][ns_hmm_moving_weakly] = 1;
 	if (allow_expansion) {
-		m[ns_hmm_moving_vigorously][ns_hmm_not_moving_alive] = 1;
+		if (allow_not_moving_alive)
+			m[ns_hmm_moving_vigorously][ns_hmm_not_moving_alive] = 1;
 		m[ns_hmm_moving_vigorously][ns_hmm_not_moving_expanding] = 1;
 	}
 	m[ns_hmm_moving_vigorously][ns_hmm_not_moving_dead] = penalized_transition;
@@ -534,7 +582,8 @@ void ns_hmm_solver::build_state_transition_matrix(const ns_emperical_posture_qua
 	if (allow_weakly){
 		m[ns_hmm_moving_weakly][ns_hmm_not_moving_dead] = allow_expansion ? penalized_transition : 1;
 		if (allow_expansion) {
-			m[ns_hmm_moving_weakly][ns_hmm_not_moving_alive] = 1;
+			if (allow_not_moving_alive)
+				m[ns_hmm_moving_weakly][ns_hmm_not_moving_alive] = 1;
 			m[ns_hmm_moving_weakly][ns_hmm_not_moving_expanding] = 1;
 		}
 		if (allow_contraction)
@@ -561,10 +610,12 @@ void ns_hmm_solver::build_state_transition_matrix(const ns_emperical_posture_qua
 		m[ns_hmm_not_moving_expanding][ns_hmm_contracting_post_expansion] = 1;
 		if (allow_contraction) {
 			m[ns_hmm_contracting_post_expansion][ns_hmm_not_moving_dead] = 1;
-			m[ns_hmm_not_moving_alive][ns_hmm_contracting_post_expansion] = 1;
+			if (allow_not_moving_alive)
+				m[ns_hmm_not_moving_alive][ns_hmm_contracting_post_expansion] = 1;
 		}
-		m[ns_hmm_not_moving_alive][ns_hmm_not_moving_expanding] = 1;
-		m[ns_hmm_not_moving_alive][ns_hmm_not_moving_dead] = penalized_transition;
+		if (allow_not_moving_alive)
+			m[ns_hmm_not_moving_alive][ns_hmm_not_moving_expanding] = 1;
+			m[ns_hmm_not_moving_alive][ns_hmm_not_moving_dead] = penalized_transition;
 	}
 
 
@@ -584,6 +635,7 @@ void ns_hmm_solver::build_state_transition_matrix(const ns_emperical_posture_qua
 		unsigned int sum = 0;
 		for (unsigned int j = 0; j < (int)ns_hmm_unknown_state; j++)
 			sum += m[i][j];
+		if (sum != 0)
 		for (unsigned int j = 0; j < (int)ns_hmm_unknown_state; j++)
 			m[i][j] = m[i][j] / (double)sum;
 	}
@@ -703,6 +755,7 @@ bool operator==(const GMM & a, const GMM & b) {
 		if (!ns_double_equal(a.Prior(i),b.Prior(i))) {
 			std::cerr << "Prior " << i << " doesn't match\n";
 			double q = fabs(a.Prior(i) / b.Prior(i) - 1);
+			std::cerr << q << "\n";
 			return false;
 		}
 		const double *am = a.Mean(i),
@@ -891,7 +944,8 @@ struct ns_intensity_accessor_4x : public ns_measurement_accessor {
 
 struct ns_movement_accessor : public ns_measurement_accessor {
 	const double operator()(const ns_analyzed_image_time_path_element_measurements & e) const {
-		const double d = e.death_time_posture_analysis_measure_v2_cropped()+1;
+		//this defines the movement score used by the HMM model!
+		const double d = e.death_time_posture_analysis_measure_v2_uncropped()+.1;
 		if (d <= 0) return -DBL_MAX;
 		return log(d);
 	}
@@ -1175,21 +1229,24 @@ public:
 			throw ns_ex("number_of_dimensions is not set correctly");
 	}
 	static double* training_data_buffer;
-	static unsigned long training_data_bufrer_size;
+	static unsigned long training_data_buffer_size;
 	static ns_lock training_data_buffer_lock;
-	void build_from_data(const std::vector<ns_hmm_emission>& observations) {
+	void build_from_data(const std::vector<const std::vector<ns_hmm_emission> * > & observations) {
+		unsigned long N(0);
+		for (unsigned int i = 0; i < observations.size(); i++)
+			N += observations[i]->size();
 
-
-		if (observations.size() < number_of_gaussians) {
+		if (N < number_of_gaussians) {
 			//calculate means
 			double means[number_of_dimensions];
 			for (unsigned int d = 0; d < number_of_dimensions; d++)
 				means[d] = 0;
 			for (unsigned int i = 0; i < observations.size(); i++)
-				for (unsigned int d = 0; d < number_of_dimensions; d++)
-					means[d] += (*dimensions[d].measurement_accessor)(observations[i]);
+				for (unsigned int j = 0; j < observations[i]->size(); j++)
+					for (unsigned int d = 0; d < number_of_dimensions; d++)
+						means[d] += (*dimensions[d].measurement_accessor)((*observations[i])[j]);
 			for (unsigned int d = 0; d < number_of_dimensions; d++)
-				means[d] /= observations.size();
+				means[d] /= N;
 
 			for (unsigned int i = 0; i < number_of_gaussians; i++) {
 				gmm.setPrior(i, i == 0);	//only use 1 gaussian
@@ -1199,27 +1256,34 @@ public:
 			return;
 		}
 		ns_acquire_lock_for_scope lock(training_data_buffer_lock,__FILE__,__LINE__);
-		if (training_data_bufrer_size < number_of_dimensions * observations.size()) {
+		if (training_data_buffer_size < number_of_dimensions * N) {
 			delete[] training_data_buffer;
 			training_data_buffer = 0;
-			training_data_bufrer_size = 0;
+			training_data_buffer_size = 0;
 		}
 		if (training_data_buffer == 0) {
-			training_data_buffer = new double[number_of_dimensions * observations.size()];
-			training_data_bufrer_size = number_of_dimensions * observations.size();
+			training_data_buffer_size = number_of_dimensions * N;
+			training_data_buffer = new double[training_data_buffer_size];
 		}
-		
+		unsigned ij = 0;
 		for (unsigned long i = 0; i < observations.size(); i++) {
-			for (unsigned int d = 0; d < number_of_dimensions; d++)
-				training_data_buffer[number_of_dimensions * i + d] = (*dimensions[d].measurement_accessor)(observations[i]);
+			for (unsigned int j = 0; j < observations[i]->size(); j++) {
+				for (unsigned int d = 0; d < number_of_dimensions; d++)
+					training_data_buffer[number_of_dimensions * (ij)+d] = (*dimensions[d].measurement_accessor)((*observations[i])[j]);
+				ij++;
+			}
 		}
 		//gmm.SetMaxIterNum(1e6);
 		//gmm.SetEndError(1e-5);
-		gmm.Train(training_data_buffer, observations.size());
+		gmm.Train(training_data_buffer, N);
 		lock.release();
 		double sum_of_weights = 0;
-		for (unsigned int i = 0; i < number_of_gaussians; i++)
+		for (unsigned int i = 0; i < number_of_gaussians; i++) {
 			sum_of_weights += gmm.Prior(i);
+
+			if (isnan(gmm.Prior(i)))
+				throw ns_ex("GMM problem");
+		}
 
 		if (abs(sum_of_weights - 1) > 0.01)
 			throw ns_ex("GMM problem");
@@ -1355,7 +1419,7 @@ public:
 		return true;
 	}
 };
-unsigned long ns_emission_probabiliy_gaussian_diagonal_covariance_model::training_data_bufrer_size = 0;
+unsigned long ns_emission_probabiliy_gaussian_diagonal_covariance_model::training_data_buffer_size = 0;
 double* ns_emission_probabiliy_gaussian_diagonal_covariance_model::training_data_buffer = 0;
 ns_lock ns_emission_probabiliy_gaussian_diagonal_covariance_model::training_data_buffer_lock("tbl");
 
@@ -1441,6 +1505,15 @@ void ns_emperical_posture_quantification_value_estimator::log_probability_for_ea
 		d[p->first] = tmp;
 	}
 }
+
+void ns_emperical_posture_quantification_value_estimator::validate_model_settings(ns_sql& sql) const {
+	//any state not specified in the estimator will be removed from the transition matrix in build_transition_matrix().
+	if (!state_specified_by_model(ns_hmm_not_moving_alive))
+		image_server_const.register_server_event(ns_image_server_event("This model file does not have a not-moving-but-alive state specified. This means that animal's movement cessation and death-associated expansion are forced to be synchronous."), &sql);
+
+	if (!state_specified_by_model(ns_hmm_moving_weakly) || !state_specified_by_model(ns_hmm_not_moving_dead))
+		throw ns_ex("This model file does not have a moving weakly or dead state!");
+}
 void ns_emperical_posture_quantification_value_estimator::output_debug_info(const ns_analyzed_image_time_path_element_measurements & e, std::ostream & o) const {
 
 	for (auto p = emission_probability_models.begin(); p != emission_probability_models.end(); p++) {
@@ -1456,13 +1529,13 @@ void ns_emperical_posture_quantification_value_estimator::output_debug_info(cons
 }
 	
 
-void ns_emperical_posture_quantification_value_estimator::write_observation_data(std::ostream & out, const std::string & experiment_name) const {
+void ns_hmm_observation_set::write(std::ostream & out, const std::string & experiment_name) const {
 	out << "device_name,region_name,detection_set_id,group_id,path_id,data_type,time,hmm_movement_state,";
 	ns_analyzed_image_time_path_element_measurements::write_header(out);
 	out << "\n";
 	//first write normalization stats
 	out.precision(30);
-	for (std::map<ns_hmm_movement_state, std::vector<ns_hmm_emission> >::const_iterator p = observed_values.begin(); p != observed_values.end(); p++) {
+	for (std::map<ns_hmm_movement_state, std::vector<ns_hmm_emission> >::const_iterator p = obs.begin(); p != obs.end(); p++) {
 		for (unsigned int i = 0; i < p->second.size(); i++) {
 			out << *(p->second[i].device_name) << ","
 				<< *(p->second[i].region_name) << ","
@@ -1506,15 +1579,11 @@ void ns_emperical_posture_quantification_value_estimator::write_observation_data
 
 ns_emperical_posture_quantification_value_estimator::ns_emperical_posture_quantification_value_estimator() {}
 ns_emperical_posture_quantification_value_estimator::ns_emperical_posture_quantification_value_estimator(const ns_emperical_posture_quantification_value_estimator& a) {
-	normalization_stats = a.normalization_stats;
-	observed_values = a.observed_values;
 	for (auto p = a.emission_probability_models.begin(); p != a.emission_probability_models.end(); p++)
 		emission_probability_models.insert(emission_probability_models.begin(), std::map<ns_hmm_movement_state, ns_emission_probability_model_to_use*>::value_type(p->first, new ns_emission_probability_model_to_use(*p->second)));
 
 }
 ns_emperical_posture_quantification_value_estimator& ns_emperical_posture_quantification_value_estimator::operator=(const ns_emperical_posture_quantification_value_estimator& a) {
-	normalization_stats = a.normalization_stats;
-	observed_values = a.observed_values;
 	for (auto p = a.emission_probability_models.begin(); p != a.emission_probability_models.end(); p++)
 		emission_probability_models.insert(emission_probability_models.begin(), std::map<ns_hmm_movement_state, ns_emission_probability_model_to_use*>::value_type(p->first, new ns_emission_probability_model_to_use(*p->second)));
 	return *this;
@@ -1542,7 +1611,7 @@ void ns_emperical_posture_quantification_value_estimator::read(std::istream & i)
 				software_version_when_built = software_version_for_model;
 			else if (software_version_when_built != software_version_for_model)
 				throw ns_ex("Software version mismatch within model");
-			states_permitted_int = (ns_states_permitted)data;
+			states_permitted_int = (ns_hmm_states_permitted)data;
 
 			if (state == ns_hmm_unknown_state || i.fail()) {
 				if (emission_probability_models.size() < 2)
@@ -1569,7 +1638,7 @@ void ns_emperical_posture_quantification_value_estimator::write(std::ostream & o
 	}
 }
 
-void ns_emperical_posture_quantification_value_estimator::read_observation_data(std::istream & in){
+void ns_hmm_observation_set::read(std::istream & in){
 	std::string tmp, tmp2;
 	getline(in, tmp, '\n');
 	//read normalization stats
@@ -1619,7 +1688,7 @@ void ns_emperical_posture_quantification_value_estimator::read_observation_data(
 				break;
 			getline(in, tmp2, ','); //discard time column
 			ns_hmm_movement_state state(ns_hmm_movement_state_from_string(tmp));
-			std::vector<ns_hmm_emission> & observations = observed_values[state];
+			std::vector<ns_hmm_emission> & observations = obs[state];
 			observations.resize(observations.size() + 1);
 			ns_hmm_emission & e(*observations.rbegin());
 			e.path_id = id;
@@ -1633,78 +1702,84 @@ void ns_emperical_posture_quantification_value_estimator::read_observation_data(
 	}
 }
 
-void ns_emperical_posture_quantification_value_estimator::build_estimator_from_observations(std::string & output,const ns_states_permitted & states_permitted_) {
-	states_permitted_int = states_permitted_;
-	software_version_when_built = NS_HMM_VERSION;
+void ns_hmm_observation_set::clean_up_data_prior_to_model_fitting() {
 	//if the user hasn't explicitly labeled moving weakly post expansion,
 	//use the moving weakly pre expansion as a proxy.
-	if (states_permitted_ != ns_no_expansion_while_alive && states_permitted_ != no_expansion_while_alive_nor_contraction) {
-		if (observed_values.find(ns_hmm_moving_weakly_post_expansion) == observed_values.end()) {
-			observed_values[ns_hmm_moving_weakly_post_expansion] = observed_values[ns_hmm_moving_weakly];
-		}
-		else {
-			auto p = observed_values.find(ns_hmm_moving_weakly_post_expansion);
-			if (p->second.size() < 100)
-				p->second.insert(p->second.end(), observed_values[ns_hmm_moving_weakly].begin(), observed_values[ns_hmm_moving_weakly].end());
-
-		}
+	
 
 		//we mix together expansion annotations with and without animal movement.
 		//this removes any bias the machine has as to whether expansion happens before or after the final movement.
-		auto p_expansion_moving = observed_values.find(ns_hmm_moving_weakly_expanding);
-		auto p_expansion_not_moving = observed_values.find(ns_hmm_not_moving_expanding);
-		if (p_expansion_moving != observed_values.end() && p_expansion_not_moving != observed_values.end()) {
+		auto p_expansion_moving = obs.find(ns_hmm_moving_weakly_expanding);
+		auto p_expansion_not_moving = obs.find(ns_hmm_not_moving_expanding);
+		if (p_expansion_moving != obs.end() && p_expansion_not_moving != obs.end()) {
 			p_expansion_moving->second.insert(p_expansion_moving->second.end(), p_expansion_not_moving->second.begin(), p_expansion_not_moving->second.end());
 			p_expansion_not_moving->second = p_expansion_moving->second;
 		}
-	}
 	
+}
 
-	std::vector<unsigned long > state_counts((int)(ns_hmm_unknown_state), 0);
-	for (auto p = observed_values.begin(); p != observed_values.end(); p++) {
-		if (p->second.size() < 100) {
-			//output+= "Very few annotations were made for the state " + ns_hmm_movement_state_to_string(p->first) + ".  It will not be considered in the model.\n";
-			continue;
+void ns_emperical_posture_quantification_value_estimator::build_estimator_from_observations(const ns_hmm_observation_set& observation_set,std::string & output,const ns_hmm_states_permitted & states_permitted_) {
+	states_permitted_int = states_permitted_;
+	software_version_when_built = NS_HMM_VERSION;
+
+	//a list of observations for each state.
+	//because we mix and match these, we need to have a vector of vectors.
+	std::map<ns_hmm_movement_state, std::vector<const std::vector<ns_hmm_emission>* > > observations_sorted_by_state;
+	for (auto p = observation_set.obs.begin(); p != observation_set.obs.end(); p++)
+		observations_sorted_by_state[p->first].push_back(&p->second);
+
+
+	bool add_pre_expansion_weakly_to_post_expansion_weakly(false);
+	if (states_permitted_ != ns_no_expansion_while_alive && states_permitted_ != no_expansion_while_alive_nor_contraction) {
+		auto p = observation_set.obs.find(ns_hmm_moving_weakly_post_expansion);
+		if (p == observation_set.obs.end() || p->second.size() < 100) {
+			add_pre_expansion_weakly_to_post_expansion_weakly = true;
 		}
-		auto p2 = emission_probability_models.find(p->first);
+	}
+	if (add_pre_expansion_weakly_to_post_expansion_weakly) {
+		auto p = observation_set.obs.find(ns_hmm_moving_weakly);
+		if (p != observation_set.obs.end())
+			observations_sorted_by_state[ns_hmm_moving_weakly_post_expansion].push_back(&(p->second));
+	}
+
+	//count states and build probability models for each one as needed
+	std::vector<unsigned long > state_counts((int)(ns_hmm_unknown_state), 0);
+
+	const unsigned long minimum_number_of_observations = 100;
+	for (auto q = observations_sorted_by_state.begin(); q != observations_sorted_by_state.end(); q++) {
+		unsigned long& state_count = state_counts[(int)q->first];
+		for (auto p = q->second.begin(); p != q->second.end(); p++) 
+			state_count += (*p)->size();
+		if (state_count < minimum_number_of_observations)
+			continue;	//skip states with to few observations.
+		auto p2 = emission_probability_models.find(q->first);
 		if (p2 == emission_probability_models.end())
 			p2 = emission_probability_models.insert(emission_probability_models.end(),
-				std::map < ns_hmm_movement_state, ns_emission_probability_model_to_use*>::value_type(p->first, 0));
+				std::map < ns_hmm_movement_state, ns_emission_probability_model_to_use*>::value_type(q->first, 0));
 		p2->second = new ns_emission_probability_model_to_use;
-		p2->second->build_from_data(p->second);
-		state_counts[(int)p->first] = p->second.size();
+		p2->second->build_from_data(q->second);
 	}
+	
+		
 
-	//special case to detect contraction after expansion.
-	//we don't have by hand annotations for this, so we just flip the sign of the by hand annotated expansion states!
-	/*auto expanding_data = emission_probability_models.find(ns_hmm_not_moving_expanding);
-	state_counts[ns_hmm_contracting_post_expansion] = state_counts[ns_hmm_not_moving_expanding];
-	if (expanding_data == emission_probability_models.end()) {
-		expanding_data == emission_probability_models.find(ns_hmm_moving_weakly_expanding);
-		state_counts[ns_hmm_contracting_post_expansion] = state_counts[ns_hmm_moving_weakly_expanding];
-	}*/
-	/*if (expanding_data != emission_probability_models.end()) {
-		auto contracting_data = emission_probability_models.insert(emission_probability_models.begin(), std::pair< ns_hmm_movement_state, ns_emission_probabiliy_model *>(ns_hmm_contracting_post_expansion, 0));
-		(contracting_data->second) = new ns_emission_probabiliy_model;
-		*contracting_data->second = *expanding_data->second;
-		contracting_data->second->intensity_1x.flip_model_sign();
-		contracting_data->second->intensity_2x.flip_model_sign();
-		contracting_data->second->intensity_4x.flip_model_sign();
-	}*/
+	std::vector<ns_hmm_movement_state> required_states;
+	required_states.reserve(3);
+	required_states.push_back(ns_hmm_missing);
+	required_states.push_back(ns_hmm_not_moving_dead);
+	if (states_permitted_ != ns_require_movement_expansion_synchronicity)
+		required_states.push_back(ns_hmm_moving_weakly);
 
-	ns_hmm_movement_state required_states[2] = { ns_hmm_missing, ns_hmm_not_moving_dead };
 	ns_ex ex;
 	//output+= "By hand annotation entries per HMM state:\n";
 	//for (unsigned int i = 0; i < state_counts.size(); i++) 
 	//	output+= ns_to_string(state_counts[i]) + "\t" + ns_hmm_movement_state_to_string((ns_hmm_movement_state)i) +"\n";
 	for (unsigned int i = 0; i < state_counts.size(); i++) {
-		if (state_counts[i] < 100) {
-
-			for (unsigned int j = 0; j < 3; j++) {
+		if (state_counts[i] < minimum_number_of_observations) {
+			for (unsigned int j = 0; j < required_states.size(); j++) {
 				if (required_states[j] == i) {
 					if (!ex.text().empty())
 						ex << "\n";
-					else ex << "Too few by-hand annotations were provided to fit an HMM model.\n";
+					else ex << "Too few by-hand annotations were provided to fit an HMM model (type=" << (int)states_permitted_ << "). ";
 					ex << "Only  " << state_counts[i] << " annotations were provided for the state " << ns_hmm_movement_state_to_string(required_states[j]) << " (" << state_counts[required_states[j]] << ")).";
 					continue;
 				}
@@ -1713,14 +1788,36 @@ void ns_emperical_posture_quantification_value_estimator::build_estimator_from_o
 			//	output += "Warning: No annotations were made for state " + ns_hmm_movement_state_to_string((ns_hmm_movement_state)i) + ".  It will not be considered in the model.\n";
 		}
 	}
+	if (states_permitted_ != ns_no_expansion_nor_contraction &&
+		states_permitted_ != ns_require_movement_expansion_synchronicity &&
+		state_counts[ns_hmm_not_moving_expanding] >= minimum_number_of_observations && state_counts[ns_hmm_not_moving_alive] < minimum_number_of_observations)
+		throw ns_ex("In order to detect movement cessation and death-time expansion as distinct events, observations are required for the time in-between these events.  Only ") << state_counts[ns_hmm_not_moving_alive] << " observations were provided, so a model cannot be built.";
+	
+	//sometimes the number of by hand annotations for states allows models to be built for only a subset of states.
+	//forbid unusual combinations of states, so we don't generate weird models where worms can only enter certain states that don't make sense in combination
+	if (emission_probability_models.find(ns_hmm_moving_weakly) == emission_probability_models.end() &&
+		(emission_probability_models.find(ns_hmm_moving_weakly_expanding) != emission_probability_models.end()
+			|| emission_probability_models.find(ns_hmm_moving_weakly_post_expansion) != emission_probability_models.end())) {
+		emission_probability_models.erase(ns_hmm_moving_weakly_expanding);
+		emission_probability_models.erase(ns_hmm_moving_weakly_post_expansion);
+		std::cout << "Excluding expansion while weakly moving states because no annotations are provided for weakly moving.\n";
+	}
+
+	if ((emission_probability_models.find(ns_hmm_moving_weakly_post_expansion) != emission_probability_models.end() ||
+		emission_probability_models.find(ns_hmm_contracting_post_expansion) != emission_probability_models.end()) &&
+		emission_probability_models.find(ns_hmm_not_moving_expanding) == emission_probability_models.end()) {
+		emission_probability_models.erase(ns_hmm_moving_weakly_post_expansion);
+		emission_probability_models.erase(ns_hmm_contracting_post_expansion);
+		std::cout << "Post-expansion states are defined but expansion is not.\n";
+	}
 
 	if (!ex.text().empty())
 		throw ex;
 }
 
-std::string ns_emperical_posture_quantification_value_estimator::state_permissions_to_string(const ns_states_permitted & s) {
+std::string ns_emperical_posture_quantification_value_estimator::state_permissions_to_string(const ns_hmm_states_permitted & s) {
 	switch(s){
-		case ns_all_states: return "all_states_allowed";
+		case ns_all_states_permitted: return "all_states_allowed";
 		case ns_no_post_expansion_contraction: return "no_contraction";
 		case ns_no_expansion_while_alive: return "no_expansion_while_alive";
 		case no_expansion_while_alive_nor_contraction: return "no_expansion_while_alive_nor_contraction";
@@ -1729,10 +1826,10 @@ std::string ns_emperical_posture_quantification_value_estimator::state_permissio
 		default: throw ns_ex("ns_emperical_posture_quantification_value_estimator::state_permissions_to_string()::Unknown permission: ") << (int)s;
 	} 
 }
-ns_emperical_posture_quantification_value_estimator::ns_states_permitted ns_emperical_posture_quantification_value_estimator::state_permissions_from_string(const std::string & s) {
+ns_hmm_states_permitted ns_emperical_posture_quantification_value_estimator::state_permissions_from_string(const std::string & s) {
 	for (unsigned int i = 0; i < (int)ns_number_of_state_settings; i++)
-		if (s == state_permissions_to_string((ns_states_permitted)i))
-			return (ns_states_permitted)i;
+		if (s == state_permissions_to_string((ns_hmm_states_permitted)i))
+			return (ns_hmm_states_permitted)i;
 	throw ns_ex("Unknown state permission string: ") << s;
 }
 
@@ -1740,10 +1837,11 @@ ns_emperical_posture_quantification_value_estimator::ns_states_permitted ns_empe
 void ns_emperical_posture_quantification_value_estimator::write_visualization(std::ostream & o, const std::string & experiment_name)const{
 }
 
-bool ns_emperical_posture_quantification_value_estimator::add_observation(const std::string &software_version, const ns_death_time_annotation & properties,const ns_analyzed_image_time_path * path, const std::string * plate_name, const std::string * device_name){
+bool ns_hmm_observation_set::add_observation(const std::string& software_version, const ns_death_time_annotation& properties, const ns_analyzed_image_time_path* path, const std::string* database_name, const ns_64_bit& experiment_id, const std::string* plate_name, const std::string* device_name, const std::string * genotype_){
 	//only consider paths with death times annotated.
-	if (!path->by_hand_death_time().fully_unbounded()){
-		ns_analyzed_image_time_path_element_measurements path_mean, path_mean_square,path_variance;
+	if (!path->by_hand_movement_cessation_time().fully_unbounded() &&
+		!path->by_hand_death_associated_expansion_time().fully_unbounded()) {
+		ns_analyzed_image_time_path_element_measurements path_mean, path_mean_square, path_variance;
 		path_mean.zero();
 		path_variance.zero();
 		unsigned long n(0);
@@ -1774,7 +1872,7 @@ bool ns_emperical_posture_quantification_value_estimator::add_observation(const 
 		for (unsigned int i = 0; i < path->element_count(); i++) {
 			if (path->element(i).excluded || path->element(i).censored)
 				continue;
-			if (path->by_hand_hmm_movement_state(path->element(i).absolute_time, *this) == ns_hmm_contracting_post_expansion) {
+			if (path->by_hand_hmm_movement_state(path->element(i).absolute_time) == ns_hmm_contracting_post_expansion) {
 				animal_contracted = true;
 				//std::cout << "Animal contracted\n";
 				break;
@@ -1784,7 +1882,7 @@ bool ns_emperical_posture_quantification_value_estimator::add_observation(const 
 		for (unsigned int i = 0; i < path->element_count(); i++) {
 			if (path->element(i).excluded || path->element(i).censored)
 				continue;
-			ns_hmm_movement_state by_hand_movement_state(path->by_hand_hmm_movement_state(path->element(i).absolute_time, *this));
+			ns_hmm_movement_state by_hand_movement_state(path->by_hand_hmm_movement_state(path->element(i).absolute_time));
 
 			//we don't enter in as evidence measurements taken after expansion has stopped but before contraction has begun.
 			if (animal_contracted) {
@@ -1832,7 +1930,7 @@ bool ns_emperical_posture_quantification_value_estimator::add_observation(const 
 				break;
 			case 3:
 				//as long as the animal's shrinking is accelerating, mark the animal as contracting
-				if (path->element(i).measurements.change_in_total_stabilized_intensity_4x <= min_ix4) 
+				if (path->element(i).measurements.change_in_total_stabilized_intensity_4x <= min_ix4)
 					min_ix4 = path->element(i).measurements.change_in_total_stabilized_intensity_4x;
 
 				if (path->element(i).measurements.change_in_total_stabilized_intensity_4x <= min_ix4/3) {
@@ -1844,24 +1942,30 @@ bool ns_emperical_posture_quantification_value_estimator::add_observation(const 
 			}*/
 			//if (s == ns_hmm_missing)
 			//	continue;				//do not learn this state
-			std::vector<ns_hmm_emission> & v(observed_values[by_hand_movement_state]);
+			std::vector<ns_hmm_emission>& v(obs[by_hand_movement_state]);
 			v.resize(v.size() + 1);
-			ns_hmm_emission & e = *v.rbegin();
+			ns_hmm_emission& e = *v.rbegin();
 			e.measurement = path->element(i).measurements;
 			e.path_id = properties.stationary_path_id;
 			e.emission_time = path->element(i).absolute_time;
 			e.region_name = plate_name;
 			e.device_name = device_name;
-			e.region_id = properties.region_info_id;
-			ns_hmm_emission_normalization_stats & stats = normalization_stats[e.path_id];
+			e.region_info_id = properties.region_info_id;
+			e.database_name = database_name;
+			e.experiment_id = experiment_id;
+			e.genotype = genotype_;
+			ns_hmm_emission_normalization_stats& stats = normalization_stats[e.path_id];
 			stats.path_mean = path_mean;
 			stats.path_variance = path_variance;
 			stats.source = properties;
 			stats.region_name = plate_name;
 			stats.device_name = device_name;
 		}
+		volatile_number_of_individuals_fully_annotated++;
+		volatile_number_of_individuals_observed++;
 		return true;
 	}
+	volatile_number_of_individuals_observed++;
 	return false;
 }
 
@@ -1872,8 +1976,12 @@ bool ns_emperical_posture_quantification_value_estimator::state_specified_by_mod
 
 ns_posture_analysis_model ns_posture_analysis_model::dummy(){
 		ns_posture_analysis_model m;
-		m.posture_analysis_method = ns_posture_analysis_model::ns_hidden_markov;
-		m.hmm_posture_estimator = ns_emperical_posture_quantification_value_estimator::dummy();
+		m.posture_analysis_method = ns_posture_analysis_model::ns_threshold;
+		m.threshold_parameters.stationary_cutoff = 0;
+		m.threshold_parameters.permanance_time_required_in_seconds = 0;
+		m.threshold_parameters.death_time_expansion_cutoff = 0;
+		m.threshold_parameters.death_time_expansion_time_kernel_in_seconds = 0;
+		m.threshold_parameters.version_flag = NS_CURRENT_THRESHOLD_POSTURE_MODEL_VERSION;
 		return m;
 	}
 

@@ -71,13 +71,14 @@ public:
 		region_info_id = region_id;
 		solution.load_from_db(region_id, sql, false);
 
-		
+		/*
 		ns_image_server::ns_posture_analysis_model_cache::const_handle_t posture_analysis_model_handle;
 		image_server.get_posture_analysis_model_for_region(region_id, posture_analysis_model_handle, sql);
 		ns_acquire_for_scope<ns_analyzed_image_time_path_death_time_estimator> death_time_estimator(
 			ns_get_death_time_estimator_from_posture_analysis_model(posture_analysis_model_handle().model_specification));
 		const ns_time_series_denoising_parameters time_series_denoising_parameters(ns_time_series_denoising_parameters::load_from_db(region_id, sql));
-		analyzer.load_completed_analysis_(region_id, solution, time_series_denoising_parameters, &death_time_estimator(), sql, true);
+		*/
+		analyzer.load_completed_analysis(region_id, solution,  sql, true);
 
 		timepoints.resize(solution.timepoints.size());
 		for (unsigned int i = 0; i < solution.timepoints.size(); i++) {
@@ -125,7 +126,7 @@ public:
 		//and output the time path solution visualiaztion complete with by hand annotations
 		analyzer.back_port_by_hand_annotations_to_solution_elements(solution);
 
-		posture_analysis_model_handle.release();
+		//posture_analysis_model_handle.release();
 	}
 	void match_images_with_solution(ns_sql & sql) {
 

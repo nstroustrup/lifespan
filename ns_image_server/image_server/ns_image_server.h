@@ -116,7 +116,7 @@ public:
 	unsigned int software_version_major(){return 2;}
 	///image server nodes check the cluster to see if they are running the latest version of the software,
 	///which is specified by (major).(minor).(software_version_compile).
-	unsigned int software_version_minor(){return 3;}
+	unsigned int software_version_minor(){return 4;}
 	///image server nodes check the cluster to see if they are running the latest version of the software,
 	///which is specified by (major).(minor).(software_version_compile).
 	unsigned int software_version_compile(){return _software_version_compile;}
@@ -301,9 +301,9 @@ public:
 	void set_processing_node_behavior(const bool act_as_processing_node){_act_as_processing_node = act_as_processing_node;}
 
 	///returns a human-readible description of the sql server the image server is using.
-	std::string sql_info(ns_sql & sql){
+	std::string sql_info(ns_sql_connection * sql){
 		if (sql_server_addresses.empty()) throw ns_ex("sql_info()::No sql sever specified");
-		return sql_user + std::string("@") + sql.hostname() + std::string(".") + *sql_database_choice;
+		return sql_user + std::string("@") + sql->hostname() + std::string(" ") + sql->database();
 	}
 
 	///Scanners identify themselves by scanning a barcode on their surface.

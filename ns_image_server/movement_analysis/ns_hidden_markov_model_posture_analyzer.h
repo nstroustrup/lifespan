@@ -29,8 +29,9 @@ struct ns_hmm_movement_analysis_optimizatiom_stats_record {
 	static const ns_movement_event states[number_of_states];
 	typedef std::map<ns_movement_event, ns_hmm_movement_analysis_optimizatiom_stats_event_annotation> ns_record_list;
 	ns_record_list measurements;
-	ns_stationary_path_id id;
+	ns_stationary_path_id path_id;
 	ns_death_time_annotation properties;
+	const std::string* database_name;
 	double solution_loglikelihood;
 	
 	ns_hmm_movement_optimization_stats_record_path by_hand_state_info, machine_state_info;
@@ -42,10 +43,10 @@ struct ns_hmm_movement_analysis_optimizatiom_stats {
 	std::vector<ns_hmm_movement_analysis_optimizatiom_stats_record> animals;
 
 	static void write_error_header(std::ostream & o, const std::vector<std::string> & extra_columns);
-	void write_error_data(std::ostream & o, const std::string& genotype_set, const std::string & cross_validation_info, const unsigned long & cross_validation_replicate_id, const std::map<ns_64_bit,  ns_region_metadata> & metadata_cache) const;
+	void write_error_data(std::ostream & o, const std::string& genotype_set, const std::string & cross_validation_info, const unsigned long & cross_validation_replicate_id, const std::map<std::string, std::map<ns_64_bit, ns_region_metadata> > & metadata_cache) const;
 
 	void write_hmm_path_header(std::ostream & o) const;
-	void write_hmm_path_data(std::ostream & o, const std::map<ns_64_bit, ns_region_metadata> & metadata_cache) const;
+	void write_hmm_path_data(std::ostream & o, const std::map<std::string, std::map<ns_64_bit, ns_region_metadata> > & metadata_cache) const;
 
 };
 
@@ -63,15 +64,16 @@ public:
 
 
 	//run the viterbi algorithm using the specified indicies of the path
-	static double run_viterbi(const ns_analyzed_image_time_path & path, const ns_emperical_posture_quantification_value_estimator & estimator, const std::vector<unsigned long> path_indices,
+	static double run_viterbi(const ns_analyzed_image_time_path & path, const ns_emperical_posture_quantification_value_estimator & estimator, const std::vector<unsigned long> & path_indices,
 		std::vector<ns_hmm_state_transition_time_path_index > &movement_transitions,
 		std::vector<double > & tmp_storage_1, std::vector<unsigned long > & tmp_storage_2);
 
 	void build_movement_state_solution_from_movement_transitions(const unsigned long first_stationary_path_index,const std::vector<unsigned long> path_indices, const std::vector<ns_hmm_state_transition_time_path_index > & movement_transitions);
 	
-private:
 	//m[i][j] is the log probabilitiy that an individual in state i transitions to state j.
 	static void build_state_transition_matrix(const ns_emperical_posture_quantification_value_estimator & estimator, std::vector<std::vector<double> > & m);
+
+	static void output_state_transition_matrix(const std::vector<std::vector<double> >& m, std::ostream& o);
 
 	static ns_hmm_movement_state most_probable_state(const std::vector<double> & d);
 
@@ -97,7 +99,7 @@ public:
 
 	ns_time_path_posture_movement_solution estimate_posture_movement_states(int software_value,const ns_analyzed_image_time_path * source_path, std::vector<double > & tmp_storage_1, std::vector<unsigned long > & tmp_storage_2, ns_analyzed_image_time_path * output_path = 0,std::ostream * debug_output=0) const;
 	const ns_emperical_posture_quantification_value_estimator & estimator;
-	std::string software_version_number() const { return "2.1"; }
+	std::string software_version_number() const { return "2.2"; }
 	unsigned long latest_possible_death_time(const ns_analyzed_image_time_path * path,
 		const unsigned long last_observation_time) const{return  last_observation_time; }
 };

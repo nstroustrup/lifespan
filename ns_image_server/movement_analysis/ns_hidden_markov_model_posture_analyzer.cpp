@@ -177,6 +177,11 @@ void ns_forbid_requested_hmm_states(const ns_emperical_posture_quantification_va
 			forbidden[offset + ns_hmm_not_moving_expanding] = 1;	//deliberate case readthrough
 		case ns_no_post_expansion_contraction:
 			forbidden[offset + ns_hmm_contracting_post_expansion] = 1; break;
+		case ns_require_movement_expansion_synchronicity:
+			forbidden[offset + ns_hmm_moving_weakly_expanding] = 1;
+			forbidden[offset + ns_hmm_moving_weakly_post_expansion] = 1; 
+			forbidden[offset + ns_hmm_not_moving_alive] = 1; break;
+		default: throw ns_ex("Invalid state permission flag: ") << (int)e.states_permitted();
 	}
 }
 
@@ -537,12 +542,18 @@ void ns_hmm_solver::build_state_transition_matrix(const ns_emperical_posture_qua
 	std::set<ns_hmm_movement_state> defined_states;
 	estimator.defined_states(defined_states);
 	const bool allow_weakly = defined_states.find(ns_hmm_moving_weakly) != defined_states.end();
+//	ns_all_states_permitted, ns_no_post_expansion_contraction, ns_no_expansion_while_alive, no_expansion_while_alive_nor_contraction, ns_no_expansion_nor_contraction, ns_require_movement_expansion_synchronicity, ns_number_of_state_settings
+
+
 
 	const bool allow_expansion = estimator.states_permitted() != ns_no_expansion_nor_contraction;
-	const bool all_expansion_while_alive = (estimator.states_permitted() != ns_no_expansion_while_alive &&
+	const bool all_expansion_while_alive = (estimator.states_permitted() != ns_no_expansion_while_alive && 
+											estimator.states_permitted() != ns_require_movement_expansion_synchronicity &&
+											estimator.states_permitted() != no_expansion_while_alive_nor_contraction &&
 										 allow_expansion && allow_weakly);
 	const bool allow_contraction = allow_expansion && estimator.states_permitted() != ns_no_post_expansion_contraction;
 
+	const bool allow_not_moving_alive = estimator.states_permitted() != ns_require_movement_expansion_synchronicity;
 
 
 	//if there are any loops anywhere here, the approach will not function
@@ -552,7 +563,8 @@ void ns_hmm_solver::build_state_transition_matrix(const ns_emperical_posture_qua
 	if (allow_weakly) m[ns_hmm_missing][ns_hmm_moving_weakly] = 1;
 	if (all_expansion_while_alive) m[ns_hmm_missing][ns_hmm_moving_weakly_expanding] = 1;
 	if (allow_expansion) {
-		m[ns_hmm_missing][ns_hmm_not_moving_alive] = 1;
+		if (allow_not_moving_alive)
+			m[ns_hmm_missing][ns_hmm_not_moving_alive] = 1;
 		m[ns_hmm_missing][ns_hmm_not_moving_expanding] = 1;
 	}
 	m[ns_hmm_missing][ns_hmm_not_moving_dead] = penalized_transition;	//we penalize any path that skips death time expansion
@@ -560,7 +572,8 @@ void ns_hmm_solver::build_state_transition_matrix(const ns_emperical_posture_qua
 	if (all_expansion_while_alive) m[ns_hmm_moving_vigorously][ns_hmm_moving_weakly_expanding] = 1;
 	m[ns_hmm_moving_vigorously][ns_hmm_moving_weakly] = 1;
 	if (allow_expansion) {
-		m[ns_hmm_moving_vigorously][ns_hmm_not_moving_alive] = 1;
+		if (allow_not_moving_alive)
+			m[ns_hmm_moving_vigorously][ns_hmm_not_moving_alive] = 1;
 		m[ns_hmm_moving_vigorously][ns_hmm_not_moving_expanding] = 1;
 	}
 	m[ns_hmm_moving_vigorously][ns_hmm_not_moving_dead] = penalized_transition;
@@ -569,7 +582,8 @@ void ns_hmm_solver::build_state_transition_matrix(const ns_emperical_posture_qua
 	if (allow_weakly){
 		m[ns_hmm_moving_weakly][ns_hmm_not_moving_dead] = allow_expansion ? penalized_transition : 1;
 		if (allow_expansion) {
-			m[ns_hmm_moving_weakly][ns_hmm_not_moving_alive] = 1;
+			if (allow_not_moving_alive)
+				m[ns_hmm_moving_weakly][ns_hmm_not_moving_alive] = 1;
 			m[ns_hmm_moving_weakly][ns_hmm_not_moving_expanding] = 1;
 		}
 		if (allow_contraction)
@@ -596,10 +610,12 @@ void ns_hmm_solver::build_state_transition_matrix(const ns_emperical_posture_qua
 		m[ns_hmm_not_moving_expanding][ns_hmm_contracting_post_expansion] = 1;
 		if (allow_contraction) {
 			m[ns_hmm_contracting_post_expansion][ns_hmm_not_moving_dead] = 1;
-			m[ns_hmm_not_moving_alive][ns_hmm_contracting_post_expansion] = 1;
+			if (allow_not_moving_alive)
+				m[ns_hmm_not_moving_alive][ns_hmm_contracting_post_expansion] = 1;
 		}
-		m[ns_hmm_not_moving_alive][ns_hmm_not_moving_expanding] = 1;
-		m[ns_hmm_not_moving_alive][ns_hmm_not_moving_dead] = penalized_transition;
+		if (allow_not_moving_alive)
+			m[ns_hmm_not_moving_alive][ns_hmm_not_moving_expanding] = 1;
+			m[ns_hmm_not_moving_alive][ns_hmm_not_moving_dead] = penalized_transition;
 	}
 
 

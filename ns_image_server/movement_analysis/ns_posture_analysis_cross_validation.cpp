@@ -680,6 +680,14 @@ void ns_run_hmm_cross_validation(std::string& results_summary, ns_image_server_r
 
 			both_parameter_set2.release();
 
+			ns_acquire_for_scope<ns_ostream>  graphvis_file(image_server.results_storage.time_path_image_analysis_quantification(sub, std::string("state_transition_graph=") + p->first, true, sql).output());
+			ns_hmm_solver solver;
+			std::vector<std::vector<double> > state_transition_matrix;
+			solver.build_state_transition_matrix(p->second.all_vs_all().replicates[0].model, state_transition_matrix);
+			solver.output_state_transition_matrix(state_transition_matrix, graphvis_file()());
+			graphvis_file.release();
+			
+
 		}
 		else model_filenames[p->first] = "(Not Written)";
 		++p;

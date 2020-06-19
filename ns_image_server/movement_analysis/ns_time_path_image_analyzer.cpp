@@ -666,8 +666,8 @@ template<class allocator_T>
 void ns_time_path_image_movement_analyzer<allocator_T>::process_raw_images(const ns_64_bit region_id,const ns_time_path_solution & solution_, const ns_time_series_denoising_parameters & times_series_denoising_parameters,
 																const ns_analyzed_image_time_path_death_time_estimator * e,ns_sql & sql, const long group_number,const bool write_status_to_db,
 																const ns_analysis_db_options &id_reanalysis_options){
-	if (e->software_version_number() != NS_CURRENT_POSTURE_MODEL_VERSION)
-	  throw ns_ex("This software, which is running threshold posture analysis version ") << ns_to_string(NS_CURRENT_POSTURE_MODEL_VERSION) << ", cannot use the incompatible posture analysis parameter set " << e->name << ", which is version " << e->software_version_number();
+	if (e->software_version_number() != NS_CURRENT_THRESHOLD_POSTURE_MODEL_VERSION)
+	  throw ns_ex("This software, which is running threshold posture analysis version ") << ns_to_string(NS_CURRENT_THRESHOLD_POSTURE_MODEL_VERSION) << ", cannot use the incompatible posture analysis parameter set " << e->name << ", which is version " << e->software_version_number();
 	region_info_id = region_id; 
 	obtain_analysis_id_and_save_movement_data(region_id, sql, id_reanalysis_options,ns_do_not_write_data);
 	if (analysis_id == 0)
@@ -1995,8 +1995,7 @@ bool ns_time_path_image_movement_analyzer<allocator_T>::load_image_quantificatio
 	return found_path_info_in_db;
 }
 template<class allocator_T>
-bool ns_time_path_image_movement_analyzer<allocator_T>::load_completed_analysis_(const ns_64_bit region_id,const ns_time_path_solution & solution_,  const ns_time_series_denoising_parameters & times_series_denoising_parameters, 
-															const ns_analyzed_image_time_path_death_time_estimator * e,ns_sql & sql, bool exclude_movement_quantification){
+bool ns_time_path_image_movement_analyzer<allocator_T>::load_completed_analysis(const ns_64_bit region_id,const ns_time_path_solution & solution_, ns_sql & sql, bool exclude_movement_quantification){
 	region_info_id = region_id;
 	externally_specified_plate_observation_interval = get_externally_specified_last_measurement(region_id,sql);
 	load_from_solution(solution_);
@@ -2015,10 +2014,10 @@ bool ns_time_path_image_movement_analyzer<allocator_T>::load_completed_analysis_
 	if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Populating movement quantification from file"));
 	load_stored_movement_analysis_results(sql, exclude_movement_quantification? ns_all_results_no_movement:ns_all_results );
 
-	if (posture_model_version_used != e->software_version_number()){
+	/*if (posture_model_version_used != e->software_version_number()){
 	  cout << posture_model_version_used << "\n";
 	  throw ns_ex("This region's movement analysis was run using threshold posture analysis version \"") << ns_to_string(posture_model_version_used) << "\".  This is incompatible with the movement analysis model you have specified, \"" << e->name << "\" which is v " << e->software_version_number() << ".  You can fix this by running the job \"Analyze Worm Movement using Cached Images\" which will preserve all by hand annotations.";
-	}
+	}*/
 
 
 
@@ -7487,8 +7486,8 @@ void ns_time_path_image_movement_analyzer<allocator_T>::back_port_by_hand_annota
 template<class allocator_T>
 void ns_time_path_image_movement_analyzer<allocator_T>::reanalyze_stored_aligned_images(const ns_64_bit region_id,const ns_time_path_solution & solution_,const ns_time_series_denoising_parameters & times_series_denoising_parameters,const ns_analyzed_image_time_path_death_time_estimator * e,ns_sql & sql,const bool load_images_after_last_valid_sample,const bool recalculate_flow_images){
 
-	if (e->software_version_number() != NS_CURRENT_POSTURE_MODEL_VERSION)
-		throw ns_ex("This software, which is running threshold posture analysis version ") << NS_CURRENT_POSTURE_MODEL_VERSION << ", cannot use the incompatible posture analysis parameter set " << e->name << ", which is version " << e->software_version_number();
+	if (e->software_version_number() != NS_CURRENT_THRESHOLD_POSTURE_MODEL_VERSION)
+		throw ns_ex("This software, which is running threshold posture analysis version ") << NS_CURRENT_THRESHOLD_POSTURE_MODEL_VERSION << ", cannot use the incompatible posture analysis parameter set " << e->name << ", which is version " << e->software_version_number();
 
 	#ifndef NS_CALCULATE_OPTICAL_FLOW
 	if (recalculate_flow_images)
@@ -7532,7 +7531,7 @@ void ns_time_path_image_movement_analyzer<allocator_T>::reanalyze_stored_aligned
 
 		//this will set the analysis id based on the file contents
 		load_stored_movement_analysis_results(sql, ns_only_quantification);
-		posture_model_version_used = NS_CURRENT_POSTURE_MODEL_VERSION;
+		posture_model_version_used = NS_CURRENT_THRESHOLD_POSTURE_MODEL_VERSION;
 		ns_64_bit file_specified_analysis_id = this->analysis_id;
 		obtain_analysis_id_and_save_movement_data(region_id, sql, ns_require_existing_record, ns_do_not_write_data);
 		if (file_specified_analysis_id != this->analysis_id)

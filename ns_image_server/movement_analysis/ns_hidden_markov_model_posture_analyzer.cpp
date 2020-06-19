@@ -1976,8 +1976,12 @@ bool ns_emperical_posture_quantification_value_estimator::state_specified_by_mod
 
 ns_posture_analysis_model ns_posture_analysis_model::dummy(){
 		ns_posture_analysis_model m;
-		m.posture_analysis_method = ns_posture_analysis_model::ns_hidden_markov;
-		m.hmm_posture_estimator = ns_emperical_posture_quantification_value_estimator::dummy();
+		m.posture_analysis_method = ns_posture_analysis_model::ns_threshold;
+		m.threshold_parameters.stationary_cutoff = 0;
+		m.threshold_parameters.permanance_time_required_in_seconds = 0;
+		m.threshold_parameters.death_time_expansion_cutoff = 0;
+		m.threshold_parameters.death_time_expansion_time_kernel_in_seconds = 0;
+		m.threshold_parameters.version_flag = NS_CURRENT_THRESHOLD_POSTURE_MODEL_VERSION;
 		return m;
 	}
 

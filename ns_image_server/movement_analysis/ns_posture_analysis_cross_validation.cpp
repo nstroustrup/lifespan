@@ -64,7 +64,7 @@ public:
 			if (time_path_image_analyzer.size() == 0) {
 
 				time_path_image_analyzer.add_by_hand_annotations(by_hand_annotations);
-				time_path_image_analyzer.load_completed_analysis_(
+				time_path_image_analyzer.load_image_quantification_and_rerun_death_time_detection(
 					region_id,
 					time_path_solution,
 					time_series_denoising_parameters,
@@ -740,6 +740,8 @@ void ns_run_hmm_cross_validation(std::string& results_summary, ns_image_server_r
 				const std::string plate_type_summary = movement_results.samples[i].regions[j]->metadata.plate_type_summary("-", true);
 				movement_results.samples[i].regions[j]->contains_a_by_hand_death_time_annotation = true;
 				movement_results.samples[i].regions[j]->time_path_solution.load_from_db(movement_results.samples[i].regions[j]->metadata.region_id, sql, true);
+
+				/*
 				ns_posture_analysis_model dummy_model(ns_posture_analysis_model::dummy());
 				const ns_posture_analysis_model* posture_analysis_model(&dummy_model);
 				ns_image_server::ns_posture_analysis_model_cache::const_handle_t handle;
@@ -749,18 +751,15 @@ void ns_run_hmm_cross_validation(std::string& results_summary, ns_image_server_r
 				ns_acquire_for_scope<ns_analyzed_image_time_path_death_time_estimator> death_time_estimator(
 					ns_get_death_time_estimator_from_posture_analysis_model(
 						handle().model_specification));
-				const ns_time_series_denoising_parameters time_series_denoising_parameters(ns_time_series_denoising_parameters::load_from_db(movement_results.samples[i].regions[j]->metadata.region_id, sql));
+				*/
 
 
-
-				movement_results.samples[i].regions[j]->time_path_image_analyzer->load_completed_analysis_(
+				movement_results.samples[i].regions[j]->time_path_image_analyzer->load_completed_analysis(
 					movement_results.samples[i].regions[j]->metadata.region_id,
 					movement_results.samples[i].regions[j]->time_path_solution,
-					time_series_denoising_parameters,
-					&death_time_estimator(),
 					sql,
 					false);
-				death_time_estimator.release();
+				//death_time_estimator.release();
 
 
 				ns_hand_annotation_loader by_hand_annotations;
@@ -777,6 +776,7 @@ void ns_run_hmm_cross_validation(std::string& results_summary, ns_image_server_r
 
 				std::cout << ns_to_string_short((100.0 * num_built) / region_count, 2) << "%...";
 				num_built++;
+				const ns_time_series_denoising_parameters time_series_denoising_parameters(ns_time_series_denoising_parameters::load_from_db(movement_results.samples[i].regions[j]->metadata.region_id, sql));
 
 				for (auto p = cross_validation_sets.begin(); p != cross_validation_sets.end(); p++) {
 					const ns_cross_replicate_specification& spec(p->second.validation_runs_sorted_by_validation_type.begin()->second.spec);
@@ -1153,12 +1153,12 @@ void ns_identify_best_threshold_parameteters(std::string& results_text, const ns
 				mod.threshold_parameters.version_flag = time_path_image_analyzer.posture_model_version_used;
 
 				handle.release();
-				ns_acquire_for_scope<ns_analyzed_image_time_path_death_time_estimator> death_time_estimator(
+				//ns_acquire_for_scope<ns_analyzed_image_time_path_death_time_estimator> death_time_estimator(
 
-					ns_get_death_time_estimator_from_posture_analysis_model(mod));
+				//	ns_get_death_time_estimator_from_posture_analysis_model(mod));
 
-				time_path_image_analyzer.load_completed_analysis_(region_id, time_path_solution, denoising_parameters, &death_time_estimator(), sql);
-				death_time_estimator.release();
+				time_path_image_analyzer.load_completed_analysis(region_id, time_path_solution, sql);
+				//death_time_estimator.release();
 				ns_region_metadata metadata;
 
 				try {

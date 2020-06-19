@@ -317,7 +317,7 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 	if (job.maintenance_task == ns_maintenance_recalculate_censoring) {
 		if (log_output)
 			image_server->register_server_event(ns_image_server_event("Analyzing stored animal posture quantification."), &sql);
-		time_path_image_analyzer.load_completed_analysis_(job.region_id, time_path_solution, time_series_denoising_parameters, &death_time_estimator(), sql,true);
+		time_path_image_analyzer.load_completed_analysis(job.region_id, time_path_solution, sql,true);
 		time_path_image_analyzer.obtain_analysis_id_and_save_movement_data(job.region_id, sql,
 			ns_time_path_image_movement_analyzer<ns_overallocation_resizer>::ns_require_existing_record,
 			ns_time_path_image_movement_analyzer<ns_overallocation_resizer>::ns_do_not_write_data);

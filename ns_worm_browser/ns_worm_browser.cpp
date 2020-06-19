@@ -2288,27 +2288,27 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 
 							movement_results.samples[i].regions[j]->contains_a_by_hand_death_time_annotation = true;
 							movement_results.samples[i].regions[j]->time_path_solution.load_from_db(movement_results.samples[i].regions[j]->metadata.region_id, sql, true);
-							ns_posture_analysis_model dummy_model(ns_posture_analysis_model::dummy());
+							/*
 							const ns_posture_analysis_model* posture_analysis_model(&dummy_model);
 							ns_image_server::ns_posture_analysis_model_cache::const_handle_t handle;
 							image_server.get_posture_analysis_model_for_region(movement_results.samples[i].regions[j]->metadata.region_id, handle, sql);
 							posture_analysis_model = &handle().model_specification;
 
+							
+							ns_posture_analysis_model dummy_model(ns_posture_analysis_model::dummy());
 							ns_acquire_for_scope<ns_analyzed_image_time_path_death_time_estimator> death_time_estimator(
 								ns_get_death_time_estimator_from_posture_analysis_model(
-									handle().model_specification));
+									dummy_model));
 							const ns_time_series_denoising_parameters time_series_denoising_parameters(ns_time_series_denoising_parameters::load_from_db(movement_results.samples[i].regions[j]->metadata.region_id, sql));
+							*/
 
 
-
-							movement_results.samples[i].regions[j]->time_path_image_analyzer->load_completed_analysis_(
+							movement_results.samples[i].regions[j]->time_path_image_analyzer->load_completed_analysis(
 								movement_results.samples[i].regions[j]->metadata.region_id,
 								movement_results.samples[i].regions[j]->time_path_solution,
-								time_series_denoising_parameters,
-								&death_time_estimator(),
 								sql,
 								false);
-							death_time_estimator.release();
+							//death_time_estimator.release();
 
 
 							movement_results.samples[i].regions[j]->by_hand_annotations = by_hand_annotations.annotations;
@@ -2399,7 +2399,7 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 													standard_model.observations = observation_cache.get_new();
 													standard_model.subject = "all_experiments";
 												}
-												standard_model.observations->add_observation(NS_CURRENT_POSTURE_MODEL_VERSION, a, path, database_name, movement_results.experiment_id(), &(*plate_name), &(*device), &(*genotype));
+												standard_model.observations->add_observation(NS_CURRENT_THRESHOLD_POSTURE_MODEL_VERSION, a, path, database_name, movement_results.experiment_id(), &(*plate_name), &(*device), &(*genotype));
 												
 
 												if (test_strict_ordering) {
@@ -2430,7 +2430,7 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 													genotype_model.genotype = (*genotype);
 													genotype_model.subject = "all_experiments";
 												}
-												genotype_model.observations->add_observation(NS_CURRENT_POSTURE_MODEL_VERSION, a, path, database_name, movement_results.experiment_id(), &(*plate_name), &(*device), &(*genotype));
+												genotype_model.observations->add_observation(NS_CURRENT_THRESHOLD_POSTURE_MODEL_VERSION, a, path, database_name, movement_results.experiment_id(), &(*plate_name), &(*device), &(*genotype));
 											}
 											//now set up model for each experiment individually
 											if (experiments_specified.size() > 1) {
@@ -2441,7 +2441,7 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 													exp_specific_standard_model.subject = experiment_name_to_use;
 													exp_specific_standard_model.observations = observation_cache.get_new();
 												}
-												exp_specific_standard_model.observations->add_observation(NS_CURRENT_POSTURE_MODEL_VERSION, a, path, database_name, movement_results.experiment_id(), &(*plate_name), &(*device), &(*genotype));
+												exp_specific_standard_model.observations->add_observation(NS_CURRENT_THRESHOLD_POSTURE_MODEL_VERSION, a, path, database_name, movement_results.experiment_id(), &(*plate_name), &(*device), &(*genotype));
 												
 
 												if (test_strict_ordering) {
@@ -2471,7 +2471,7 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 													genotype_model.observations = observation_cache.get_new();
 													genotype_model.genotype = (*genotype);
 												}
-												genotype_model.observations->add_observation(NS_CURRENT_POSTURE_MODEL_VERSION, a, path, database_name, movement_results.experiment_id(), &(*plate_name), &(*device), &(*genotype));
+												genotype_model.observations->add_observation(NS_CURRENT_THRESHOLD_POSTURE_MODEL_VERSION, a, path, database_name, movement_results.experiment_id(), &(*plate_name), &(*device), &(*genotype));
 											}
 										}
 
@@ -3825,13 +3825,13 @@ void ns_worm_learner::generate_single_frame_posture_image_pixel_data(const bool 
 		cerr << "Sample " <<movement_results.samples[i].name() << " has " << movement_results.samples[i].regions.size() << " regions\n";
 		for (unsigned int j = 0; j < movement_results.samples[i].regions.size(); j++){
 			const ns_64_bit region_id(movement_results.samples[i].regions[j]->metadata.region_id);
-			const ns_time_series_denoising_parameters time_series_denoising_parameters(ns_time_series_denoising_parameters::load_from_db(movement_results.samples[i].regions[j]->metadata.region_id,sql));
+			//const ns_time_series_denoising_parameters time_series_denoising_parameters(ns_time_series_denoising_parameters::load_from_db(movement_results.samples[i].regions[j]->metadata.region_id,sql));
 
 			if (single_region && region_id != data_gui_selector.current_region().region_id)
 				continue;
 			try{
 				movement_results.samples[i].regions[j]->time_path_solution.load_from_db(region_id,sql,true);
-				movement_results.samples[i].regions[j]->time_path_image_analyzer->load_completed_analysis_(region_id,movement_results.samples[i].regions[j]->time_path_solution,time_series_denoising_parameters,0,sql,true);
+				movement_results.samples[i].regions[j]->time_path_image_analyzer->load_completed_analysis(region_id,movement_results.samples[i].regions[j]->time_path_solution,sql,true);
 				movement_results.samples[i].regions[j]->time_path_image_analyzer->add_by_hand_annotations(by_hand_annotations.annotations);
 				for (unsigned int w = 0; w < movement_results.samples[i].regions[j]->time_path_image_analyzer->size(); w++){
 					if (ns_death_time_annotation::is_excluded(movement_results.samples[i].regions[j]->time_path_image_analyzer->group(w).paths[0].excluded()))

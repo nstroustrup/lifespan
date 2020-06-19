@@ -11,7 +11,7 @@
 #include "ns_hidden_markov_model_posture_analyzer.h"
 
 //posture version specifically for threshold models.
-#define NS_CURRENT_POSTURE_MODEL_VERSION "2.2"
+#define NS_CURRENT_THRESHOLD_POSTURE_MODEL_VERSION "2.2"
 
 #undef NS_CALCULATE_OPTICAL_FLOW
 #define NS_USE_FAST_IMAGE_REGISTRATION
@@ -730,7 +730,7 @@ public:
 	enum { ns_spatially_averaged_movement_threshold = 3, ns_spatially_averaged_movement_kernal_half_size=2};
 	ns_time_path_image_movement_analyzer(ns_time_path_image_movement_analysis_memory_pool<allocator_T> & memory_pool_):paths_loaded_from_solution(false),
 		region_info_id(0),last_timepoint_in_analysis_(0), _number_of_invalid_images_encountered(0),image_cache(1024*1024*64),
-		number_of_timepoints_in_analysis_(0),image_db_info_loaded(false),externally_specified_plate_observation_interval(0,ULONG_MAX),posture_model_version_used(NS_CURRENT_POSTURE_MODEL_VERSION),
+		number_of_timepoints_in_analysis_(0),image_db_info_loaded(false),externally_specified_plate_observation_interval(0,ULONG_MAX),posture_model_version_used(NS_CURRENT_THRESHOLD_POSTURE_MODEL_VERSION),
 		memory_pool(memory_pool_),asynch_group_loading_is_running(false),cancel_asynch_group_load(false), asynch_group_loading_failed(false){}
 
 	~ns_time_path_image_movement_analyzer(){
@@ -762,7 +762,7 @@ public:
 																												  //understand how this might effect all other cached data!
 	void reanalyze_stored_aligned_images(const ns_64_bit region_id,const ns_time_path_solution & solution_,const ns_time_series_denoising_parameters &,const ns_analyzed_image_time_path_death_time_estimator * e,ns_sql & sql,const bool load_images_after_last_valid_sample, const bool recalculate_flow_images);
 	bool load_image_quantification_and_rerun_death_time_detection(const ns_64_bit region_id, const ns_time_path_solution & solution_, const ns_time_series_denoising_parameters &, const ns_analyzed_image_time_path_death_time_estimator * e, ns_sql & sql,unsigned long debug_specific_worm=-1);
-	bool load_completed_analysis_(const ns_64_bit region_id, const ns_time_path_solution& solution_, const ns_time_series_denoising_parameters&, const ns_analyzed_image_time_path_death_time_estimator* e, ns_sql& sql, bool exclude_movement_quantification = false);
+	bool load_completed_analysis(const ns_64_bit region_id, const ns_time_path_solution& solution_,  ns_sql& sql, bool exclude_movement_quantification = false);
 
 	void reanalyze_with_different_movement_estimator(const ns_time_series_denoising_parameters &,const ns_analyzed_image_time_path_death_time_estimator * e);
 

@@ -754,13 +754,13 @@ ns_64_bit ns_processing_job_maintenance_processor::run_job(ns_sql & sql) {
 			ns_time_path_image_movement_analyzer<ns_overallocation_resizer> analyzer(memory_pool);
 			const ns_time_series_denoising_parameters time_series_denoising_parameters(ns_time_series_denoising_parameters::load_from_db(job.region_id,sql));
 
-			ns_image_server::ns_posture_analysis_model_cache::const_handle_t posture_analysis_model_handle;
+			/*ns_image_server::ns_posture_analysis_model_cache::const_handle_t posture_analysis_model_handle;
 			image_server->get_posture_analysis_model_for_region(job.region_id, posture_analysis_model_handle, sql);
 
 			ns_acquire_for_scope<ns_analyzed_image_time_path_death_time_estimator> death_time_estimator(
-				ns_get_death_time_estimator_from_posture_analysis_model(posture_analysis_model_handle().model_specification));
-			analyzer.load_completed_analysis_(job.region_id, solution, time_series_denoising_parameters, &death_time_estimator(), sql);
-			death_time_estimator.release();
+				ns_get_death_time_estimator_from_posture_analysis_model(posture_analysis_model_handle().model_specification));*/
+			analyzer.load_completed_analysis(job.region_id, solution, sql);
+			//death_time_estimator.release();
 			ns_region_metadata metadata;
 			ns_hand_annotation_loader by_hand_region_annotations;
 			metadata = by_hand_region_annotations.load_region_annotations(ns_death_time_annotation_set::ns_censoring_and_movement_transitions, job.region_id, sql);

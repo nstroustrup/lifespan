@@ -98,15 +98,15 @@ bool ns_machine_analysis_region_data::recalculate_from_saved_movement_quantifica
 	solver.solve(solver_parameters,time_path_solution,&sql);
 	time_path_solution.save_to_db(region_id,sql);
 	//time_path_solution.load_from_db(region_id,sql);
-
+	/*
 	ns_image_server::ns_posture_analysis_model_cache::const_handle_t posture_analysis_model_handle;
 	image_server.get_posture_analysis_model_for_region(region_id, posture_analysis_model_handle, sql);
 	//load cached movement quantification
 		ns_acquire_for_scope<ns_analyzed_image_time_path_death_time_estimator> death_time_estimator(
 				ns_get_death_time_estimator_from_posture_analysis_model(posture_analysis_model_handle().model_specification));
-
-	time_path_image_analyzer->load_completed_analysis_(region_id,time_path_solution,time_series_denoising_parameters, &death_time_estimator(),sql,false);
-	death_time_estimator.release();
+	*/
+	time_path_image_analyzer->load_completed_analysis(region_id,time_path_solution,sql,false);
+	//death_time_estimator.release();
 	//generate annotations from quantification
 	
 	time_path_image_analyzer->produce_death_time_annotations(death_time_annotation_set);

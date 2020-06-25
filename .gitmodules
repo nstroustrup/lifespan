@@ -1,0 +1,3 @@
+[submodule "external_compile_libraries/openjpeg"]
+	path = external_compile_libraries/openjpeg
+	url = https://github.com/uclouvain/openjpeg

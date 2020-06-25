@@ -29,6 +29,7 @@ struct ns_sql_table_lock {
 		c.manager = 0;
 		c.lock_point.erase();
 		c.table.erase();
+		return *this;
 	}
 	//c++11 move constructor!
 	ns_sql_table_lock(ns_sql_table_lock && c){

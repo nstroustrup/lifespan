@@ -776,6 +776,7 @@ void ns_image_server::set_up_local_buffer(){
 					<< table_names[i] << " was not found.  Drop all tables to allow an automatic rebuild of the buffer schema.";
 			}
 		}
+		std::cerr << "Local db looks great.\n";
 		//if everything is present, we're done!
 		return;
 	}
@@ -1493,7 +1494,11 @@ void ns_image_server::create_and_configure_sql_database(bool local, const std::s
 		password(local ? local_buffer_pwd : sql_pwd),
 		db(local ? local_buffer_db : possible_sql_databases[0]),
 		hostname(local ? local_buffer_ip : sql_server_addresses[0]);
-	std::cout << "**Configuring database " << db << " on server " << hostname << "**\n";
+	std::cout << "**Configuring the ";
+	if (local)
+	  std::cout << "local db buffer ";
+	else std::cout << "central sql database ";
+	std::cout << db << " on server " << hostname << "**\n";
 	std::cout << "To modify schema, please provide a username with administrative privileges on your sql server: ";
 	std::string root_username;
 	getline(cin,root_username);
@@ -1569,9 +1574,9 @@ void ns_image_server::create_and_configure_sql_database(bool local, const std::s
         if (tmp.empty())	
                 throw ns_ex("mysql.user table not found!");
         if (tmp[0][0] == "0"){	
-	sql << "CREATE USER '" << username << "'@'localhost' identified by '" << password << "'";
-	sql.send_query();
-}
+	  sql << "CREATE USER '" << username << "'@'localhost' identified by '" << password << "'";
+	  sql.send_query();
+	}
 
 	sql << "CREATE DATABASE " << db;
 	sql.send_query();
@@ -1601,6 +1606,9 @@ void ns_image_server::create_and_configure_sql_database(bool local, const std::s
 			//upload schema from copy stored in header file
 			std::string ch;
 			bool in_quote = false;
+			if (image_server_db_schema_sql_len == 0)
+			  throw ns_ex("No db schema provided!");
+			else cout << "Schema len: " << image_server_db_schema_sql_len << "\n";
 			for (unsigned long i = 0; i < image_server_db_schema_sql_len; i++) {
 
 				const char a = image_server_db_schema_sql[i];
@@ -1628,6 +1636,7 @@ void ns_image_server::create_and_configure_sql_database(bool local, const std::s
 		sql.send_query("COMMIT");
 	}
 
+	cout << "Done!\n";
 	schema.close();
 	sql.disconnect();
 }

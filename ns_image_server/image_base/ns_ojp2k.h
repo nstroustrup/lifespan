@@ -203,6 +203,7 @@ public:
 		for (unsigned int i = 0; i < n; i++) {
 			read_line(buffer[n]);
 		}
+		return n;
 	}
 	void open_mem(const void *){ throw ns_ex("NOT IMPLEMENTED"); }
 	~ns_ojp2k_image_input_file() { close(); }

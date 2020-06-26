@@ -9,6 +9,7 @@
 #include "ns_hidden_markov_model_posture_analyzer.h"
 #include "ns_image_statistics.h"
 #include <queue>
+#include "ns_gmm.h"
 
 #ifdef NS_CALCULATE_OPTICAL_FLOW
 #include "ns_optical_flow.h"
@@ -1131,34 +1132,36 @@ void ns_time_path_image_movement_analyzer<allocator_T>::process_raw_images(const
 
 			//OK! Now we have /everything/ finished with the images.
 			//calculate some final stats and then we're done.
-			normalize_movement_scores_over_all_paths(e->software_version_number(),times_series_denoising_parameters,sql);
+			normalize_movement_scores_over_all_paths(e->software_version_number(), times_series_denoising_parameters, sql);
 			//xxx this could be paraellelized if it was worth it.
-			for (unsigned int i = 0; i < groups.size(); i++){
-				for (unsigned int j = 0; j < groups[i].paths.size(); j++){
-							if (ns_skip_low_density_paths && groups[i].paths[j].is_low_density_path())
-									continue;
+			for (unsigned int i = 0; i < groups.size(); i++) {
+				for (unsigned int j = 0; j < groups[i].paths.size(); j++) {
+					if (ns_skip_low_density_paths && groups[i].paths[j].is_low_density_path())
+						continue;
 					//THIS IS WHERE QUANTIFICATION IS ANALYZED AND DEATH TIMES ARE IDENTIFIED AND ANNOTATIONS ARE GENERATED
-					groups[i].paths[j].analyze_movement(e,ns_stationary_path_id(i,j,analysis_id),last_timepoint_in_analysis_);
+					groups[i].paths[j].analyze_movement(e, ns_stationary_path_id(i, j, analysis_id), last_timepoint_in_analysis_);
 					groups[i].paths[j].calculate_movement_quantification_summary(groups[i].paths[j].movement_analysis_result);
 				}
 			}
 
+			flag_outliers();
+
 			//ofstream oo("c:\\out.csv");
 			unsigned long total_groups(0);
 			unsigned long total_skipped(0);
-			for (unsigned int i = 0; i < groups.size(); i++){
-				for (unsigned int j = 0; j < groups[i].paths.size(); j++){
-				//	for (unsigned int k = 0; k < groups[i].paths[j].elements.size(); k++)
-				//		oo << i << "," << j << "," << k << "," << (groups[i].paths[j].elements[k].element_was_processed?1:0) << "\n";
+			for (unsigned int i = 0; i < groups.size(); i++) {
+				for (unsigned int j = 0; j < groups[i].paths.size(); j++) {
+					//	for (unsigned int k = 0; k < groups[i].paths[j].elements.size(); k++)
+					//		oo << i << "," << j << "," << k << "," << (groups[i].paths[j].elements[k].element_was_processed?1:0) << "\n";
 					const unsigned long c(groups[i].paths[j].number_of_elements_not_processed_correctly());
 					//if (c > 0){
 					//}
-					total_groups+=(c>0)?1:0;
-					total_skipped+=c;
+					total_groups += (c > 0) ? 1 : 0;
+					total_skipped += c;
 				}
 			}
 
-			if (total_skipped > 0){
+			if (total_skipped > 0) {
 				throw ns_ex("") << total_skipped << " frames were missed among " << total_groups << " out of a total of " << groups.size() << " path groups.";
 			}
 		}
@@ -1887,6 +1890,8 @@ void ns_time_path_image_movement_analyzer<allocator_T>::reanalyze_with_different
 			}
 		}
 	}
+
+	flag_outliers();
 	generate_movement_description_series();
 }
 
@@ -1991,7 +1996,8 @@ bool ns_time_path_image_movement_analyzer<allocator_T>::load_image_quantificatio
 
 
 
-	//generate_movement_description_series();
+	flag_outliers();
+	generate_movement_description_series();
 	return found_path_info_in_db;
 }
 template<class allocator_T>
@@ -7618,6 +7624,7 @@ void ns_time_path_image_movement_analyzer<allocator_T>::reanalyze_stored_aligned
 			}
 		}
 		normalize_movement_scores_over_all_paths(e->software_version_number(),times_series_denoising_parameters,sql);
+		flag_outliers();
 		//ofstream o("c:\\server\\debug_" + ns_format_time_string(ns_current_time()));
 		//groups[0].paths[0].write_detailed_movement_quantification_analysis_header(o);
 		//o << "\n";
@@ -7827,6 +7834,75 @@ void ns_time_path_image_movement_analyzer<allocator_T>::match_plat_areas_to_path
 		areas[i].average_annotation_time_for_region = average_path_duration;
 }
 
+struct ns_outlier_search_data {
+	ns_outlier_search_data() {}
+	ns_outlier_search_data(const double &w, const double &a) :weak_movement_duration(w), alive_but_not_moving_duration(a) {}
+	double weak_movement_duration,
+		alive_but_not_moving_duration;
+};
+
+
+
+struct ns_measurement_accessor {
+	typedef ns_outlier_search_data data_t;
+	virtual const double operator()(const ns_outlier_search_data& e) const = 0;
+	virtual ns_measurement_accessor* clone() = 0;
+	const double get_from_emission(const data_t& e) const { return (*this)(e); }
+};
+
+struct ns_weak_movement_accessor : public ns_measurement_accessor {
+	typedef ns_outlier_search_data data_t;
+	const double operator()(const ns_outlier_search_data& e) const {return e.weak_movement_duration;}
+	ns_weak_movement_accessor* clone() { return new ns_weak_movement_accessor; }
+	const double get_from_emission(const data_t& e) const { return (*this)(e); }
+}; 
+struct ns_alive_but_non_moving_movement_accessor : ns_measurement_accessor {
+	typedef ns_outlier_search_data data_t;
+	const double operator()(const ns_outlier_search_data& e) const { return e.alive_but_not_moving_duration; }
+	ns_weak_movement_accessor* clone() { return new ns_weak_movement_accessor; }
+	const double get_from_emission(const data_t& e) const { return (*this)(e); }
+};
+
+template<class measurement_accessor_t, int number_of_dimensions, int number_of_gaussians>
+unsigned long ns_emission_probabiliy_gaussian_diagonal_covariance_model<measurement_accessor_t, number_of_dimensions, number_of_gaussians>::training_data_buffer_size = 0;
+
+template<class measurement_accessor_t, int number_of_dimensions, int number_of_gaussians>
+double* ns_emission_probabiliy_gaussian_diagonal_covariance_model<measurement_accessor_t, number_of_dimensions, number_of_gaussians>::training_data_buffer = 0;
+
+template<class measurement_accessor_t, int number_of_dimensions, int number_of_gaussians>
+ns_lock ns_emission_probabiliy_gaussian_diagonal_covariance_model<measurement_accessor_t, number_of_dimensions, number_of_gaussians>::training_data_buffer_lock("tbl");
+
+
+template<class allocator_T>
+void ns_time_path_image_movement_analyzer<allocator_T>::flag_outliers() {
+	//set up object to fit a 2-d gaussian to the data
+	ns_emission_probabiliy_gaussian_diagonal_covariance_model<ns_measurement_accessor,2, 1> normal_fit;
+	normal_fit.dimensions.reserve(2);
+	normal_fit.dimensions.push_back(ns_covarying_gaussian_dimension<ns_measurement_accessor>(new ns_weak_movement_accessor, "w"));
+	normal_fit.dimensions.push_back(ns_covarying_gaussian_dimension<ns_measurement_accessor>(new ns_alive_but_non_moving_movement_accessor, "a"));
+
+	std::vector<ns_outlier_search_data> data;
+	data.reserve(100);
+	for (unsigned int i = 0; i < groups.size(); i++) {
+		for (unsigned int j = 0; j < groups[i].paths.size(); j++) {
+			const ns_analyzed_image_time_path& path(groups[i].paths[j]);
+			bool movement_cessation_skipped, expansion_skipped;
+			ns_death_time_annotation_time_interval translation = path.machine_event_time(ns_translation_cessation, movement_cessation_skipped);
+			ns_death_time_annotation_time_interval movement = path.machine_event_time(ns_movement_cessation, movement_cessation_skipped);
+			ns_death_time_annotation_time_interval expansion = path.machine_event_time(ns_death_associated_expansion_start, expansion_skipped);
+
+			if (!movement_cessation_skipped && !expansion_skipped) {
+				data.push_back(ns_outlier_search_data(
+					movement.best_estimate_event_time_for_possible_partially_unbounded_interval()
+					- translation.best_estimate_event_time_for_possible_partially_unbounded_interval(),
+					expansion.best_estimate_event_time_for_possible_partially_unbounded_interval()
+					- movement.best_estimate_event_time_for_possible_partially_unbounded_interval()));
+			}
+		}
+	}
+	std::vector< const std::vector<ns_outlier_search_data>* > data_holder(1, &data);
+	normal_fit.build_from_data(data_holder);
+}
 template<class allocator_T>
 void ns_time_path_image_movement_analyzer<allocator_T>::generate_movement_description_series(){
 	//group sizes and position

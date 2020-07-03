@@ -908,7 +908,6 @@ private:
 	const ns_time_path_solution * solution;
 	void generate_movement_description_series();
 	void normalize_movement_scores_over_all_paths(const std::string & software_version,const ns_time_series_denoising_parameters &, ns_sql & sql);
-	void flag_outliers();
 	ns_worm_movement_description_series description_series;
 
 	ns_time_series_denoising_parameters denoising_parameters_used;

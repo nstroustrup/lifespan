@@ -4,6 +4,86 @@
 #include "ns_death_time_annotation.h"
 #include "ns_vector.h"
 #include <random>
+#include "ns_gmm.h"
+
+
+
+template<class allocator_T>
+void ns_time_path_image_movement_analyzer<allocator_T>::match_plat_areas_to_paths(std::vector<ns_region_area>& areas) {
+	for (unsigned int i = 0; i < areas.size(); i++) {
+		areas[i].worm_id = 0;
+		areas[i].movement_state = ns_movement_fast;
+		areas[i].clear_stats();
+		areas[i].plate_subregion_info = ns_plate_subregion_info();
+		areas[i].overlap_area_with_match = 0;
+	}
+	ns_64_bit average_path_duration(0), path_count(0);
+
+
+	for (unsigned int g = 0; g < groups.size(); g++) {
+		for (unsigned int p = 0; p < groups[g].paths.size(); p++) {
+			const ns_64_bit path_duration = groups[g].paths[p].elements.rbegin()->absolute_time - groups[g].paths[p].elements[0].absolute_time;
+			average_path_duration += path_duration;
+			path_count++;
+
+			for (unsigned int i = 0; i < areas.size(); i++) {
+				const ns_vector_2i overlap_area = ns_rectangle_overlap_area(areas[i].pos, areas[i].pos + areas[i].size,
+					groups[g].paths[p].path_region_position, groups[g].paths[p].path_region_position + groups[g].paths[p].path_region_size);
+				unsigned long oa = overlap_area.x * overlap_area.y;
+				if (oa == 0)
+					continue;
+				if (oa > areas[i].overlap_area_with_match) {
+					areas[i].overlap_area_with_match = oa;
+					areas[i].worm_id = g + 1;
+
+					if (groups[g].paths[p].excluded() || groups[g].paths[p].is_low_density_path())
+						areas[i].total_exclusion_time_in_seconds = path_duration;
+					else areas[i].total_inclusion_time_in_seconds = path_duration;
+
+					if (areas[i].time < groups[g].paths[p].elements[0].absolute_time)
+						areas[i].movement_state = ns_movement_fast;
+					else if (areas[i].time > groups[g].paths[p].elements.rbegin()->absolute_time)
+						areas[i].movement_state = ns_movement_stationary;
+					else {
+						areas[i].movement_state = groups[g].paths[p].best_guess_movement_state(areas[i].time);
+					}
+					//			cout << "Matched " << areas[i].worm_id << ": " << ns_movement_state_to_string_short(areas[i].movement_state) << "\n";
+				}
+			}
+		}
+	}
+	average_path_duration /= path_count;
+	//ns_time_path_image_movement_analyzer a;
+	for (unsigned int i = 0; i < areas.size(); i++)
+		areas[i].average_annotation_time_for_region = average_path_duration;
+}
+
+struct ns_outlier_search_data {
+	ns_outlier_search_data() {}
+	ns_outlier_search_data(const double& w, const double& a) :weak_movement_duration(w), alive_but_not_moving_duration(a),by_hand_annotation_exists(false), is_an_outlier(false){}
+	double weak_movement_duration,
+		alive_but_not_moving_duration;
+	bool by_hand_annotation_exists;
+	bool is_an_outlier;
+	ns_outlier_search_data(const ns_dying_animal_description_base<const ns_death_time_annotation>& source_data) {
+		by_hand_annotation_exists =
+			ns_dying_animal_description_group<const ns_death_time_annotation>::calculate_best_guess_death_annotation(source_data.by_hand.movement_based_death_annotation, source_data.by_hand.death_associated_expansion_start) != 0;
+
+		if (source_data.machine.last_fast_movement_annotation == 0 || 
+			source_data.machine.movement_based_death_annotation == 0) {
+			weak_movement_duration = alive_but_not_moving_duration = -1;
+			return;
+		}
+		else weak_movement_duration = source_data.machine.movement_based_death_annotation - source_data.machine.last_fast_movement_annotation;
+		if (source_data.machine.death_associated_expansion_start == 0) {
+			alive_but_not_moving_duration = -1;
+			return;
+		}
+		else alive_but_not_moving_duration = source_data.machine.movement_based_death_annotation - source_data.machine.death_associated_expansion_start;
+	}
+};
+
+
 
 struct ns_worm_lookup_info {
 	ns_worm_lookup_info() {}
@@ -24,7 +104,36 @@ struct ns_scatter_plot_element {
 	double x_specified, y_specified;
 	ns_64_bit region_info_id;
 	ns_stationary_path_id stationary_path_id;
+	ns_outlier_search_data outlier_data;
 };
+
+
+struct ns_measurement_accessor {
+	typedef ns_scatter_plot_element data_t;
+	virtual const double operator()(const ns_scatter_plot_element& e) const = 0;
+	virtual ns_measurement_accessor* clone() = 0;
+};
+
+struct ns_weak_movement_accessor : public ns_measurement_accessor {
+	typedef ns_outlier_search_data data_t;
+	const double operator()(const ns_scatter_plot_element& e) const { return e.outlier_data.weak_movement_duration; }
+	ns_weak_movement_accessor* clone() { return new ns_weak_movement_accessor; }
+};
+struct ns_alive_but_non_moving_movement_accessor : ns_measurement_accessor {
+	typedef ns_outlier_search_data data_t;
+	const double operator()(const ns_scatter_plot_element& e) const { return e.outlier_data.alive_but_not_moving_duration; }
+	ns_weak_movement_accessor* clone() { return new ns_weak_movement_accessor; }
+};
+
+template<class measurement_accessor_t, int number_of_dimensions, int number_of_gaussians>
+unsigned long ns_emission_probabiliy_gaussian_diagonal_covariance_model<measurement_accessor_t, number_of_dimensions, number_of_gaussians>::training_data_buffer_size = 0;
+
+template<class measurement_accessor_t, int number_of_dimensions, int number_of_gaussians>
+double* ns_emission_probabiliy_gaussian_diagonal_covariance_model<measurement_accessor_t, number_of_dimensions, number_of_gaussians>::training_data_buffer = 0;
+
+template<class measurement_accessor_t, int number_of_dimensions, int number_of_gaussians>
+ns_lock ns_emission_probabiliy_gaussian_diagonal_covariance_model<measurement_accessor_t, number_of_dimensions, number_of_gaussians>::training_data_buffer_lock("tbl");
+
 struct ns_survival_graph {
 	ns_survival_graph() :vals(ns_graph_object::ns_graph_dependant_variable) {}
 	ns_graph_object vals;
@@ -49,6 +158,24 @@ struct ns_survival_telemetry_cache {
 	std::vector< ns_survival_telemetry_set> s;
 };
 
+//first is annotation for x axis, second is annotation for y axis
+struct ns_scatter_plot_coordinate {
+	ns_scatter_plot_coordinate() {}
+	ns_scatter_plot_coordinate(const ns_death_time_annotation* a) :using_value(false), annotation(a) {}
+	ns_scatter_plot_coordinate(const double& a) :using_value(true), value(a) {}
+	const ns_death_time_annotation* annotation;
+	double value;
+	bool using_value;
+};
+
+struct ns_plot_pair {
+	ns_plot_pair() {}
+	ns_plot_pair(const ns_scatter_plot_coordinate& a, const ns_scatter_plot_coordinate& b, ns_outlier_search_data & outlier_d) :
+		first(a), second(b),outlier_data(outlier_d) {}
+	ns_scatter_plot_coordinate first;
+	ns_scatter_plot_coordinate second;
+	ns_outlier_search_data outlier_data;
+};
 
 class ns_population_telemetry {
 public:
@@ -468,20 +595,11 @@ public:
 		stats_subset_strain_to_display = strain;
 
 	}
-	//first is annotation for x axis, second is annotation for y axis
-	struct ns_scatter_plot_coordinate {
-		ns_scatter_plot_coordinate() {}
-		ns_scatter_plot_coordinate(const ns_death_time_annotation* a) :using_value(false), annotation(a) {}
-		ns_scatter_plot_coordinate(const double& a) :using_value(true), value(a) {}
-		const ns_death_time_annotation* annotation;
-		double value;
-		bool using_value;
-	};
-	typedef std::pair<ns_scatter_plot_coordinate, ns_scatter_plot_coordinate> ns_plot_pair;
+	
 	void clear_cache() {
 		telemetry_cache.clear();
 	}
-	void update_annotations_and_build_survival(const ns_death_time_annotation_compiler & compiler, const ns_region_metadata & metadata) {
+	void update_annotations_and_build_survival(const ns_death_time_annotation_compiler& compiler, const ns_region_metadata& metadata) {
 		survival_curves.resize(0);
 		ns_lifespan_experiment_set set;
 		compiler.generate_survival_curve_set(set, ns_death_time_annotation::ns_machine_annotations_if_no_by_hand, true, false);
@@ -495,8 +613,8 @@ public:
 
 		const ns_64_bit time_at_zero = metadata.time_at_which_animals_had_zero_age;
 		const ns_64_bit storyboard_region_id = metadata.region_id;
-	
-		
+
+
 		ns_region_metadata data_to_process;
 		const bool filter_by_strain = strain_override_specified || viewing_a_storyboard_for_a_specific_strain;
 		if (filter_by_strain) {
@@ -816,6 +934,9 @@ public:
 			time_axis[i] -= time_at_which_animals_were_age_zero;
 		*/
 
+
+		//now make the scatter plots
+
 		movement_vs_posture_vals.resize(0);
 
 
@@ -846,14 +967,13 @@ public:
 		//later we analyze and plot it.
 		std::map<unsigned long, std::vector<ns_scatter_plot_element> > points_to_plot;
 		double max_x(0), max_y(0), max_y_x_diff(0);
-
 		for (ns_death_time_annotation_compiler::ns_region_list::const_iterator r = compiler.regions.begin(); r != compiler.regions.end(); r++) {
 			if (region_to_view != 0 && r->first != region_to_view)
 				continue;
 			if (filter_by_strain && r->second.metadata.device_regression_match_description() != data_to_process.device_regression_match_description())
 				continue;
 			for (ns_death_time_annotation_compiler_region::ns_location_list::const_iterator l = r->second.locations.begin(); l != r->second.locations.end(); l++) {
-				
+
 				ns_multiple_worm_cluster_death_annotation_handler multiple_worm_handler;
 				//if (l->properties.number_of_worms()>1)
 				ns_dying_animal_description_set_const set;
@@ -867,6 +987,7 @@ public:
 
 				//each location can have multiple worms in a group.  We plot each individually, keeping track of the annotations that mark the x and y position of each point.
 				for (unsigned int i = 0; i < set.descriptions.size(); i++) {
+					pair_to_plot.outlier_data = ns_outlier_search_data(set.descriptions[i]);
 					if (regression_plot == ns_plot_death_types) {
 						movement_vs_posture_x_axis_label = "Movement Cessation Time (days)";
 						movement_vs_posture_y_axis_label = "Death-Associated Expansion Time (days)";
@@ -940,10 +1061,10 @@ public:
 					}
 				}
 
-			
+
 
 				const ns_64_bit region_info_id(r->first);
-				
+
 
 				const unsigned long group_id = data_categories[region_info_id].output_location_id;
 				auto p = points_to_plot.emplace(std::pair<unsigned long, std::vector<ns_scatter_plot_element> >(group_id, std::vector<ns_scatter_plot_element>())).first;
@@ -951,7 +1072,7 @@ public:
 				ns_scatter_plot_element& point = *p->second.rbegin();
 				point.region_info_id = region_info_id;
 				point.stationary_path_id = l->properties.stationary_path_id;
-
+				point.outlier_data = pair_to_plot.outlier_data;
 				if (pair_to_plot.first.using_value) {
 					if (pair_to_plot.first.value > 0)
 						point.x_raw = pair_to_plot.first.value;
@@ -962,7 +1083,7 @@ public:
 						point.x_raw = pair_to_plot.first.annotation->time.best_estimate_event_time_for_possible_partially_unbounded_interval();
 					else point.x_specified = false;
 				}
-					
+
 				if (pair_to_plot.second.using_value) {
 					if (pair_to_plot.second.value > 0)
 						point.y_raw = pair_to_plot.second.value;
@@ -983,6 +1104,40 @@ public:
 
 			}
 		}
+
+		//we want to find and tag outlier points
+		//So, we fit a 2-d gaussian to the data
+		//and then flag points that are on the tails of the distribution.
+		ns_emission_probabiliy_gaussian_diagonal_covariance_model<ns_measurement_accessor, 2, 1> normal_fit;
+		normal_fit.dimensions.reserve(2);
+		normal_fit.dimensions.push_back(ns_covarying_gaussian_dimension<ns_measurement_accessor>(new ns_weak_movement_accessor, "w"));
+		normal_fit.dimensions.push_back(ns_covarying_gaussian_dimension<ns_measurement_accessor>(new ns_alive_but_non_moving_movement_accessor, "a"));
+
+		unsigned long number_of_points(0);
+		std::vector< const std::vector<ns_scatter_plot_element>* > data_holder(points_to_plot.size());
+		{
+			int i = 0;
+			for (auto p = points_to_plot.begin(); p != points_to_plot.end(); p++) {
+				data_holder[i] = &p->second;
+				number_of_points += p->second.size();
+				++i;
+			}
+		}
+		double permissible_range[2] = { log(.02),log(.98) };
+		normal_fit.build_from_data(data_holder);
+		{
+			for (auto p = points_to_plot.begin(); p != points_to_plot.end(); p++) {
+				for (unsigned int i = 0; i < p->second.size(); i++) {
+					const double prob = normal_fit.point_emission_likelihood(p->second[i]);
+					p->second[i].outlier_data.is_an_outlier = (prob < permissible_range[0] || prob > permissible_range[1]);
+				}
+			}
+			
+		}
+
+
+
+
 		std::random_device dev;
 		std::mt19937 rng(dev());
 		std::uniform_real_distribution<> rnd_dist(.95, 1.05);

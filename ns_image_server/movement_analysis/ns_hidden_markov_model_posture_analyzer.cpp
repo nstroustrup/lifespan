@@ -739,7 +739,6 @@ struct ns_measurement_accessor {
 };
 
 struct ns_intensity_accessor_1x : public ns_measurement_accessor {
-	typedef ns_hmm_emission data_t;
 	const double operator()(const ns_analyzed_image_time_path_element_measurements & e) const {
 		return e.change_in_total_stabilized_intensity_1x / 100.0;
 	}
@@ -747,7 +746,6 @@ struct ns_intensity_accessor_1x : public ns_measurement_accessor {
 	ns_measurement_accessor* clone() { return new ns_intensity_accessor_1x; }
 }; 
 struct ns_intensity_accessor_2x : public ns_measurement_accessor {
-	typedef ns_hmm_emission data_t;
 	const double operator()(const ns_analyzed_image_time_path_element_measurements & e) const {
 		return e.change_in_total_stabilized_intensity_2x / 100.0;
 	}
@@ -755,7 +753,6 @@ struct ns_intensity_accessor_2x : public ns_measurement_accessor {
 	ns_measurement_accessor* clone() { return new ns_intensity_accessor_2x; }
 };
 struct ns_intensity_accessor_4x : public ns_measurement_accessor {
-	typedef ns_hmm_emission data_t;
 	const double operator()(const ns_analyzed_image_time_path_element_measurements & e) const {
 		return e.change_in_total_stabilized_intensity_4x/100.0;
 	}
@@ -764,7 +761,6 @@ struct ns_intensity_accessor_4x : public ns_measurement_accessor {
 };
 
 struct ns_movement_accessor : public ns_measurement_accessor {
-	typedef ns_hmm_emission data_t;
 	const double operator()(const ns_analyzed_image_time_path_element_measurements & e) const {
 		//this defines the movement score used by the HMM model!
 		const double d = e.death_time_posture_analysis_measure_v2_uncropped()+.1;
@@ -775,7 +771,6 @@ struct ns_movement_accessor : public ns_measurement_accessor {
 	ns_measurement_accessor* clone() { return new ns_movement_accessor; }
 };
 struct ns_outside_intensity_accessor_1x : public ns_measurement_accessor {
-	typedef ns_hmm_emission data_t;
 	const double operator()(const ns_analyzed_image_time_path_element_measurements& e) const {
 		return e.change_in_total_outside_stabilized_intensity_1x/100.0;
 	}
@@ -783,7 +778,6 @@ struct ns_outside_intensity_accessor_1x : public ns_measurement_accessor {
 	ns_measurement_accessor* clone() { return new ns_outside_intensity_accessor_1x; }
 };
 struct ns_outside_intensity_accessor_2x : public ns_measurement_accessor {
-	typedef ns_hmm_emission data_t;
 	const double operator()(const ns_analyzed_image_time_path_element_measurements& e) const {
 		return e.change_in_total_outside_stabilized_intensity_2x / 100.0;
 	}
@@ -791,7 +785,6 @@ struct ns_outside_intensity_accessor_2x : public ns_measurement_accessor {
 	ns_measurement_accessor* clone() { return new ns_outside_intensity_accessor_2x; }
 };
 struct ns_outside_intensity_accessor_4x : public ns_measurement_accessor {
-	typedef ns_hmm_emission data_t;
 	const double operator()(const ns_analyzed_image_time_path_element_measurements& e) const {
 		return e.change_in_total_outside_stabilized_intensity_4x / 100.0;
 	}
@@ -800,7 +793,6 @@ struct ns_outside_intensity_accessor_4x : public ns_measurement_accessor {
 };
 
 struct ns_stabilized_region_vs_outside_intensity_comparitor : public ns_measurement_accessor {
-	typedef ns_hmm_emission data_t;
 	const double operator()(const ns_analyzed_image_time_path_element_measurements& e) const {
 		return (e.change_in_total_outside_stabilized_intensity_2x  - e.change_in_total_stabilized_intensity_2x) / 100.0;
 	}

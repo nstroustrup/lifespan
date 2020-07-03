@@ -92,6 +92,10 @@ double ns_likelihood_of_normal_zcore(double x){
 	else return 2*normal_dist.cdf(x);
 }
 
+double ns_cdf_of_zcore(double x) {
+	return normal_dist.cdf(x);
+}
+
 double ns_likelihood_of_lognormal_value(double x,double mean, double stdev){
 	return ns_likelihood_of_normal_zcore((log(x)-mean)/stdev);
 }

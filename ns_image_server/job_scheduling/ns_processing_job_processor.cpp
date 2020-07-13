@@ -1076,11 +1076,12 @@ ns_64_bit ns_processing_job_maintenance_processor::run_job(ns_sql & sql) {
 				}
 			}
 			if (generation_errors.size() > 0) {
-				//register all the errors but only throw the first one
-				ns_ex ex("One or more errors were encountered while generating storyboards.");
-				for (unsigned long i = 0; i < generation_errors.size(); i++)
-					ex<< "\n" << generation_errors[i].text();
-				throw ex;
+				if (there_were_errors) {
+					ns_ex ex("One or more errors were encountered while generating storyboards.");
+					for (unsigned long i = 0; i < generation_errors.size(); i++)
+						ex << "\n" << generation_errors[i].text();
+					throw ex;
+				}
 			}
 			else {
 				if (there_were_errors)

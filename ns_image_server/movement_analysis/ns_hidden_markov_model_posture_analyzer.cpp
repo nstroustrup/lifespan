@@ -1031,37 +1031,15 @@ ns_emperical_posture_quantification_value_estimator::~ns_emperical_posture_quant
 
 template<int number_of_dimensions = 2, int number_of_gaussians = 4>
 bool operator==(const ns_emission_probability_model_to_use & a, const ns_emission_probability_model_to_use & b) {
-	if (!a.movement.equal(b.movement)) {
-		std::cerr << "Movement not equal\n";
-		return false;
-	}
-	if (!a.intensity_1x.equal(b.intensity_1x)) {
-		std::cerr << "intensity_1x not equal\n";
-		return false;
-	}
-	if (!a.intensity_2x.equal(b.intensity_2x)) {
-		std::cerr << "intensity_2x not equal\n";
-		return false;
-	}
-	if (!a.intensity_4x.equal(b.intensity_4x)) {
-		std::cerr << "intensity_4x not equal\n";
-		return false;
-	}
-	if (!a.outside_intensity_1x.equal(b.outside_intensity_1x)) {
-		std::cerr << "outside_intensity_1x not equal\n";
-		return false;
-	}
-	if (!a.outside_intensity_2x.equal(b.outside_intensity_2x)) {
-		std::cerr << "outside_intensity_2x not equal\n";
-		return false;
-	}
-	if (!a.outside_intensity_2x.equal(b.outside_intensity_2x)) {
-		std::cerr << "outside_intensity_2x not equal\n";
-		return false;
-	}
-	if (!a.outside_intensity_4x.equal(b.outside_intensity_4x)) {
-		std::cerr << "outside_intensity_4x not equal\n";
-		return false;
+	if (a.dimensions.size() != b.dimensions.size())
+		std::cerr << "Different number of dimensions!\n";
+	else {
+		for (unsigned int i = 0; i < a.dimensions.size(); i++)
+			if (!(a.dimensions[i] == b.dimensions[i])) {
+				std::cerr << "Unequal dimension: " << a.dimensions[i].name << "\n";
+				return false;
+			}
+
 	}
 	return true;
 }

@@ -232,7 +232,7 @@ public:
 	//so as long as we are always comparing observations at the same t, we can multiply these together.
 	//So we can use them for viterbi algorithm 
 	template<class l_data_t>
-	double point_emission_log_probability(const typename l_data_t & e) const {
+	double point_emission_log_probability(const l_data_t & e) const {
 		for (unsigned int d = 0; d < number_of_dimensions; d++)
 			observation_buffer[d] = (*dimensions[d].measurement_accessor)(e);
 		return log(gmm.GetProbability(observation_buffer));
@@ -241,7 +241,7 @@ public:
 	//these are the actual likelihoods of an observation being drawn from the GMM.
 	//They are more expensive to calculate so we only use them when necessary
 	template<class l_data_t>
-	double point_emission_likelihood(const typename l_data_t& e) const {
+	double point_emission_likelihood(const l_data_t& e) const {
 		for (unsigned int d = 0; d < number_of_dimensions; d++)
 			observation_buffer[d] = (*dimensions[d].measurement_accessor)(e);
 		return gmm.GetLikelihood(observation_buffer);

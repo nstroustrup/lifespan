@@ -8,55 +8,6 @@
 
 
 
-template<class allocator_T>
-void ns_time_path_image_movement_analyzer<allocator_T>::match_plat_areas_to_paths(std::vector<ns_region_area>& areas) {
-	for (unsigned int i = 0; i < areas.size(); i++) {
-		areas[i].worm_id = 0;
-		areas[i].movement_state = ns_movement_fast;
-		areas[i].clear_stats();
-		areas[i].plate_subregion_info = ns_plate_subregion_info();
-		areas[i].overlap_area_with_match = 0;
-	}
-	ns_64_bit average_path_duration(0), path_count(0);
-
-
-	for (unsigned int g = 0; g < groups.size(); g++) {
-		for (unsigned int p = 0; p < groups[g].paths.size(); p++) {
-			const ns_64_bit path_duration = groups[g].paths[p].elements.rbegin()->absolute_time - groups[g].paths[p].elements[0].absolute_time;
-			average_path_duration += path_duration;
-			path_count++;
-
-			for (unsigned int i = 0; i < areas.size(); i++) {
-				const ns_vector_2i overlap_area = ns_rectangle_overlap_area(areas[i].pos, areas[i].pos + areas[i].size,
-					groups[g].paths[p].path_region_position, groups[g].paths[p].path_region_position + groups[g].paths[p].path_region_size);
-				unsigned long oa = overlap_area.x * overlap_area.y;
-				if (oa == 0)
-					continue;
-				if (oa > areas[i].overlap_area_with_match) {
-					areas[i].overlap_area_with_match = oa;
-					areas[i].worm_id = g + 1;
-
-					if (groups[g].paths[p].excluded() || groups[g].paths[p].is_low_density_path())
-						areas[i].total_exclusion_time_in_seconds = path_duration;
-					else areas[i].total_inclusion_time_in_seconds = path_duration;
-
-					if (areas[i].time < groups[g].paths[p].elements[0].absolute_time)
-						areas[i].movement_state = ns_movement_fast;
-					else if (areas[i].time > groups[g].paths[p].elements.rbegin()->absolute_time)
-						areas[i].movement_state = ns_movement_stationary;
-					else {
-						areas[i].movement_state = groups[g].paths[p].best_guess_movement_state(areas[i].time);
-					}
-					//			cout << "Matched " << areas[i].worm_id << ": " << ns_movement_state_to_string_short(areas[i].movement_state) << "\n";
-				}
-			}
-		}
-	}
-	average_path_duration /= path_count;
-	//ns_time_path_image_movement_analyzer a;
-	for (unsigned int i = 0; i < areas.size(); i++)
-		areas[i].average_annotation_time_for_region = average_path_duration;
-}
 
 struct ns_outlier_search_data {
 	ns_outlier_search_data() {}

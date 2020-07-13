@@ -5500,6 +5500,9 @@ void ns_analyzed_image_time_path::quantify_movement(const ns_analyzed_time_image
 		elements[i].measurements.total_intensity_within_alternate_worm = 0;
 		elements[i].measurements.total_alternate_worm_area = 0;
 
+		double spatial_averaged_movement_signed_sum = 0,
+			spatial_averaged_movement_signed_sum_cropped = 0;
+
 		for (long y = 0; y < elements[i].registered_images->movement_image_.properties().height; y++) {
 			for (long x = 0; x < elements[i].registered_images->movement_image_.properties().width; x++) {
 
@@ -5525,6 +5528,8 @@ void ns_analyzed_image_time_path::quantify_movement(const ns_analyzed_time_image
 					if (count > 0) {
 						elements[i].measurements.spatial_averaged_movement_sum_uncropped += abs(averaged_sum / (float)count);
 						elements[i].measurements.spatial_averaged_movement_sum_cropped += abs(averaged_sum_cropped / (float)count);
+						spatial_averaged_movement_signed_sum += averaged_sum / (float)count;
+						spatial_averaged_movement_signed_sum_cropped += averaged_sum_cropped / (float)count;
 					}
 				}
 				if (alternate_worm_threshold) {
@@ -5538,6 +5543,12 @@ void ns_analyzed_image_time_path::quantify_movement(const ns_analyzed_time_image
 
 			}
 		}
+		//across an image, worm movement should create as many negative movement values as postive values.
+		//technical problems in scanner illumination, however, will make the entire image brighter or darker.
+		//we can therefore remove technical problems by simply subtracting out the average intensity difference between timages.
+		elements[i].measurements.spatial_averaged_movement_sum_uncropped -= abs(spatial_averaged_movement_signed_sum);
+		elements[i].measurements.spatial_averaged_movement_sum_cropped -= abs(spatial_averaged_movement_signed_sum_cropped);
+
 		/*double interframe_time_scaling_factor(1);
 		if (0 && !first_frames) {	//turn this off!
 			const long dt_s(elements[i].absolute_time - elements[i - movement_time_kernel_width].absolute_time);
@@ -5862,6 +5873,55 @@ void ns_analyzed_image_time_path::calculate_flow(const unsigned long element_ind
 }
 
 
+template<class allocator_T>
+void ns_time_path_image_movement_analyzer<allocator_T>::match_plat_areas_to_paths(std::vector<ns_region_area>& areas) {
+	for (unsigned int i = 0; i < areas.size(); i++) {
+		areas[i].worm_id = 0;
+		areas[i].movement_state = ns_movement_fast;
+		areas[i].clear_stats();
+		areas[i].plate_subregion_info = ns_plate_subregion_info();
+		areas[i].overlap_area_with_match = 0;
+	}
+	ns_64_bit average_path_duration(0), path_count(0);
+
+
+	for (unsigned int g = 0; g < groups.size(); g++) {
+		for (unsigned int p = 0; p < groups[g].paths.size(); p++) {
+			const ns_64_bit path_duration = groups[g].paths[p].elements.rbegin()->absolute_time - groups[g].paths[p].elements[0].absolute_time;
+			average_path_duration += path_duration;
+			path_count++;
+
+			for (unsigned int i = 0; i < areas.size(); i++) {
+				const ns_vector_2i overlap_area = ns_rectangle_overlap_area(areas[i].pos, areas[i].pos + areas[i].size,
+					groups[g].paths[p].path_region_position, groups[g].paths[p].path_region_position + groups[g].paths[p].path_region_size);
+				unsigned long oa = overlap_area.x * overlap_area.y;
+				if (oa == 0)
+					continue;
+				if (oa > areas[i].overlap_area_with_match) {
+					areas[i].overlap_area_with_match = oa;
+					areas[i].worm_id = g + 1;
+
+					if (groups[g].paths[p].excluded() || groups[g].paths[p].is_low_density_path())
+						areas[i].total_exclusion_time_in_seconds = path_duration;
+					else areas[i].total_inclusion_time_in_seconds = path_duration;
+
+					if (areas[i].time < groups[g].paths[p].elements[0].absolute_time)
+						areas[i].movement_state = ns_movement_fast;
+					else if (areas[i].time > groups[g].paths[p].elements.rbegin()->absolute_time)
+						areas[i].movement_state = ns_movement_stationary;
+					else {
+						areas[i].movement_state = groups[g].paths[p].best_guess_movement_state(areas[i].time);
+					}
+					//			cout << "Matched " << areas[i].worm_id << ": " << ns_movement_state_to_string_short(areas[i].movement_state) << "\n";
+				}
+			}
+		}
+	}
+	average_path_duration /= path_count;
+	//ns_time_path_image_movement_analyzer a;
+	for (unsigned int i = 0; i < areas.size(); i++)
+		areas[i].average_annotation_time_for_region = average_path_duration;
+}
 ns_analyzed_time_image_chunk ns_analyzed_image_time_path::initiate_image_registration(const ns_analyzed_time_image_chunk & chunk,ns_alignment_state & state, ns_calc_best_alignment_fast & align){
 	const unsigned long time_kernel(alignment_time_kernel_width);
 	//if (abs(chunk.stop_i - chunk.start_i) < time_kernel)
@@ -8569,7 +8629,7 @@ void ns_time_path_image_movement_analyzer<allocator_T>::load_region_visualizatio
 				throw ns_ex("Required worm detection information could not be loaded for this image (Interpolated region visualization requested with no id specified)");
 			if (region_image_specifications[i].region_vis_required &&
 				region_image_specifications[i].region_vis_image.id==0)
-				throw ns_ex("Required worm detection information could not be loaded for this image (Region visualization requested with no id specified)");
+				throw ns_ex("An image was encountered for which worm detection was not completed properly.");
 		
 
 			if (load_type != ns_analyzed_image_time_path::ns_lrv_just_flag) {

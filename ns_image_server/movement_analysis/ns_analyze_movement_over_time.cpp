@@ -748,7 +748,8 @@ void ns_process_inferred_worms_for_timepoint(ns_time_path_timepoint * timepoint,
 
 	if (current_region_image == shared_state.region_images_by_time->end())
 		throw ns_ex("Could not find timepoint ") << timepoint->time << " in the database";
-
+	if (current_region_image->second.worm_detection_results_id == 0)
+		throw ns_ex("Encountered an timepoint without worm detection performed.");
 	ns_acquire_lock_for_scope lock(shared_state.sql_lock, __FILE__, __LINE__);
 	if (persistant_data.inferred_elements.empty()) {
 		current_region_image->second.remove_inferred_element_from_db(*shared_state.sql);

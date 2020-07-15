@@ -692,7 +692,7 @@ public:
 	static std::string remove_menu_formatting(const string & s){
 		string ret;
 		for (unsigned int i = 0; i < s.size(); ++i){
-			if (s[i]!='_' || i > 0 && (s[i-1] != '/')) ret+=s[i];
+			if (s[i] != '&' && (s[i]!='_' || i > 0 && (s[i-1] != '/'))) ret+=s[i];
 		}
 		return ret;
 	}

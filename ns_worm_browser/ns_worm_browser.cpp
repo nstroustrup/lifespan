@@ -1891,8 +1891,7 @@ void ns_worm_learner::compare_machine_and_by_hand_annotations(const ns_browser_c
 
 			results_text += "The machine differed from by-hand annotations by:\n"
 				"  [movement]:" + ns_to_string_short(sqrt(death_msqerr), 3) + " days on average (N=" + ns_to_string(death_count) + ")\n"
-				"  [death-associated expansion]:" + ns_to_string_short(sqrt(expansion_msqerr), 3) + " days on average (N=" + ns_to_string(expansion_count) + ")\n"
-				"  [post-mortem contraction]:" + ns_to_string_short(sqrt(contraction_msqerr), 3) + " days on average (N=" + ns_to_string(contraction_count) + ")\n";
+				"  [death-associated expansion]:" + ns_to_string_short(sqrt(expansion_msqerr), 3) + " days on average (N=" + ns_to_string(expansion_count) + ")\n";
 			/*
 			bool enough_worms = local_count < 50;
 			if (enough_worms)
@@ -1905,8 +1904,7 @@ void ns_worm_learner::compare_machine_and_by_hand_annotations(const ns_browser_c
 		results_text += "**For all plates in this experiment **\n";
 		results_text += "The machine differed from by-hand annotations by:\n"
 			"  [movement]:" + ns_to_string_short(sqrt(overall_death_msqerr), 3) + " days on average (N=" + ns_to_string(overall_death_count) + ")\n"
-			"  [death-associated expansion]:" + ns_to_string_short(sqrt(overall_expansion_msqerr), 3) + " days on average (N=" + ns_to_string(overall_expansion_count) + ")\n"
-			"  [post-mortem contraction]:" + ns_to_string_short(sqrt(overall_contraction_msqerr), 3) + " days on average (N=" + ns_to_string(overall_contraction_count) + ")\n";
+			"  [death-associated expansion]:" + ns_to_string_short(sqrt(overall_expansion_msqerr), 3) + " days on average (N=" + ns_to_string(overall_expansion_count) + ")\n";
 		ns_text_dialog td;
 		td.grid_text.push_back(results_text);
 		td.title = "Results";

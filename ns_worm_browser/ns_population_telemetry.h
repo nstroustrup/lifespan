@@ -251,7 +251,10 @@ private:
 	ns_graph survival,movement_vs_posture;
 	ns_graph_specifics survival_specifics, movement_vs_posture_specifics;
 	std::vector<ns_survival_graph> survival_curves;
-	std::vector<ns_survival_graph> movement_vs_posture_vals;
+	std::vector<ns_survival_graph> movement_vs_posture_vals_fully_specified;
+	std::vector<ns_survival_graph> movement_vs_posture_vals_by_hand_annotated;
+	std::vector<ns_survival_graph> movement_vs_posture_vals_not_fully_specified;
+	std::vector<ns_survival_graph> movement_vs_posture_vals_outliers;
 	std::string survival_curve_title, survival_curve_note, movement_vs_posture_title, movement_vs_posture_note;
 	std::string movement_vs_posture_x_axis_label, movement_vs_posture_y_axis_label;
 	ns_color_8 movement_vs_posture_x_axis_color, movement_vs_posture_y_axis_color;
@@ -324,21 +327,26 @@ private:
 
 		double tmax(0), tmin(DBL_MAX), ymax(0), ymin(DBL_MAX);
 		unsigned long number_of_points(0);
-		for (unsigned int j = 0; j < movement_vs_posture_vals.size(); j++) {
-			for (unsigned int i = 0; i < movement_vs_posture_vals[j].vals.x.size(); i++) {
-				number_of_points++;
-				if (movement_vs_posture_vals[j].vals.x[i] < tmin)
-					tmin = movement_vs_posture_vals[j].vals.x[i];
-				if (movement_plot == ns_plot_death_times_absolute && movement_vs_posture_vals[j].vals.y[i] < tmin)
-					tmin = movement_vs_posture_vals[j].vals.y[i];
-				if (movement_vs_posture_vals[j].vals.y[i] < ymin)
-					ymin = movement_vs_posture_vals[j].vals.y[i];
-				if (movement_vs_posture_vals[j].vals.x[i] > tmax)
-					tmax = movement_vs_posture_vals[j].vals.x[i];
-				if (movement_plot == ns_plot_death_times_absolute && movement_vs_posture_vals[j].vals.y[i] > tmax)
-					tmax = movement_vs_posture_vals[j].vals.y[i];
-				if (movement_vs_posture_vals[j].vals.y[i] > ymax)
-					ymax = movement_vs_posture_vals[j].vals.y[i];
+		const int number_of_movement_vs_posture_graphs(4);
+		std::vector<ns_survival_graph>* all_movement_vs_posture_graphs[number_of_movement_vs_posture_graphs] = { &movement_vs_posture_vals_fully_specified, &movement_vs_posture_vals_not_fully_specified, &movement_vs_posture_vals_outliers, &movement_vs_posture_vals_by_hand_annotated };
+		for (unsigned int g = 0; g < number_of_movement_vs_posture_graphs; g++) {
+			std::vector<ns_survival_graph>& graph(*all_movement_vs_posture_graphs[g]);
+			for (unsigned int j = 0; j < graph.size(); j++) {
+				for (unsigned int i = 0; i < graph[j].vals.x.size(); i++) {
+					number_of_points++;
+					if (graph[j].vals.x[i] < tmin)
+						tmin = graph[j].vals.x[i];
+					if (movement_plot == ns_plot_death_times_absolute && graph[j].vals.y[i] < tmin)
+						tmin = graph[j].vals.y[i];
+					if (graph[j].vals.y[i] < ymin)
+						ymin = graph[j].vals.y[i];
+					if (graph[j].vals.x[i] > tmax)
+						tmax = graph[j].vals.x[i];
+					if (movement_plot == ns_plot_death_times_absolute && graph[j].vals.y[i] > tmax)
+						tmax = graph[j].vals.y[i];
+					if (graph[j].vals.y[i] > ymax)
+						ymax = graph[j].vals.y[i];
+				}
 			}
 		}
 		if (number_of_points != 0) {
@@ -377,17 +385,34 @@ private:
 		movement_vs_posture.x_axis_label = movement_vs_posture_x_axis_label;
 		movement_vs_posture.y_axis_properties.text.color = ns_color_8(0, 0, 255);
 		movement_vs_posture.y_axis_label = movement_vs_posture_y_axis_label;
-		for (unsigned int i = 0; i < movement_vs_posture_vals.size(); i++) {
-			movement_vs_posture_vals[i].vals.type = ns_graph_object::ns_graph_dependant_variable;
-			movement_vs_posture_vals[i].vals.properties.line.draw = false;
-			movement_vs_posture_vals[i].vals.properties.point.draw = true;
-			movement_vs_posture_vals[i].vals.properties.point.color = movement_vs_posture_vals[i].color;
-			movement_vs_posture_vals[i].vals.properties.point.width = 4;
-			movement_vs_posture_vals[i].vals.properties.point.edge_color = ns_color_8(0, 0, 0);
-			movement_vs_posture_vals[i].vals.properties.point.edge_width = 1;
-			movement_vs_posture_vals[i].vals.properties.point.point_shape = ns_graph_color_set::ns_circle;
-			movement_vs_posture_vals[i].vals.data_label = movement_vs_posture_vals[i].name;
-			movement_vs_posture.add_reference(&movement_vs_posture_vals[i].vals);
+		for (unsigned int g = 0; g < number_of_movement_vs_posture_graphs; g++) {
+			for (unsigned int i = 0; i < all_movement_vs_posture_graphs[g]->size(); i++) {
+				(*all_movement_vs_posture_graphs[g])[i].vals.type = ns_graph_object::ns_graph_dependant_variable;
+				(*all_movement_vs_posture_graphs[g])[i].vals.properties.line.draw = false;
+				(*all_movement_vs_posture_graphs[g])[i].vals.properties.point.draw = true;
+				(*all_movement_vs_posture_graphs[g])[i].vals.data_label = (*all_movement_vs_posture_graphs[g])[i].name;
+
+				(*all_movement_vs_posture_graphs[g])[i].vals.properties.point.color = (*all_movement_vs_posture_graphs[g])[i].color;
+				(*all_movement_vs_posture_graphs[g])[i].vals.properties.point.width = 4;
+				(*all_movement_vs_posture_graphs[g])[i].vals.properties.point.edge_color = ns_color_8(0, 0, 0);
+				(*all_movement_vs_posture_graphs[g])[i].vals.properties.point.edge_width = 1;
+				(*all_movement_vs_posture_graphs[g])[i].vals.properties.point.point_shape = ns_graph_color_set::ns_circle;
+
+				movement_vs_posture.add_reference(&(*all_movement_vs_posture_graphs[g])[i].vals);
+			}
+		}
+		for (unsigned int i = 0; i < movement_vs_posture_vals_not_fully_specified.size(); i++) 
+			movement_vs_posture_vals_not_fully_specified[i].vals.properties.point.edge_color = ns_color_8(125, 125, 125);
+
+		for (unsigned int i = 0; i < movement_vs_posture_vals_outliers.size(); i++) {
+			movement_vs_posture_vals_not_fully_specified[i].vals.properties.point.edge_color = movement_vs_posture_vals_not_fully_specified[i].color;
+			movement_vs_posture_vals_not_fully_specified[i].vals.properties.point.edge_width = 2;
+			movement_vs_posture_vals_not_fully_specified[i].vals.properties.point.color = ns_color_8(255, 255, 255);
+			movement_vs_posture_vals_not_fully_specified[i].vals.properties.point.width = 3;
+		}
+		for (unsigned int i = 0; i < movement_vs_posture_vals_by_hand_annotated.size(); i++) {
+			movement_vs_posture_vals_by_hand_annotated[i].vals.properties.point.point_shape = ns_graph_color_set::ns_square;
+			movement_vs_posture_vals_by_hand_annotated[i].vals.properties.point.width = 3;
 		}
 
 
@@ -438,7 +463,10 @@ public:
 		survival.clear();
 		movement_vs_posture.clear();
 		survival_curves.clear();
-		movement_vs_posture_vals.clear();
+		movement_vs_posture_vals_fully_specified.clear();
+		movement_vs_posture_vals_not_fully_specified.clear();
+		movement_vs_posture_vals_by_hand_annotated.clear();
+		movement_vs_posture_vals_outliers.clear();
 		unity_line.clear();
 		last_graph_contents = ns_none;
 		last_start_time = 0;
@@ -888,7 +916,10 @@ public:
 
 		//now make the scatter plots
 
-		movement_vs_posture_vals.resize(0);
+		movement_vs_posture_vals_fully_specified.resize(0);
+		movement_vs_posture_vals_by_hand_annotated.resize(0);
+		movement_vs_posture_vals_not_fully_specified.resize(0);
+		movement_vs_posture_vals_outliers.resize(0);
 
 
 		movement_id_lookup.clear();
@@ -898,7 +929,10 @@ public:
 			std::map<std::string, unsigned long> group_mappings_to_data;
 			for (auto p = data_categories.begin(); p != data_categories.end(); p++)
 				group_mappings_to_data[p->second.group_name] = 0;
-			movement_vs_posture_vals.resize(group_mappings_to_data.size());
+			movement_vs_posture_vals_fully_specified.resize(group_mappings_to_data.size());
+			movement_vs_posture_vals_not_fully_specified.resize(group_mappings_to_data.size());
+			movement_vs_posture_vals_by_hand_annotated.resize(group_mappings_to_data.size());
+			movement_vs_posture_vals_outliers.resize(group_mappings_to_data.size());
 			{
 				int tm = 0;
 				for (auto p = group_mappings_to_data.begin(); p != group_mappings_to_data.end(); p++) {
@@ -909,8 +943,14 @@ public:
 
 			for (auto p = data_categories.begin(); p != data_categories.end(); p++) {
 				p->second.output_location_id = group_mappings_to_data[p->second.group_name];
-				movement_vs_posture_vals[p->second.output_location_id].name = p->second.group_name;
-				movement_vs_posture_vals[p->second.output_location_id].color = p->second.color;
+				movement_vs_posture_vals_fully_specified[p->second.output_location_id].name = p->second.group_name;
+				movement_vs_posture_vals_fully_specified[p->second.output_location_id].color = p->second.color;
+				movement_vs_posture_vals_not_fully_specified[p->second.output_location_id].name = p->second.group_name;
+				movement_vs_posture_vals_not_fully_specified[p->second.output_location_id].color = p->second.color;
+				movement_vs_posture_vals_by_hand_annotated[p->second.output_location_id].name = p->second.group_name;
+				movement_vs_posture_vals_by_hand_annotated[p->second.output_location_id].color = p->second.color;
+				movement_vs_posture_vals_outliers[p->second.output_location_id].name = p->second.group_name;
+				movement_vs_posture_vals_outliers[p->second.output_location_id].color = p->second.color;
 			}
 		}
 
@@ -1106,22 +1146,36 @@ public:
 		//now we analyze and plot the points_to_plot structure
 		//now replace all the unspecified times with the max value so they fall on top or on the side of the chart.
 		for (auto p = points_to_plot.begin(); p != points_to_plot.end(); ++p) {
-			movement_vs_posture_vals[p->first].vals.x.resize(p->second.size());
-			movement_vs_posture_vals[p->first].vals.y.resize(p->second.size());
+			movement_vs_posture_vals_fully_specified[p->first].vals.x.resize(0);
+			movement_vs_posture_vals_fully_specified[p->first].vals.y.resize(0);
+			movement_vs_posture_vals_by_hand_annotated[p->first].vals.x.resize(0);
+			movement_vs_posture_vals_by_hand_annotated[p->first].vals.y.resize(0);
+			movement_vs_posture_vals_not_fully_specified[p->first].vals.x.resize(0);
+			movement_vs_posture_vals_not_fully_specified[p->first].vals.y.resize(0);
+			movement_vs_posture_vals_outliers[p->first].vals.x.resize(0);
+			movement_vs_posture_vals_outliers[p->first].vals.y.resize(0);
+
+			movement_vs_posture_vals_fully_specified[p->first].vals.x.reserve(p->second.size());
+			movement_vs_posture_vals_fully_specified[p->first].vals.y.reserve(p->second.size());
+			movement_vs_posture_vals_by_hand_annotated[p->first].vals.x.reserve(p->second.size());
+			movement_vs_posture_vals_by_hand_annotated[p->first].vals.y.reserve(p->second.size());
+			movement_vs_posture_vals_not_fully_specified[p->first].vals.x.reserve(p->second.size());
+			movement_vs_posture_vals_not_fully_specified[p->first].vals.y.reserve(p->second.size());
+			movement_vs_posture_vals_outliers[p->first].vals.x.reserve(p->second.size()/5);
+			movement_vs_posture_vals_outliers[p->first].vals.y.reserve(p->second.size()/5);
 
 			for (unsigned int j = 0; j < p->second.size(); j++) {
-
-				//if (!p->second[j].x_specified && !p->second[j].y_specified)
-				//	continue; // throw ns_ex("Completely unspecified event pair!");
-
-
+				bool fully_specified = true;
 				//handle residuals and missing data for y
 				if (movement_plot == ns_plot_death_times_residual) {
-					if (!p->second[j].x_specified || !p->second[j].y_specified)
+					if (!p->second[j].x_specified || !p->second[j].y_specified) {
+						fully_specified = false;
 						p->second[j].y_raw = undefined_y_position * rnd_dist(rng);  //add jitter
+					}
 					else p->second[j].y_raw -= p->second[j].x_raw;
 				}
 				else if (!p->second[j].y_specified) {
+					fully_specified = false;
 					if (regression_plot == ns_death_vs_observation_duration)
 						p->second[j].y_raw = (undefined_y_position)*rnd_dist(rng);  //add jitter 
 					else
@@ -1129,15 +1183,24 @@ public:
 				}
 
 				//handle missing data for x
-				if (!p->second[j].x_specified)
+				if (!p->second[j].x_specified) {
+					fully_specified = false;
 					p->second[j].x_raw = (undefined_x_position)*rnd_dist(rng) + metadata.time_at_which_animals_had_zero_age;  //add jitter
+				}
+				std::vector<ns_survival_graph>* graph_to_add(&movement_vs_posture_vals_fully_specified);
+				if (p->second[j].outlier_data.by_hand_annotation_exists)
+					graph_to_add = &movement_vs_posture_vals_by_hand_annotated;
+				else if (!fully_specified)
+					graph_to_add = &movement_vs_posture_vals_not_fully_specified;
+				else if (p->second[j].outlier_data.is_an_outlier)
+					graph_to_add = &movement_vs_posture_vals_outliers;
 
 				if (movement_plot == ns_plot_death_times_residual || regression_plot == ns_death_vs_observation_duration)
-					movement_vs_posture_vals[p->first].vals.y[j] = p->second[j].y_raw / 60.0 / 60.0 / 24;
+					(*graph_to_add)[p->first].vals.y.push_back(p->second[j].y_raw / 60.0 / 60.0 / 24);
 
-				else movement_vs_posture_vals[p->first].vals.y[j] = ((double)p->second[j].y_raw - metadata.time_at_which_animals_had_zero_age) / 60.0 / 60.0 / 24;
+				else(*graph_to_add)[p->first].vals.y.push_back(((double)p->second[j].y_raw - metadata.time_at_which_animals_had_zero_age) / 60.0 / 60.0 / 24);
 
-				movement_vs_posture_vals[p->first].vals.x[j] = ((double)p->second[j].x_raw - metadata.time_at_which_animals_had_zero_age) / 60.0 / 60.0 / 24;
+				(*graph_to_add)[p->first].vals.x.push_back(((double)p->second[j].x_raw - metadata.time_at_which_animals_had_zero_age) / 60.0 / 60.0 / 24);
 
 
 				ns_lookup_index li(p->second[j].x_raw, p->second[j].y_raw);

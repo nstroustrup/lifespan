@@ -346,9 +346,6 @@
     <ClCompile Include="..\ns_worm_browser\ns_worm_browser.cpp">
       <Filter>worm_browser</Filter>
     </ClCompile>
-    <ClCompile Include="..\ns_worm_browser\ns_worm_browser_main.cpp">
-      <Filter>worm_browser</Filter>
-    </ClCompile>
     <ClCompile Include="..\external_libraries\libhungarian\hungarian.c">
       <Filter>misc_lib\hungarian</Filter>
     </ClCompile>
@@ -703,6 +700,9 @@
     <ClCompile Include="..\ns_image_server\image_processing\ns_worm_detection_model_training.cpp">
       <Filter>image_processing</Filter>
     </ClCompile>
+    <ClCompile Include="..\ns_worm_browser\ns_worm_browser_main.cpp">
+      <Filter>statistics</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\ns_image_server\system_base\ns_dir.h">
@@ -754,9 +754,6 @@
       <Filter>statistics</Filter>
     </ClInclude>
     <ClInclude Include="..\ns_image_server\movement_analysis\ns_hidden_markov_model_posture_analyzer.h">
-      <Filter>movement_analysis</Filter>
-    </ClInclude>
-    <ClInclude Include="..\ns_image_server\movement_analysis\ns_image_server_time_path_inferred_worm_aggregator.h">
       <Filter>movement_analysis</Filter>
     </ClInclude>
     <ClInclude Include="..\ns_image_server\movement_analysis\ns_time_path_image_analyzer.h">
@@ -1169,6 +1166,9 @@
     </ClInclude>
     <ClInclude Include="..\ns_worm_browser\ns_tiled_gl_image.h">
       <Filter>worm_browser</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_image_server\movement_analysis\ns_image_server_time_path_inferred_worm_aggregator.h">
+      <Filter>statistics</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

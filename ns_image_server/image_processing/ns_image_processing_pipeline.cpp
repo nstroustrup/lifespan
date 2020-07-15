@@ -2205,9 +2205,8 @@ void ns_lifespan_curve_cache_entry_data::load(const ns_annotation_region_data_id
 
 	
 	region_compilation_timestamp = region_timestamp;
-
-	ns_machine_analysis_data_loader machine_loader;
-	machine_loader.load(id.annotations,metadata.region_id,0,0,sql);
+	ns_machine_analysis_data_loader machine_loader(true);
+	machine_loader.load(id.annotations,metadata.region_id,0,0,sql,true);
 	for (unsigned int i = 0; i < machine_loader.samples.size(); i++){
 		for (unsigned int j = 0; j < machine_loader.samples[i].regions.size(); j++){
 			compiler.add(machine_loader.samples[i].regions[j]->death_time_annotation_set,machine_loader.samples[i].regions[j]->metadata);
@@ -2247,7 +2246,15 @@ void ns_lifespan_curve_cache_entry::load_from_external_source(const ns_annotatio
 	ns_sql_result res;
 	sql.get_rows(res);
 	bool reload_experiment_data(false);
+
+	image_server.add_subtext_to_current_event("Loading annotations for the entire experiment...", &sql);
+	int perc(0);
 	for (unsigned int i = 0; i < res.size(); i++) {
+		int cur_perc = 5 * floor((i * 100) / (res.size() * 5));
+		if (cur_perc > perc) {
+			image_server.add_subtext_to_current_event(ns_to_string(cur_perc) + "%...", &sql);
+			perc = cur_perc;
+		}
 		const ns_64_bit region_id(ns_atoi64(res[i][0].c_str()));
 		const unsigned long latest_machine_timestamp(atol(res[i][1].c_str()));
 		const unsigned long latest_hand_timestamp(atol(res[i][2].c_str()));
@@ -2288,6 +2295,8 @@ void ns_lifespan_curve_cache_entry::load_from_external_source(const ns_annotatio
 			*/
 		}
 	}
+
+	image_server.add_subtext_to_current_event("\n", &sql);
 }
 
 

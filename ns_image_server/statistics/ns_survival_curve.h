@@ -618,8 +618,8 @@ public:
 	const std::size_t size() const { return curves.size(); }
 	void resize(const std::size_t& i) {
 		if (i < curves.size()) {
-			for (std::size_t j = i; i < curves.size(); j++)
-				memory_pool.release(curves[i]);
+			for (std::size_t j = i; j < curves.size(); j++)
+				memory_pool.release(curves[j]);
 			curves.resize(i);
 		}
 		else {

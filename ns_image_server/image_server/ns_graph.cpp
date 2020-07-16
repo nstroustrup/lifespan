@@ -201,26 +201,31 @@ void ns_graph_axes::check_for_sanity() const{
 		throw ns_ex("Invalid x axis specification: [") <<boundary(2) << "," << boundary(3) << "]";
 }
 
-
 void ns_graph::draw_legend(const std::string& title, long line_width, bool do_not_resize_image, ns_image_standard& image) {
 	unsigned long border = 5;
 	unsigned long line_spacing = 5;
 	ns_font& font(font_server.get_default_font());
 	font.set_height(y_axis_properties.text_size * FREETYPE_SCALE_FACTOR);
-	std::vector<std::string> cropped_labels;
-	std::vector<ns_color_8> colors;
-	cropped_labels.reserve(contents.size());
-	colors.reserve(contents.size());
+	std::map< std::string, ns_color_8> cropped_labels;
 
 	for (unsigned int i = 0; i < contents.size(); i++) {
 		if (contents[i]->data_label.empty() || contents[i]->type == ns_graph_object::ns_graph_independant_variable)
 			continue;
-		cropped_labels.push_back(contents[i]->data_label);
-		if (cropped_labels.rbegin()->size() > 26)
-			cropped_labels.rbegin()->resize(26);
-		if (contents[i]->properties.line.draw)
-			colors.push_back(contents[i]->properties.line.color);
-		else colors.push_back(contents[i]->properties.point.color);
+		std::pair<std::string,ns_color_8> entry(contents[i]->data_label, contents[i]->properties.line.color);
+	
+		if (entry.first.size() > 26)
+			entry.first.resize(26);
+
+		if (!contents[i]->properties.line.draw)
+			entry.second = contents[i]->properties.point.color;
+		auto p = cropped_labels.find(entry.first);
+		if (p == cropped_labels.end())
+			cropped_labels.emplace(entry);
+		else {
+			if (!(p->second == entry.second)) {
+				std::cerr << "ns_graph::draw_legend()::Multiple legend entries for " << entry.first << " differ in colors.\n";
+			}
+		}
 	}
 
 	ns_vector_2i largest_dimension;
@@ -229,8 +234,8 @@ void ns_graph::draw_legend(const std::string& title, long line_width, bool do_no
 		if (title.size() > 0)
 			dim = font.draw_color(0, 0, ns_color_8(0, 0, 0), title, image, false);
 		largest_dimension = ns_vector_2i(dim.w, dim.h);
-		for (unsigned int i = 0; i < cropped_labels.size(); i++) {
-			dim = font.draw_color(0, 0, ns_color_8(0, 0, 0), cropped_labels[i], image, false);
+		for (auto p = cropped_labels.begin(); p != cropped_labels.end(); ++p) {
+			dim = font.draw_color(0, 0, ns_color_8(0, 0, 0), p->first, image, false);
 			if (dim.w > largest_dimension.x)
 				largest_dimension.x = dim.w;
 			if (dim.h > largest_dimension.y)
@@ -265,10 +270,10 @@ void ns_graph::draw_legend(const std::string& title, long line_width, bool do_no
 		font.draw_color(text_x, cur_y, ns_color_8(0, 0, 0), title, image);
 		cur_y += largest_dimension.y + line_spacing;
 	}
-	for (unsigned long i = 0; i < cropped_labels.size(); i++) {
+	for (auto p = cropped_labels.begin(); p != cropped_labels.end(); ++p) {
 		const int line_pos = cur_y - largest_dimension.y / 2;
-		image.draw_line_color_thick(ns_vector_2i(border, line_pos), ns_vector_2i(border+line_width, line_pos),colors[i],3);
-		font.draw_color(text_x, cur_y, ns_color_8(0, 0, 0), cropped_labels[i], image);
+		image.draw_line_color_thick(ns_vector_2i(border, line_pos), ns_vector_2i(border+line_width, line_pos),p->second,3);
+		font.draw_color(text_x, cur_y, ns_color_8(0, 0, 0), p->first, image);
 		cur_y += largest_dimension.y + line_spacing;
 	}
 }

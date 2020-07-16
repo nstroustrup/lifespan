@@ -17,20 +17,23 @@ struct ns_outlier_search_data {
 	bool by_hand_annotation_exists;
 	bool is_an_outlier;
 	ns_outlier_search_data(const ns_dying_animal_description_base<const ns_death_time_annotation>& source_data) {
-		by_hand_annotation_exists =
-			ns_dying_animal_description_group<const ns_death_time_annotation>::calculate_best_guess_death_annotation(source_data.by_hand.movement_based_death_annotation, source_data.by_hand.death_associated_expansion_start) != 0;
+		const ns_death_time_annotation* d =
+			ns_dying_animal_description_group<const ns_death_time_annotation>::calculate_best_guess_death_annotation(source_data.by_hand.movement_based_death_annotation, source_data.by_hand.death_associated_expansion_start);
+		by_hand_annotation_exists = d != 0 && !d->time.fully_unbounded();
 
 		if (source_data.machine.last_fast_movement_annotation == 0 || 
 			source_data.machine.movement_based_death_annotation == 0) {
 			weak_movement_duration = alive_but_not_moving_duration = -1;
 			return;
 		}
-		else weak_movement_duration = source_data.machine.movement_based_death_annotation - source_data.machine.last_fast_movement_annotation;
+		else weak_movement_duration = source_data.machine.movement_based_death_annotation->time.best_estimate_event_time_for_possible_partially_unbounded_interval() - 
+			source_data.machine.last_fast_movement_annotation->time.best_estimate_event_time_for_possible_partially_unbounded_interval();
 		if (source_data.machine.death_associated_expansion_start == 0) {
 			alive_but_not_moving_duration = -1;
 			return;
 		}
-		else alive_but_not_moving_duration = source_data.machine.movement_based_death_annotation - source_data.machine.death_associated_expansion_start;
+		else alive_but_not_moving_duration = source_data.machine.death_associated_expansion_start->time.best_estimate_event_time_for_possible_partially_unbounded_interval() 
+			- source_data.machine.movement_based_death_annotation->time.best_estimate_event_time_for_possible_partially_unbounded_interval();
 	}
 };
 
@@ -390,7 +393,8 @@ private:
 				(*all_movement_vs_posture_graphs[g])[i].vals.type = ns_graph_object::ns_graph_dependant_variable;
 				(*all_movement_vs_posture_graphs[g])[i].vals.properties.line.draw = false;
 				(*all_movement_vs_posture_graphs[g])[i].vals.properties.point.draw = true;
-				(*all_movement_vs_posture_graphs[g])[i].vals.data_label = (*all_movement_vs_posture_graphs[g])[i].name;
+				if (g==0)
+					(*all_movement_vs_posture_graphs[g])[i].vals.data_label = (*all_movement_vs_posture_graphs[g])[i].name;
 
 				(*all_movement_vs_posture_graphs[g])[i].vals.properties.point.color = (*all_movement_vs_posture_graphs[g])[i].color;
 				(*all_movement_vs_posture_graphs[g])[i].vals.properties.point.width = 4;
@@ -405,10 +409,10 @@ private:
 			movement_vs_posture_vals_not_fully_specified[i].vals.properties.point.edge_color = ns_color_8(125, 125, 125);
 
 		for (unsigned int i = 0; i < movement_vs_posture_vals_outliers.size(); i++) {
-			movement_vs_posture_vals_not_fully_specified[i].vals.properties.point.edge_color = movement_vs_posture_vals_not_fully_specified[i].color;
-			movement_vs_posture_vals_not_fully_specified[i].vals.properties.point.edge_width = 2;
-			movement_vs_posture_vals_not_fully_specified[i].vals.properties.point.color = ns_color_8(255, 255, 255);
-			movement_vs_posture_vals_not_fully_specified[i].vals.properties.point.width = 3;
+			movement_vs_posture_vals_outliers[i].vals.properties.point.edge_color = movement_vs_posture_vals_not_fully_specified[i].color;
+			movement_vs_posture_vals_outliers[i].vals.properties.point.edge_width = 2;
+			movement_vs_posture_vals_outliers[i].vals.properties.point.color = ns_color_8(255, 255, 255);
+			movement_vs_posture_vals_outliers[i].vals.properties.point.width = 3;
 		}
 		for (unsigned int i = 0; i < movement_vs_posture_vals_by_hand_annotated.size(); i++) {
 			movement_vs_posture_vals_by_hand_annotated[i].vals.properties.point.point_shape = ns_graph_color_set::ns_square;
@@ -1114,17 +1118,24 @@ public:
 				++i;
 			}
 		}
-		double permissible_range[2] = { log(.02),log(.98) };
+		//ofstream o("c:\\server\\outlier_debug.csv");
+		//o << "val1,val2,p,outlier\n";
+		const double p_cutoff = .02;
 		normal_fit.build_from_data(data_holder);
 		{
 			for (auto p = points_to_plot.begin(); p != points_to_plot.end(); p++) {
 				for (unsigned int i = 0; i < p->second.size(); i++) {
+					if (p->second[i].outlier_data.alive_but_not_moving_duration == -1 || p->second[i].outlier_data.weak_movement_duration == -1) {
+						p->second[i].outlier_data.is_an_outlier = false;
+						continue;
+					}
 					const double prob = normal_fit.point_emission_likelihood(p->second[i]);
-					p->second[i].outlier_data.is_an_outlier = (prob < permissible_range[0] || prob > permissible_range[1]);
+					p->second[i].outlier_data.is_an_outlier = prob < p_cutoff;
+		//			o << p->second[i].outlier_data.alive_but_not_moving_duration << "," << p->second[i].outlier_data.weak_movement_duration << "," << prob << "," << p->second[i].outlier_data.is_an_outlier << "\n";
 				}
 			}
-			
 		}
+		//o.close();
 
 
 

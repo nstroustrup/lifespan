@@ -97,18 +97,19 @@ struct ns_device_summary{
 	ns_device_summary(){}
 	ns_device_summary(const std::string & name_, const bool sim, const bool unknown_id,
 					  const bool paused_,const bool currently_scanning_,const unsigned long last_capture_start_time_,
-					  const unsigned long autoscan_interval_, const unsigned long last_autoscan_time_, const unsigned long next_autoscan_time_):name(name_),simulated_device(sim),
+					  const unsigned long autoscan_interval_, const unsigned long last_autoscan_time_, const unsigned long next_autoscan_time_, bool preview_capture_requested_):name(name_),simulated_device(sim),
 					  unknown_identity(unknown_id),paused(paused_),currently_scanning(currently_scanning_),
-					  last_capture_start_time(last_capture_start_time_),autoscan_interval(autoscan_interval_),last_autoscan_time(last_autoscan_time_),next_autoscan_time(next_autoscan_time_){}
+					  last_capture_start_time(last_capture_start_time_),autoscan_interval(autoscan_interval_),last_autoscan_time(last_autoscan_time_),next_autoscan_time(next_autoscan_time_), preview_capture_requested(preview_capture_requested_){}
 	std::string name;
 	bool simulated_device;
 	bool unknown_identity,
 		paused,
 		currently_scanning;
 	unsigned long last_capture_start_time,
-				  autoscan_interval,
-				  last_autoscan_time,
-				  next_autoscan_time;
+		autoscan_interval,
+		last_autoscan_time,
+		next_autoscan_time;
+	long preview_capture_requested;
 };
 
 struct ns_device_hardware_info {

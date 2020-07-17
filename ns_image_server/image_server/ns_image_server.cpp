@@ -2569,7 +2569,7 @@ void ns_image_server::register_devices(const bool verbose, ns_image_server_sql *
 	device_manager.request_device_list(connected_devices);
 
 	//we want to remember specified information about devices, so we download it from the db before clearing the db.
-	*sql << "SELECT name, pause_captures,autoscan_interval, next_autoscan_time FROM devices WHERE host_id = " << image_server.host_id();
+	*sql << "SELECT name, pause_captures,autoscan_interval, next_autoscan_time,preview_requested FROM devices WHERE host_id = " << image_server.host_id();
 	ns_sql_result device_state;
 	sql->get_rows(device_state);
 	std::map<string,ns_device_summary> device_state_map;
@@ -2577,6 +2577,7 @@ void ns_image_server::register_devices(const bool verbose, ns_image_server_sql *
 		device_state_map[device_state[i][0]].paused = device_state[i][1]!="0";
 		device_state_map[device_state[i][0]].autoscan_interval = atol(device_state[i][2].c_str());
 		device_state_map[device_state[i][0]].next_autoscan_time = atol(device_state[i][3].c_str());
+		device_state_map[device_state[i][0]].preview_capture_requested = atol(device_state[i][3].c_str());
 	}
 	unsigned long current_time(ns_current_time());
 	//only specify new pause states for devices that are currently connected
@@ -2603,6 +2604,21 @@ void ns_image_server::register_devices(const bool verbose, ns_image_server_sql *
 	for (unsigned int i = 0; i < connected_devices.size(); i++){
 		register_device(connected_devices[i],sql);
 		devices_registered += connected_devices[i].name + ",";
+	}
+
+	for (unsigned int i = 0; i < connected_devices.size(); i++) {
+		std::map<string, ns_device_summary>::iterator p(device_state_map.find(connected_devices[i].name));
+		if (p == device_state_map.end())
+			continue;
+		try {
+			if (p->second.preview_capture_requested) {
+				*sql << "UPDATE devices SET preview_capture_requested = " << device_state_map[device_state[i][0]].preview_capture_requested << " WHERE name='" << connected_devices[i].name << "'";
+				sql->send_query();
+			}
+		}
+		catch (ns_ex & ex) {
+			image_server.register_server_event(ex, sql);
+		}
 	}
 	ns_image_server_event ev("Registering devices ");
 	ev << devices_registered;

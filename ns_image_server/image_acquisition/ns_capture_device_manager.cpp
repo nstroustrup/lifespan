@@ -137,7 +137,7 @@ void ns_image_server_device_manager::request_device_list(ns_device_name_list & l
 	for (ns_device_list::const_iterator p = devices.begin(); p != devices.end(); ++p)
 		list.push_back(ns_device_summary(p->first,p->second->device.is_simulated_device(),
 		p->second->device.unknown_identity(),p->second->device.paused > 0,p->second->currently_scanning,p->second->last_capture_start_time, 
-		p->second->autoscan_interval,p->second->last_autoscan_time, p->second->next_autoscan_time));
+		p->second->autoscan_interval,p->second->last_autoscan_time, p->second->next_autoscan_time,false));
 	lock.release();
 }
 
@@ -341,6 +341,7 @@ bool ns_image_server_device_manager::set_autoscan_interval_and_balance(const std
 	lock.release();
 	return true;
 }
+
 
 bool ns_image_server_device_manager::set_autoscan_interval(const std::string & device_name, const int interval_in_seconds,const unsigned long start_time){
 	
@@ -1061,8 +1062,13 @@ void ns_format_device_address(std::string & str){
 	str = "epson2:" + str;
 }
 
-bool ns_image_server_device_manager::hotplug_new_devices(const bool rescan_bad_barcodes, const bool verbose){
-	
+bool ns_image_server_device_manager::hotplug_new_devices(const bool rescan_bad_barcodes, const bool verbose,const bool hotplug_is_due_to_confusion){
+	if (hotplug_is_due_to_confusion)
+		this->number_of_confused_hotplugs++;
+	else this->number_of_confused_hotplugs = 0;
+	if (number_of_confused_hotplugs > 4) {
+		image_server.register_server_event(ns_image_server::ns_register_in_local_db, ns_image_server_event("Too many hotplugs have been automatically triggered by confusion over devices on the cluster.  To update the device list, please manually request a hotplug from the commandline or through the website via the \"Search for New Devices\" button."));
+	}
 	ns_acquire_lock_for_scope lock(device_list_access_lock,__FILE__,__LINE__);
 	if (hotplug_running){
 		lock.release();
@@ -1503,7 +1509,7 @@ void ns_image_server_device_manager::clear_device_list_and_identify_all_hardware
 	}
 	devices.clear();
 	lock.release();
-	hotplug_new_devices();
+	hotplug_new_devices(true,false,false);
 }
 
 

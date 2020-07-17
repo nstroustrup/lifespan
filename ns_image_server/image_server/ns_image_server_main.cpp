@@ -1451,7 +1451,7 @@ int main(int argc, char ** argv){
 				cerr << "Last known configuration:\n";
 				image_server.device_manager.output_connected_devices(cerr);
 				cerr << "\n";
-				image_server.device_manager.hotplug_new_devices();
+				image_server.device_manager.hotplug_new_devices(true,true,false);
 			}
 			else image_server.device_manager.clear_device_list_and_identify_all_hardware();
 		}

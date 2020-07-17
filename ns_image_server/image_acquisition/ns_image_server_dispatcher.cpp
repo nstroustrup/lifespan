@@ -18,6 +18,7 @@
 #include <stdlib.h>
 #include "ns_high_precision_timer.h"
 #include "ns_sql.h"
+#include <set>
 using namespace std;
 
 #ifdef _WIN32

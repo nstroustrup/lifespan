@@ -466,6 +466,7 @@ private:
 template<class storage_type, class ns_component>
 class ns_histogram{
 public:
+	ns_histogram(int length_) :hist(length_, 0), length(length_),N(0) {}
 	ns_histogram():hist(max_pixel_depth,0),N(0){
 		//s = 2^(8*sizeof(ns_component))
 		unsigned int s = 1;
@@ -874,8 +875,13 @@ public:
 
 	///calculates the image's histogram, neglecting the value 0 which is used to represent
 	///pixels that are not part of the image.
-	ns_histogram<unsigned int, ns_component> histogram() const{
-		ns_histogram<unsigned int,ns_component> hist;
+
+	ns_histogram<unsigned int, ns_component> histogram() const {
+		ns_histogram<unsigned int, ns_component> hist;
+		histogram(hist);
+		return hist;
+	}
+	ns_histogram<unsigned int, ns_component> histogram(ns_histogram<unsigned int, ns_component> & hist) const {
 		hist.clear();
 		unsigned long num_zeros = 0;
 		if (reciever_t::_properties.components == 3)

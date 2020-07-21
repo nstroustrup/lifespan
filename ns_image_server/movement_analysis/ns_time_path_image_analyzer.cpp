@@ -1075,7 +1075,7 @@ void ns_time_path_image_movement_analyzer<allocator_T>::process_raw_images(const
 				//Now we calculate some statistics and then we're done.
 				image_loading_temp.use_more_memory_to_avoid_reallocations(false);
 				image_loading_temp.clear();
-
+				output_histogram_telemetry_file(sql);
 				memory_pool.clear();
 				g = stop_group;
 				current_round++;
@@ -5333,9 +5333,7 @@ void ns_analyzed_image_time_path::denoise_movement_series_and_calculate_intensit
 	ns_slope_calculator<8, 2, ns_slope_accessor_total_outside_stabilized_4x, ns_set_to_zero, ns_set_to_local_mean> stabilized_outside_change_calculator_4x(elements, start_i, tmp1, tmp2);
 }
 
-void ns_match_histograms(const ns_image_standard & im1, const ns_image_standard & im2, float * histogram_matching_factors) {
-	ns_histogram<unsigned int, ns_8_bit> h1(im1.histogram());
-	ns_histogram<unsigned int, ns_8_bit> h2(im2.histogram());
+void ns_match_histograms(const ns_histogram<unsigned int, ns_8_bit> h1, const ns_histogram<unsigned int, ns_8_bit> h2,float * histogram_matching_factors) {
 	long cdf1[256], cdf2[256];
 	cdf1[0] = h1[0];
 	for (unsigned int i = 1; i < 256; i++)	cdf1[i] = h1[i] + cdf1[i - 1];
@@ -5370,6 +5368,18 @@ void ns_analyzed_image_time_path::spatially_average_movement(const int y, const 
 		}
 	}
 }
+
+//aggregate histogram into larger categories to remove noise, retaining 0 as a special case.
+ns_histogram<unsigned int, ns_8_bit>  ns_downsample_histogram(const ns_histogram<unsigned int, ns_8_bit> & source){
+	ns_histogram<unsigned int, ns_8_bit> hist(17);
+	for (unsigned i = 0; i < source.size(); i++) {
+		if (i == 0)
+			hist[0]+=source[0];
+		else hist[(i / 16)+1]+=source[i];
+	}
+	return hist;
+}
+
 void ns_analyzed_image_time_path::quantify_movement(const ns_analyzed_time_image_chunk & chunk){
 	
 
@@ -5391,7 +5401,12 @@ void ns_analyzed_image_time_path::quantify_movement(const ns_analyzed_time_image
 	const int image_width(prop.width),
 			  image_height(prop.height);
 
+
+	ns_histogram<unsigned int, ns_8_bit> hist1, hist2;
 	for (unsigned int i = chunk.start_i; i < chunk.stop_i; i++) {
+		elements[i].registered_images->image.histogram(hist1);
+		elements[i].registered_image_histogram = ns_downsample_histogram(hist1);
+		elements[i].histogram_calculated = true;
 		
 		const bool first_frames(i < movement_time_kernel_width);
 		//calulate histogram if not already done.
@@ -5400,9 +5415,11 @@ void ns_analyzed_image_time_path::quantify_movement(const ns_analyzed_time_image
 				for (unsigned int j = 0; j < 256; j++)
 					elements[i].registered_images->histogram_matching_factors[j] = j;
 			}
-			else
-				ns_match_histograms(elements[i].registered_images->image, elements[i - movement_time_kernel_width].registered_images->image, elements[i].registered_images->histogram_matching_factors);
-			elements[i].registered_images->histograms_matched = true;
+			else {
+				elements[i - movement_time_kernel_width].registered_images->image.histogram(hist2);
+				ns_match_histograms(hist1, hist2, elements[i].registered_images->histogram_matching_factors);
+				elements[i].registered_images->histograms_matched = true;
+			}
 		}
 
 		elements[i].measurements.zero();
@@ -5722,6 +5739,7 @@ void ns_analyzed_image_time_path::calculate_movement_images(const ns_analyzed_ti
 	if (flow == 0)
 		flow = new ns_optical_flow_processor();
 #endif
+	ns_histogram<unsigned int, ns_8_bit> hist1, hist2;
 	for (long i = chunk.start_i; ; i += istep) {
 		if (chunk.forward() && i >= chunk.stop_i)
 			break;
@@ -5749,13 +5767,18 @@ void ns_analyzed_image_time_path::calculate_movement_images(const ns_analyzed_ti
 		}
 		calculate_flow(i);
 #endif
+		elements[i].registered_images->image.histogram(hist1);
+		elements[i].registered_image_histogram = ns_downsample_histogram(hist1);
+		elements[i].histogram_calculated = true;
 
 		if (first_frames) {
 			for (unsigned int j = 0; j < 256; j++)
 				elements[i].registered_images->histogram_matching_factors[j] = j;
 		}
-		else
-			ns_match_histograms(elements[i].registered_images->image, elements[i - dt].registered_images->image, elements[i].registered_images->histogram_matching_factors);
+		else {
+			elements[i - dt].registered_images->image.histogram(hist2);
+			ns_match_histograms(hist1, hist2, elements[i].registered_images->histogram_matching_factors);
+		}
 		elements[i].registered_images->histograms_matched = true;
 
 		//now we generate the movement image
@@ -7543,6 +7566,49 @@ void ns_time_path_image_movement_analyzer<allocator_T>::back_port_by_hand_annota
 
 }
 
+ns_ostream* ns_get_histogram_output(ns_64_bit region_info_id, int hist_size, ns_sql & sql) {
+	ns_image_server_results_subject sub;
+	sub.region_id = region_info_id;
+	ns_image_server_results_file hist_out(image_server.results_storage.time_path_image_analysis_quantification(sub, "histogram_normalization_data", true, sql, false, true, ns_csv_gz));
+	ns_ostream * hist_file = hist_out.output();
+	(*hist_file)() << "Time (Formated), Time (UNIX Timestamp), Region Id, Group Id";
+	for (unsigned int i = 0; i < hist_size; i++)
+		(*hist_file)() << ", hist[" << i << "]";
+	(*hist_file)() << "\n";
+	return hist_file;
+}
+
+typedef std::pair<unsigned long, ns_histogram<unsigned int, ns_8_bit> > ns_group_id_histogram;
+template<class allocator_T>
+void ns_time_path_image_movement_analyzer<allocator_T>::output_histogram_telemetry_file(ns_sql & sql) const {
+	map<unsigned long, std::vector<ns_group_id_histogram> > histograms_ordered_by_time;
+	for (unsigned int i = 0; i < groups.size(); i++) {
+		for (unsigned int j = 0; j < groups[i].paths.size(); j++) {
+			if (ns_skip_low_density_paths && groups[i].paths[j].is_low_density_path())
+				continue;
+
+			for (unsigned int t = 0; t < groups[i].paths[j].elements.size(); t++) {
+				if (groups[i].paths[j].elements[t].histogram_calculated)
+					histograms_ordered_by_time[groups[i].paths[j].elements[t].absolute_time].push_back(ns_group_id_histogram(i, groups[i].paths[j].elements[t].registered_image_histogram));
+			}
+		}
+	}
+
+	ns_histogram<unsigned int, ns_8_bit>& q(histograms_ordered_by_time.begin()->second.begin()->second);
+	ns_acquire_for_scope<ns_ostream> hist_file(ns_get_histogram_output(region_info_id, q.size(), sql));
+	for (auto p = histograms_ordered_by_time.begin(); p != histograms_ordered_by_time.end(); ++p) {
+		for (unsigned int i = 0; i < p->second.size(); i++) {
+			hist_file()() << ns_format_time_string(p->first) << "," << p->first << "," << region_info_id << "," << p->second[i].first;
+			for (unsigned int j = 0; j < p->second[i].second.size(); j++) {
+				hist_file()() << "," << p->second[i].second[j];
+			}
+			hist_file()() << "\n";
+		}
+	}
+	hist_file.release();
+}
+
+
 template<class allocator_T>
 void ns_time_path_image_movement_analyzer<allocator_T>::reanalyze_stored_aligned_images(const ns_64_bit region_id,const ns_time_path_solution & solution_,const ns_time_series_denoising_parameters & times_series_denoising_parameters,const ns_analyzed_image_time_path_death_time_estimator * e,ns_sql & sql,const bool load_images_after_last_valid_sample,const bool recalculate_flow_images){
 
@@ -7685,14 +7751,12 @@ void ns_time_path_image_movement_analyzer<allocator_T>::reanalyze_stored_aligned
 			for (unsigned int j = 0; j < groups[i].paths.size(); j++){
 				if (ns_skip_low_density_paths && groups[i].paths[j].is_low_density_path())
 					continue;
-				groups[i].paths[j].analyze_movement(e,generate_stationary_path_id(i,j),last_timepoint_in_analysis_);
-			//	ns_region_metadata m;
-			//	if (i == 17)
-			//		groups[i].paths[j].write_detailed_movement_quantification_analysis_data(m, i, j, o, false, false);
 
+				groups[i].paths[j].analyze_movement(e,generate_stationary_path_id(i,j),last_timepoint_in_analysis_);
 				groups[i].paths[j].calculate_movement_quantification_summary(groups[i].paths[j].movement_analysis_result);
 			}
 		}
+		output_histogram_telemetry_file(sql);
 		//o.close();
 		memory_pool.clear();
 		generate_movement_description_series();

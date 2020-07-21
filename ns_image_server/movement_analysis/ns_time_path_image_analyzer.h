@@ -169,7 +169,7 @@ template<class allocator_T> using ns_registered_image_pool = ns_image_pool<ns_re
 class ns_analyzed_image_time_path_element{
 public:
 	ns_analyzed_image_time_path_element():registered_images(0),path_aligned_images(0),
-	inferred_animal_location(false), path_aligned_images_are_loaded_and_released(false),element_before_fast_movement_cessation(false),element_was_processed(false),movement(ns_movement_not_calculated),saturated_offset(false),registration_offset(0,0),number_of_extra_worms_observed_at_position(0),part_of_a_multiple_worm_disambiguation_group(0),excluded(false),censored(false){}
+	inferred_animal_location(false), path_aligned_images_are_loaded_and_released(false),histogram_calculated(false),element_before_fast_movement_cessation(false),element_was_processed(false),movement(ns_movement_not_calculated),saturated_offset(false),registration_offset(0,0),number_of_extra_worms_observed_at_position(0),part_of_a_multiple_worm_disambiguation_group(0),excluded(false),censored(false){}
 	~ns_analyzed_image_time_path_element(){
 		if (path_aligned_images != 0 || registered_images != 0)
 			std::cerr << "ABOUT TO LEAK TIME PATH ELEMENT!";
@@ -234,6 +234,9 @@ public:
 		registered_images = pool.get(p);
 	}
 	void generate_movement_visualization(ns_image_standard & out) const;
+
+	ns_histogram<unsigned int, ns_8_bit> registered_image_histogram;
+	bool histogram_calculated;
 private:
 	unsigned long number_of_extra_worms_observed_at_position;
 	bool part_of_a_multiple_worm_disambiguation_group;
@@ -900,6 +903,8 @@ private:
 	bool load_movement_image_db_info(const ns_64_bit region_id,ns_sql & sql);
 	void generate_images_from_region_visualization();
 
+	void output_histogram_telemetry_file(ns_sql& sql) const;
+
 
 	bool paths_loaded_from_solution;
 	std::vector<ns_analyzed_image_time_path_group<allocator_T> > groups;
@@ -951,7 +956,6 @@ public:
 	void from_xml(const std::string & text);
 };
 
-
-void ns_match_histograms(const ns_image_standard & im1, const ns_image_standard & im2, float * histogram_matching_factors);
+void ns_match_histograms(const ns_histogram<unsigned int, ns_8_bit> h1, const ns_histogram<unsigned int, ns_8_bit> h2, float* histogram_matching_factors);
 
 #endif

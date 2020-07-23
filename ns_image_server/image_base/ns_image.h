@@ -550,7 +550,7 @@ public:
 
 		//calculate the width of the ntile, and the area of the curve beneath the ntile.
 		storage_type ntile_width = c_area/(storage_type)ntile_number_of_divisions;
-		storage_type start=ntile_width*ntile;
+		storage_type start = (storage_type)((ntile * (ns_64_bit)c_area) / ntile_number_of_divisions);
 
 		if (ntile_width == 0) return 0;
 
@@ -559,7 +559,7 @@ public:
 		ns_64_bit cur_ntile_sum(0);
 		storage_type  cur_ntile_width(0);
 		//u and o stored for debugging only
-		ns_64_bit u(0),o(0);
+	//	ns_64_bit u(0),o(0);
 		for (unsigned int i = (ignore_zero?1:0); i < length; i++){
 
 			//go through the histogram until you find the start of the requested ntile.
@@ -571,10 +571,10 @@ public:
 						return (double)i;  //the entire ntile exists in the current histogram level
 					cur_ntile_sum+=(overflow)*(storage_type)i;
 					cur_ntile_width+=overflow;
-					o+=(overflow);
-					u+=start-under_count;
+	//				o+=(overflow);
+			//		u+=start-under_count;
 				}
-				else u+=hist[i];
+	//			else u+=hist[i];
 				under_count+=hist[i];
 			}
 			else{
@@ -584,7 +584,7 @@ public:
 				}
 				cur_ntile_width+=hist[i];
 				cur_ntile_sum+=hist[i]*(storage_type)i;
-				o+=hist[i];
+	//			o+=hist[i];
 			}
 		}
 		if (cur_ntile_width >= ntile_width)

@@ -354,10 +354,9 @@ void ns_time_path_image_movement_analyzer<allocator_T>::output_allocation_state_
 
 struct ns_movement_analysis_shared_state {
 	ns_movement_analysis_shared_state():open_object_count(0),sql_lock("ssl"), deallocated_aligned_count(0),
-		registered_image_clear_lag(ns_analyzed_image_time_path::movement_time_kernel_width), 
+		registered_image_clear_lag(std::max(ns_analyzed_image_time_path::movement_time_kernel_width, ns_analyzed_image_time_path::intensity_normalization_kernel_half_width)),
 		sql(0),
-		path_aligned_image_clear_lag((ns_analyzed_image_time_path::movement_time_kernel_width > ns_analyzed_image_time_path::alignment_time_kernel_width) ?
-			ns_analyzed_image_time_path::movement_time_kernel_width : ns_analyzed_image_time_path::alignment_time_kernel_width){}
+		path_aligned_image_clear_lag(std::max(std::max(ns_analyzed_image_time_path::movement_time_kernel_width, ns_analyzed_image_time_path::alignment_time_kernel_width), ns_analyzed_image_time_path::intensity_normalization_kernel_half_width)){}
 
 	vector<vector<ns_chunk_generator> > chunk_generators;
 	vector<vector<ns_alignment_state> > alignment_states;
@@ -393,7 +392,6 @@ template<class allocator_T>
 void ns_time_path_image_movement_analyzer<allocator_T>::run_group_for_current_backwards_round(unsigned int group_id, unsigned int path_id, ns_time_path_image_movement_analyzer_thread_pool_persistant_data * persistant_data,ns_movement_analysis_shared_state * shared_state) {
 	const unsigned int & i(group_id), &j(path_id);
 	ns_analyzed_time_image_chunk chunk;
-
 	if (!shared_state->chunk_generators[i][j].backwards_update_and_check_for_new_chunk(chunk)) {
 		
 		return;
@@ -404,7 +402,7 @@ void ns_time_path_image_movement_analyzer<allocator_T>::run_group_for_current_ba
 	shared_state->open_object_count++;
 	if (abs(chunk.start_i - chunk.stop_i) != 1)
 		throw ns_ex("Running backwards, the chunk size has to be 1, otherwise reversing the order gets complicated!");
-	//cerr << "R" << i << "(" << chunk.start_i << "-" << chunk.stop_i << ")";
+	//cerr << "R" << i << "(" << chunk.start_i << "-" << chunk.stop_i << ")\n";
 	groups[i].paths[j].calculate_image_registration(chunk, shared_state->alignment_states[i][j], shared_state->chunk_generators[i][j].first_chunk(), persistant_data->fast_aligner);
 	//cerr << "(";
 
@@ -419,19 +417,19 @@ void ns_time_path_image_movement_analyzer<allocator_T>::run_group_for_current_ba
 
 	//also, we /register/ backwards but calculate movement /forwards/
 	//so we need to be one behind in the movement calculation at all times.
-	ns_analyzed_time_image_chunk registration_chunk(chunk);
-	registration_chunk.start_i += shared_state->registered_image_clear_lag;
-	registration_chunk.stop_i += shared_state->registered_image_clear_lag;
+	ns_analyzed_time_image_chunk movement_analysis_chunk(chunk);
+	movement_analysis_chunk.start_i += shared_state->registered_image_clear_lag;
+	movement_analysis_chunk.stop_i += shared_state->registered_image_clear_lag;
 
-	if (registration_chunk.start_i <= groups[i].paths[j].first_stationary_timepoint() - 1) {
-		//	cerr << "M" << i << "(" << registration_chunk.start_i << "-" << registration_chunk.stop_i << ")";
-		groups[i].paths[j].calculate_movement_images(registration_chunk);
+	if (movement_analysis_chunk.start_i <= groups[i].paths[j].first_stationary_timepoint() - 1) {
+		//cerr << "M" << i << "(" << movement_analysis_chunk.start_i << "-" << movement_analysis_chunk.stop_i << ")\n";
+		groups[i].paths[j].calculate_movement_images(movement_analysis_chunk, shared_state->chunk_generators[i][j].first_chunk());
 		ns_acquire_lock_for_scope sql_lock(shared_state->sql_lock, __FILE__, __LINE__);
 #ifdef NS_CALCULATE_OPTICAL_FLOW
 		groups[i].paths[j].save_movement_images(registration_chunk, *shared_state->sql, ns_analyzed_image_time_path::ns_save_both, ns_analyzed_image_time_path::ns_only_output_backwards_images, ns_analyzed_image_time_path::ns_local_0);
 
 #else
-		groups[i].paths[j].save_movement_images(registration_chunk, *shared_state->sql, ns_analyzed_image_time_path::ns_save_simple, ns_analyzed_image_time_path::ns_only_output_backwards_images,ns_analyzed_image_time_path::ns_local_0);
+		groups[i].paths[j].save_movement_images(movement_analysis_chunk, *shared_state->sql, ns_analyzed_image_time_path::ns_save_simple, ns_analyzed_image_time_path::ns_only_output_backwards_images,ns_analyzed_image_time_path::ns_local_0);
 #endif
 		sql_lock.release();
 	}
@@ -441,27 +439,30 @@ void ns_time_path_image_movement_analyzer<allocator_T>::run_group_for_current_ba
 		if (groups[i].paths[j].elements[k].clear_path_aligned_images(memory_pool.aligned_image_pool))
 			shared_state->deallocated_aligned_count++;
 	}
-	//cerr << "Cr" << i << "(" << chunk.start_i + registered_image_clear_lag << "-" << groups[i].paths[j].elements.size() << ")";
-	for (long k = chunk.start_i + shared_state->registered_image_clear_lag; k < groups[i].paths[j].elements.size(); k++)
+	long image_clear_start = movement_analysis_chunk.start_i + shared_state->registered_image_clear_lag;
+	//if (image_clear_start < shared_state->registered_image_clear_lag)
+		//image_clear_start = shared_state->registered_image_clear_lag;
+	//cerr << "Cr" << i << "(" << image_clear_start << "-" << groups[i].paths[j].elements.size() << ")\n";
+	for (long k = image_clear_start; k < groups[i].paths[j].elements.size(); k++)
 		groups[i].paths[j].elements[k].clear_movement_images(memory_pool.registered_image_pool);
 
 	if (shared_state->chunk_generators[i][j].no_more_chunks_backward()) {
 		//output the last (e.g first)
-		ns_analyzed_time_image_chunk registration_chunk;
-		registration_chunk.processing_direction = ns_analyzed_time_image_chunk::ns_backward;
-		registration_chunk.start_i = 0;
-		registration_chunk.stop_i = -1;
-		groups[i].paths[j].calculate_movement_images(registration_chunk);
+		ns_analyzed_time_image_chunk movement_analysis_chunk;
+		movement_analysis_chunk.processing_direction = ns_analyzed_time_image_chunk::ns_backward;
+		movement_analysis_chunk.start_i = shared_state->registered_image_clear_lag - 1;
+		movement_analysis_chunk.stop_i = -1;
+		groups[i].paths[j].calculate_movement_images(movement_analysis_chunk, shared_state->chunk_generators[i][j].first_chunk());
 		ns_acquire_lock_for_scope sql_lock(shared_state->sql_lock, __FILE__, __LINE__);
 #ifdef NS_CALCULATE_OPTICAL_FLOW
 		groups[i].paths[j].save_movement_images(registration_chunk, *shared_state->sql, ns_analyzed_image_time_path::ns_save_both, ns_analyzed_image_time_path::ns_only_output_backwards_images, ns_analyzed_image_time_path::ns_local_0);
 		ns_safe_delete(groups[i].paths[j].flow);
 #else
-		groups[i].paths[j].save_movement_images(registration_chunk, *shared_state->sql, ns_analyzed_image_time_path::ns_save_simple, ns_analyzed_image_time_path::ns_only_output_backwards_images, ns_analyzed_image_time_path::ns_local_0);
+		groups[i].paths[j].save_movement_images(movement_analysis_chunk, *shared_state->sql, ns_analyzed_image_time_path::ns_save_simple, ns_analyzed_image_time_path::ns_only_output_backwards_images, ns_analyzed_image_time_path::ns_local_0);
 #endif
 		sql_lock.release();
 
-		//	cerr << "FCp" << i << "(0-" << groups[i].paths[j].elements.size() << ")";
+		//cerr << "FCp" << i << "(0-" << groups[i].paths[j].elements.size() << ")";
 		for (long k = 0; k < groups[i].paths[j].elements.size(); k++) {
 			if (groups[i].paths[j].elements[k].clear_path_aligned_images(memory_pool.aligned_image_pool))
 				shared_state->deallocated_aligned_count++;
@@ -502,7 +503,11 @@ typedef std::pair<unsigned int, unsigned int> ns_tpiatp_job;
 
 template<class allocator_T>
 void ns_time_path_image_movement_analyzer<allocator_T>::finish_up_and_write_to_long_term_storage(unsigned int group_id, unsigned int path_id, ns_time_path_image_movement_analyzer_thread_pool_persistant_data * persistant_data, ns_movement_analysis_shared_state * shared_state) {
-
+	for (unsigned int i = 0; i < groups[group_id].paths[path_id].element_count(); i++) {
+		if (groups[group_id].paths[path_id].elements[i].debug_write_count != 1)
+			cout << "G" << group_id << ":" << groups[group_id].paths[path_id].elements[i].debug_write_count << " (" << groups[group_id].paths[path_id].first_stationary_timepoint() << "," << groups[group_id].paths[path_id].element_count() << ")\n";
+		groups[group_id].paths[path_id].elements[i].debug_write_count = 0;
+	}
 	persistant_data->temp_storage.use_more_memory_to_avoid_reallocations();
 	//using the data stored in each path during the previous steps (specifically, when calculate_movement_images() is called
 	//for each chunk
@@ -553,14 +558,16 @@ void ns_time_path_image_movement_analyzer<allocator_T>::finish_up_and_write_to_l
 
 template<class allocator_T>
 void ns_time_path_image_movement_analyzer<allocator_T>::run_group_for_current_forwards_round(unsigned int group_id, unsigned int path_id, ns_time_path_image_movement_analyzer_thread_pool_persistant_data * persistant_data,ns_movement_analysis_shared_state * shared_state) {
-	const unsigned int &i(group_id), &j(path_id);
+	const unsigned int &g(group_id), &p(path_id);
+	ns_analyzed_image_time_path& path(groups[g].paths[p]);
+
 #ifdef NS_OUTPUT_ALGINMENT_DEBUG
 	if (i != 1)	//xxx
 		continue;
 #endif
 
 	ns_analyzed_time_image_chunk chunk;
-	if (!shared_state->chunk_generators[i][j].update_and_check_for_new_chunk(chunk))
+	if (!shared_state->chunk_generators[g][p].update_and_check_for_new_chunk(chunk))
 		return;
 
 	//			cerr << "Processing path " << i <<"." << j << ":(" << chunk.start_i << "-" << chunk.stop_i << ")\n";
@@ -568,49 +575,60 @@ void ns_time_path_image_movement_analyzer<allocator_T>::run_group_for_current_fo
 	cerr << "PATH " << i << "," << j << "\n";
 	debug_path_name = string("path") + ns_to_string(i) + "_" + ns_to_string(j);
 #endif			
-	//cerr << "R" << i << "(" << chunk.start_i << "-" << chunk.stop_i << ")";
-	groups[i].paths[j].calculate_image_registration(chunk, shared_state->alignment_states[i][j], shared_state->chunk_generators[i][j].first_chunk(), persistant_data->fast_aligner);
-	groups[i].paths[j].copy_aligned_path_to_registered_image(chunk, persistant_data->temporary_image,memory_pool);
-	groups[i].paths[j].calculate_movement_images(chunk);
+	//cerr << "R" << g << "(" << chunk.start_i << "-" << chunk.stop_i << ")";
+	path.calculate_image_registration(chunk, shared_state->alignment_states[g][p], shared_state->chunk_generators[g][p].first_chunk(), persistant_data->fast_aligner);
+	path.copy_aligned_path_to_registered_image(chunk, persistant_data->temporary_image,memory_pool);
 
-	///	cerr << total_flow_time / 1000;
-	//	cerr << ")";
+
+
+	//we need data from the "future" to do the intensity normalization
+	//so we need to be one behind in the movement calculation at all times.
+	ns_analyzed_time_image_chunk movement_analysis_chunk(chunk);
+	movement_analysis_chunk.start_i -= shared_state->registered_image_clear_lag;
+	if (!shared_state->chunk_generators[g][p].no_more_chunks_forward())
+		movement_analysis_chunk.stop_i -= shared_state->registered_image_clear_lag;
+	if (movement_analysis_chunk.start_i < shared_state->chunk_generators[g][p].first_chunk().start_i)
+		movement_analysis_chunk.start_i = shared_state->chunk_generators[g][p].first_chunk().start_i;
+		groups[g].paths[p].calculate_movement_images(movement_analysis_chunk, shared_state->chunk_generators[g][p].first_chunk());
+
+		///	cerr << total_flow_time / 1000;
+		//	cerr << ")";
 #ifdef NS_OUTPUT_ALGINMENT_DEBUG
-	for (unsigned int k = chunk.start_i; k < chunk.stop_i; k++) {
-		oout << k << "," << groups[i].paths[j].element(k).registration_offset.x << "," <<
-			groups[i].paths[j].element(k).registration_offset.y << "," <<
-			groups[i].paths[j].element(k).registration_offset.mag() << "\n";
-	}
-	oout.flush();
-#endif
-	//groups[i].paths[j].quantify_movement(chunk);
-	{
-		ns_acquire_lock_for_scope sql_lock(shared_state->sql_lock, __FILE__, __LINE__);
-#ifdef NS_CALCULATE_OPTICAL_FLOW
-		groups[i].paths[j].save_movement_images(chunk, *shared_state->sql, ns_analyzed_image_time_path::ns_save_both, ns_analyzed_image_time_path::ns_output_all_images, ns_analyzed_image_time_path::ns_local_1);
-#else
-		groups[i].paths[j].save_movement_images(chunk, *shared_state->sql, ns_analyzed_image_time_path::ns_save_simple, ns_analyzed_image_time_path::ns_output_all_images, ns_analyzed_image_time_path::ns_local_1);
-#endif
-		sql_lock.release();
-	}
-	//cerr << "Cp" << i << "(0-" << chunk.start_i - (long)path_aligned_image_clear_lag+1 << ")";
-	//cerr << "Cr" << i << "(0-" << chunk.start_i - (long)registered_image_clear_lag+1 << ")";
-
-	for (long k = 0; k < (long)chunk.start_i - (long)shared_state->path_aligned_image_clear_lag + 1; k++)
-		groups[i].paths[j].elements[k].clear_path_aligned_images(memory_pool.aligned_image_pool);
-	for (long k = 0; k < (long)chunk.start_i - (long)shared_state->registered_image_clear_lag + 1; k++)
-		groups[i].paths[j].elements[k].clear_movement_images(memory_pool.registered_image_pool);
-
-	if (shared_state->chunk_generators[i][j].no_more_chunks_forward()) {
-
-		for (long k = 0; k < groups[i].paths[j].elements.size(); k++) {
-			groups[i].paths[j].elements[k].clear_path_aligned_images(memory_pool.aligned_image_pool);
-			groups[i].paths[j].elements[k].clear_movement_images(memory_pool.registered_image_pool);
+		for (unsigned int k = chunk.start_i; k < chunk.stop_i; k++) {
+			oout << k << "," << groups[p].paths[g].element(k).registration_offset.x << "," <<
+				path.element(k).registration_offset.y << "," <<
+				path.element(k).registration_offset.mag() << "\n";
 		}
-		groups[i].paths[j].reset_movement_image_saving();
-	//	shared_state->path_reset[i]++;
-	//	if (shared_state->path_reset[i] > 1)
-	//		cerr << "YIKES!";
+		oout.flush();
+#endif
+		
+		//since the movement analysis trails behind the registration chunk, at the very start there might be no movement analysis data to output.
+		if (movement_analysis_chunk.start_i != movement_analysis_chunk.stop_i){
+			ns_acquire_lock_for_scope sql_lock(shared_state->sql_lock, __FILE__, __LINE__);
+#ifdef NS_CALCULATE_OPTICAL_FLOW
+			path.save_movement_images(chunk, *shared_state->sql, ns_analyzed_image_time_path::ns_save_both, ns_analyzed_image_time_path::ns_output_all_images, ns_analyzed_image_time_path::ns_local_1);
+#else
+			path.save_movement_images(movement_analysis_chunk, *shared_state->sql, ns_analyzed_image_time_path::ns_save_simple, ns_analyzed_image_time_path::ns_output_all_images, ns_analyzed_image_time_path::ns_local_1);
+#endif
+			sql_lock.release();
+		}
+		//cerr << "Cp" << i << "(0-" << chunk.start_i - (long)path_aligned_image_clear_lag+1 << ")";
+	
+	//cerr << "Cr" << g << "(0-" << movement_analysis_chunk.start_i - (long)shared_state->path_aligned_image_clear_lag << ")\n";
+	
+	for (long k = 0; k < (long)movement_analysis_chunk.start_i - (long)shared_state->path_aligned_image_clear_lag ; k++)
+		path.elements[k].clear_path_aligned_images(memory_pool.aligned_image_pool);
+	for (long k = 0; k < (long)movement_analysis_chunk.start_i - (long)shared_state->registered_image_clear_lag ; k++)
+		path.elements[k].clear_movement_images(memory_pool.registered_image_pool);
+
+	if (shared_state->chunk_generators[g][p].no_more_chunks_forward()) {
+
+
+		for (long k = 0; k < path.elements.size(); k++) {
+			path.elements[k].clear_path_aligned_images(memory_pool.aligned_image_pool);
+			path.elements[k].clear_movement_images(memory_pool.registered_image_pool);
+		}
+		path.reset_movement_image_saving();
 	}
 }
 template<class allocator_T>
@@ -696,7 +714,7 @@ void ns_time_path_image_movement_analyzer<allocator_T>::process_raw_images(const
 		//we can limit memory usage to just one region (and miminize paging and disk thrashing)
 		ns_thread_pool<ns_time_path_image_movement_analyzer_thread_pool_job<allocator_T>,
 					   ns_time_path_image_movement_analyzer_thread_pool_persistant_data> thread_pool;
-		thread_pool.set_number_of_threads(image_server_const.maximum_number_of_processing_threads());
+		thread_pool.set_number_of_threads(1);// image_server_const.maximum_number_of_processing_threads());
 		thread_pool.prepare_pool_to_run();
 
 		//xxx debug only
@@ -834,13 +852,27 @@ void ns_time_path_image_movement_analyzer<allocator_T>::process_raw_images(const
 						//we obtain all the image data from disk that required to run the image analysis for the current chunk.
 						//it is loaded into the groups[i].paths[j] data structures.
 						//cout << "li(" << stop_t + 1 <<","<< t << ")";
-						for (long t1 = stop_t + 1; t1 < t + 1; t1++) {
+
+						long first_image_to_load = stop_t + 1,
+							last_image_to_load = t ;
+						int dt_needed = std::max(ns_analyzed_image_time_path::movement_time_kernel_width, ns_analyzed_image_time_path::intensity_normalization_kernel_half_width);
+						//make sure images outside the current chunk are loaded to allow intensity and movement calculations that require time lags and leads.
+						if (last_image_to_load + dt_needed < region_image_specifications.size())
+							last_image_to_load += dt_needed;
+						if (first_image_to_load > ns_analyzed_image_time_path::intensity_normalization_kernel_half_width)
+							first_image_to_load -= ns_analyzed_image_time_path::intensity_normalization_kernel_half_width;
+
+
+
+						load_region_visualization_images(first_image_to_load, last_image_to_load + 1, start_group, stop_group, sql, false, true, ns_analyzed_image_time_path::ns_lrv_flag_and_images);
+
+						/*for (long t1 = stop_t + 1; t1 < t + 1; t1++) {
 
 							//throw ns_ex("test");
 							//cout << "Loading " << ns_format_time_string_for_human(region_image_specifications[t1].time) << "-" << ns_format_time_string_for_human(t1 + 1) << "\n";
 							load_region_visualization_images(t1, t1 + 1, start_group, stop_group, sql, false, true, ns_analyzed_image_time_path::ns_lrv_flag_and_images);
 
-						}
+						}*/
 					}
 					catch (ns_ex & ex) {
 						//if we find an image error, we go back and go through /all/ images to root out all errors.  
@@ -924,6 +956,19 @@ void ns_time_path_image_movement_analyzer<allocator_T>::process_raw_images(const
 				if (paths_still_open) {
 					cerr << still_open_errors.text();
 					throw still_open_errors;
+				}
+
+				for (unsigned int i = start_group; i < stop_group; i++) {
+					for (unsigned int j = 0; j < groups[i].paths.size(); j++) {
+						ns_analyzed_image_time_path& p(groups[i].paths[j]);
+							for (int e = 0; e < p.first_stationary_timepoint(); e++) {
+								if (p.elements[e].debug_write_count != 1)
+									cout << "Image not written: " << i << "::" << e << "\n";
+								p.elements[e].debug_write_count = 0;
+							}
+
+
+					}
 				}
 
 				//since we have been registered images backwards in time, we've been writing everything in reverse order to the local disk.
@@ -1026,13 +1071,13 @@ void ns_time_path_image_movement_analyzer<allocator_T>::process_raw_images(const
 
 
 					//load a chunk of images
-					unsigned long stop_t = t + chunk_size;
-					if (stop_t > region_image_specifications.size())
-						stop_t = region_image_specifications.size();
+					unsigned long image_load_stop_t = t + chunk_size+ ns_analyzed_image_time_path::intensity_normalization_kernel_half_width;
+					if (image_load_stop_t > region_image_specifications.size())
+						image_load_stop_t = region_image_specifications.size();
 					//	cerr << "Loading images " << t << "-" << stop_t << "\n";
 					try {
 						//load in image data for the current chunk
-						load_region_visualization_images(t, stop_t, start_group, stop_group, sql, false, false, ns_analyzed_image_time_path::ns_lrv_flag_and_images);
+						load_region_visualization_images(t, image_load_stop_t, start_group, stop_group, sql, false, false, ns_analyzed_image_time_path::ns_lrv_flag_and_images);
 					}
 					catch (ns_ex & ex) {
 						ns_ex ex_f(ex);
@@ -2254,7 +2299,7 @@ void ns_analyzed_image_time_path_element_measurements::read(istream & in, ns_vec
 	if (in.fail())		throw ns_ex("Invalid Specification 24");
 	get_double(in, spatial_averaged_movement_score_cropped);//25
 	if (in.fail())		throw ns_ex("Invalid Specification 25");
-	get_int(in, total_intensity_in_previous_frame_scaled_to_current_frames_histogram);//26
+	get_double(in, intensity_normalization_scale_factor);//26
 	if (in.fail())		throw ns_ex("Invalid Specification 26");
 	get_int(in, total_stabilized_area);//27
 	if (in.fail())		throw ns_ex("Invalid Specification 27");
@@ -2383,6 +2428,7 @@ void ns_time_path_image_movement_analyzer<allocator_T>::load_movement_data_from_
 		//cout << "Group id:" << group_id << "; Element id: " << element_id << "; time: " << groups[group_id].paths[path_id].elements[element_id].absolute_time << " ";
 		if(in.fail()) throw ns_ex("Invalid Specification 4");																										
 		groups[group_id].paths[path_id].elements[element_id].measurements.read(in, groups[group_id].paths[path_id].elements[element_id].registration_offset, groups[group_id].paths[path_id].elements[element_id].saturated_offset);
+		groups[group_id].paths[path_id].elements[element_id].histogram_matching_data.overall_scaling = groups[group_id].paths[path_id].elements[element_id].measurements.intensity_normalization_scale_factor;
 		//std::cout << "\n";
 
 	}
@@ -2434,7 +2480,7 @@ void ns_analyzed_image_time_path_element_measurements::write_header(ostream & ou
 		",spatial_averaged_movement_sum_uncropped "
 		",spatial_averaged_movement_score_uncropped "
 		",spatial_averaged_movement_score_cropped "
-		",total_intensity_in_previous_frame_scaled_to_current_frames_histogram"
+		",intensity_scale_factor"
 		",total_stabilized_area"
 		",change_in_total_stabilized_intensity_1x"
 		",change_in_total_stabilized_intensity_2x"
@@ -2470,7 +2516,7 @@ void ns_analyzed_image_time_path_element_measurements::write(ostream & out,const
 		<< spatial_averaged_movement_sum_uncropped << ","//23
 		<< spatial_averaged_movement_score_uncropped << ","//24
 		<< spatial_averaged_movement_score_cropped << ","//25
-		<< total_intensity_in_previous_frame_scaled_to_current_frames_histogram << ","//26
+		<< intensity_normalization_scale_factor << ","//26
 		<< total_stabilized_area << ","//27
 		<< change_in_total_stabilized_intensity_1x << ","//28
 		<< change_in_total_stabilized_intensity_2x << ","//29
@@ -5332,25 +5378,34 @@ void ns_analyzed_image_time_path::denoise_movement_series_and_calculate_intensit
 	ns_slope_calculator<4, 2, ns_slope_accessor_total_outside_stabilized_2x, ns_set_to_zero, ns_set_to_local_mean> stabilized_outside_change_calculator_2x(elements, start_i, tmp1, tmp2);
 	ns_slope_calculator<8, 2, ns_slope_accessor_total_outside_stabilized_4x, ns_set_to_zero, ns_set_to_local_mean> stabilized_outside_change_calculator_4x(elements, start_i, tmp1, tmp2);
 }
-
-void ns_match_histograms(const ns_histogram<unsigned int, ns_8_bit> h1, const ns_histogram<unsigned int, ns_8_bit> h2,float * histogram_matching_factors) {
-	long cdf1[256], cdf2[256];
-	cdf1[0] = h1[0];
-	for (unsigned int i = 1; i < 256; i++)	cdf1[i] = h1[i] + cdf1[i - 1];
-	cdf2[0] = h2[0];
-	for (unsigned int i = 1; i < 256; i++)	cdf2[i] = h2[i] + cdf2[i - 1];
-
-	int cur_v(1);
-	histogram_matching_factors[0] = 0; //0 is a special pixel value indicateing "not in this region" pixels.
-	for (int i = 1; i < 256; i++) {
-		while (cdf1[cur_v] < cdf2[i])
-			cur_v++;
-		//if (cur_v == 0) histogram_matching_factors[i] = 0;
-		if (cdf1[cur_v] - cdf2[i] < cdf2[i] - cdf1[cur_v - 1])
-			histogram_matching_factors[i] = cur_v;
-		else histogram_matching_factors[i] = cur_v - 1;
+//aggregate histogram into larger categories to remove noise, retaining 0 as a special case.
+ns_histogram<unsigned int, ns_8_bit>  ns_downsample_histogram(const ns_histogram<unsigned int, ns_8_bit>& source) {
+	ns_histogram<unsigned int, ns_8_bit> hist(17);
+	for (unsigned i = 0; i < source.size(); i++) {
+		if (i == 0)
+			hist[0] += source[0];
+		else hist[(i / 16) + 1] += source[i];
 	}
+	return hist;
 }
+
+/*
+void ns_match_histograms(const ns_histogram<unsigned int, ns_8_bit> h1, const ns_histogram<unsigned int, ns_8_bit> h2,float * histogram_matching_factors) {
+	double quartiles_1[3], quartiles_2[3];
+	for (unsigned int i = 1; i < 4; i++)
+		quartiles_1[i-1] = h1.average_of_ntile(i, 4, false);
+	for (unsigned int i = 1; i < 4; i++)
+		quartiles_2[i-1] = h1.average_of_ntile(i, 4, false);
+	double mean_fold_change(0);
+	for (unsigned int i = 0; i < 3; i++) {
+		if (quartiles_1[i] == 0)
+			histogram_matching_factors[i] = 0;
+		else
+			histogram_matching_factors[i] = quartiles_2[i] / quartiles_1[i];
+		mean_fold_change += histogram_matching_factors[i];
+	}
+	histogram_matching_factors
+}*/
 
 void ns_analyzed_image_time_path::spatially_average_movement(const int y, const int x, const int k, const ns_image_standard_signed & im, long &averaged_sum, long &count) {
 	averaged_sum = 0; 
@@ -5369,16 +5424,7 @@ void ns_analyzed_image_time_path::spatially_average_movement(const int y, const 
 	}
 }
 
-//aggregate histogram into larger categories to remove noise, retaining 0 as a special case.
-ns_histogram<unsigned int, ns_8_bit>  ns_downsample_histogram(const ns_histogram<unsigned int, ns_8_bit> & source){
-	ns_histogram<unsigned int, ns_8_bit> hist(17);
-	for (unsigned i = 0; i < source.size(); i++) {
-		if (i == 0)
-			hist[0]+=source[0];
-		else hist[(i / 16)+1]+=source[i];
-	}
-	return hist;
-}
+
 
 void ns_analyzed_image_time_path::quantify_movement(const ns_analyzed_time_image_chunk & chunk){
 	
@@ -5404,23 +5450,12 @@ void ns_analyzed_image_time_path::quantify_movement(const ns_analyzed_time_image
 
 	ns_histogram<unsigned int, ns_8_bit> hist1, hist2;
 	for (unsigned int i = chunk.start_i; i < chunk.stop_i; i++) {
-		elements[i].registered_images->image.histogram(hist1);
-		elements[i].registered_image_histogram = ns_downsample_histogram(hist1);
-		elements[i].histogram_calculated = true;
+		//elements[i].registered_images->image.histogram(hist1);
+		//elements[i].registered_image_histogram = ns_downsample_histogram(hist1);
+		//elements[i].histogram_calculated = true;
 		
 		const bool first_frames(i < movement_time_kernel_width);
-		//calulate histogram if not already done.
-		if (!elements[i].registered_images->histograms_matched) {
-			if (first_frames) {
-				for (unsigned int j = 0; j < 256; j++)
-					elements[i].registered_images->histogram_matching_factors[j] = j;
-			}
-			else {
-				elements[i - movement_time_kernel_width].registered_images->image.histogram(hist2);
-				ns_match_histograms(hist1, hist2, elements[i].registered_images->histogram_matching_factors);
-				elements[i].registered_images->histograms_matched = true;
-			}
-		}
+		
 
 		elements[i].measurements.zero();
 
@@ -5429,6 +5464,8 @@ void ns_analyzed_image_time_path::quantify_movement(const ns_analyzed_time_image
 
 		if (elements[i].registered_images == 0)
 			throw ns_ex("ns_analyzed_image_time_path::quantify_movement()::Encountered an unloaded registered image!");
+
+		elements[i].measurements.intensity_normalization_scale_factor = elements[i].histogram_matching_data.overall_scaling;
 
 		elements[i].measurements.total_region_area = elements[i].worm_region_size_.x*elements[i].worm_region_size_.y;
 		for (unsigned long y = 0; y < elements[i].registered_images->movement_image_.properties().height; y++) {
@@ -5441,20 +5478,19 @@ void ns_analyzed_image_time_path::quantify_movement(const ns_analyzed_time_image
 				elements[i].measurements.total_intensity_within_stabilized += stabilized ? elements[i].registered_images->image[y][x] : 0;
 				elements[i].measurements.total_foreground_area += (worm_threshold ? 1 : 0);
 				elements[i].measurements.total_stabilized_area += (stabilized ? 1 : 0);
-			}
-		}
-		
-		elements[i].measurements.total_intensity_in_previous_frame_scaled_to_current_frames_histogram = 0;
-		if (!first_frames) {
-			for (unsigned long y = 0; y < elements[i- movement_time_kernel_width].registered_images->movement_image_.properties().height; y++) {
-				for (unsigned long x = 0; x < elements[i-movement_time_kernel_width].registered_images->movement_image_.properties().width; x++) {
-					//const bool worm_threshold(elements[i].registered_images->get_stabilized_worm_neighborhood_threshold(y, x));
-					const bool stabilized = elements[i].registered_images->get_stabilized_worm_neighborhood_threshold(y, x);
-					elements[i].measurements.total_intensity_in_previous_frame_scaled_to_current_frames_histogram +=
-						stabilized ? elements[i].registered_images->histogram_matching_factors[elements[i - movement_time_kernel_width].registered_images->image[y][x]] : 0;
+
+
+				const bool alternate_worm_threshold(elements[i].registered_images->get_region_threshold(y, x) == 1 &&
+					!worm_threshold);
+				if (alternate_worm_threshold) {
+					elements[i].measurements.total_intensity_within_alternate_worm += elements[i].registered_images->image[y][x];
+					elements[i].measurements.total_alternate_worm_area++;
 				}
 			}
 		}
+
+		elements[i].measurements.rescale_baseline_intensities(elements[i].measurements.intensity_normalization_scale_factor);
+		
 		//these are calculated later
 		if (first_frames) {
 			elements[i].measurements.change_in_total_foreground_intensity =
@@ -5509,13 +5545,9 @@ void ns_analyzed_image_time_path::quantify_movement(const ns_analyzed_time_image
 			*elements[i].registered_images);
 #endif
 
-		double movement_sum(0),
-			alternate_movement_sum(0);
 		elements[i].measurements.movement_sum = 0;
 		elements[i].measurements.spatial_averaged_movement_sum_cropped = 0;
 		elements[i].measurements.spatial_averaged_movement_sum_uncropped = 0;
-		elements[i].measurements.total_intensity_within_alternate_worm = 0;
-		elements[i].measurements.total_alternate_worm_area = 0;
 
 		double spatial_averaged_movement_signed_sum = 0,
 			spatial_averaged_movement_signed_sum_cropped = 0;
@@ -5532,7 +5564,7 @@ void ns_analyzed_image_time_path::quantify_movement(const ns_analyzed_time_image
 				const bool alternate_worm_threshold(elements[i].registered_images->get_region_threshold(y, x) == 1 &&
 					!worm_threshold);
 				elements[i].measurements.movement_sum += (worm_threshold ? abs(elements[i].registered_images->movement_image_[y][x]) : 0);
-				alternate_movement_sum += (alternate_worm_threshold) ? abs(elements[i].registered_images->movement_image_[y][x]) : 0;
+				elements[i].measurements.movement_alternate_worm_sum += (alternate_worm_threshold) ? abs(elements[i].registered_images->movement_image_[y][x]) : 0;
 				//there is a lot of low-level pixel noise that can average out even with a small 5x5 kernal.
 				if (worm_threshold) {
 					long averaged_sum, count;
@@ -5549,22 +5581,13 @@ void ns_analyzed_image_time_path::quantify_movement(const ns_analyzed_time_image
 						spatial_averaged_movement_signed_sum_cropped += averaged_sum_cropped / (float)count;
 					}
 				}
-				if (alternate_worm_threshold) {
-					elements[i].measurements.total_intensity_within_alternate_worm += elements[i].registered_images->image[y][x];
-					elements[i].measurements.total_alternate_worm_area++;
-				}
-
-
-				//	elements[i].measurements.total_alternate_worm_area += (alternate_worm_threshold ? 1 : 0);
-					//elements[i].measurements.total_intensity_within_alternate_worm += alternate_worm_threshold ? elements[i].registered_images->image[y][x] : 0;
-
 			}
 		}
 		//across an image, worm movement should create as many negative movement values as postive values.
 		//technical problems in scanner illumination, however, will make the entire image brighter or darker.
 		//we can therefore remove technical problems by simply subtracting out the average intensity difference between timages.
-		elements[i].measurements.spatial_averaged_movement_sum_uncropped -= abs(spatial_averaged_movement_signed_sum);
-		elements[i].measurements.spatial_averaged_movement_sum_cropped -= abs(spatial_averaged_movement_signed_sum_cropped);
+		//elements[i].measurements.spatial_averaged_movement_sum_uncropped -= abs(spatial_averaged_movement_signed_sum);
+		//elements[i].measurements.spatial_averaged_movement_sum_cropped -= abs(spatial_averaged_movement_signed_sum_cropped);
 
 		/*double interframe_time_scaling_factor(1);
 		if (0 && !first_frames) {	//turn this off!
@@ -5577,14 +5600,11 @@ void ns_analyzed_image_time_path::quantify_movement(const ns_analyzed_time_image
 		elements[i].measurements.interframe_time_scaled_movement_sum = elements[i].measurements.movement_sum*interframe_time_scaling_factor;
 		elements[i].measurements.interframe_scaled_spatial_averaged_movement_sum = elements[i].measurements.spatial_averaged_movement_sum*interframe_time_scaling_factor;*/
 		
-		elements[i].measurements.movement_alternate_worm_sum = (unsigned long)alternate_movement_sum;
 	}
 }
 template<class allocator_T>
 void ns_analyzed_image_time_path::copy_aligned_path_to_registered_image(const ns_analyzed_time_image_chunk & chunk, std::vector < ns_image_standard> & temporary_images, ns_time_path_image_movement_analysis_memory_pool<allocator_T> & memory_pool_){
 
-	const unsigned long C(256);
-	const unsigned long C_sqrt(16);
 
 	ns_image_properties prop(elements[chunk.start_i].path_aligned_images->image.properties());
 	set_path_alignment_image_dimensions(prop);
@@ -5620,16 +5640,15 @@ void ns_analyzed_image_time_path::copy_aligned_path_to_registered_image(const ns
 
 		//		cerr << "Initializing registered images for " << i << "\n";
 
-		if (!chunk.forward() || !elements[i].registered_image_is_loaded() || (i > ns_analyzed_image_time_path::alignment_time_kernel_width && i > this->first_stationary_timepoint()))
+		if (!chunk.forward() || !elements[i].registered_image_is_loaded() || (i > ns_analyzed_image_time_path::alignment_time_kernel_width&& i > this->first_stationary_timepoint()))
 			elements[i].initialize_registered_images(prop, memory_pool_.registered_image_pool);
 		//else cerr << "Skipping reg im init";
 
 		if (elements[i].path_aligned_images == 0)
 			throw ns_ex("Encountered an unloaded path aligned image!");
 
-		//fill in top border
-
-		//mapping from pixels in im to pixels in im_1
+		//we calculate the histogram fothat we'll use later for intensity normalization 
+		elements[i].registered_image_histogram = ns_histogram<unsigned int, ns_8_bit>();
 
 
 		//ok the tricky thing here is that each individual image is valid between [0, elements[i].worm_context_size()]
@@ -5660,6 +5679,7 @@ void ns_analyzed_image_time_path::copy_aligned_path_to_registered_image(const ns
 		for (long y = 0; y < tl_registered.y; y++) {
 			for (long x = 0; x < prop.width; x++) {
 				elements[i].registered_images->image[y][x] = NS_MARGIN_BACKGROUND;
+				elements[i].registered_image_histogram.increment(NS_MARGIN_BACKGROUND);
 
 				region_threshold[y][x] = NS_MARGIN_BACKGROUND;
 				worm_threshold[y][x] = NS_MARGIN_BACKGROUND;
@@ -5667,28 +5687,39 @@ void ns_analyzed_image_time_path::copy_aligned_path_to_registered_image(const ns
 		}
 
 		for (long y = tl_registered.y; y < br_registered.y; y++) {
-//fill in left gap
-for (long x = 0; x < (tl_registered.x); x++) {
-	elements[i].registered_images->image[y][x] = NS_MARGIN_BACKGROUND;
-	region_threshold[y][x] = NS_MARGIN_BACKGROUND;
-	worm_threshold[y][x] = NS_MARGIN_BACKGROUND;
-}
-//fill in center
-for (long x = tl_registered.x; x < br_registered.x; x++) {
-	elements[i].registered_images->image[y][x] = elements[i].path_aligned_images->image.sample_f(y - v0.y, x - v0.x);
-	elements[i].path_aligned_images->sample_thresholds<ns_8_bit>(y - v0.y, x - v0.x, region_threshold[y][x], worm_threshold[y][x]);
-}
-//fill in right gap
-for (long x = (br_registered.x); x < prop.width; x++) {
-	elements[i].registered_images->image[y][x] = NS_MARGIN_BACKGROUND;
-	region_threshold[y][x] = NS_MARGIN_BACKGROUND;
-	worm_threshold[y][x] = NS_MARGIN_BACKGROUND;
-}
+			//fill in left gap
+			for (long x = 0; x < (tl_registered.x); x++) {
+				elements[i].registered_images->image[y][x] = NS_MARGIN_BACKGROUND;
+				elements[i].registered_image_histogram.increment(NS_MARGIN_BACKGROUND);
+
+				region_threshold[y][x] = NS_MARGIN_BACKGROUND;
+				worm_threshold[y][x] = NS_MARGIN_BACKGROUND;
+			}
+			//fill in center
+			for (long x = tl_registered.x; x < br_registered.x; x++) {
+				elements[i].registered_images->image[y][x] = elements[i].path_aligned_images->image.sample_f(y - v0.y, x - v0.x);
+				///xxx artificially add flicker to test intensity normalization
+				//if (i % 10 == 0)
+				//	elements[i].registered_images->image[y][x] = ((1.2 * elements[i].registered_images->image[y][x]) <= 256) ? (1.2 * elements[i].registered_images->image[y][x]) : 255;
+				elements[i].registered_image_histogram.increment(elements[i].registered_images->image[y][x]);
+
+				elements[i].path_aligned_images->sample_thresholds<ns_8_bit>(y - v0.y, x - v0.x, region_threshold[y][x], worm_threshold[y][x]);
+			}
+			//fill in right gap
+			for (long x = (br_registered.x); x < prop.width; x++) {
+				elements[i].registered_images->image[y][x] = NS_MARGIN_BACKGROUND;
+				elements[i].registered_image_histogram.increment(NS_MARGIN_BACKGROUND);
+
+				region_threshold[y][x] = NS_MARGIN_BACKGROUND;
+				worm_threshold[y][x] = NS_MARGIN_BACKGROUND;
+			}
 		}
 		//fill in top
 		for (long y = br_registered.y; y < prop.height; y++) {
 			for (long x = 0; x < prop.width; x++) {
 				elements[i].registered_images->image[y][x] = NS_MARGIN_BACKGROUND;
+				elements[i].registered_image_histogram.increment(NS_MARGIN_BACKGROUND);
+
 				worm_threshold[y][x] = NS_MARGIN_BACKGROUND;
 				region_threshold[y][x] = NS_MARGIN_BACKGROUND;
 			}
@@ -5699,14 +5730,22 @@ for (long x = (br_registered.x); x < prop.width; x++) {
 				elements[i].registered_images->set_thresholds(y, x, region_threshold[y][x], worm_threshold[y][x], worm_neighborhood_threshold[y][x], 0);
 
 		//xxx
-		if (i - istep > 0 && elements[i - istep].registered_image_is_loaded()) {
-			ns_64_bit sum(0);
-			for (unsigned int y = 0; y < worm_threshold.properties().height; y++)
-				for (unsigned int x = 0; x < worm_threshold.properties().width; x++)
-					sum += abs(elements[i].registered_images->image[y][x] - (long)elements[i - istep].registered_images->image[y][x]);
-
-
+		if (0) {
+			if (i - istep > 0 && elements[i - istep].registered_image_is_loaded()) {
+				ns_64_bit sum(0);
+				for (unsigned int y = 0; y < worm_threshold.properties().height; y++)
+					for (unsigned int x = 0; x < worm_threshold.properties().width; x++)
+						sum += abs(elements[i].registered_images->image[y][x] - (long)elements[i - istep].registered_images->image[y][x]);
+			}
 		}
+		elements[i].histogram_calculated = true;
+		//these images are all quite dark, so we normalize based on the 85th, 90th, and 95th percentiles
+		for (unsigned int j = 0; j < 3; j++)
+			elements[i].histogram_matching_data.quartiles[j] = elements[i].registered_image_histogram.average_of_ntile(j+17, 20, false);
+
+		//for (unsigned int j = 0; j < 3; j++)
+		//	cout << "Quartiles: " << elements[i].histogram_matching_data.quartiles[j];
+		//cout << "\n";
 
 #ifdef NS_CALCULATE_SLOW_IMAGE_REGISTRATION
 		if (tmp_cmp == 0) {
@@ -5722,24 +5761,103 @@ for (long x = (br_registered.x); x < prop.width; x++) {
 			<< elements[i].alignment_times[1] << "," << (elements[i].synthetic_offset - elements[i].registration_offset_slow).mag() << "\n";
 		tmp_cmp->flush();
 #endif
+		
 	}
 
 }
-void ns_analyzed_image_time_path::calculate_movement_images(const ns_analyzed_time_image_chunk & chunk) {
+
+
+bool operator<(const ns_histogram_matching_data& a, const ns_histogram_matching_data& b) {
+	float sum = 0;
+	for (unsigned int i = 0; i < 3; i++) 
+			sum += a.quartiles[i] - b.quartiles[i];
+	return sum < 0;
+}
+class ns_matching_data_accessor {
+public:
+	bool operator()(const ns_histogram_matching_data* a, const ns_histogram_matching_data* b) {
+		return *a < *b;
+	}
+};
+
+
+void ns_histogram_matching_data::calc_scaling(const ns_histogram_matching_data& ref) {
+	overall_scaling = 0;
+	int num = 0;
+	for (unsigned int j = 0; j < 3; j++) {
+		if (quartiles[j] == 0 || ref.quartiles[j] == 0)
+			quartile_scaling[j] = 0;
+		else {
+			quartile_scaling[j] = ref.quartiles[j] / quartiles[j];
+			num++;
+		}
+		overall_scaling += quartile_scaling[j];
+	}
+	if (num == 0) overall_scaling = 1;
+	else overall_scaling /= num;
+	//cout << "overall Scaling: " << overall_scaling << "\n";
+	scaling_calculated = true;
+}
+
+struct ns_image_quant_info {
+	ns_image_quant_info() {}
+	ns_image_quant_info(int source, int dest, double d_) :source_id(source), d(d_) {}
+	int source_id;
+	double d;
+};
+bool operator<(const ns_image_quant_info& a, const ns_image_quant_info& b) {
+	return a.d < b.d;
+}
+
+double ns_calc_whole_image_scaling(const ns_image_standard & subject, const ns_image_standard & reference) {
+	const ns_64_bit min_pixel_value_for_scaling_text(40);
+	double d = 0;
+	long count(0);
+	for (unsigned int y = 0; y < subject.properties().height; y++)
+		for (unsigned int x = 0; x < subject.properties().width; x++) {
+			if (subject[y][x] >= min_pixel_value_for_scaling_text&& reference[y][x] >= min_pixel_value_for_scaling_text) {
+				d += reference[y][x] / (double)subject[y][x];
+				count++;
+			}
+		}
+	if (count < 50) 
+		return 1;
+	
+	return d / count;
+}
+
+ns_image_quant_info ns_calc_mean(const ns_image_standard& subject) {
+	ns_image_quant_info r;
+	ns_64_bit m = 0;
+	long count(0);
+	for (unsigned int y = 0; y < subject.properties().height; y++)
+		for (unsigned int x = 0; x < subject.properties().width; x++) {
+			if (subject[y][x] > 2) {
+				m += subject[y][x];
+				count++;
+			}
+		}
+	if (count < 50) {
+		r.d = 0;
+		return r;
+	}
+	r.d = m / (double)count;
+	return r;
+}
+
+void ns_analyzed_image_time_path::calculate_movement_images(const ns_analyzed_time_image_chunk & chunk, const ns_analyzed_time_image_chunk& first_chunk) {
 
 
 	const long n(movement_detection_kernal_half_width);
 	const long kernel_area((2 * n + 1)*(2 * n + 1));
 
 	long istep(chunk.forward() ? 1 : -1);
-	const long dt(movement_time_kernel_width);
-	const unsigned long movement_start_i(chunk.forward() ? (first_stationary_timepoint() + dt) : dt);
+	const long movement_dt(movement_time_kernel_width);
 
 #ifdef NS_CALCULATE_OPTICAL_FLOW
 	if (flow == 0)
 		flow = new ns_optical_flow_processor();
 #endif
-	ns_histogram<unsigned int, ns_8_bit> hist1, hist2;
 	for (long i = chunk.start_i; ; i += istep) {
 		if (chunk.forward() && i >= chunk.stop_i)
 			break;
@@ -5751,7 +5869,6 @@ void ns_analyzed_image_time_path::calculate_movement_images(const ns_analyzed_ti
 		}
 		elements[i].element_was_processed = true;
 
-		bool first_frames(chunk.forward() ? (i < movement_start_i) : (i < movement_start_i));
 
 #ifdef NS_CALCULATE_OPTICAL_FLOW
 		if (first_frames) {
@@ -5767,22 +5884,107 @@ void ns_analyzed_image_time_path::calculate_movement_images(const ns_analyzed_ti
 		}
 		calculate_flow(i);
 #endif
-		elements[i].registered_images->image.histogram(hist1);
-		elements[i].registered_image_histogram = ns_downsample_histogram(hist1);
-		elements[i].histogram_calculated = true;
+		
+		//INTENSITY NORMALIZATION IS PERFORMED HERE
+		//We need to look at the intensity of all images collected within a time kernal,
+		//and find the median value with which to scale the current image and its movement image
+		//note that the movement image pixels are scaled, but the registered image pixels are unscaled (so we can inspect the original if needed)
+		//but the scale factor used is stored.
+		long intensity_normalization_kernal_start = i - intensity_normalization_kernel_half_width,
+			intensity_normalization_kernal_stop = i + intensity_normalization_kernel_half_width;
+		
+		const long upper_kernel_boundary(chunk.forward() ? elements.size()-1 : (first_stationary_timepoint() != 0 ? (first_stationary_timepoint()-1):0));
+		const long lower_kernel_boundary(chunk.forward() ? first_chunk.start_i : 0);
+		if (intensity_normalization_kernal_stop >= upper_kernel_boundary)
+			intensity_normalization_kernal_stop = upper_kernel_boundary;
+		if (intensity_normalization_kernal_start < lower_kernel_boundary)
+			intensity_normalization_kernal_start = lower_kernel_boundary;
+		//std::vector< const ns_histogram_matching_data *> hist_data(intensity_normalization_kernal_stop - intensity_normalization_kernal_start + 1);
+		const int num_images = intensity_normalization_kernal_stop - intensity_normalization_kernal_start + 1;
 
-		if (first_frames) {
-			for (unsigned int j = 0; j < 256; j++)
-				elements[i].registered_images->histogram_matching_factors[j] = j;
+		double cur_scaling;
+		if (num_images >= 3) {
+			std::vector< ns_image_quant_info > means;
+			//cout << "running kernel between " << intensity_normalization_kernal_start << "," << intensity_normalization_kernal_stop << " (boundary = " << upper_kernel_boundary << ")\n";
+
+			for (int k = intensity_normalization_kernal_start; k <= intensity_normalization_kernal_stop; ++k) {
+				if (!elements[k].histogram_calculated)
+					throw ns_ex("Encountered an uncalculated histogram at ") << k;
+				if (elements[k].registered_images == 0)
+					throw ns_ex("Encountered uncalculated region image");
+				ns_image_quant_info sc = ns_calc_mean(elements[k].registered_images->image);
+				sc.source_id = k;
+				means.push_back(sc);
+				//cout << "Setting hist " << k - intensity_normalization_kernal_start << " to " << k << "\n";
+				//hist_data[k - intensity_normalization_kernal_start] = &elements[k].histogram_matching_data;
+			}
+			//find the image with the median mean intensity, and use it as the reference.
+			std::sort(means.begin(), means.end());
+			const unsigned long ref_id = means[intensity_normalization_kernel_half_width].source_id;
+			cur_scaling = ns_calc_whole_image_scaling(elements[i].registered_images->image, elements[ref_id].registered_images->image);
 		}
 		else {
-			elements[i - dt].registered_images->image.histogram(hist2);
-			ns_match_histograms(hist1, hist2, elements[i].registered_images->histogram_matching_factors);
-		}
-		elements[i].registered_images->histograms_matched = true;
+			cur_scaling = 1;
+		}	
+		double movement_dt_scaling; 
+		if (i >= movement_dt && elements[i - movement_dt].registered_images != 0 )
+			movement_dt_scaling = ns_calc_whole_image_scaling(elements[i - movement_dt].registered_images->image, elements[i].registered_images->image);
+		else 
+			movement_dt_scaling = 1;
+		//crop extreme values--this normalization is supposed to tweak images but not dramatically alter images
+		if (exp(abs(log(cur_scaling))) > 3)
+			cur_scaling = 1;
+		if (exp(abs(log(movement_dt_scaling))) > 3)
+			movement_dt_scaling= 1;
 
+
+		//cerr << cur_scaling << "," << movement_dt_scaling << "\n";
+
+		elements[i].histogram_matching_data.overall_scaling = cur_scaling;
+
+		/*std::sort(hist_data.begin(), hist_data.end(), ns_matching_data_accessor());
+		const ns_histogram_matching_data* ref_hist(hist_data[intensity_normalization_kernel_half_width]);
+		elements[i].histogram_matching_data.calc_scaling(*ref_hist);
+		ns_histogram_matching_data histogram_matching_data_movement_dt;
+		if (i >= first_chunk.start_i + movement_dt && elements[i - movement_dt].histogram_calculated) {
+			histogram_matching_data_movement_dt = elements[i - movement_dt].histogram_matching_data;
+			histogram_matching_data_movement_dt.calc_scaling(*ref_hist);
+			
+		}
+		else {
+			//if (movement_dt > intensity_normalization_kernal_start&& movement_dt > intensity_normalization_kernal_stop ||
+			//	movement_dt < intensity_normalization_kernal_start && movement_dt < intensity_normalization_kernal_stop)
+			//	throw ns_ex("Encontered an uncalculated histogram smaller than movement_dt: ") << movement_dt << " (" << intensity_normalization_kernal_start << "," << intensity_normalization_kernal_stop << "(";
+			histogram_matching_data_movement_dt.overall_scaling = 1;
+		}
+
+			//crop extreme values--this normalization is supposed to tweak images but not dramatically alter images
+
+		if (exp(abs(log(elements[i].histogram_matching_data.overall_scaling))) > 3) 
+			elements[i].histogram_matching_data.overall_scaling = 1;
+		if (exp(abs(log(histogram_matching_data_movement_dt.overall_scaling))) > 3)
+			histogram_matching_data_movement_dt.overall_scaling = 1;
+
+
+		if (exp(abs(log(elements[i].histogram_matching_data.overall_scaling))) > 3){
+			cout << "This quantiles: ";
+			for (unsigned int j = 0; j < 3; j++) {
+				cout << elements[i].histogram_matching_data.quartiles[j] << ",";
+			}
+			cout << "\nRef quantiles: ";
+			for (unsigned int j = 0; j < 3; j++) {
+				cout << ref_hist->quartiles[j] << ",";
+			}
+			cout << "\nScaling: ";
+			for (unsigned int j = 0; j < 3; j++) {
+				cout << elements[i].histogram_matching_data.quartile_scaling[j] << ",";
+			}
+			cout << "\nOverall: " << elements[i].histogram_matching_data.overall_scaling;
+			cout << "\n";
+
+		}*/
 		//now we generate the movement image
-		const ns_vector_2d v1(first_frames ? ns_vector_2d(0, 0) : elements[i - dt].registration_offset);
+		//const ns_vector_2d v1(first_frames ? ns_vector_2d(0, 0) : elements[i - movement_dt].registration_offset);
 
 		//fill in bottom
 		for (long y = 0; y < n; y++) {
@@ -5790,17 +5992,12 @@ void ns_analyzed_image_time_path::calculate_movement_images(const ns_analyzed_ti
 				elements[i].registered_images->movement_image_[y][x] = NS_MARGIN_BACKGROUND;
 			}
 		}
-		if (first_frames) {
-			for (long y = n; y < registered_image_properties.height - n; y++)
-				for (long x = 0; x < registered_image_properties.width; x++)
-					elements[i].registered_images->movement_image_[y][x] = elements[i].registered_images->image[y][x];
-		}
-		else {
-			for (long y = n; y < registered_image_properties.height - n; y++) {
-				//fill in left gap
-				for (long x = 0; x < n; x++)
-					elements[i].registered_images->movement_image_[y][x] = NS_MARGIN_BACKGROUND;
+		for (long y = n; y < registered_image_properties.height - n; y++) {
+			//fill in left gap
+			for (long x = 0; x < n; x++)
+				elements[i].registered_images->movement_image_[y][x] = NS_MARGIN_BACKGROUND;
 
+			if (i >= movement_dt && elements[i - movement_dt].registered_images != 0) {
 				//fill in center
 				for (long x = 0 + n; x < registered_image_properties.width - n; x++) {
 
@@ -5810,13 +6007,12 @@ void ns_analyzed_image_time_path::calculate_movement_images(const ns_analyzed_ti
 						throw ns_ex("Yikes");
 #endif
 
-					float d_numerator(0),
-						d_denominator(0);
-
+					float d_numerator(0);
+					//we spatially average the movement value to remove random noise
 					for (long dy = -n; dy <= n; dy++) {
 						for (long dx = -n; dx <= n; dx++) {
-							float d(elements[i].registered_images->image[y][x]
-								- elements[i].registered_images->histogram_matching_factors[elements[i - dt].registered_images->image[y][x]]);
+							float d(elements[i].registered_images->image[y][x]  
+								- elements[i - movement_dt].registered_images->image[y][x] * movement_dt_scaling);
 							d_numerator += d;
 						}
 					}
@@ -5824,16 +6020,27 @@ void ns_analyzed_image_time_path::calculate_movement_images(const ns_analyzed_ti
 
 
 					float val = d_numerator /= kernel_area;
+
 					//note that the absolute value of val can never be greater than 255  
 					//so val contains 9 bits of information
-					elements[i].registered_images->movement_image_[y][x] = (short)val;
+					if (val >= 255)
+						elements[i].registered_images->movement_image_[y][x] = 255;
+					else if (val <= -255)
+						elements[i].registered_images->movement_image_[y][x] = -255;
+					else elements[i].registered_images->movement_image_[y][x] = (short)val;
+
 
 				}
-				//fill in right gap
-				for (long x = (registered_image_properties.width - n); x < registered_image_properties.width; x++) {
-					elements[i].registered_images->movement_image_[y][x] = NS_MARGIN_BACKGROUND;
-
+			}
+			else {
+				for (long x = 0 + n; x < registered_image_properties.width - n; x++) {
+					elements[i].registered_images->movement_image_[y][x] = elements[i].registered_images->image[y][x];
 				}
+			}
+			//fill in right gap
+			for (long x = (registered_image_properties.width - n); x < registered_image_properties.width; x++) {
+				elements[i].registered_images->movement_image_[y][x] = NS_MARGIN_BACKGROUND;
+
 			}
 		}
 		//fill in top
@@ -6509,6 +6716,9 @@ void ns_analyzed_image_time_path::reset_movement_image_saving() {
 void ns_analyzed_image_time_path::save_movement_images(const ns_analyzed_time_image_chunk & chunk, ns_sql & sql, const ns_images_to_save & images_to_save, const ns_backwards_image_handling & backwards_image_handling, const ns_output_location & output_location){
 	const bool save_image(images_to_save == ns_save_simple || images_to_save == ns_save_both),
 			   save_flow_image(images_to_save == ns_save_flow || images_to_save == ns_save_both);
+
+	if (chunk.start_i == chunk.stop_i)
+		throw ns_ex("Empty chunk requested!");
 	#ifndef NS_CALCULATE_OPTICAL_FLOW
 	if (save_flow_image)
 		throw ns_ex("Attempting to save flow movement images with NS_CALCULATE_OPTICAL_FLOW set to false");
@@ -6608,6 +6818,8 @@ void ns_analyzed_image_time_path::save_movement_image(const ns_analyzed_time_ima
 
 	if (elements.size() == 0) return;
 
+	std::set<unsigned int> elements_written;
+
 	unsigned long number_of_frames_to_write(0);
 	if (only_write_backwards_frames)
 		number_of_frames_to_write = this->first_stationary_timepoint();
@@ -6668,6 +6880,7 @@ void ns_analyzed_image_time_path::save_movement_image(const ns_analyzed_time_ima
 				else {
 
 					const ns_analyzed_image_time_path_element &e(elements[i + i_offset]);
+					elements_written.emplace(i + i_offset);
 					if (e.registered_images == 0)
 						throw ns_ex("Registered images are not allocated!");
 					if (e.excluded)
@@ -6692,6 +6905,14 @@ void ns_analyzed_image_time_path::save_movement_image(const ns_analyzed_time_ima
 		}
 		//	cerr << y << "->" << dh << "\n";
 		out.output_stream().recieve_lines(save_image_buffer, dh);
+	}
+
+	for (auto p = elements_written.begin(); p != elements_written.end(); ++p){
+		
+		const ns_analyzed_image_time_path_element& e(elements[*p]);
+		e.debug_write_count++;
+		if (e.debug_write_count > 1)
+			cout << "Multiple writes: " << e.debug_write_count << "\n";
 	}
 
 }
@@ -6925,7 +7146,7 @@ void ns_analyzed_image_time_path_element_measurements::zero(){
 	total_intensity_within_stabilized = 0;
 	total_intensity_within_stabilized_denoised = 0;
 	total_intensity_within_foreground = 0;
-	total_intensity_in_previous_frame_scaled_to_current_frames_histogram = 0;
+	intensity_normalization_scale_factor = 0;
 	total_alternate_worm_area = 0;
 	total_intensity_within_alternate_worm = 0;
 
@@ -6947,6 +7168,15 @@ void ns_analyzed_image_time_path_element_measurements::zero(){
 	spatial_averaged_movement_score_uncropped = 0;
 	registration_displacement = ns_vector_2d(0,0);
 }
+
+
+void ns_analyzed_image_time_path_element_measurements::rescale_baseline_intensities(double scale_factor) {
+	total_intensity_within_region = total_intensity_within_region * scale_factor;
+	total_intensity_within_stabilized = total_intensity_within_stabilized * scale_factor;
+	total_intensity_within_stabilized_denoised = total_intensity_within_stabilized_denoised * scale_factor;
+	total_intensity_within_foreground = total_intensity_within_foreground * scale_factor;
+	total_intensity_within_alternate_worm = total_intensity_within_alternate_worm * scale_factor;
+}
 void ns_analyzed_image_time_path_element_measurements::square() {
 	interframe_time_scaled_movement_sum = interframe_time_scaled_movement_sum* interframe_time_scaled_movement_sum;
 	movement_sum = movement_sum*movement_sum;
@@ -6958,7 +7188,7 @@ void ns_analyzed_image_time_path_element_measurements::square() {
 	total_intensity_within_stabilized = total_intensity_within_stabilized*total_intensity_within_stabilized;
 	total_intensity_within_stabilized_denoised = total_intensity_within_stabilized_denoised*total_intensity_within_stabilized_denoised;
 	total_intensity_within_foreground = total_intensity_within_foreground*total_intensity_within_foreground;
-	total_intensity_in_previous_frame_scaled_to_current_frames_histogram = total_intensity_in_previous_frame_scaled_to_current_frames_histogram*total_intensity_in_previous_frame_scaled_to_current_frames_histogram;
+	intensity_normalization_scale_factor = intensity_normalization_scale_factor * intensity_normalization_scale_factor;
 	total_alternate_worm_area = total_alternate_worm_area*total_alternate_worm_area;
 	total_intensity_within_alternate_worm = total_intensity_within_alternate_worm*total_intensity_within_alternate_worm;
 
@@ -6993,7 +7223,7 @@ void ns_analyzed_image_time_path_element_measurements::square_root() {
 	total_intensity_within_stabilized = sqrt(total_intensity_within_stabilized);
 	total_intensity_within_stabilized_denoised = sqrt(total_intensity_within_stabilized_denoised);
 	total_intensity_within_foreground = sqrt(total_intensity_within_foreground);
-	total_intensity_in_previous_frame_scaled_to_current_frames_histogram = sqrt(total_intensity_in_previous_frame_scaled_to_current_frames_histogram);
+	intensity_normalization_scale_factor = sqrt(intensity_normalization_scale_factor);
 	total_alternate_worm_area = sqrt(total_alternate_worm_area);
 	total_intensity_within_alternate_worm = sqrt(total_intensity_within_alternate_worm);
 
@@ -7031,7 +7261,7 @@ ns_analyzed_image_time_path_element_measurements operator+(const ns_analyzed_ima
 	ret.total_intensity_within_stabilized = a.total_intensity_within_stabilized+b.total_intensity_within_stabilized;
 	ret.total_intensity_within_stabilized_denoised = a.total_intensity_within_stabilized_denoised+b.total_intensity_within_stabilized_denoised;
 	ret.total_intensity_within_foreground = a.total_intensity_within_foreground+b.total_intensity_within_foreground;
-	ret.total_intensity_in_previous_frame_scaled_to_current_frames_histogram = a.total_intensity_in_previous_frame_scaled_to_current_frames_histogram+b.total_intensity_in_previous_frame_scaled_to_current_frames_histogram;
+	ret.intensity_normalization_scale_factor = a.intensity_normalization_scale_factor +b.intensity_normalization_scale_factor;
 	ret.total_alternate_worm_area = a.total_alternate_worm_area+b.total_alternate_worm_area;
 	ret.total_intensity_within_alternate_worm = a.total_intensity_within_alternate_worm+b.total_intensity_within_alternate_worm;
 
@@ -7068,7 +7298,7 @@ ns_analyzed_image_time_path_element_measurements operator-(const ns_analyzed_ima
 	ret.total_intensity_within_stabilized = a.total_intensity_within_stabilized - b.total_intensity_within_stabilized;
 	ret.total_intensity_within_stabilized_denoised = a.total_intensity_within_stabilized_denoised-b.total_intensity_within_stabilized_denoised;
 	ret.total_intensity_within_foreground = a.total_intensity_within_foreground - b.total_intensity_within_foreground;
-	ret.total_intensity_in_previous_frame_scaled_to_current_frames_histogram = a.total_intensity_in_previous_frame_scaled_to_current_frames_histogram - b.total_intensity_in_previous_frame_scaled_to_current_frames_histogram;
+	ret.intensity_normalization_scale_factor = a.intensity_normalization_scale_factor - b.intensity_normalization_scale_factor;
 	ret.total_alternate_worm_area = a.total_alternate_worm_area - b.total_alternate_worm_area;
 	ret.total_intensity_within_alternate_worm = a.total_intensity_within_alternate_worm - b.total_intensity_within_alternate_worm;
 
@@ -7106,7 +7336,7 @@ ns_analyzed_image_time_path_element_measurements operator/(const ns_analyzed_ima
 	ret.total_intensity_within_stabilized = a.total_intensity_within_stabilized / d;
 	ret.total_intensity_within_stabilized_denoised = a.total_intensity_within_stabilized /d;
 	ret.total_intensity_within_foreground = a.total_intensity_within_foreground / d;
-	ret.total_intensity_in_previous_frame_scaled_to_current_frames_histogram = a.total_intensity_in_previous_frame_scaled_to_current_frames_histogram / d;
+	ret.intensity_normalization_scale_factor = a.intensity_normalization_scale_factor / d;
 	ret.total_alternate_worm_area = a.total_alternate_worm_area / d;
 	ret.total_intensity_within_alternate_worm = a.total_intensity_within_alternate_worm / d;
 	ret.change_in_total_foreground_intensity = a.change_in_total_foreground_intensity / d;
@@ -7569,7 +7799,7 @@ void ns_time_path_image_movement_analyzer<allocator_T>::back_port_by_hand_annota
 ns_ostream* ns_get_histogram_output(ns_64_bit region_info_id, int hist_size, ns_sql & sql) {
 	ns_image_server_results_subject sub;
 	sub.region_id = region_info_id;
-	ns_image_server_results_file hist_out(image_server.results_storage.time_path_image_analysis_quantification(sub, "histogram_normalization_data", true, sql, false, true, ns_csv_gz));
+	ns_image_server_results_file hist_out(image_server.results_storage.time_path_image_analysis_quantification(sub, "histograms", true, sql, false, true, ns_csv_gz));
 	ns_ostream * hist_file = hist_out.output();
 	(*hist_file)() << "Time (Formated), Time (UNIX Timestamp), Region Id, Group Id";
 	for (unsigned int i = 0; i < hist_size; i++)
@@ -7756,7 +7986,7 @@ void ns_time_path_image_movement_analyzer<allocator_T>::reanalyze_stored_aligned
 				groups[i].paths[j].calculate_movement_quantification_summary(groups[i].paths[j].movement_analysis_result);
 			}
 		}
-		output_histogram_telemetry_file(sql);
+		//output_histogram_telemetry_file(sql);
 		//o.close();
 		memory_pool.clear();
 		generate_movement_description_series();

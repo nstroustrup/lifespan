@@ -16,6 +16,7 @@ struct ns_analyzed_image_time_path_element_measurements {
 	inline const double & death_time_posture_analysis_measure_v2_uncropped() const { return spatial_averaged_movement_score_uncropped; }
 	inline double & death_time_posture_analysis_measure_v2_uncropped() { return spatial_averaged_movement_score_uncropped; }
 
+	inline void rescale_baseline_intensities(double scale_factor);
 
 	ns_64_bit interframe_time_scaled_movement_sum,
 		movement_sum,
@@ -28,7 +29,6 @@ struct ns_analyzed_image_time_path_element_measurements {
 		total_intensity_within_stabilized,
 		total_intensity_outside_stabilized_denoised,
 		total_intensity_within_foreground,
-		total_intensity_in_previous_frame_scaled_to_current_frames_histogram,
 		total_alternate_worm_area,
 		total_intensity_within_alternate_worm;
 
@@ -48,7 +48,8 @@ struct ns_analyzed_image_time_path_element_measurements {
 		spatial_averaged_movement_sum_cropped,
 		spatial_averaged_movement_sum_uncropped,
 		spatial_averaged_movement_score_cropped,
-		spatial_averaged_movement_score_uncropped;
+		spatial_averaged_movement_score_uncropped,
+		intensity_normalization_scale_factor;
 
 	ns_vector_2d registration_displacement;
 

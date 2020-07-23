@@ -801,7 +801,10 @@ public:
 		ns_stretch_registration reg;
 
 		float histogram_matching_factors_r[256], histogram_matching_factors_s[256];
-		ns_match_histograms(im1, im2, histogram_matching_factors_s);
+		ns_histogram<unsigned int, ns_8_bit> hist1, hist2;
+		im1.histogram(hist1);
+		im2.histogram(hist2);
+		ns_match_histograms(hist1, hist2, histogram_matching_factors_s);
 		float avg_x = reg.calculate(im1, im2, ns_vector_2i(0, 0), ns_vector_2i(im1.properties().width, im1.properties().height), ns_vector_2i(0, 0), offsets, histogram_matching_factors_s);
 		ns_stretch_source_mappings mappings;
 		ns_stretch_registration::convert_offsets_to_source_positions(offsets, mappings);

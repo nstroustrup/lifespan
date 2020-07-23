@@ -84,10 +84,19 @@ inline void ns_set_bit(const bool f, //conditional
 
 	w = (w & ~m) | (-f & m);
 }*/
+struct ns_histogram_matching_data {
+	ns_histogram_matching_data() :scaling_calculated(false) {}
+	double quartile_scaling[3];
+	double overall_scaling;
+	bool scaling_calculated;
+	void calc_scaling(const ns_histogram_matching_data& ref);
+	double quartiles[3];
+};
+bool operator<(const ns_histogram_matching_data& a, const ns_histogram_matching_data& b);
 
 struct ns_registered_image_set{
-	ns_registered_image_set(){}
-	ns_registered_image_set(const ns_image_properties & p):histograms_matched(false){
+	ns_registered_image_set():movement_image_calculated(false){}
+	ns_registered_image_set(const ns_image_properties & p){
 		image.use_more_memory_to_avoid_reallocations();	
 		//worm_threshold_.use_more_memory_to_avoid_reallocations();	
 		worm_region_threshold.use_more_memory_to_avoid_reallocations();	
@@ -98,15 +107,15 @@ struct ns_registered_image_set{
 		flow_image_dy.use_more_memory_to_avoid_reallocations();
 		#endif
 		image.init(p);
-		//worm_threshold_.init(p);
 		worm_region_threshold.init(p);
-		//region_threshold.init(p);
 		movement_image_.init(p);
+		movement_image_calculated = false;
 		#ifdef NS_CALCULATE_OPTICAL_FLOW
 		flow_image_dx.init(p);
 		flow_image_dy.init(p);
 		#endif
 	}
+	bool movement_image_calculated;
 	enum{region_mask=1,worm_mask=2,worm_neighborhood_mask=4, stabilized_worm_neighborhood_mask=8};
 	bool get_region_threshold(const int y, const int x) const { return (worm_region_threshold[y][x]&region_mask)!=0;}
 	bool get_worm_neighborhood_threshold(const int y, const int x) const { return (worm_region_threshold[y][x]&worm_neighborhood_mask)!=0;}
@@ -137,15 +146,12 @@ struct ns_registered_image_set{
 		//region_threshold.resize(p);
 		worm_region_threshold.resize(p);
 		movement_image_.resize(p);
+		movement_image_calculated = false;
 		#ifdef NS_CALCULATE_OPTICAL_FLOW
 		flow_image_dx.resize(p);
 		flow_image_dy.resize(p);
 		#endif
 	}
-	//the per-level scane factor that transforms the previous registered image
-	//in the series to have the same histogram as this one.
-	float histogram_matching_factors[256];
-	bool histograms_matched;
 
 	void use_more_memory_to_avoid_reallocations(bool u) {
 		image.use_more_memory_to_avoid_reallocations(u);
@@ -169,7 +175,7 @@ template<class allocator_T> using ns_registered_image_pool = ns_image_pool<ns_re
 class ns_analyzed_image_time_path_element{
 public:
 	ns_analyzed_image_time_path_element():registered_images(0),path_aligned_images(0),
-	inferred_animal_location(false), path_aligned_images_are_loaded_and_released(false),histogram_calculated(false),element_before_fast_movement_cessation(false),element_was_processed(false),movement(ns_movement_not_calculated),saturated_offset(false),registration_offset(0,0),number_of_extra_worms_observed_at_position(0),part_of_a_multiple_worm_disambiguation_group(0),excluded(false),censored(false){}
+	inferred_animal_location(false), debug_write_count(0),path_aligned_images_are_loaded_and_released(false),histogram_calculated(false),element_before_fast_movement_cessation(false),element_was_processed(false),movement(ns_movement_not_calculated),saturated_offset(false),registration_offset(0,0),number_of_extra_worms_observed_at_position(0),part_of_a_multiple_worm_disambiguation_group(0),excluded(false),censored(false){}
 	~ns_analyzed_image_time_path_element(){
 		if (path_aligned_images != 0 || registered_images != 0)
 			std::cerr << "ABOUT TO LEAK TIME PATH ELEMENT!";
@@ -203,7 +209,8 @@ public:
 	
 	bool inferred_animal_location,
 		 element_before_fast_movement_cessation;
-	
+
+	bool movement_image_calculated() const { return registered_image_is_loaded() && registered_images->movement_image_calculated; }
 	bool registered_image_is_loaded() const{return registered_images != 0 && registered_images->image.properties().height != 0;}
 	bool path_aligned_image_is_loaded() const { return path_aligned_images != 0 && path_aligned_images->image.properties().height != 0 && path_aligned_images_are_loaded_and_released; }
 	const ns_image_standard & image() const { return registered_images->image;}
@@ -248,8 +255,11 @@ private:
 	//contain extra boundary data around the close region image crop
 	ns_path_aligned_image_set * path_aligned_images;
 	ns_registered_image_set * registered_images;
+	mutable int debug_write_count;
 
-
+	//the per-level scane factor that transforms the previous registered image
+	//in the series to have the same histogram as this one.
+	ns_histogram_matching_data histogram_matching_data;
 	
 	//this is the offset of the worm in the movement registered image
 	//i.e how far the worm is moved by the registration algorithm from it's position in the path_aligned images.
@@ -543,7 +553,7 @@ public:
 
 	static ns_vector_2d maximum_alignment_offset(){return ns_vector_2d(60,60);}
 	static ns_vector_2d maximum_local_alignment_offset(){return ns_vector_2d(4,4);}
-	enum {movement_detection_kernal_half_width=2,sobel_operator_width=1,alignment_time_kernel_width=5,movement_time_kernel_width=1,save_output_buffer_height=16};
+	enum {intensity_normalization_kernel_half_width=1,movement_detection_kernal_half_width=2,sobel_operator_width=1,alignment_time_kernel_width=5,movement_time_kernel_width=1,save_output_buffer_height=16};
 
 	bool entirely_excluded;
 	ns_image_properties registered_image_properties;
@@ -644,7 +654,7 @@ private:
 
 	ns_analyzed_time_image_chunk initiate_image_registration(const ns_analyzed_time_image_chunk & chunk,ns_alignment_state & state, ns_calc_best_alignment_fast & align);
 	void calculate_image_registration(const ns_analyzed_time_image_chunk & chunk,ns_alignment_state & state, const ns_analyzed_time_image_chunk & first_chunk_to_register, ns_calc_best_alignment_fast & align);
-	void calculate_movement_images(const ns_analyzed_time_image_chunk & chunk);
+	void calculate_movement_images(const ns_analyzed_time_image_chunk & chunk, const ns_analyzed_time_image_chunk& first_chunk);
 	template<class allocator_T>
 	void copy_aligned_path_to_registered_image(const ns_analyzed_time_image_chunk & chunk, std::vector < ns_image_standard> & temporary_images, ns_time_path_image_movement_analysis_memory_pool<allocator_T> & memory_pool_);
 

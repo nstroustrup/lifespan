@@ -480,7 +480,8 @@ public:
 		//last_measurement_cache.clear();
 	}
 	unsigned long get_graph_time_from_graph_position(const float x) { //x is in relative time
-		//xxx not done
+	  return 0;
+	  //xxx not done
 		/*ns_analyzed_image_time_path* path(&region_data->movement_analyzer.group(group_id).paths[0]);
 		long min_i(0);
 		float min_dt(100000);

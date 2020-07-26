@@ -998,7 +998,7 @@ void ns_identify_best_threshold_parameteters(std::string& results_text, const ns
 		expansion_analysis_hold_times;
 	const bool v1_parameters = false;
 	//old movement scores
-	if (v1_parameters == "1") {
+	if (v1_parameters == true) {
 		const double min_thresh(.0005);
 		const double max_thresh(.5);
 		const long number_of_thresholds(60);

@@ -6,7 +6,6 @@
 # To use standalone IPP update cmake command line:
 # cmake ... -DIPPROOT=<path> ...
 #
-# Note: Backward compatibility is broken, IPPROOT environment path is ignored
 #
 #
 # On return this will define:
@@ -234,7 +233,7 @@ macro(ipp_detect_version)
 endmacro()
 
 
-list(APPEND posloc  /usr /usr/local /opt/local /sw  /opt/local /root/intel /opt/intel /users/nstroustrup/nstroustrup)
+list(APPEND posloc  /usr /usr/local /opt/local /sw  /opt/local /root/intel /opt/intel /users/nstroustrup/nstroustrup/ ${IPPROOT})
 
 FOREACH(curpath ${posloc})
  FILE(GLOB_RECURSE new_list ${curpath}/*/ipp/include/ippversion.h)
@@ -246,6 +245,8 @@ FOREACH(curpath ${posloc})
  LIST(APPEND new_list ${new_list2})
  FILE(GLOB_RECURSE new_list2 ${curpath}/*/intel/ipp/include/ippversion.h)
  LIST(APPEND new_list ${new_list2})
+ FILE(GLOB_RECURSE new_list2 ${curpath}/include/ippversion.h)
+  LIST(APPEND new_list ${new_list2})
 
  list(LENGTH new_list len)
  if (len GREATER 0)

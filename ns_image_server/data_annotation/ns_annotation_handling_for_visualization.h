@@ -450,7 +450,7 @@ public:
 		}
 		ns_death_time_annotation_compiler c;
 		c.add(set, ns_region_metadata());
-		load_timing_data_from_set(c, ignore_unuseful_annotations, timing_data, orphaned_events, error_message);
+		return load_timing_data_from_set(c, ignore_unuseful_annotations, timing_data, orphaned_events, error_message);
 	}
 	bool load_timing_data_from_set(const ns_death_time_annotation_compiler& c, const bool ignore_unuseful_annotations, timing_data_container& timing_data, std::vector<ns_death_time_annotation>& orphaned_events, std::string& error_message) {
 		//use the compiler to recognize all the stationary worms and put all the annotations together.

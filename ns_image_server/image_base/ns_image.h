@@ -611,7 +611,7 @@ public:
 	}
 	inline const unsigned long & number_of_pixels() const { return N;}
 private:
-	enum {max_pixel_depth = 256*256};
+	enum {max_pixel_depth = 256};
 	std::vector<storage_type> hist;
 	unsigned long N;
 	unsigned long length;

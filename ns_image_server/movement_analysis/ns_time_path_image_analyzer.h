@@ -86,13 +86,9 @@ inline void ns_set_bit(const bool f, //conditional
 }*/
 struct ns_histogram_matching_data {
 	ns_histogram_matching_data() :scaling_calculated(false) {}
-	double quartile_scaling[3];
 	double overall_scaling;
 	bool scaling_calculated;
-	void calc_scaling(const ns_histogram_matching_data& ref);
-	double quartiles[3];
 };
-bool operator<(const ns_histogram_matching_data& a, const ns_histogram_matching_data& b);
 
 struct ns_registered_image_set{
 	ns_registered_image_set():movement_image_calculated(false){}
@@ -175,7 +171,7 @@ template<class allocator_T> using ns_registered_image_pool = ns_image_pool<ns_re
 class ns_analyzed_image_time_path_element{
 public:
 	ns_analyzed_image_time_path_element():registered_images(0),path_aligned_images(0),
-	inferred_animal_location(false), debug_write_count(0),path_aligned_images_are_loaded_and_released(false),histogram_calculated(false),element_before_fast_movement_cessation(false),element_was_processed(false),movement(ns_movement_not_calculated),saturated_offset(false),registration_offset(0,0),number_of_extra_worms_observed_at_position(0),part_of_a_multiple_worm_disambiguation_group(0),excluded(false),censored(false){}
+	inferred_animal_location(false), debug_write_count(0),path_aligned_images_are_loaded_and_released(false),element_before_fast_movement_cessation(false),element_was_processed(false),movement(ns_movement_not_calculated),saturated_offset(false),registration_offset(0,0),number_of_extra_worms_observed_at_position(0),part_of_a_multiple_worm_disambiguation_group(0),excluded(false),censored(false){}
 	~ns_analyzed_image_time_path_element(){
 		if (path_aligned_images != 0 || registered_images != 0)
 			std::cerr << "ABOUT TO LEAK TIME PATH ELEMENT!";
@@ -242,8 +238,6 @@ public:
 	}
 	void generate_movement_visualization(ns_image_standard & out) const;
 
-	ns_histogram<unsigned int, ns_8_bit> registered_image_histogram;
-	bool histogram_calculated;
 private:
 	unsigned long number_of_extra_worms_observed_at_position;
 	bool part_of_a_multiple_worm_disambiguation_group;

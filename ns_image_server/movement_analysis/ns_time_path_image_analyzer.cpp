@@ -5648,7 +5648,7 @@ void ns_analyzed_image_time_path::copy_aligned_path_to_registered_image(const ns
 			throw ns_ex("Encountered an unloaded path aligned image!");
 
 		//we calculate the histogram fothat we'll use later for intensity normalization 
-		elements[i].registered_image_histogram = ns_histogram<unsigned int, ns_8_bit>();
+		//elements[i].registered_image_histogram = ns_histogram<unsigned int, ns_8_bit>();
 
 
 		//ok the tricky thing here is that each individual image is valid between [0, elements[i].worm_context_size()]
@@ -5679,7 +5679,7 @@ void ns_analyzed_image_time_path::copy_aligned_path_to_registered_image(const ns
 		for (long y = 0; y < tl_registered.y; y++) {
 			for (long x = 0; x < prop.width; x++) {
 				elements[i].registered_images->image[y][x] = NS_MARGIN_BACKGROUND;
-				elements[i].registered_image_histogram.increment(NS_MARGIN_BACKGROUND);
+				//elements[i].registered_image_histogram.increment(NS_MARGIN_BACKGROUND);
 
 				region_threshold[y][x] = NS_MARGIN_BACKGROUND;
 				worm_threshold[y][x] = NS_MARGIN_BACKGROUND;
@@ -5690,7 +5690,7 @@ void ns_analyzed_image_time_path::copy_aligned_path_to_registered_image(const ns
 			//fill in left gap
 			for (long x = 0; x < (tl_registered.x); x++) {
 				elements[i].registered_images->image[y][x] = NS_MARGIN_BACKGROUND;
-				elements[i].registered_image_histogram.increment(NS_MARGIN_BACKGROUND);
+				//elements[i].registered_image_histogram.increment(NS_MARGIN_BACKGROUND);
 
 				region_threshold[y][x] = NS_MARGIN_BACKGROUND;
 				worm_threshold[y][x] = NS_MARGIN_BACKGROUND;
@@ -5701,14 +5701,14 @@ void ns_analyzed_image_time_path::copy_aligned_path_to_registered_image(const ns
 				///xxx artificially add flicker to test intensity normalization
 				//if (i % 10 == 0)
 				//	elements[i].registered_images->image[y][x] = ((1.2 * elements[i].registered_images->image[y][x]) <= 256) ? (1.2 * elements[i].registered_images->image[y][x]) : 255;
-				elements[i].registered_image_histogram.increment(elements[i].registered_images->image[y][x]);
+				//elements[i].registered_image_histogram.increment(elements[i].registered_images->image[y][x]);
 
 				elements[i].path_aligned_images->sample_thresholds<ns_8_bit>(y - v0.y, x - v0.x, region_threshold[y][x], worm_threshold[y][x]);
 			}
 			//fill in right gap
 			for (long x = (br_registered.x); x < prop.width; x++) {
 				elements[i].registered_images->image[y][x] = NS_MARGIN_BACKGROUND;
-				elements[i].registered_image_histogram.increment(NS_MARGIN_BACKGROUND);
+				//elements[i].registered_image_histogram.increment(NS_MARGIN_BACKGROUND);
 
 				region_threshold[y][x] = NS_MARGIN_BACKGROUND;
 				worm_threshold[y][x] = NS_MARGIN_BACKGROUND;
@@ -5718,7 +5718,7 @@ void ns_analyzed_image_time_path::copy_aligned_path_to_registered_image(const ns
 		for (long y = br_registered.y; y < prop.height; y++) {
 			for (long x = 0; x < prop.width; x++) {
 				elements[i].registered_images->image[y][x] = NS_MARGIN_BACKGROUND;
-				elements[i].registered_image_histogram.increment(NS_MARGIN_BACKGROUND);
+				//elements[i].registered_image_histogram.increment(NS_MARGIN_BACKGROUND);
 
 				worm_threshold[y][x] = NS_MARGIN_BACKGROUND;
 				region_threshold[y][x] = NS_MARGIN_BACKGROUND;
@@ -5738,11 +5738,11 @@ void ns_analyzed_image_time_path::copy_aligned_path_to_registered_image(const ns
 						sum += abs(elements[i].registered_images->image[y][x] - (long)elements[i - istep].registered_images->image[y][x]);
 			}
 		}
-		elements[i].histogram_calculated = true;
+		//elements[i].histogram_calculated = true;
 		//these images are all quite dark, so we normalize based on the 85th, 90th, and 95th percentiles
-		for (unsigned int j = 0; j < 3; j++)
+		/*for (unsigned int j = 0; j < 3; j++)
 			elements[i].histogram_matching_data.quartiles[j] = elements[i].registered_image_histogram.average_of_ntile(j+17, 20, false);
-
+		*/
 		//for (unsigned int j = 0; j < 3; j++)
 		//	cout << "Quartiles: " << elements[i].histogram_matching_data.quartiles[j];
 		//cout << "\n";
@@ -5764,39 +5764,6 @@ void ns_analyzed_image_time_path::copy_aligned_path_to_registered_image(const ns
 		
 	}
 
-}
-
-
-bool operator<(const ns_histogram_matching_data& a, const ns_histogram_matching_data& b) {
-	float sum = 0;
-	for (unsigned int i = 0; i < 3; i++) 
-			sum += a.quartiles[i] - b.quartiles[i];
-	return sum < 0;
-}
-class ns_matching_data_accessor {
-public:
-	bool operator()(const ns_histogram_matching_data* a, const ns_histogram_matching_data* b) {
-		return *a < *b;
-	}
-};
-
-
-void ns_histogram_matching_data::calc_scaling(const ns_histogram_matching_data& ref) {
-	overall_scaling = 0;
-	int num = 0;
-	for (unsigned int j = 0; j < 3; j++) {
-		if (quartiles[j] == 0 || ref.quartiles[j] == 0)
-			quartile_scaling[j] = 0;
-		else {
-			quartile_scaling[j] = ref.quartiles[j] / quartiles[j];
-			num++;
-		}
-		overall_scaling += quartile_scaling[j];
-	}
-	if (num == 0) overall_scaling = 1;
-	else overall_scaling /= num;
-	//cout << "overall Scaling: " << overall_scaling << "\n";
-	scaling_calculated = true;
 }
 
 struct ns_image_quant_info {
@@ -5908,8 +5875,6 @@ void ns_analyzed_image_time_path::calculate_movement_images(const ns_analyzed_ti
 			//cout << "running kernel between " << intensity_normalization_kernal_start << "," << intensity_normalization_kernal_stop << " (boundary = " << upper_kernel_boundary << ")\n";
 
 			for (int k = intensity_normalization_kernal_start; k <= intensity_normalization_kernal_stop; ++k) {
-				if (!elements[k].histogram_calculated)
-					throw ns_ex("Encountered an uncalculated histogram at ") << k;
 				if (elements[k].registered_images == 0)
 					throw ns_ex("Encountered uncalculated region image");
 				ns_image_quant_info sc = ns_calc_mean(elements[k].registered_images->image);
@@ -7811,6 +7776,7 @@ ns_ostream* ns_get_histogram_output(ns_64_bit region_info_id, int hist_size, ns_
 typedef std::pair<unsigned long, ns_histogram<unsigned int, ns_8_bit> > ns_group_id_histogram;
 template<class allocator_T>
 void ns_time_path_image_movement_analyzer<allocator_T>::output_histogram_telemetry_file(ns_sql & sql) const {
+	/*
 	map<unsigned long, std::vector<ns_group_id_histogram> > histograms_ordered_by_time;
 	for (unsigned int i = 0; i < groups.size(); i++) {
 		for (unsigned int j = 0; j < groups[i].paths.size(); j++) {
@@ -7836,6 +7802,7 @@ void ns_time_path_image_movement_analyzer<allocator_T>::output_histogram_telemet
 		}
 	}
 	hist_file.release();
+	*/
 }
 
 

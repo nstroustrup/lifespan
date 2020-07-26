@@ -1,8 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <LocalDebuggerCommandArguments>
-    </LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>"Calibration/Posture Analaysis/Build new HMM Model from storyboard annnotations" image_server_archive_2015::2012_12_14_worm_zoo_25C image_server_archive_2017::2015_03_eat2_wt_20c image_server_archive_2017::2016_03_07_ant_dosage_3 image_server::2019_04_06_adl_hr1 image_server::2019_11_22_AMP100_Dosage_Series -o 2020_06_09=20C_hmm</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">

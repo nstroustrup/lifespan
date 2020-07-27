@@ -64,18 +64,18 @@ struct ns_scatter_plot_element {
 
 struct ns_measurement_accessor {
 	typedef ns_scatter_plot_element data_t;
-	virtual const double operator()(const ns_scatter_plot_element& e) const = 0;
+	virtual const double operator()(const ns_scatter_plot_element& e, bool& valid_data_point) const = 0;
 	virtual ns_measurement_accessor* clone() = 0;
 };
 
 struct ns_weak_movement_accessor : public ns_measurement_accessor {
 	typedef ns_outlier_search_data data_t;
-	const double operator()(const ns_scatter_plot_element& e) const { return e.outlier_data.weak_movement_duration; }
+	const double operator()(const ns_scatter_plot_element& e, bool& valid_data_point) const { valid_data_point = e.outlier_data.weak_movement_duration != -1;  return e.outlier_data.weak_movement_duration; }
 	ns_weak_movement_accessor* clone() { return new ns_weak_movement_accessor; }
 };
 struct ns_alive_but_non_moving_movement_accessor : ns_measurement_accessor {
 	typedef ns_outlier_search_data data_t;
-	const double operator()(const ns_scatter_plot_element& e) const { return e.outlier_data.alive_but_not_moving_duration; }
+	const double operator()(const ns_scatter_plot_element& e, bool & valid_data_point) const { valid_data_point = e.outlier_data.alive_but_not_moving_duration != -1; return e.outlier_data.alive_but_not_moving_duration; }
 	ns_weak_movement_accessor* clone() { return new ns_weak_movement_accessor; }
 };
 
@@ -1122,19 +1122,25 @@ public:
 		//ofstream o("c:\\server\\outlier_debug.csv");
 		//o << "val1,val2,p,outlier\n";
 		const double p_cutoff = .02;
-		normal_fit.build_from_data(data_holder);
-		{
-			for (auto p = points_to_plot.begin(); p != points_to_plot.end(); p++) {
-				for (unsigned int i = 0; i < p->second.size(); i++) {
-					if (p->second[i].outlier_data.alive_but_not_moving_duration == -1 || p->second[i].outlier_data.weak_movement_duration == -1) {
-						p->second[i].outlier_data.is_an_outlier = false;
-						continue;
+		try {
+			normal_fit.build_from_data(data_holder);
+			{
+				for (auto p = points_to_plot.begin(); p != points_to_plot.end(); p++) {
+					for (unsigned int i = 0; i < p->second.size(); i++) {
+						if (p->second[i].outlier_data.alive_but_not_moving_duration == -1 || p->second[i].outlier_data.weak_movement_duration == -1) {
+							p->second[i].outlier_data.is_an_outlier = false;
+							continue;
+						}
+						const double prob = normal_fit.point_emission_likelihood(p->second[i]);
+						p->second[i].outlier_data.is_an_outlier = prob < p_cutoff;
+						//			o << p->second[i].outlier_data.alive_but_not_moving_duration << "," << p->second[i].outlier_data.weak_movement_duration << "," << prob << "," << p->second[i].outlier_data.is_an_outlier << "\n";
 					}
-					const double prob = normal_fit.point_emission_likelihood(p->second[i]);
-					p->second[i].outlier_data.is_an_outlier = prob < p_cutoff;
-		//			o << p->second[i].outlier_data.alive_but_not_moving_duration << "," << p->second[i].outlier_data.weak_movement_duration << "," << prob << "," << p->second[i].outlier_data.is_an_outlier << "\n";
 				}
 			}
+		}
+		catch (ns_ex & ex) {
+			cerr <<"Problem during outlier detection: " << ex.text() << "\n";
+
 		}
 		//o.close();
 

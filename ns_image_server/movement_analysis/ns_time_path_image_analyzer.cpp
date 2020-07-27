@@ -4648,8 +4648,10 @@ void ns_hmm_movement_analysis_optimizatiom_stats::write_hmm_path_header(std::ost
 	o << "Experiment,Plate Name,Animal Details,Group ID,Path ID,Excluded,Censored,Number of Worms, Time (Days),Machine HMM state, By Hand HMM state, Machine likelihood, By hand likelihood, log(p(Machine) / p(by hand)) , Cumulative log(p(Machine) / p(by hand)) ";
 
 	if (animals.size() > 0) {
+		o << ", Machine p(total)";
 		for (unsigned int i = 0; i < animals[0].state_info_variable_names.size(); i++) {
 			o << ", Measurement " << animals[0].state_info_variable_names[i];
+			o << ", Machine p(" << animals[0].state_info_variable_names[i] << ")";
 			o << ", log(Machine p(" << animals[0].state_info_variable_names[i] << ") / By Hand p(" << animals[0].state_info_variable_names[i] << "))";
 			o << ", Cumulative log(Machine p(" << animals[0].state_info_variable_names[i] << ") / By Hand p(" << animals[0].state_info_variable_names[i] << "))";
 		}
@@ -4680,15 +4682,24 @@ void ns_hmm_movement_analysis_optimizatiom_stats::write_hmm_path_data(std::ostre
 			o << ns_hmm_movement_state_to_string(animals[k].machine_state_info.path[i].state) << "," << ns_hmm_movement_state_to_string(animals[k].by_hand_state_info.path[i].state) << ",";
 			o << animals[k].machine_state_info.path[i].total_log_probability << "," << animals[k].by_hand_state_info.path[i].total_log_probability << ",";
 			const double diff_p = (animals[k].machine_state_info.path[i].total_log_probability - animals[k].by_hand_state_info.path[i].total_log_probability);
-			if (animals[k].machine_state_info.path[i].state != ns_hmm_missing)	//missing states don't count in verterbi calculations, so we shouldn't calculate it
-				cumulative_differential_probability += diff_p;
-			o << diff_p << ",";
-			o << cumulative_differential_probability;
+			if (std::isfinite(animals[k].by_hand_state_info.path[i].total_log_probability)) {  //by hand annotations can involve state transitions that are 
+																							  //impossible in the current models' state transition restrictions
+																							  //We don't allow these state transtiions to set the cumulative probability to -infinity
+				if (animals[k].machine_state_info.path[i].state != ns_hmm_missing)	//missing states don't count in verterbi calculations, so we shouldn't calculate it
+					cumulative_differential_probability += diff_p;
+					o << diff_p << ",";
+					o << cumulative_differential_probability;
+			}
+			else {
+				o << ",";
+			}
+			o << "," << animals[k].machine_state_info.path[i].total_log_probability;
 			for (unsigned int pp = 0; pp < animals[0].state_info_variable_names.size(); pp++) {
 				const double diff_p_sub(animals[k].machine_state_info.path[i].log_sub_probabilities[pp] - animals[k].by_hand_state_info.path[i].log_sub_probabilities[pp]);
 				if (animals[k].machine_state_info.path[i].state != ns_hmm_missing)	//missing states don't count in verterbi calculations, so we shouldn't calculate it
 					cumulative_sub_probabilities[pp] += diff_p_sub;
 				o << "," << animals[k].machine_state_info.path[i].sub_measurements[pp]
+				  << "," << animals[k].machine_state_info.path[i].log_sub_probabilities[pp]
 				  << "," << diff_p_sub
 				  << "," << cumulative_sub_probabilities[pp];
 			}

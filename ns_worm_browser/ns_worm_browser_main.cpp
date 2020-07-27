@@ -128,20 +128,19 @@ ns_worm_terminal_stats_window* stats_window;
 //only call from within valid() section of the draw function
 void ns_setup_default_gl_window_settings(Fl_Gl_Window * window) {
 	glShadeModel(GL_FLAT);
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	glFrustum(-1.0, 1.0, -1.0, 1.0, /* transformation */
-		0, 1);
-	glMatrixMode(GL_MODELVIEW);  /* back to modelview matrix */
+	glMatrixMode(GL_MODELVIEW);  //back to modelview matrix *
+	check_gl_err();
 	glViewport(0, 0, window->pixel_w(), window->pixel_h());
 	//glTranslatef(0,0,-10);
 	window->ortho();
 	glMatrixMode(GL_PROJECTION);
+	check_gl_err();
 	glLoadIdentity();
 	//glOrtho(0, 1, 0, 1, -1, 1);
 	glEnable(GL_TEXTURE_2D);
 	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
 	//glDisable(GL_DEPTH_TEST);
+	check_gl_err();
 
 }
 // OPENGL WINDOW CLASS

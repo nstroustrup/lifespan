@@ -967,6 +967,7 @@ private:
 	ns_sql * persistant_sql_connection;
 
 };
+void check_gl_err();
 
 
 #endif

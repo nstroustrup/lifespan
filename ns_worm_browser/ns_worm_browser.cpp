@@ -7358,13 +7358,14 @@ void check_gl_err() {
 	while ((err = glGetError()) != GL_NO_ERROR)
 	{
 		switch (err) {
-		case GL_INVALID_ENUM: cerr << "Invalid enum"; break;
-		case GL_INVALID_VALUE: cerr << "Invalid value"; break;
-		case GL_INVALID_OPERATION: cerr << "Invalid operation"; break;
-		case GL_STACK_OVERFLOW: cerr << "Stack Overflow"; break;
-		case GL_STACK_UNDERFLOW: cerr << "Stack underflow"; break;
-		case GL_OUT_OF_MEMORY: cerr << "Out of memory"; break;
-		default: cerr << "Unknown error: " << err;
+		case GL_INVALID_ENUM: cerr << "OpenGL error: Invalid enum"; break;
+		case GL_INVALID_VALUE: 
+			cerr << "OpenGL error: Invalid value"; break;
+		case GL_INVALID_OPERATION: cerr << "OpenGL error: Invalid operation"; break;
+		case GL_STACK_OVERFLOW: cerr << "OpenGL error: Stack Overflow"; break;
+		case GL_STACK_UNDERFLOW: cerr << "OpenGL error: Stack underflow"; break;
+		case GL_OUT_OF_MEMORY: cerr << "OpenGL error: Out of memory"; break;
+		default: cerr << "Unknown OpenGL error: " << err;
 		}
 		cerr << "\n";
 	}
@@ -7403,13 +7404,15 @@ void ns_gl_window_data::update_display(long x, long y) {
 	/*#ifndef MESA
 		glDrawBuffer(GL_FRONT_AND_BACK);
 	#endif*/
-		
+
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		check_gl_err();
 		glClearColor(0.0, 0.0, 0.0, 1.0);
 		check_gl_err();
 		gl_buffer.upload_textures();
+		check_gl_err();
 		gl_buffer.draw(x, y);
+		check_gl_err();
 		/*
 		glGenTextures(1, &texture[0]);
 		glBindTexture(GL_TEXTURE_2D, texture[0]);

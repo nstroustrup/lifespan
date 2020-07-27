@@ -171,28 +171,40 @@ public:
 	static double* training_data_buffer;
 	static unsigned long training_data_buffer_size;
 	static ns_lock training_data_buffer_lock;
+	void guestimate_small_set(const std::vector<const std::vector<typename measurement_accessor_t::data_t>* >& observations) {
+		
+		//calculate means
+		double means[number_of_dimensions];
+		for (unsigned int d = 0; d < number_of_dimensions; d++)
+			means[d] = 0;
+		bool valid_point;
+		unsigned long N = 0;
+		for (unsigned int i = 0; i < observations.size(); i++)
+			for (unsigned int j = 0; j < observations[i]->size(); j++)
+				for (unsigned int d = 0; d < number_of_dimensions; d++) {
+					double val = (*dimensions[d].measurement_accessor)((*observations[i])[j],valid_point);
+					if (valid_point) {
+						means[d] += val;
+						N++;
+					}
+				}
+		if (N != 0)
+			for (unsigned int d = 0; d < number_of_dimensions; d++)
+				means[d] /= N;
+
+		for (unsigned int i = 0; i < number_of_gaussians; i++) {
+			gmm.setPrior(i, i == 0);	//only use 1 gaussian
+			gmm.setMean(i, means);
+			gmm.setVariance(i, means);
+		}
+	}
 	void build_from_data(const std::vector<const std::vector<typename measurement_accessor_t::data_t>* >& observations) {
 		unsigned long N(0);
 		for (unsigned int i = 0; i < observations.size(); i++)
 			N += observations[i]->size();
 
 		if (N < number_of_gaussians) {
-			//calculate means
-			double means[number_of_dimensions];
-			for (unsigned int d = 0; d < number_of_dimensions; d++)
-				means[d] = 0;
-			for (unsigned int i = 0; i < observations.size(); i++)
-				for (unsigned int j = 0; j < observations[i]->size(); j++)
-					for (unsigned int d = 0; d < number_of_dimensions; d++)
-						means[d] += (*dimensions[d].measurement_accessor)((*observations[i])[j]);
-			for (unsigned int d = 0; d < number_of_dimensions; d++)
-				means[d] /= N;
-
-			for (unsigned int i = 0; i < number_of_gaussians; i++) {
-				gmm.setPrior(i, i == 0);	//only use 1 gaussian
-				gmm.setMean(i, means);
-				gmm.setVariance(i, means);
-			}
+			guestimate_small_set(observations);
 			return;
 		}
 		ns_acquire_lock_for_scope lock(training_data_buffer_lock, __FILE__, __LINE__);
@@ -206,12 +218,26 @@ public:
 			training_data_buffer = new double[training_data_buffer_size];
 		}
 		unsigned ij = 0;
+		bool valid_data_point;
+		N = 0;
 		for (unsigned long i = 0; i < observations.size(); i++) {
 			for (unsigned int j = 0; j < observations[i]->size(); j++) {
-				for (unsigned int d = 0; d < number_of_dimensions; d++)
-					training_data_buffer[number_of_dimensions * (ij)+d] = (*dimensions[d].measurement_accessor)((*observations[i])[j]);
+				for (unsigned int d = 0; d < number_of_dimensions; d++) {
+					const double val = (*dimensions[d].measurement_accessor)((*observations[i])[j], valid_data_point);
+					if (!std::isfinite(val))
+						throw ns_ex("Invalid training data: ") << val << ": observations[" << i << "][" << j << "]\n";
+					if (valid_data_point) {
+						training_data_buffer[number_of_dimensions * (ij)+d] = val;
+						N++;
+					}
+
+				}
 				ij++;
 			}
+		}
+		if (N < number_of_gaussians) {
+			guestimate_small_set(observations);
+			return;
 		}
 		//gmm.SetMaxIterNum(1e6);
 		//gmm.SetEndError(1e-5);
@@ -233,8 +259,9 @@ public:
 	//So we can use them for viterbi algorithm 
 	template<class l_data_t>
 	double point_emission_log_probability(const l_data_t & e) const {
+		bool valid_point;
 		for (unsigned int d = 0; d < number_of_dimensions; d++)
-			observation_buffer[d] = (*dimensions[d].measurement_accessor)(e);
+			observation_buffer[d] = (*dimensions[d].measurement_accessor)(e, valid_point);
 		return log(gmm.GetProbability(observation_buffer));
 	}
 
@@ -242,8 +269,9 @@ public:
 	//They are more expensive to calculate so we only use them when necessary
 	template<class l_data_t>
 	double point_emission_likelihood(const l_data_t& e) const {
+		bool valid_data;
 		for (unsigned int d = 0; d < number_of_dimensions; d++)
-			observation_buffer[d] = (*dimensions[d].measurement_accessor)(e);
+			observation_buffer[d] = (*dimensions[d].measurement_accessor)(e,valid_data);
 		return gmm.GetLikelihood(observation_buffer);
 	}
 
@@ -251,8 +279,10 @@ public:
 	void log_sub_probabilities(const l_data_t & m, std::vector<double>& measurements, std::vector<double>& probabilities) const {
 		measurements.resize(number_of_dimensions);
 		probabilities.resize(number_of_dimensions);
-		for (unsigned int d = 0; d < number_of_dimensions; d++)
-			observation_buffer[d] = measurements[d] = (*dimensions[d].measurement_accessor)(m);
+		bool valid_point;
+		for (unsigned int d = 0; d < number_of_dimensions; d++) 
+			observation_buffer[d] = measurements[d] = (*dimensions[d].measurement_accessor)(m,valid_point);
+
 
 		for (unsigned int d = 0; d < number_of_dimensions; d++)
 			probabilities[d] = log(gmm.Get_1D_Probability(d, observation_buffer));

@@ -18,9 +18,7 @@ struct ns_analyzed_image_time_path_element_measurements {
 
 	inline void rescale_baseline_intensities(double scale_factor);
 
-	ns_64_bit interframe_time_scaled_movement_sum,
-		movement_sum,
-		movement_alternate_worm_sum,
+	ns_64_bit movement_sum,
 		total_foreground_area,
 		total_stabilized_area,
 		total_region_area,
@@ -49,6 +47,8 @@ struct ns_analyzed_image_time_path_element_measurements {
 		spatial_averaged_movement_sum_uncropped,
 		spatial_averaged_movement_score_cropped,
 		spatial_averaged_movement_score_uncropped,
+		spatial_averaged_movement_score_uncropped_4x,
+		spatial_averaged_movement_score_uncropped_min_4x,
 		intensity_normalization_scale_factor;
 
 	ns_vector_2d registration_displacement;

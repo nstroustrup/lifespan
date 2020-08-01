@@ -34,7 +34,6 @@ struct ns_hmm_emission_normalization_stats {
 	const std::string* region_name, * device_name;
 };
 
-class ns_emission_probability_model_to_use;
 
 
 typedef enum { ns_all_states_permitted, ns_no_post_expansion_contraction, ns_no_expansion_while_alive, no_expansion_while_alive_nor_contraction, ns_no_expansion_nor_contraction, ns_require_movement_expansion_synchronicity, ns_number_of_state_settings } ns_hmm_states_permitted;
@@ -55,6 +54,7 @@ public:
 	unsigned long volatile_number_of_individuals_observed;
 };
 
+class ns_probability_model_holder;
 class ns_emperical_posture_quantification_value_estimator{
 public:
 	static std::string state_permissions_to_string(const ns_hmm_states_permitted& s);
@@ -82,15 +82,12 @@ public:
 	unsigned long number_of_sub_probabilities() const;
 	bool state_defined(const ns_hmm_movement_state & m) const;
 	const ns_hmm_states_permitted & states_permitted() const { return states_permitted_int; }
-	void defined_states(std::set<ns_hmm_movement_state> & s) const{ 
-		for (auto p = emission_probability_models.begin(); p != emission_probability_models.end(); p++)
-			s.emplace(p->first);
-	}
+	void defined_states(std::set<ns_hmm_movement_state>& s) const;
 	std::string software_version_when_built;
 	friend bool operator==(const ns_emperical_posture_quantification_value_estimator & a, const ns_emperical_posture_quantification_value_estimator & b);
 private:
 	void write_visualization(std::ostream & o,const std::string & experiment_name="") const;
-	std::map<ns_hmm_movement_state, ns_emission_probability_model_to_use*> emission_probability_models;
+	ns_probability_model_holder * emission_probability_models;
 	ns_hmm_states_permitted states_permitted_int;
 };
 bool operator==(const ns_emperical_posture_quantification_value_estimator & a, const ns_emperical_posture_quantification_value_estimator & b);

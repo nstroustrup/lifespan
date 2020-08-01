@@ -6,7 +6,9 @@
 #include "ns_gmm.h"
 #define NS_HMM_VERSION "2.5"
 
-//typedef ns_emission_probabiliy_independent_gaussian_model ns_emission_probability_model_to_use;
+
+
+#define number_of_gmm_dimensions  2
 
 double inline ns_catch_infinity(const double & d){
 	return (d==-std::numeric_limits<double>::infinity())?-20:d;
@@ -738,6 +740,15 @@ struct ns_measurement_accessor {
 	const double get_from_emission(const data_t& e, bool& valid_point) const { return (*this)(e.measurement,valid_point); }
 };
 
+class ns_probability_model_holder {
+public:
+	std::map<ns_hmm_movement_state, ns_emission_probability_model<ns_measurement_accessor>*> models;
+	~ns_probability_model_holder() {
+		for (auto p = models.begin(); p != models.end(); ++p)
+			delete p->second;
+	}
+};
+
 struct ns_intensity_accessor_1x : public ns_measurement_accessor {
 	const double operator()(const ns_analyzed_image_time_path_element_measurements & e, bool& valid_point) const {
 		valid_point = true;
@@ -774,6 +785,30 @@ struct ns_movement_accessor : public ns_measurement_accessor {
 	const double get_from_emission(const ns_hmm_emission& e,bool & valid_point) const { return (*this)(e.measurement,valid_point); }
 	ns_measurement_accessor* clone() { return new ns_movement_accessor; }
 };
+
+struct ns_movement_accessor_4x : public ns_measurement_accessor {
+	const double operator()(const ns_analyzed_image_time_path_element_measurements& e, bool& valid_point) const {
+		//this defines the movement score used by the HMM model!
+		valid_point = true;
+		const double d = e.spatial_averaged_movement_score_uncropped_4x + .1;
+		if (d <= 0) return -DBL_MAX;
+		return log(d);
+	}
+	const double get_from_emission(const ns_hmm_emission& e, bool& valid_point) const { return (*this)(e.measurement, valid_point); }
+	ns_measurement_accessor* clone() { return new ns_movement_accessor; }
+};
+struct ns_movement_accessor_min_4x : public ns_measurement_accessor {
+	const double operator()(const ns_analyzed_image_time_path_element_measurements& e, bool& valid_point) const {
+		//this defines the movement score used by the HMM model!
+		valid_point = true;
+		const double d = e.spatial_averaged_movement_score_uncropped_min_4x + .1;
+		if (d <= 0) return -DBL_MAX;
+		return log(d);
+	}
+	const double get_from_emission(const ns_hmm_emission& e, bool& valid_point) const { return (*this)(e.measurement, valid_point); }
+	ns_measurement_accessor* clone() { return new ns_movement_accessor; }
+};
+
 struct ns_outside_intensity_accessor_1x : public ns_measurement_accessor {
 	const double operator()(const ns_analyzed_image_time_path_element_measurements& e, bool& valid_point) const {
 		valid_point = true;
@@ -809,32 +844,43 @@ struct ns_stabilized_region_vs_outside_intensity_comparitor : public ns_measurem
 };
 
 
-class ns_emission_probability_model_to_use : public ns_emission_probabiliy_gaussian_diagonal_covariance_model<ns_measurement_accessor, 2, 4> {
+class ns_hmm_emission_probability_model_organizer : public ns_emission_probability_model_organizer<ns_measurement_accessor>{
 public:
-	ns_emission_probability_model_to_use() {
-		dimensions.reserve(2);
-		dimensions.push_back(ns_covarying_gaussian_dimension<ns_measurement_accessor>(new ns_movement_accessor, "m"));
-		//dimensions.push_back(ns_covarying_gaussian_dimension<ns_measurement_accessor>(new ns_intensity_accessor_1x, "i1"));
-		//dimensions.push_back(ns_covarying_gaussian_dimension<ns_measurement_accessor>(new ns_intensity_accessor_2x, "i2"));
-		dimensions.push_back(ns_covarying_gaussian_dimension<ns_measurement_accessor>(new ns_intensity_accessor_4x, "i4"));
-		//dimensions.push_back(ns_covarying_gaussian_dimension<ns_measurement_accessor>(new ns_outside_intensity_accessor_1x, "o1"));
-		//dimensions.push_back(ns_covarying_gaussian_dimension<ns_measurement_accessor>(new ns_outside_intensity_accessor_2x, "o2"));
-		//dimensions.push_back(ns_covarying_gaussian_dimension<ns_measurement_accessor>(new ns_outside_intensity_accessor_4x, "o4"));
-		//dimensions.push_back(ns_covarying_gaussian_dimension<ns_measurement_accessor>(new ns_stabilized_region_vs_outside_intensity_comparitor, "c"));
-		if (dimensions.size() != 2)
-			throw ns_ex("number_of_dimensions is not set correctly");
+
+	ns_covarying_gaussian_dimension<ns_measurement_accessor> create_dimension(const std::string & d) const {
+		if (d == "m") return ns_covarying_gaussian_dimension<ns_measurement_accessor>(new ns_movement_accessor, d);
+		if (d == "m4") return ns_covarying_gaussian_dimension<ns_measurement_accessor>(new ns_movement_accessor_4x, d);
+		if (d == "i1") return ns_covarying_gaussian_dimension<ns_measurement_accessor>(new ns_intensity_accessor_1x, d);
+		if (d == "i2") return ns_covarying_gaussian_dimension<ns_measurement_accessor>(new ns_intensity_accessor_2x, d);
+		if (d == "i4") return ns_covarying_gaussian_dimension<ns_measurement_accessor>(new ns_intensity_accessor_4x, d);
+		if (d == "o1") return ns_covarying_gaussian_dimension<ns_measurement_accessor>(new ns_outside_intensity_accessor_1x, d);
+		if (d == "o2") return ns_covarying_gaussian_dimension<ns_measurement_accessor>(new ns_outside_intensity_accessor_2x, d);
+		if (d == "o4") return ns_covarying_gaussian_dimension<ns_measurement_accessor>(new ns_outside_intensity_accessor_4x, d);
+		if (d == "c") return ns_covarying_gaussian_dimension<ns_measurement_accessor>(new ns_stabilized_region_vs_outside_intensity_comparitor, d);
+		throw ns_ex("ns_emission_probability_model_organizer()::Unknown dimension: ") << d;
 	}
 
+	ns_emission_probabiliy_gaussian_diagonal_covariance_model<ns_measurement_accessor>* default_model() const {
+		auto p = new ns_emission_probabiliy_gaussian_diagonal_covariance_model<ns_measurement_accessor>;
+		p->dimensions.insert(p->dimensions.end(), create_dimension("m"));
+		p->dimensions.insert(p->dimensions.end(), create_dimension("m4"));
+		p->dimensions.insert(p->dimensions.end(), create_dimension("i1"));
+		p->dimensions.insert(p->dimensions.end(), create_dimension("i4"));
+		p->setup_gmm(p->dimensions.size(), 4);
+		return p;
+	}
+	
 };
 
-template<class measurement_accessor_t, int number_of_dimensions, int number_of_gaussians>
-unsigned long ns_emission_probabiliy_gaussian_diagonal_covariance_model<measurement_accessor_t,number_of_dimensions, number_of_gaussians>::training_data_buffer_size = 0;
 
-template<class measurement_accessor_t, int number_of_dimensions, int number_of_gaussians>
-double* ns_emission_probabiliy_gaussian_diagonal_covariance_model<measurement_accessor_t, number_of_dimensions, number_of_gaussians>::training_data_buffer = 0;
+template<class measurement_accessor_t>
+unsigned long ns_emission_probabiliy_gaussian_diagonal_covariance_model<measurement_accessor_t>::training_data_buffer_size = 0;
 
-template<class measurement_accessor_t, int number_of_dimensions, int number_of_gaussians>
-ns_lock ns_emission_probabiliy_gaussian_diagonal_covariance_model<measurement_accessor_t, number_of_dimensions, number_of_gaussians>::training_data_buffer_lock("tbl");
+template<class measurement_accessor_t>
+double* ns_emission_probabiliy_gaussian_diagonal_covariance_model<measurement_accessor_t>::training_data_buffer = 0;
+
+template<class measurement_accessor_t>
+ns_lock ns_emission_probabiliy_gaussian_diagonal_covariance_model<measurement_accessor_t>::training_data_buffer_lock("tbl");
 
 template<class ns_movement_accessor_t>
 bool operator==(const ns_covarying_gaussian_dimension< ns_movement_accessor_t >& a, const ns_covarying_gaussian_dimension< ns_movement_accessor_t >& b) {
@@ -883,7 +929,7 @@ bool operator==(const GMM& a, const GMM& b) {
 	return true;
 }
 bool operator==(const ns_emperical_posture_quantification_value_estimator & a, const ns_emperical_posture_quantification_value_estimator & b) {
-	if (a.emission_probability_models.size() != b.emission_probability_models.size()) {
+	if (a.emission_probability_models->models.size() != b.emission_probability_models->models.size()) {
 		std::cerr << "Wrong number of models\n";
 		return false;
 	}
@@ -891,30 +937,35 @@ bool operator==(const ns_emperical_posture_quantification_value_estimator & a, c
 		std::cerr << "State permission mismatch!";
 		return false;
 	}
-	for (auto p = a.emission_probability_models.begin(); p != a.emission_probability_models.end(); ++p) {
-		auto q = b.emission_probability_models.find(p->first);
-		if (q == b.emission_probability_models.end()) {
+	for (auto p = a.emission_probability_models->models.begin(); p != a.emission_probability_models->models.end(); ++p) {
+		auto q = b.emission_probability_models->models.find(p->first);
+		if (q == b.emission_probability_models->models.end()) {
 			std::cerr << "Missing state\n";
 			return false;
 		}
-		if (!(*p->second == *q->second))
+		if (!(p->second->equals(q->second)))
 			return false;
 	}
 	return true;
 
 }
+
+
+
 void ns_emperical_posture_quantification_value_estimator::provide_measurements_and_log_sub_probabilities(const ns_hmm_movement_state & state, const ns_analyzed_image_time_path_element_measurements & e, std::vector<double> & measurement, std::vector<double> & sub_probabilitiy) const {
 	bool undefined_state(false);
-	auto p = emission_probability_models.find(state);
+	auto p = emission_probability_models->models.find(state);
 	
-	if (p == emission_probability_models.end()) {
+	if (p == emission_probability_models->models.end()) {
 		//if we are debugging a state for which the emission model isn't trained, output N/A.
-		if (emission_probability_models.empty())
+		if (emission_probability_models->models.empty())
 			throw ns_ex("No emission models!");
-		p = emission_probability_models.begin();
+		p = emission_probability_models->models.begin();
 		undefined_state = true;
 	}
-	p->second->log_sub_probabilities(e, measurement, sub_probabilitiy);
+	ns_hmm_emission em;
+	em.measurement = e;
+	p->second->log_sub_probabilities(em, measurement, sub_probabilitiy);
 
 
 	//if we are debugging a state for which the emission model isn't trained, output N/A.
@@ -924,26 +975,32 @@ void ns_emperical_posture_quantification_value_estimator::provide_measurements_a
 	}
 }
 void ns_emperical_posture_quantification_value_estimator::provide_sub_probability_names(std::vector<std::string> & names) const {
-	if (emission_probability_models.empty())
+	if (emission_probability_models->models.empty())
 		throw ns_ex("ns_emperical_posture_quantification_value_estimator::provide_sub_probability_names()::Cannot find any probability model");
-	emission_probability_models.begin()->second->sub_probability_names(names);
+	emission_probability_models->models.begin()->second->sub_probability_names(names);
 }
 unsigned long ns_emperical_posture_quantification_value_estimator::number_of_sub_probabilities() const {
-	if (emission_probability_models.empty())
+	if (emission_probability_models->models.empty())
 		throw ns_ex("ns_emperical_posture_quantification_value_estimator::provide_sub_probability_names()::Cannot find any probability model");
-	return emission_probability_models.begin()->second->number_of_sub_probabilities();
+	return emission_probability_models->models.begin()->second->number_of_sub_probabilities();
 }
 
 bool ns_emperical_posture_quantification_value_estimator::state_defined(const ns_hmm_movement_state & m) const {
-	return emission_probability_models.find(m) != emission_probability_models.end();
+	return emission_probability_models->models.find(m) != emission_probability_models->models.end();
 
+}
+void ns_emperical_posture_quantification_value_estimator::defined_states(std::set<ns_hmm_movement_state>& s) const {
+	for (auto p = emission_probability_models->models.begin(); p != emission_probability_models->models.end(); p++)
+		s.emplace(p->first);
 }
 
 void ns_emperical_posture_quantification_value_estimator::log_probability_for_each_state(const ns_analyzed_image_time_path_element_measurements & e, std::vector<double> & d) const {
 	d.resize(0);
 	d.resize((int)ns_hmm_unknown_state,-INFINITY);
-	for (auto p = emission_probability_models.begin(); p != emission_probability_models.end(); p++) {
-		const double tmp(p->second->point_emission_log_probability(e));
+	ns_hmm_emission em;
+	em.measurement = e;
+	for (auto p = emission_probability_models->models.begin(); p != emission_probability_models->models.end(); p++) {
+		const double tmp(p->second->point_emission_log_probability(em));
 		d[p->first] = tmp;
 	}
 }
@@ -958,12 +1015,14 @@ void ns_emperical_posture_quantification_value_estimator::validate_model_setting
 }
 void ns_emperical_posture_quantification_value_estimator::output_debug_info(const ns_analyzed_image_time_path_element_measurements & e, std::ostream & o) const {
 
-	for (auto p = emission_probability_models.begin(); p != emission_probability_models.end(); p++) {
+	for (auto p = emission_probability_models->models.begin(); p != emission_probability_models->models.end(); p++) {
 		std::vector<std::string> names;
 		std::vector<double> measurements;
 		std::vector<double> probabilities;
 		p->second->sub_probability_names(names);
-		p->second->log_sub_probabilities(e, measurements, probabilities);
+		ns_hmm_emission em;
+		em.measurement = e;
+		p->second->log_sub_probabilities(em, measurements, probabilities);
 		for (unsigned int i = 0; i < names.size(); i++) {
 			o << p->first << ": " << names[i] << ": " << measurements[i] << ": " << probabilities[i] << "\n";
 		}
@@ -1019,26 +1078,26 @@ void ns_hmm_observation_set::write(std::ostream & out, const std::string & exper
 
 
 
-ns_emperical_posture_quantification_value_estimator::ns_emperical_posture_quantification_value_estimator() {}
+ns_emperical_posture_quantification_value_estimator::ns_emperical_posture_quantification_value_estimator():emission_probability_models(new ns_probability_model_holder){}
 ns_emperical_posture_quantification_value_estimator::ns_emperical_posture_quantification_value_estimator(const ns_emperical_posture_quantification_value_estimator& a) {
-	for (auto p = a.emission_probability_models.begin(); p != a.emission_probability_models.end(); p++)
-		emission_probability_models.insert(emission_probability_models.begin(), std::map<ns_hmm_movement_state, ns_emission_probability_model_to_use*>::value_type(p->first, new ns_emission_probability_model_to_use(*p->second)));
+	emission_probability_models = new ns_probability_model_holder;
+	for (auto p = a.emission_probability_models->models.begin(); p != a.emission_probability_models->models.end(); p++)
+		emission_probability_models->models.insert(emission_probability_models->models.begin(), std::map<ns_hmm_movement_state, ns_emission_probability_model<ns_measurement_accessor>*>::value_type(p->first, p->second->clone()));
 
 }
 ns_emperical_posture_quantification_value_estimator& ns_emperical_posture_quantification_value_estimator::operator=(const ns_emperical_posture_quantification_value_estimator& a) {
-	for (auto p = a.emission_probability_models.begin(); p != a.emission_probability_models.end(); p++)
-		emission_probability_models.insert(emission_probability_models.begin(), std::map<ns_hmm_movement_state, ns_emission_probability_model_to_use*>::value_type(p->first, new ns_emission_probability_model_to_use(*p->second)));
+	this->emission_probability_models->models.clear();
+	for (auto p = a.emission_probability_models->models.begin(); p != a.emission_probability_models->models.end(); p++)
+		emission_probability_models->models.insert(emission_probability_models->models.begin(), std::map<ns_hmm_movement_state, ns_emission_probability_model<ns_measurement_accessor>*>::value_type(p->first, p->second->clone()));
 	return *this;
 }
 
 ns_emperical_posture_quantification_value_estimator::~ns_emperical_posture_quantification_value_estimator() {
-	for (auto p = emission_probability_models.begin(); p != emission_probability_models.end(); ++p)
-		delete p->second;
-	emission_probability_models.clear();
+	delete emission_probability_models;
 }
 
-template<int number_of_dimensions = 2, int number_of_gaussians = 4>
-bool operator==(const ns_emission_probability_model_to_use & a, const ns_emission_probability_model_to_use & b) {
+template<int number_of_dimensions = number_of_gmm_dimensions, int number_of_gaussians = 4>
+bool operator==(const ns_emission_probability_model<ns_measurement_accessor>& a, const ns_emission_probability_model<ns_measurement_accessor>& b) {
 	if (a.dimensions.size() != b.dimensions.size())
 		std::cerr << "Different number of dimensions!\n";
 	else {
@@ -1056,14 +1115,15 @@ void ns_emperical_posture_quantification_value_estimator::read(std::istream & i)
 	std::string tmp;
 	getline(i, tmp, '\n');
 	ns_get_string get_string;
-	this->software_version_when_built = "";
+	software_version_when_built = "";
 	std::string software_version_for_model;
+	ns_hmm_emission_probability_model_organizer organizer;
 	while (true) {
-		auto * model = new ns_emission_probability_model_to_use;
+		ns_emission_probabiliy_gaussian_diagonal_covariance_model< ns_measurement_accessor >* model = new ns_emission_probabiliy_gaussian_diagonal_covariance_model< ns_measurement_accessor >; //first load data into a model with the maximum number of dimensions;
 		try {
 			ns_hmm_movement_state state;
 			int data;
-			if (!model->read(i, state, software_version_for_model, data))
+			if (!model->read(i, state, software_version_for_model, data,&organizer))
 				break;
 			if (software_version_when_built.empty())
 				software_version_when_built = software_version_for_model;
@@ -1072,14 +1132,14 @@ void ns_emperical_posture_quantification_value_estimator::read(std::istream & i)
 			states_permitted_int = (ns_hmm_states_permitted)data;
 
 			if (state == ns_hmm_unknown_state || i.fail()) {
-				if (emission_probability_models.size() < 2)
+				if (emission_probability_models->models.size() < number_of_gmm_dimensions)
 					throw ns_ex("ns_emperical_posture_quantification_value_estimator()::The estimator did not contain enough data.");
 			}
 
-			auto p2 = emission_probability_models.find(state);
-			if (p2 == emission_probability_models.end())
-				p2 = emission_probability_models.insert(emission_probability_models.end(),
-					std::map < ns_hmm_movement_state, ns_emission_probability_model_to_use*>::value_type(state, model));
+			auto p2 = emission_probability_models->models.find(state);
+			if (p2 == emission_probability_models->models.end())
+				p2 = emission_probability_models->models.insert(emission_probability_models->models.end(),
+					std::map < ns_hmm_movement_state, ns_emission_probability_model<ns_measurement_accessor>*>::value_type(state, model));
 		}
 		catch (...) {
 			delete model;
@@ -1088,9 +1148,10 @@ void ns_emperical_posture_quantification_value_estimator::read(std::istream & i)
 	}
 }
 void ns_emperical_posture_quantification_value_estimator::write(std::ostream & o)const {
-	ns_emission_probability_model_to_use::write_header(o);
+	if (emission_probability_models->models.size() != 0)
+		emission_probability_models->models.begin()->second->write_header(o);
 	o << "\n";
-	for (auto p = emission_probability_models.begin(); p != emission_probability_models.end(); p++) {
+	for (auto p = emission_probability_models->models.begin(); p != emission_probability_models->models.end(); p++) {
 		p->second->write(p->first, NS_HMM_VERSION,(int)states_permitted_int,o);
 		o << "\n";
 	}
@@ -1202,7 +1263,7 @@ void ns_emperical_posture_quantification_value_estimator::build_estimator_from_o
 
 	//count states and build probability models for each one as needed
 	std::vector<unsigned long > state_counts((int)(ns_hmm_unknown_state), 0);
-
+	ns_hmm_emission_probability_model_organizer organizer;
 	const unsigned long minimum_number_of_observations = 100;
 	for (auto q = observations_sorted_by_state.begin(); q != observations_sorted_by_state.end(); q++) {
 		unsigned long& state_count = state_counts[(int)q->first];
@@ -1210,11 +1271,13 @@ void ns_emperical_posture_quantification_value_estimator::build_estimator_from_o
 			state_count += (*p)->size();
 		if (state_count < minimum_number_of_observations)
 			continue;	//skip states with to few observations.
-		auto p2 = emission_probability_models.find(q->first);
-		if (p2 == emission_probability_models.end())
-			p2 = emission_probability_models.insert(emission_probability_models.end(),
-				std::map < ns_hmm_movement_state, ns_emission_probability_model_to_use*>::value_type(q->first, 0));
-		p2->second = new ns_emission_probability_model_to_use;
+		auto p2 = emission_probability_models->models.find(q->first);
+		if (p2 == emission_probability_models->models.end()) {
+			p2 = emission_probability_models->models.insert(emission_probability_models->models.end(),
+				std::map < ns_hmm_movement_state, ns_emission_probability_model<ns_measurement_accessor>*>::value_type(q->first, 0));
+			p2->second = organizer.default_model();
+		}
+
 		p2->second->build_from_data(q->second);
 	}
 	
@@ -1253,19 +1316,19 @@ void ns_emperical_posture_quantification_value_estimator::build_estimator_from_o
 	
 	//sometimes the number of by hand annotations for states allows models to be built for only a subset of states.
 	//forbid unusual combinations of states, so we don't generate weird models where worms can only enter certain states that don't make sense in combination
-	if (emission_probability_models.find(ns_hmm_moving_weakly) == emission_probability_models.end() &&
-		(emission_probability_models.find(ns_hmm_moving_weakly_expanding) != emission_probability_models.end()
-			|| emission_probability_models.find(ns_hmm_moving_weakly_post_expansion) != emission_probability_models.end())) {
-		emission_probability_models.erase(ns_hmm_moving_weakly_expanding);
-		emission_probability_models.erase(ns_hmm_moving_weakly_post_expansion);
+	if (emission_probability_models->models.find(ns_hmm_moving_weakly) == emission_probability_models->models.end() &&
+		(emission_probability_models->models.find(ns_hmm_moving_weakly_expanding) != emission_probability_models->models.end()
+			|| emission_probability_models->models.find(ns_hmm_moving_weakly_post_expansion) != emission_probability_models->models.end())) {
+		emission_probability_models->models.erase(ns_hmm_moving_weakly_expanding);
+		emission_probability_models->models.erase(ns_hmm_moving_weakly_post_expansion);
 		std::cout << "Excluding expansion while weakly moving states because no annotations are provided for weakly moving.\n";
 	}
 
-	if ((emission_probability_models.find(ns_hmm_moving_weakly_post_expansion) != emission_probability_models.end() ||
-		emission_probability_models.find(ns_hmm_contracting_post_expansion) != emission_probability_models.end()) &&
-		emission_probability_models.find(ns_hmm_not_moving_expanding) == emission_probability_models.end()) {
-		emission_probability_models.erase(ns_hmm_moving_weakly_post_expansion);
-		emission_probability_models.erase(ns_hmm_contracting_post_expansion);
+	if ((emission_probability_models->models.find(ns_hmm_moving_weakly_post_expansion) != emission_probability_models->models.end() ||
+		emission_probability_models->models.find(ns_hmm_contracting_post_expansion) != emission_probability_models->models.end()) &&
+		emission_probability_models->models.find(ns_hmm_not_moving_expanding) == emission_probability_models->models.end()) {
+		emission_probability_models->models.erase(ns_hmm_moving_weakly_post_expansion);
+		emission_probability_models->models.erase(ns_hmm_contracting_post_expansion);
 		std::cout << "Post-expansion states are defined but expansion is not.\n";
 	}
 
@@ -1428,8 +1491,8 @@ bool ns_hmm_observation_set::add_observation(const std::string& software_version
 }
 
 bool ns_emperical_posture_quantification_value_estimator::state_specified_by_model(const ns_hmm_movement_state s) const {
-	auto p = emission_probability_models.find(s);
-	return p != emission_probability_models.end();
+	auto p = emission_probability_models->models.find(s);
+	return p != emission_probability_models->models.end();
 }
 
 ns_posture_analysis_model ns_posture_analysis_model::dummy(){

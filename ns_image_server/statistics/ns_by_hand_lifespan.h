@@ -327,32 +327,40 @@ private:
 		plates.resize(0);
 		plates.reserve(grid[0].size()-1);
 		try{
-			for (unsigned int i = 1; i < columns; ){
+			bool previous_was_alive_column = false;
+			for (unsigned long column = 1; column < columns; ){
 				//get metadata for lifespan specified in each column
 				ns_by_hand_lifespan_plate_specification::ns_column_metadata metadata;
+				const int metadata_column = previous_was_alive_column ? (column - 1) : column;
 				for (int j = 0; j < event_type_row; j++)
-					metadata[row_names[j]]=grid[j][i];
+					metadata[row_names[j]]=grid[j][metadata_column];
 
 				//check to see if data and  censoring data is specified
 				long data_column,
 					  censored_column(-1);
-				if (ns_to_lower(grid[event_type_row][i]) != "deaths"){
-					if (ns_to_lower(grid[event_type_row][i]) != "censored"){
-						throw ns_ex("In column ") << i << ": If a \"censored\" column is specified for a strain, it must be on the right of the \"deaths\" column.";
+				if (ns_to_lower(grid[event_type_row][column]) == "alive") {
+					++column;
+					previous_was_alive_column = true;
+					continue;
+				}else
+					previous_was_alive_column = false;
+				if (ns_to_lower(grid[event_type_row][column]) != "deaths"){
+					if (ns_to_lower(grid[event_type_row][column]) != "censored"){
+						throw ns_ex("In column ") << column << ": If a \"censored\" column is specified for a strain, it must be on the right of the \"deaths\" column.";
 					}
 					else 
-						throw ns_ex("In column ") << i << ": Unknown Event type: \"" << grid[event_type_row][i] << "\"";
+						throw ns_ex("In column ") << column << ": Unknown Event type: \"" << grid[event_type_row][column] << "\"";
 				}
-				data_column=i;
-				if (i+1<grid[event_type_row].size() && ns_to_lower(grid[event_type_row][i+1]) == "censored")
-					censored_column = i+1;
+				data_column= column;
+				if ((column +1)<grid[event_type_row].size() && ns_to_lower(grid[event_type_row][column +1]) == "censored")
+					censored_column = column +1;
 
 				//parse the lifespan data
 				plates.resize(plates.size()+1,ns_by_hand_lifespan_plate_specification(metadata,grid,0,data_column,censored_column,first_data_row));
 				std::cerr << "\n";
 				if (censored_column != -1)
-					i+=2;
-				else ++i;
+					column +=2;
+				else ++column;
 			}
 		}
 		catch(ns_ex & ex){

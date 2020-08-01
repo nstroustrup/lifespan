@@ -79,14 +79,14 @@ struct ns_alive_but_non_moving_movement_accessor : ns_measurement_accessor {
 	ns_weak_movement_accessor* clone() { return new ns_weak_movement_accessor; }
 };
 
-template<class measurement_accessor_t, int number_of_dimensions, int number_of_gaussians>
-unsigned long ns_emission_probabiliy_gaussian_diagonal_covariance_model<measurement_accessor_t, number_of_dimensions, number_of_gaussians>::training_data_buffer_size = 0;
+template<class measurement_accessor_t>
+unsigned long ns_emission_probabiliy_gaussian_diagonal_covariance_model<measurement_accessor_t>::training_data_buffer_size = 0;
 
-template<class measurement_accessor_t, int number_of_dimensions, int number_of_gaussians>
-double* ns_emission_probabiliy_gaussian_diagonal_covariance_model<measurement_accessor_t, number_of_dimensions, number_of_gaussians>::training_data_buffer = 0;
+template<class measurement_accessor_t>
+double* ns_emission_probabiliy_gaussian_diagonal_covariance_model<measurement_accessor_t>::training_data_buffer = 0;
 
-template<class measurement_accessor_t, int number_of_dimensions, int number_of_gaussians>
-ns_lock ns_emission_probabiliy_gaussian_diagonal_covariance_model<measurement_accessor_t, number_of_dimensions, number_of_gaussians>::training_data_buffer_lock("tbl");
+template<class measurement_accessor_t>
+ns_lock ns_emission_probabiliy_gaussian_diagonal_covariance_model<measurement_accessor_t>::training_data_buffer_lock("tbl");
 
 struct ns_survival_graph {
 	ns_survival_graph() :vals(ns_graph_object::ns_graph_dependant_variable) {}
@@ -1104,7 +1104,8 @@ public:
 		//we want to find and tag outlier points
 		//So, we fit a 2-d gaussian to the data
 		//and then flag points that are on the tails of the distribution.
-		ns_emission_probabiliy_gaussian_diagonal_covariance_model<ns_measurement_accessor, 2, 1> normal_fit;
+		ns_emission_probabiliy_gaussian_diagonal_covariance_model<ns_measurement_accessor> normal_fit;
+		normal_fit.setup_gmm(2, 1);
 		normal_fit.dimensions.reserve(2);
 		normal_fit.dimensions.push_back(ns_covarying_gaussian_dimension<ns_measurement_accessor>(new ns_weak_movement_accessor, "w"));
 		normal_fit.dimensions.push_back(ns_covarying_gaussian_dimension<ns_measurement_accessor>(new ns_alive_but_non_moving_movement_accessor, "a"));

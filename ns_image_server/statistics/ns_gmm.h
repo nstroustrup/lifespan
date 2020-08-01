@@ -502,7 +502,7 @@ public:
 		}
 
 	}
-	virtual bool equals(const ns_emission_probability_model* a) const {
+	virtual bool equals(const ns_emission_probability_model<measurement_accessor_t>* a) const {
 		const ns_emission_probabiliy_gaussian_diagonal_covariance_model<measurement_accessor_t>* p =
 			static_cast<const ns_emission_probabiliy_gaussian_diagonal_covariance_model<measurement_accessor_t> * >(a);
 		if (!(*this->gmm == *p->gmm)) {

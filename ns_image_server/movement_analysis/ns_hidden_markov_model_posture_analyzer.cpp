@@ -1096,21 +1096,6 @@ ns_emperical_posture_quantification_value_estimator::~ns_emperical_posture_quant
 	delete emission_probability_models;
 }
 
-template<int number_of_dimensions = number_of_gmm_dimensions, int number_of_gaussians = 4>
-bool operator==(const ns_emission_probability_model<ns_measurement_accessor>& a, const ns_emission_probability_model<ns_measurement_accessor>& b) {
-	if (a.dimensions.size() != b.dimensions.size())
-		std::cerr << "Different number of dimensions!\n";
-	else {
-		for (unsigned int i = 0; i < a.dimensions.size(); i++)
-			if (!(a.dimensions[i] == b.dimensions[i])) {
-				std::cerr << "Unequal dimension: " << a.dimensions[i].name << "\n";
-				return false;
-			}
-
-	}
-	return true;
-}
-
 void ns_emperical_posture_quantification_value_estimator::read(std::istream & i) {
 	std::string tmp;
 	getline(i, tmp, '\n');

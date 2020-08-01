@@ -201,6 +201,7 @@ public:
 	ns_emission_probabiliy_gaussian_diagonal_covariance_model<measurement_accessor_t>() : gmm(0), number_of_dimensions(0), number_of_gaussians(0){}
 	ns_emission_probabiliy_gaussian_diagonal_covariance_model<measurement_accessor_t>(const ns_emission_probabiliy_gaussian_diagonal_covariance_model<measurement_accessor_t> & s){
 		dimensions = s.dimensions;
+		gmm = 0;
 		setup_gmm(s.number_of_dimensions, s.number_of_gaussians);
 		number_of_dimensions = s.number_of_dimensions;
 		number_of_gaussians = s.number_of_gaussians;
@@ -216,7 +217,8 @@ public:
 		if (gmm != 0) {
 			if (overwrite)
 				delete gmm;
-			else throw ns_ex("Overwriting");
+			else 
+				throw ns_ex("Overwriting");
 		}
 		number_of_dimensions = number_of_dimensions_;
 		number_of_gaussians = number_of_gaussians_;

@@ -2387,6 +2387,7 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 										auto plate_name = string_cache.emplace(experiment_name_to_use + "::" + movement_results.samples[i].regions[j]->metadata.plate_name()).first;
 										auto genotype = string_cache.emplace(movement_results.samples[i].regions[j]->metadata.plate_type_summary("-", true)).first;
 										auto device = string_cache.emplace(movement_results.samples[i].regions[j]->metadata.device).first;
+										const std::string hmm_condition = movement_results.samples[i].regions[j]->metadata.strain_condition_3;
 										if (subject_flag != ns_plate && !filter_by_strain) {
 											//first set up model for all experiments being combined together
 											{
@@ -2419,6 +2420,39 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 													}
 												}
 											}
+											if (!hmm_condition.empty())
+											{
+												ns_cross_replicate_specification& hmm_group_model = models_to_build["all_experiments=" + hmm_condition + "=flexible_model"];
+												if (hmm_group_model.observations == 0) {
+													hmm_group_model.cross_replicate_type = ns_cross_replicate_specification::ns_hmm_user_specified_specific;
+													hmm_group_model.cross_replicate_estimator_type = ns_cross_replicate_specification::ns_standard;
+													hmm_group_model.observations = observation_cache.get_new();
+													hmm_group_model.subject = hmm_condition;
+												}
+												hmm_group_model.observations->add_observation(NS_CURRENT_THRESHOLD_POSTURE_MODEL_VERSION, a, path, database_name, movement_results.experiment_id(), &(*plate_name), &(*device), &(*genotype));
+
+
+												if (test_strict_ordering) {
+													ns_cross_replicate_specification& strict_ordering_model = models_to_build["all_experiments=" + hmm_condition + "=with_strict_event_ordering"];
+													if (strict_ordering_model.observations == 0) {
+														strict_ordering_model.observations = hmm_group_model.observations;
+														strict_ordering_model.cross_replicate_type = ns_cross_replicate_specification::ns_hmm_user_specified_specific;
+														strict_ordering_model.cross_replicate_estimator_type = ns_cross_replicate_specification::ns_strict_ordering;
+														strict_ordering_model.subject = hmm_condition;
+													}
+												}
+												if (test_synchronous_movement_cessatation_and_expansion) {
+													ns_cross_replicate_specification& strict_ordering_model = models_to_build["all_experiments=" + hmm_condition + "=with_simultaneous_movement_cessation_and_expansion"];
+													if (strict_ordering_model.observations == 0) {
+														strict_ordering_model.observations = hmm_group_model.observations;
+														strict_ordering_model.cross_replicate_type = ns_cross_replicate_specification::ns_hmm_user_specified_specific;
+														strict_ordering_model.cross_replicate_estimator_type = ns_cross_replicate_specification::ns_simultaneous_movement_cessation_and_expansion;
+														strict_ordering_model.subject = hmm_condition;
+													}
+												}
+											}
+
+											if (0)
 											{
 												ns_cross_replicate_specification& genotype_model = models_to_build["all_experiments="+plate_type_summary + "=flexible_model"];
 												if (genotype_model.observations == 0) {

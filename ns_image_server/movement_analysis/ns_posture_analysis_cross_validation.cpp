@@ -781,7 +781,8 @@ void ns_run_hmm_cross_validation(std::string& results_summary, ns_image_server_r
 				for (auto p = cross_validation_sets.begin(); p != cross_validation_sets.end(); p++) {
 					const ns_cross_replicate_specification& spec(p->second.validation_runs_sorted_by_validation_type.begin()->second.spec);
 					if ((spec.cross_replicate_type != ns_cross_replicate_specification::ns_genotype_specific &&
-						 spec.cross_replicate_type != ns_cross_replicate_specification::ns_genotype_experiment_specific) ||
+						 spec.cross_replicate_type != ns_cross_replicate_specification::ns_genotype_experiment_specific &&
+						spec.cross_replicate_type != ns_cross_replicate_specification::ns_hmm_user_specified_specific) ||
 						spec.genotype == plate_type_summary) {
 						for (auto cross_validation_runs = p->second.validation_runs_sorted_by_validation_type.begin(); cross_validation_runs != p->second.validation_runs_sorted_by_validation_type.end(); ++cross_validation_runs) {
 

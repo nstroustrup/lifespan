@@ -701,7 +701,7 @@
       <Filter>image_processing</Filter>
     </ClCompile>
     <ClCompile Include="..\ns_worm_browser\ns_worm_browser_main.cpp">
-      <Filter>statistics</Filter>
+      <Filter>worm_browser</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

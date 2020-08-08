@@ -28,29 +28,37 @@ bool operator<(const ns_hmm_test_subject& l, const ns_hmm_test_subject& r) {
 		return l.region_info_id < r.region_info_id;
 	return l.group_id < r.group_id;
 }
-class  ns_cross_validation_replicate {
+
+class  ns_cross_validation_replicate_spec {
 public:
-  ns_cross_validation_replicate() : generate_detailed_path_info(false), states_permitted(ns_all_states_permitted),replicate_id(0) {}
+	ns_cross_validation_replicate_spec() :replicate_id(0) {}
 	std::set<ns_hmm_test_subject> test_set;
 	ns_hmm_observation_set training_set;
 	std::set< ns_hmm_test_subject> training_set_individuals;
+	std::vector<std::string> replicate_training_groups, replicate_testing_groups, replicate_skipped_groups;
 
+	unsigned long replicate_id;
+};
+
+class  ns_cross_validation_replicate_analysis {
+public:
+	ns_cross_validation_replicate_analysis() : generate_detailed_path_info(false), states_permitted(ns_all_states_permitted) {}
+
+	ns_model_building_specification spec;
 	ns_emperical_posture_quantification_value_estimator model;
 
 	ns_hmm_movement_analysis_optimizatiom_stats results;
 
-
 	std::string replicate_description;
 	bool generate_detailed_path_info;
-	unsigned long replicate_id;
-	std::vector<std::string> replicate_training_groups, replicate_testing_groups, replicate_skipped_groups;
 	bool model_building_completed;
 	ns_hmm_states_permitted states_permitted;
-	void test_model(const std::string * database, ns_64_bit & region_id, const ns_death_time_annotation_compiler& by_hand_annotations, const ns_time_series_denoising_parameters& time_series_denoising_parameters, ns_time_path_image_movement_analyzer<ns_wasteful_overallocation_resizer>& time_path_image_analyzer, ns_time_path_solution& time_path_solution, ns_sql& sql,
+
+	void test_model(const ns_cross_validation_replicate_spec & replicate_spec,const std::string* database, ns_64_bit& region_id, const ns_death_time_annotation_compiler& by_hand_annotations, const ns_time_series_denoising_parameters& time_series_denoising_parameters, ns_time_path_image_movement_analyzer<ns_wasteful_overallocation_resizer>& time_path_image_analyzer, ns_time_path_solution& time_path_solution, ns_sql& sql,
 		ns_hmm_movement_analysis_optimizatiom_stats& output_stats, bool generate_detailed_path_info) {
 
 		bool found_valid_individual(false);
-		for (auto p = test_set.begin(); p != test_set.end(); p++) {
+		for (auto p = replicate_spec.test_set.begin(); p != replicate_spec.test_set.end(); p++) {
 			if (p->region_info_id == region_id) {
 				found_valid_individual = true;
 				break;
@@ -78,17 +86,17 @@ public:
 			else {
 				time_path_image_analyzer.reanalyze_with_different_movement_estimator(time_series_denoising_parameters, &markov_solver);
 			}
-			
+
 			std::set<ns_stationary_path_id> individuals_to_test;
-			for (auto p = test_set.begin(); p != test_set.end(); p++) {
+			for (auto p = replicate_spec.test_set.begin(); p != replicate_spec.test_set.end(); p++) {
 				if (*p->database_name == *database && p->region_info_id == region_id)
 					individuals_to_test.emplace(ns_stationary_path_id(p->group_id, 0, 0));
 			}
 			for (std::set<ns_stationary_path_id>::iterator pp = individuals_to_test.begin(); pp != individuals_to_test.end(); pp++)
 				individuals_to_test.emplace(ns_stationary_path_id(pp->group_id, 0, time_path_image_analyzer.db_analysis_id()));
-			time_path_image_analyzer.calculate_optimzation_stats_for_current_hmm_estimator(database,output_stats, &model, individuals_to_test, generate_detailed_path_info);
+			time_path_image_analyzer.calculate_optimzation_stats_for_current_hmm_estimator(database, output_stats, &model, individuals_to_test, generate_detailed_path_info);
 		}
-		catch (ns_ex & ex2) {
+		catch (ns_ex& ex2) {
 			sql << "select r.name, s.name FROM sample_region_image_info as r, capture_samples as s WHERE r.id = " << region_id << " AND s.id = r.sample_id";
 			ns_sql_result res;
 			sql.get_rows(res);
@@ -103,8 +111,8 @@ public:
 			image_server.register_server_event(ex, &sql);
 		}
 	}
-
 };
+
 
 struct ns_plate_replicate_generator {
 	typedef std::pair<const std::string *,const std::string *> index_type;
@@ -171,27 +179,42 @@ typedef std::map<std::string, std::map<ns_64_bit, ns_region_metadata>> ns_metada
 class ns_hmm_cross_validation_set {
 public:
 	ns_hmm_cross_validation_set() {}
-	std::vector<ns_cross_validation_replicate> replicates;
-	std::string description; 
-	ns_cross_replicate_specification spec;
+	std::vector<ns_cross_validation_replicate_spec> replicates;
+	//results[0] gives all results for the first /model type/ specified in the spec.
+	//results[0][0] gives the /first replicate's/ result for the first model type
+	std::vector<std::vector<ns_cross_validation_replicate_analysis> > analysis;
 
-	bool build_device_cross_validation_set(int k_fold_validation, const ns_cross_replicate_specification & spec_) {
+
+	std::string description; 
+	ns_cross_validation_subject spec;
+
+	void set_up_analysis_structure() {
+		analysis.resize(spec.specification.size());
+		for (unsigned int i = 0; i < analysis.size(); i++) {
+			analysis[i].resize(replicates.size());
+			for (unsigned int j = 0; j < replicates.size(); j++) {
+				analysis[i][j].spec = spec.specification[i];
+			}
+		}
+	}
+
+	bool build_device_cross_validation_set(int k_fold_validation, const ns_cross_validation_subject& spec_) {
 		spec = spec_;
 		return build_independent_replicates<ns_device_replicate_generator>(k_fold_validation, *spec.observations);
 	}
-	bool build_plate_cross_validation_set(int k_fold_validation, const ns_cross_replicate_specification& spec_) {
+	bool build_plate_cross_validation_set(int k_fold_validation, const ns_cross_validation_subject& spec_) {
 		spec = spec_;
 		return build_independent_replicates<ns_plate_replicate_generator>(k_fold_validation, *spec.observations);
 	}
-	bool build_individual_cross_validation_set(int k_fold_validation, const ns_cross_replicate_specification& spec_) {
+	bool build_individual_cross_validation_set(int k_fold_validation, const ns_cross_validation_subject& spec_) {
 		spec = spec_;
 		return build_independent_replicates<ns_individual_replicate_generator>(k_fold_validation, *spec.observations);
 	}
-	bool build_genotype_cross_validation_set(int k_fold_validation, const ns_cross_replicate_specification& spec_) {
+	bool build_genotype_cross_validation_set(int k_fold_validation, const ns_cross_validation_subject& spec_) {
 		spec = spec_;
 		return build_independent_replicates<ns_genotype_replicate_generator>(k_fold_validation, *spec.observations);
 	}
-	void build_all_vs_all_set(const ns_cross_replicate_specification& spec_) {
+	void build_all_vs_all_set(const ns_cross_validation_subject& spec_) {
 		spec = spec_;
 		replicates.resize(1);
 		//all individuals go into training set
@@ -203,9 +226,12 @@ public:
 			}
 		}
 		replicates[0].training_set_individuals = replicates[0].test_set;
+		set_up_analysis_structure();
 	}
 
-	ns_cross_validation_results calculate_error() {
+	//model_type is the index of the particular model specificiation in the original spec
+	//errors are summarized for all replicates analyzed using a model of that spec.
+	ns_cross_validation_results calculate_error(const std::size_t & model_type) const{
 		ns_cross_validation_results results;
 
 		results.mean_test_set_N = results.mean_training_set_N = results.var_test_set_N = results.var_training_set_N = 0;
@@ -236,16 +262,19 @@ public:
 			r.event_not_found_N.resize(replicates.size(), 0);
 
 			bool found_animals = false;
-			for (unsigned int e = 0; e < replicates.size(); e++) {
+			const std::vector<ns_cross_validation_replicate_analysis> & p = analysis[model_type];
+			for (unsigned int e = 0; e < p.size(); e++) {
 				unsigned long movement_Nc(0);
 				double movement_square_error(0);
-				for (unsigned int i = 0; i < replicates[e].results.animals.size(); i++) {
+				for (unsigned int i = 0; i < p[e].results.animals.size(); i++) {
 					found_animals = true;
-					ns_hmm_movement_analysis_optimizatiom_stats_record& animal = replicates[e].results.animals[i];
-					if (animal.measurements[step[m]].by_hand_identified &&
-						animal.measurements[step[m]].machine_identified) {
-						const double d = (animal.measurements[step[m]].machine.best_estimate_event_time_for_possible_partially_unbounded_interval() -
-							animal.measurements[step[m]].by_hand.best_estimate_event_time_for_possible_partially_unbounded_interval()) / 24.0 / 60.0 / 60.0;
+					const ns_hmm_movement_analysis_optimizatiom_stats_record& animal = p[e].results.animals[i];
+					auto measurement(animal.measurements.find(step[m]));
+					if (measurement==animal.measurements.end() ||
+						measurement->second.by_hand_identified &&
+						measurement->second.machine_identified) {
+						const double d = (measurement->second.machine.best_estimate_event_time_for_possible_partially_unbounded_interval() -
+							measurement->second.by_hand.best_estimate_event_time_for_possible_partially_unbounded_interval()) / 24.0 / 60.0 / 60.0;
 						movement_square_error += d * d;
 						movement_Nc++;
 					}
@@ -401,6 +430,7 @@ private:
 			}
 
 		}
+		set_up_analysis_structure();
 		return true;
 	}
 };
@@ -421,44 +451,56 @@ struct ns_hmm_cross_validation_manager {
 	}
 
 	void build_models_for_cross_validation(std::string& output) {
-		for (auto validation_approach = validation_runs_sorted_by_validation_type.begin(); validation_approach != validation_runs_sorted_by_validation_type.end();) {
+		for (auto validation_subject = validation_runs_sorted_by_validation_type.begin(); validation_subject != validation_runs_sorted_by_validation_type.end();) {
 			ns_hmm_states_permitted state_specification;
 			//ns_emperical_posture_quantification_value_estimator::ns_all_states;
-			switch (validation_approach->second.spec.cross_replicate_estimator_type) {
-			case ns_cross_replicate_specification::ns_strict_ordering:
-				state_specification = ns_no_expansion_while_alive; break;
-			case ns_cross_replicate_specification::ns_simultaneous_movement_cessation_and_expansion:
-				state_specification = ns_require_movement_expansion_synchronicity; break;
-			default:
-				state_specification = ns_all_states_permitted; break;
-			}
-			bool all_replicates_supported_model_building = true;
-			for (auto replicate = validation_approach->second.replicates.begin(); replicate != validation_approach->second.replicates.end(); ++replicate) {
-				try {
-					replicate->model.build_estimator_from_observations(replicate->training_set, output, state_specification);
-					replicate->model_building_completed = true;
+			std::size_t validation_spec_id = 0;
+			for (auto validation_spec = validation_subject->second.spec.specification.begin(); validation_spec != validation_subject->second.spec.specification.end(); ) {
+				switch (validation_spec->cross_replicate_estimator_type) {
+				case ns_model_building_specification::ns_strict_ordering:
+					state_specification = ns_no_expansion_while_alive; break;
+				case ns_model_building_specification::ns_simultaneous_movement_cessation_and_expansion:
+					state_specification = ns_require_movement_expansion_synchronicity; break;
+				default:
+					state_specification = ns_all_states_permitted; break;
 				}
-				catch (ns_ex & ex) {
-					std::cout << "Error building HMM model: " << ex.text() << "\n";
-					replicate->model_building_completed = false;
-					all_replicates_supported_model_building = false;
+				bool all_replicates_supported_model_building = true;
+				for (int replicate_id = 0; replicate_id < validation_subject->second.replicates.size(); ++replicate_id) {
+					try {
+						validation_subject->second.analysis[validation_spec_id][replicate_id].model.build_estimator_from_observations(
+							validation_subject->second.replicates[replicate_id].training_set, output, state_specification);
+						validation_subject->second.analysis[validation_spec_id][replicate_id].model_building_completed = true;
+					}
+					catch (ns_ex& ex) {
+						std::cout << "Error building HMM model: " << ex.text() << "\n";
+						validation_subject->second.analysis[validation_spec_id][replicate_id].model_building_completed = false;
+						all_replicates_supported_model_building = false;
+					}
+				}
+				if (all_replicates_supported_model_building) {
+					validation_subject++;
+					validation_spec_id++;
+				}
+				else {
+					//if some of the replicates failed, delete the whole validation approach.
+					validation_spec = validation_subject->second.spec.specification.erase(validation_spec);
 				}
 			}
-			//if some of the replicates failed, delete the whole validation approach.
-			if (all_replicates_supported_model_building)
-				++validation_approach;
-			else validation_approach = validation_runs_sorted_by_validation_type.erase(validation_approach);
-
+			validation_subject->second.analysis.resize(validation_subject->second.spec.specification.size());
+			if (validation_subject->second.analysis.empty()) 
+				validation_subject = validation_runs_sorted_by_validation_type.erase(validation_subject);
+			else validation_subject++;
 		}
 	}
 	
-	void generate_cross_validations_to_test(int k_fold_validation, const ns_cross_replicate_specification & spec, bool try_different_states) {
+	void generate_cross_validations_to_test(int k_fold_validation, const ns_cross_validation_subject & spec, bool try_different_states) {
 		validation_runs_sorted_by_validation_type.clear();
 		if (1){
 			ns_hmm_cross_validation_set& set = validation_runs_sorted_by_validation_type["none"];
 			set.build_all_vs_all_set(spec);
-			for (unsigned int i = 0; i < set.replicates.size(); i++)
-				set.replicates[i].generate_detailed_path_info = true;
+			for (unsigned int i = 0; i < set.analysis.size(); i++)
+				for (unsigned int j = 0; i < set.analysis[i].size(); j++)
+					set.analysis[i][j].generate_detailed_path_info = true;
 			set.description = "No Cross-Validation";
 			
 		}
@@ -489,7 +531,7 @@ struct ns_hmm_cross_validation_manager {
 		}
 	}
 
-	void generate_genotype_cross_validations_to_test(int k_fold_validation, const ns_cross_replicate_specification& spec) {
+	void generate_genotype_cross_validations_to_test(int k_fold_validation, const ns_cross_validation_subject& spec) {
 
 		ns_hmm_cross_validation_set& set = validation_runs_sorted_by_validation_type["genotype"];
 		if (!set.build_genotype_cross_validation_set(k_fold_validation, spec))
@@ -504,7 +546,7 @@ struct ns_results_info {
 	std::string result;
 	bool failed;
 };
-void ns_run_hmm_cross_validation(std::string& results_summary, ns_image_server_results_subject sub, ns_machine_analysis_data_loader& movement_results, const std::map < std::string, ns_cross_replicate_specification>& models_to_fit, ns_sql& sql) {
+void ns_run_hmm_cross_validation(std::string& results_summary, ns_image_server_results_subject sub, ns_machine_analysis_data_loader& movement_results, const std::map < std::string, ns_cross_validation_subject>& models_to_fit, ns_sql& sql) {
 	const bool run_hmm_cross_validation = true;
 	const bool test_different_state_restrictions_on_viterbi_algorithm = false;
 
@@ -585,8 +627,6 @@ void ns_run_hmm_cross_validation(std::string& results_summary, ns_image_server_r
 			std::cout << ns_to_string_short((100.0 * estimators_compiled) / models_to_fit.size(), 2) << "%...";
 			estimators_compiled++;
 			//all estimator types share the same input data--we don't need to write multiple times.
-			if (p->second.cross_replicate_estimator_type != ns_cross_replicate_specification::ns_standard)
-				continue;
 			ns_select_database_for_scope db("", sql);
 			if (!sub.database_name.empty())
 				db.select(sub.database_name);
@@ -610,7 +650,7 @@ void ns_run_hmm_cross_validation(std::string& results_summary, ns_image_server_r
 
 	//cross validate across genotypes
 	for (auto p = models_to_fit.begin(); p != models_to_fit.end(); p++) {
-		if (p->second.cross_replicate_type == ns_cross_replicate_specification::ns_genotype_specific)	//we can't cross validate across genotypes if there is only one genotype!
+		if (p->second.cross_replicate_type == ns_cross_validation_subject::ns_genotype_specific)	//we can't cross validate across genotypes if there is only one genotype!
 			continue;
 		cross_validation_sets[p->first].generate_genotype_cross_validations_to_test(k_fold_validation, p->second);
 	} 
@@ -634,21 +674,14 @@ void ns_run_hmm_cross_validation(std::string& results_summary, ns_image_server_r
 		std::cout << ns_to_string_short((100.0 * num_built) / num_to_build, 2) << "%...";
 		num_built++;
 		std::string subject;
-		if (p->second.validation_runs_sorted_by_validation_type.begin()->second.spec.cross_replicate_type == ns_cross_replicate_specification::ns_all_data ||
-			p->second.validation_runs_sorted_by_validation_type.begin()->second.spec.cross_replicate_type == ns_cross_replicate_specification::ns_experiment_specific)
+		if (p->second.validation_runs_sorted_by_validation_type.begin()->second.spec.cross_replicate_type == ns_cross_validation_subject::ns_all_data ||
+			p->second.validation_runs_sorted_by_validation_type.begin()->second.spec.cross_replicate_type == ns_cross_validation_subject::ns_experiment_specific)
 			subject = "all animal types";
 		else
 			subject = *(p->second.validation_runs_sorted_by_validation_type.begin()->second.replicates.begin()->training_set.obs.begin()->second.begin()->genotype);
 		if (!p->second.validation_runs_sorted_by_validation_type.begin()->second.spec.subject.empty())
 			subject += " in " + p->second.validation_runs_sorted_by_validation_type.begin()->second.spec.subject;
-		switch (p->second.validation_runs_sorted_by_validation_type.begin()->second.spec.cross_replicate_estimator_type) {
-			case ns_cross_replicate_specification::ns_standard: 
-				subject += " using a flexible state ordering scheme"; break;
-			case ns_cross_replicate_specification::ns_strict_ordering: 
-				subject += " using a restricted state ordering scheme"; break;
-			case ns_cross_replicate_specification::ns_simultaneous_movement_cessation_and_expansion: 
-				subject +=" requiring synchronous movement cessation and expansion "; break;
-		}
+
 		p->second.build_models_for_cross_validation(model_building_and_testing_info[p->first].result);
 		//if none of the validation approaches could be used for building a model, delete this whole cross validation set.
 		if (p->second.validation_runs_sorted_by_validation_type.empty()) {
@@ -666,27 +699,29 @@ void ns_run_hmm_cross_validation(std::string& results_summary, ns_image_server_r
 			ns_select_database_for_scope db("", sql);
 			if (!sub.database_name.empty())
 				db.select(sub.database_name);
-			ns_image_server_results_file ps(image_server.results_storage.optimized_posture_analysis_parameter_set(sub, std::string("hmm=") + p->first, sql));
-			model_filenames[p->first] = ps.output_filename();
-			ns_acquire_for_scope<ns_ostream> both_parameter_set(ps.output());
-			p->second.all_vs_all().replicates[0].model.write(both_parameter_set()());
-			both_parameter_set.release();
-			//test file I/O
-			ns_acquire_for_scope<ns_istream> both_parameter_set2(ps.input());
-			ns_emperical_posture_quantification_value_estimator dummy;
-			dummy.read(both_parameter_set2()());
-			if (!(p->second.all_vs_all().replicates[0].model == dummy))
-				throw ns_ex("HMM Model File I/O error!");
+			//all vs all has all multiple types of analysis, each with a single replicate containing all individuals
+			for (auto q = p->second.all_vs_all().analysis.begin(); q != p->second.all_vs_all().analysis.end(); q++) {
+				ns_image_server_results_file ps(image_server.results_storage.optimized_posture_analysis_parameter_set(sub, std::string("hmm=") + p->first + "=" + ns_model_building_specification::estimator_type_to_short_string(q->begin()->spec.cross_replicate_estimator_type), sql));
+				model_filenames[p->first] = ps.output_filename();
+				ns_acquire_for_scope<ns_ostream> both_parameter_set(ps.output());
+				q->begin()->model.write(both_parameter_set()());
+				both_parameter_set.release();
+				//test file I/O
+				ns_acquire_for_scope<ns_istream> both_parameter_set2(ps.input());
+				ns_emperical_posture_quantification_value_estimator dummy;
+				dummy.read(both_parameter_set2()());
+				if (!(q->begin()->model == dummy))
+					throw ns_ex("HMM Model File I/O error!");
 
-			both_parameter_set2.release();
+				both_parameter_set2.release();
 
-			ns_acquire_for_scope<ns_ostream>  graphvis_file(image_server.results_storage.time_path_image_analysis_quantification(sub, std::string("state_transition_graph=") + p->first, true, sql).output());
-			ns_hmm_solver solver;
-			std::vector<std::vector<double> > state_transition_matrix;
-			solver.build_state_transition_matrix(p->second.all_vs_all().replicates[0].model, state_transition_matrix);
-			solver.output_state_transition_matrix(state_transition_matrix, graphvis_file()());
-			graphvis_file.release();
-			
+				ns_acquire_for_scope<ns_ostream>  graphvis_file(image_server.results_storage.time_path_image_analysis_quantification(sub, std::string("state_transition_graph=") + p->first, true, sql).output());
+				ns_hmm_solver solver;
+				std::vector<std::vector<double> > state_transition_matrix;
+				solver.build_state_transition_matrix(q->begin()->model, state_transition_matrix);
+				solver.output_state_transition_matrix(state_transition_matrix, graphvis_file()());
+				graphvis_file.release();
+			}
 
 		}
 		else model_filenames[p->first] = "(Not Written)";
@@ -738,6 +773,8 @@ void ns_run_hmm_cross_validation(std::string& results_summary, ns_image_server_r
 					continue;
 
 				const std::string plate_type_summary = movement_results.samples[i].regions[j]->metadata.plate_type_summary("-", true);
+				const std::string hmm_group = movement_results.samples[i].regions[j]->metadata.strain_condition_3;
+				const std::string experiment_name_to_use = movement_results.samples[i].regions[j]->metadata.experiment_name;
 				movement_results.samples[i].regions[j]->contains_a_by_hand_death_time_annotation = true;
 				movement_results.samples[i].regions[j]->time_path_solution.load_from_db(movement_results.samples[i].regions[j]->metadata.region_id, sql, true);
 
@@ -779,22 +816,32 @@ void ns_run_hmm_cross_validation(std::string& results_summary, ns_image_server_r
 				const ns_time_series_denoising_parameters time_series_denoising_parameters(ns_time_series_denoising_parameters::load_from_db(movement_results.samples[i].regions[j]->metadata.region_id, sql));
 
 				for (auto p = cross_validation_sets.begin(); p != cross_validation_sets.end(); p++) {
-					const ns_cross_replicate_specification& spec(p->second.validation_runs_sorted_by_validation_type.begin()->second.spec);
-					if ((spec.cross_replicate_type != ns_cross_replicate_specification::ns_genotype_specific &&
-						 spec.cross_replicate_type != ns_cross_replicate_specification::ns_genotype_experiment_specific &&
-						spec.cross_replicate_type != ns_cross_replicate_specification::ns_hmm_user_specified_specific) ||
-						spec.genotype == plate_type_summary) {
+					//make sure we only test on the regions specified in the cross validation set
+					const ns_cross_validation_subject& spec(p->second.validation_runs_sorted_by_validation_type.begin()->second.spec);
+					if (!(spec.cross_replicate_type == ns_cross_validation_subject::ns_genotype_specific &&
+						spec.genotype != plate_type_summary) 
+						&&
+						 !( (spec.cross_replicate_type == ns_cross_validation_subject::ns_hmm_user_specified_specific||
+							 spec.cross_replicate_type == ns_cross_validation_subject::ns_hmm_user_specified_experiment_specific)&&
+						  spec.genotype != hmm_group) 
+						){
 						for (auto cross_validation_runs = p->second.validation_runs_sorted_by_validation_type.begin(); cross_validation_runs != p->second.validation_runs_sorted_by_validation_type.end(); ++cross_validation_runs) {
 
 							//xxx 
 							//if (p->first != "Alcedo+Wildtype-0-20C-uv+nec-control")
 							//	continue;
 
-							for (auto cross_validation_replicate = cross_validation_runs->second.replicates.begin(); cross_validation_replicate != cross_validation_runs->second.replicates.end(); cross_validation_replicate++) {
-								//make sure we only test on the regions specified in the cross validation set
-								cross_validation_replicate->test_model(&experiment->first,movement_results.samples[i].regions[j]->metadata.region_id, movement_results.samples[i].regions[j]->by_hand_annotations,
-									time_series_denoising_parameters, *movement_results.samples[i].regions[j]->time_path_image_analyzer, movement_results.samples[i].regions[j]->time_path_solution, sql,
-									cross_validation_replicate->results, cross_validation_replicate->generate_detailed_path_info);
+							for (unsigned int replicate_id = 0; replicate_id < cross_validation_runs->second.replicates.size(); replicate_id++) {
+								for (unsigned int analysis_type = 0; analysis_type < cross_validation_runs->second.analysis.size(); analysis_type++) {
+									if (cross_validation_runs->second.analysis.size() < analysis_type)
+										throw ns_ex("Misconfigured analyis structure!");
+									if (cross_validation_runs->second.analysis[analysis_type].size() < replicate_id)
+										throw ns_ex("Misconfigured analyis structure!!");
+									cross_validation_runs->second.analysis[analysis_type][replicate_id].test_model(cross_validation_runs->second.replicates[replicate_id],&experiment->first, 
+										movement_results.samples[i].regions[j]->metadata.region_id, movement_results.samples[i].regions[j]->by_hand_annotations,
+										time_series_denoising_parameters, *movement_results.samples[i].regions[j]->time_path_image_analyzer, movement_results.samples[i].regions[j]->time_path_solution, sql,
+										cross_validation_runs->second.analysis[analysis_type][replicate_id].results, cross_validation_runs->second.analysis[analysis_type][replicate_id].generate_detailed_path_info);
+								}
 							}
 						}
 					}
@@ -815,47 +862,61 @@ void ns_run_hmm_cross_validation(std::string& results_summary, ns_image_server_r
 
 			//start at 1 to skip the all vs all.
 			for (auto validation_run = p->second.validation_runs_sorted_by_validation_type.begin(); validation_run != p->second.validation_runs_sorted_by_validation_type.end(); ++validation_run) {
-				ns_cross_validation_results results = validation_run->second.calculate_error();
+				for (unsigned int analysis_type = 0; analysis_type < validation_run->second.analysis.size(); analysis_type++) {
+					ns_cross_validation_results results = validation_run->second.calculate_error(analysis_type);
 
-				const bool many_movement_failures(results.movement.mean_event_not_found > results.movement.mean_N / 10),
-					many_expansion_failures(results.expansion.mean_event_not_found > results.expansion.mean_N / 10);
-				std::string& txt(model_building_and_testing_info[p->first].result);
-				txt += "= ";
-				if (validation_run->second.replicates.size() > 1)
-					txt += ns_to_string(validation_run->second.replicates.size()) + "-fold ";
-				txt += validation_run->second.description + " =\n";
-				txt += "Each replicate trained on " + ns_to_string_short(results.mean_training_set_N) + "+-" + ns_to_string_short(results.var_training_set_N) + " animals and was tested on " + ns_to_string_short(results.mean_test_set_N) + "+-" + ns_to_string_short(results.var_test_set_N) + " animals.\n";
-				if (results.movement.mean_N + results.movement.mean_event_not_found > 0)
-					txt += "[Movement cessation]:   Average error: " + ns_to_string_short(results.movement.mean_err, 2) + "+-" + ns_to_string_short(results.movement.var_err, 2) + " days across " + ns_to_string((int)results.movement.mean_N) + " animals, with " + ns_to_string((int)results.movement.mean_event_not_found) + "+-" + ns_to_string((int)results.movement.var_event_not_found) + " animals' movement cessation remaining unidentifiable.\n";
-				if (results.expansion.mean_N + results.expansion.mean_event_not_found > 0)
-					txt += "[Death-Associated expansion]: Average error: " + ns_to_string_short(results.expansion.mean_err, 2) + " +-" + ns_to_string_short(results.expansion.var_err, 2) + " days across " + ns_to_string((int)results.expansion.mean_N) + " animals, with " + ns_to_string((int)results.expansion.mean_event_not_found) + "+-" + ns_to_string((int)results.expansion.var_event_not_found) + " animals' expansion times remaining unidentifiable.\n";
-	
-				if (many_movement_failures)
-					txt += "Movement cessation times could not be found for more than 10% of animals.  This is probably not a useful model file.\n";
-				if (many_expansion_failures)
-					txt += "Death-associated expansion times could not be found for more than 10% of animals.  This is probably not a useful model file.\n";
-				if (!many_movement_failures && !many_expansion_failures && (results.movement.mean_N < 50 || results.expansion.mean_N < 50))
-					txt += "Warning: These results will not be meaningful until ~50 animals are annotated by hand.\n";
-				txt += "The model file was written to \"" + model_filenames[p->first] + "\"\n";
-				txt += "\n";
+					const bool many_movement_failures(results.movement.mean_event_not_found > results.movement.mean_N / 10),
+						many_expansion_failures(results.expansion.mean_event_not_found > results.expansion.mean_N / 10);
+					std::string& txt(model_building_and_testing_info[p->first].result);
+					txt += "= ";
+					if (validation_run->second.replicates.size() > 1)
+						txt += ns_to_string(validation_run->second.replicates.size()) + "-fold ";
+					txt += validation_run->second.description + " " + validation_run->second.spec.specification[analysis_type].name + " =\n";
+					txt += "Each replicate trained on " + ns_to_string_short(results.mean_training_set_N) + "+-" + ns_to_string_short(results.var_training_set_N) + " animals and was tested on " + ns_to_string_short(results.mean_test_set_N) + "+-" + ns_to_string_short(results.var_test_set_N) + " animals.\n";
+					if (results.movement.mean_N + results.movement.mean_event_not_found > 0)
+						txt += "[Movement cessation]:   Average error: " + ns_to_string_short(results.movement.mean_err, 2) + "+-" + ns_to_string_short(results.movement.var_err, 2) + " days across " + ns_to_string((int)results.movement.mean_N) + " animals, with " + ns_to_string((int)results.movement.mean_event_not_found) + "+-" + ns_to_string((int)results.movement.var_event_not_found) + " animals' movement cessation remaining unidentifiable.\n";
+					if (results.expansion.mean_N + results.expansion.mean_event_not_found > 0)
+						txt += "[Death-Associated expansion]: Average error: " + ns_to_string_short(results.expansion.mean_err, 2) + " +-" + ns_to_string_short(results.expansion.var_err, 2) + " days across " + ns_to_string((int)results.expansion.mean_N) + " animals, with " + ns_to_string((int)results.expansion.mean_event_not_found) + "+-" + ns_to_string((int)results.expansion.var_event_not_found) + " animals' expansion times remaining unidentifiable.\n";
 
+					if (many_movement_failures)
+						txt += "Movement cessation times could not be found for more than 10% of animals.  This is probably not a useful model file.\n";
+					if (many_expansion_failures)
+						txt += "Death-associated expansion times could not be found for more than 10% of animals.  This is probably not a useful model file.\n";
+					if (!many_movement_failures && !many_expansion_failures && (results.movement.mean_N < 50 || results.expansion.mean_N < 50))
+						txt += "Warning: These results will not be meaningful until ~50 animals are annotated by hand.\n";
+					txt += "The model file was written to \"" + model_filenames[p->first] + "\"\n";
+					txt += "\n";
+				}
 			}
 			//output performance statistics
 			ns_acquire_for_scope<ns_ostream>  performance_stats_output(image_server.results_storage.time_path_image_analysis_quantification(sub, std::string("hmm_performance=") + p->first, true, sql).output());
-			std::vector<std::string > measurement_names;
+			//get all measurements used by any analysis model
+			std::set<std::string > measurement_names;
 			for (auto r = p->second.validation_runs_sorted_by_validation_type.begin(); r != p->second.validation_runs_sorted_by_validation_type.end(); ++r) {
-				if (r->second.replicates.empty())
-					continue;
-				if (!r->second.replicates[0].results.animals.empty() && !r->second.replicates[0].results.animals[0].state_info_variable_names.empty()) {
-					measurement_names = r->second.replicates[0].results.animals[0].state_info_variable_names;
-					break;
+				for (unsigned int analysis_type = 0; analysis_type < r->second.analysis.size(); analysis_type++) {
+					if (r->second.replicates.empty())
+						continue;
+					if (!r->second.analysis[analysis_type].begin()->results.animals.empty()) {
+						std::vector<std::string>& names(r->second.analysis[analysis_type].begin()->results.animals[0].state_info_variable_names);
+						measurement_names.insert(names.begin(), names.end());
+						break;
+					}
 				}
 			}
+			std::vector<std::string > measurement_names_ordered(measurement_names.size());
+			std::size_t mm_pos(0);
+		
+			for (auto mm = measurement_names.begin(); mm != measurement_names.end(); mm++) {
+				measurement_names_ordered[mm_pos] = *mm;
+				mm_pos++;
+			}
+
 			if (!measurement_names.empty()) {
-				ns_hmm_movement_analysis_optimizatiom_stats::write_error_header(performance_stats_output()(), measurement_names);
+				ns_hmm_movement_analysis_optimizatiom_stats::write_error_header(performance_stats_output()(), measurement_names_ordered);
 				for (auto cross_validation_set = p->second.validation_runs_sorted_by_validation_type.begin(); cross_validation_set != p->second.validation_runs_sorted_by_validation_type.end(); ++cross_validation_set) {
-					for (unsigned int r = 0; r < cross_validation_set->second.replicates.size(); r++) {
-						cross_validation_set->second.replicates[r].results.write_error_data(performance_stats_output()(), p->first, cross_validation_set->first, cross_validation_set->second.replicates[r].replicate_id, metadata_cache);
+					for (unsigned int a = 0; a < cross_validation_set->second.analysis.size(); a++) {
+					for (unsigned int r = 0; r < cross_validation_set->second.analysis[a].size(); r++) 
+						cross_validation_set->second.analysis[a][r].results.write_error_data(cross_validation_set->second.analysis[a][r].spec.name,measurement_names_ordered,performance_stats_output()(), p->first, cross_validation_set->first, cross_validation_set->second.replicates[r].replicate_id, metadata_cache);
 					}
 				}
 			}
@@ -877,7 +938,11 @@ void ns_run_hmm_cross_validation(std::string& results_summary, ns_image_server_r
 						replicate_info_output()() << cross_validation_set->first << "," << q->replicate_id << ",testing," << q->replicate_testing_groups[k] << "\n";
 					for (unsigned int k = 0; k < q->replicate_skipped_groups.size(); k++)
 						replicate_info_output()() << cross_validation_set->first << "," << q->replicate_id << ",training," << q->replicate_skipped_groups[k] << "\n";
-					if (!q->generate_detailed_path_info || q->results.animals.empty())
+				}
+				for (auto q = cross_validation_set->second.analysis.begin();  q != cross_validation_set->second.analysis.end(); q++)
+					for (auto rep = q->begin(); rep != q->end(); ++rep) {
+
+					if (!rep->generate_detailed_path_info || rep->results.animals.empty())
 						continue;
 					//output per-path statistics
 					std::string suffix;
@@ -890,8 +955,8 @@ void ns_run_hmm_cross_validation(std::string& results_summary, ns_image_server_r
 						continue;
 					}
 					tmp++;
-					q->results.write_hmm_path_header(path_stats_output()());
-					q->results.write_hmm_path_data(path_stats_output()(), metadata_cache);
+					rep->results.write_hmm_path_header(path_stats_output()());
+					rep->results.write_hmm_path_data(rep->spec.name,path_stats_output()(), metadata_cache);
 					path_stats_output.release();
 				}
 			}

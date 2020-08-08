@@ -43,10 +43,10 @@ struct ns_hmm_movement_analysis_optimizatiom_stats {
 	std::vector<ns_hmm_movement_analysis_optimizatiom_stats_record> animals;
 
 	static void write_error_header(std::ostream & o, const std::vector<std::string> & extra_columns);
-	void write_error_data(std::ostream & o, const std::string& genotype_set, const std::string & cross_validation_info, const unsigned long & cross_validation_replicate_id, const std::map<std::string, std::map<ns_64_bit, ns_region_metadata> > & metadata_cache) const;
+	void write_error_data(const std::string & analysis_approach, const std::vector<std::string>& measurement_names_to_write,std::ostream & o, const std::string& genotype_set, const std::string & cross_validation_info, const unsigned long & cross_validation_replicate_id, const std::map<std::string, std::map<ns_64_bit, ns_region_metadata> > & metadata_cache) const;
 
 	void write_hmm_path_header(std::ostream & o) const;
-	void write_hmm_path_data(std::ostream & o, const std::map<std::string, std::map<ns_64_bit, ns_region_metadata> > & metadata_cache) const;
+	void write_hmm_path_data(const std::string& analysis_approach,std::ostream & o, const std::map<std::string, std::map<ns_64_bit, ns_region_metadata> > & metadata_cache) const;
 
 };
 

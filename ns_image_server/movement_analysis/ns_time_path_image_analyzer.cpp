@@ -4584,7 +4584,7 @@ void ns_output_subimage(const ns_image_standard & im,const long offset,ns_image_
 }
 
 void ns_hmm_movement_analysis_optimizatiom_stats::write_error_header(std::ostream & o,const std::vector<std::string> & extra_columns) {
-	o << "Experiment,Device,Plate Name,Animal Details,Group ID,Path ID,Excluded,Censored,Number of Worms, Cross Validation Genotype,Cross Validation Info,Cross Validation Replicate ID";
+	o << "Experiment,Device,Plate Name,Animal Details,Group ID,Path ID,Excluded,Censored,Number of Worms, Cross Validation Genotype,Analysis Approach, Cross Validation Info,Cross Validation Replicate ID";
 	for (unsigned int j = 0; j < ns_hmm_movement_analysis_optimizatiom_stats_record::number_of_states; j++) {
 		const std::string state = ns_movement_event_to_string(ns_hmm_movement_analysis_optimizatiom_stats_record::states[j]);
 		o << "," << state << " identified by hand?, " << state << " identified by machine?," <<
@@ -4596,7 +4596,7 @@ void ns_hmm_movement_analysis_optimizatiom_stats::write_error_header(std::ostrea
 	o << "\n";
 }
 
-void ns_hmm_movement_analysis_optimizatiom_stats::write_error_data(std::ostream & o, const std::string & genotype_set, const std::string & cross_validation_info, const unsigned long & replicate_id,const std::map<std::string,std::map<ns_64_bit,ns_region_metadata> > & metadata_cache) const{
+void ns_hmm_movement_analysis_optimizatiom_stats::write_error_data(const std::string& analysis_approach, const std::vector<std::string> & measurement_names_to_write,std::ostream & o, const std::string & genotype_set, const std::string & cross_validation_info, const unsigned long & replicate_id,const std::map<std::string,std::map<ns_64_bit,ns_region_metadata> > & metadata_cache) const{
 
 	for (unsigned int k = 0; k < animals.size(); k++) {
 		auto db_m = metadata_cache.find(*animals[k].database_name);
@@ -4612,7 +4612,7 @@ void ns_hmm_movement_analysis_optimizatiom_stats::write_error_data(std::ostream 
 			<< (animals[k].properties.is_excluded() ? "1" : "0") << ","
 			<< (animals[k].properties.is_censored() ? "1" : "0") << ","
 			<< animals[k].properties.number_of_worms() << ","
-			<< genotype_set << "," << cross_validation_info << "," << replicate_id;
+			<< genotype_set << "," << analysis_approach << "," << cross_validation_info << "," << replicate_id;
 		for (unsigned int s = 0; s < ns_hmm_movement_analysis_optimizatiom_stats_record::number_of_states; s++) {
 			auto state_p = animals[k].measurements.find(ns_hmm_movement_analysis_optimizatiom_stats_record::states[s]);
 			if (state_p == animals[k].measurements.end())
@@ -4639,8 +4639,15 @@ void ns_hmm_movement_analysis_optimizatiom_stats::write_error_data(std::ostream 
 						std::cerr << "Yikes";
 				}
 			}
-			for (unsigned int i = 0; i < animals[k].state_info_variable_names.size(); i++) {
-				o << "," << measurement_averages[i] / animals[k].machine_state_info.path.size();
+			//only write variable names used in model, write out blank columns for others
+			//this lets us write different models ot the same file.
+			for (unsigned int i = 0; i < measurement_names_to_write.size(); i++){
+				o << ",";
+				for (unsigned int j = 0; j < animals[k].state_info_variable_names.size(); j++)
+					if (measurement_names_to_write[i] == animals[k].state_info_variable_names[j]) {
+						o << measurement_averages[i] / animals[k].machine_state_info.path.size();
+						break;
+					}
 			}
 		}
 		o << "\n";
@@ -4648,7 +4655,7 @@ void ns_hmm_movement_analysis_optimizatiom_stats::write_error_data(std::ostream 
 }
 
 void ns_hmm_movement_analysis_optimizatiom_stats::write_hmm_path_header(std::ostream & o) const {
-	o << "Experiment,Plate Name,Animal Details,Group ID,Path ID,Excluded,Censored,Number of Worms, Time (Days),Machine HMM state, By Hand HMM state, Machine likelihood, By hand likelihood, log(p(Machine) / p(by hand)) , Cumulative log(p(Machine) / p(by hand)) ";
+	o << "Experiment,Plate Name,Animal Details,Group ID,Path ID,Excluded,Censored,Number of Worms, Time (Days),Analysis Approach,Machine HMM state, By Hand HMM state, Machine likelihood, By hand likelihood, log(p(Machine) / p(by hand)) , Cumulative log(p(Machine) / p(by hand)) ";
 
 	if (animals.size() > 0) {
 		o << ", Machine p(total)";
@@ -4664,7 +4671,7 @@ void ns_hmm_movement_analysis_optimizatiom_stats::write_hmm_path_header(std::ost
 	o << ", Machine Movement Cessation Time Error (days), Machine Expansion time Error (days), Machine post-expansion Contraction time Error (days)\n";
 }
 
-void ns_hmm_movement_analysis_optimizatiom_stats::write_hmm_path_data(std::ostream & o, const std::map<std::string,std::map<ns_64_bit, ns_region_metadata> > & metadata_cache) const {
+void ns_hmm_movement_analysis_optimizatiom_stats::write_hmm_path_data(const std::string & analysis_approach, std::ostream & o, const std::map<std::string,std::map<ns_64_bit, ns_region_metadata> > & metadata_cache) const {
 	for (unsigned int k = 0; k < animals.size(); k++) {
 		auto db_m = metadata_cache.find(*animals[k].database_name);
 		if (db_m == metadata_cache.end())
@@ -4684,6 +4691,7 @@ void ns_hmm_movement_analysis_optimizatiom_stats::write_hmm_path_data(std::ostre
 				<< (animals[k].properties.is_censored() ? "1" : "0") << ","
 				<< (animals[k].properties.number_of_worms()) << ",";
 			o << ((animals[k].state_info_times[i] - m->second.time_at_which_animals_had_zero_age) / 60.0 / 60.0 / 24.0) << ",";
+			o << analysis_approach << ",";
 			o << ns_hmm_movement_state_to_string(animals[k].machine_state_info.path[i].state) << "," << ns_hmm_movement_state_to_string(animals[k].by_hand_state_info.path[i].state) << ",";
 			o << animals[k].machine_state_info.path[i].total_log_probability << "," << animals[k].by_hand_state_info.path[i].total_log_probability << ",";
 			const double diff_p = (animals[k].machine_state_info.path[i].total_log_probability - animals[k].by_hand_state_info.path[i].total_log_probability);

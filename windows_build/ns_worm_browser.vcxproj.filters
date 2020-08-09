@@ -1170,6 +1170,9 @@
     <ClInclude Include="..\ns_image_server\movement_analysis\ns_image_server_time_path_inferred_worm_aggregator.h">
       <Filter>statistics</Filter>
     </ClInclude>
+    <ClInclude Include="..\ns_image_server\movement_analysis\ns_probability_model_measurement_accessor.h">
+      <Filter>movement_analysis</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="start.tif">

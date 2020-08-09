@@ -156,7 +156,8 @@ public:
 		auto p = new ns_emission_probabiliy_gaussian_diagonal_covariance_model<ns_measurement_accessor>;
 		for (unsigned int i = 0; i < dimensions->size(); i++)
 			p->dimensions.insert(p->dimensions.end(), org.create_dimension((*dimensions)[i]));
-		return p;
+		p->setup_gmm(p->dimensions.size(), dimensions->size());
+	return p;
 	}
 private:
 	const std::vector<std::string>* dimensions;

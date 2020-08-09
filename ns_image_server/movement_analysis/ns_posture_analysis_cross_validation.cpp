@@ -6,6 +6,8 @@
 #include "ns_time_path_solver.h"
 #include "ns_image_server_results_storage.h"
 #include "ns_hand_annotation_loader.h"
+
+#include "ns_probability_model_measurement_accessor.h"
 #include <map>
 #include <set>
 #include <random>
@@ -467,8 +469,11 @@ struct ns_hmm_cross_validation_manager {
 				bool all_replicates_supported_model_building = true;
 				for (int replicate_id = 0; replicate_id < validation_subject->second.replicates.size(); ++replicate_id) {
 					try {
+						ns_probability_model_generator gen(validation_subject->second.analysis[validation_spec_id][replicate_id].spec.model_features_to_use);
+						
 						validation_subject->second.analysis[validation_spec_id][replicate_id].model.build_estimator_from_observations(
-							validation_subject->second.replicates[replicate_id].training_set, output, state_specification);
+							validation_subject->second.replicates[replicate_id].training_set,&gen,state_specification,output);
+
 						validation_subject->second.analysis[validation_spec_id][replicate_id].model_building_completed = true;
 					}
 					catch (ns_ex& ex) {

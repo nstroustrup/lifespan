@@ -4,6 +4,7 @@
 #include "ns_posture_analysis_models.h"
 #include "ns_threshold_and_hmm_posture_analyzer.h"
 #include "ns_gmm.h"
+#include "ns_probability_model_measurement_accessor.h"
 #define NS_HMM_VERSION "2.5"
 
 
@@ -732,146 +733,6 @@ ns_time_path_posture_movement_solution ns_time_path_movement_markov_solver::esti
 }
 
 
-struct ns_measurement_accessor {
-	typedef ns_hmm_emission data_t;
-	virtual const double operator()(const ns_analyzed_image_time_path_element_measurements& e, bool & valid_point) const = 0;
-	virtual ns_measurement_accessor* clone() = 0;
-	const double operator()(const data_t& e, bool& valid_point) const { return (*this)(e.measurement, valid_point); }
-	const double get_from_emission(const data_t& e, bool& valid_point) const { return (*this)(e.measurement,valid_point); }
-};
-
-class ns_probability_model_holder {
-public:
-	std::map<ns_hmm_movement_state, ns_emission_probability_model<ns_measurement_accessor>*> models;
-	~ns_probability_model_holder() {
-		for (auto p = models.begin(); p != models.end(); ++p)
-			delete p->second;
-	}
-};
-
-struct ns_intensity_accessor_1x : public ns_measurement_accessor {
-	const double operator()(const ns_analyzed_image_time_path_element_measurements & e, bool& valid_point) const {
-		valid_point = true;
-		return e.change_in_total_stabilized_intensity_1x / 100.0;
-	}
-	const double get_from_emission(const ns_hmm_emission& e, bool& valid_point) const {return (*this)(e.measurement,valid_point);}
-	ns_measurement_accessor* clone() { return new ns_intensity_accessor_1x; }
-}; 
-struct ns_intensity_accessor_2x : public ns_measurement_accessor {
-	const double operator()(const ns_analyzed_image_time_path_element_measurements & e, bool& valid_point) const {
-		valid_point = true;
-		return e.change_in_total_stabilized_intensity_2x / 100.0;
-	}
-	const double get_from_emission(const ns_hmm_emission& e, bool& valid_point) const { return (*this)(e.measurement, valid_point); }
-	ns_measurement_accessor* clone() { return new ns_intensity_accessor_2x; }
-};
-struct ns_intensity_accessor_4x : public ns_measurement_accessor {
-	const double operator()(const ns_analyzed_image_time_path_element_measurements & e, bool& valid_point) const {
-		valid_point = true;
-		return e.change_in_total_stabilized_intensity_4x/100.0;
-	}
-	const double get_from_emission(const ns_hmm_emission& e, bool& valid_point) const { return (*this)(e.measurement, valid_point); }
-	ns_measurement_accessor* clone() { return new ns_intensity_accessor_4x; }
-};
-
-struct ns_movement_accessor : public ns_measurement_accessor {
-	const double operator()(const ns_analyzed_image_time_path_element_measurements & e, bool & valid_point) const {
-		//this defines the movement score used by the HMM model!
-		valid_point = true;
-		const double d = e.death_time_posture_analysis_measure_v2_uncropped()+.1;
-		if (d <= 0) return -DBL_MAX;
-		return log(d);
-	}
-	const double get_from_emission(const ns_hmm_emission& e,bool & valid_point) const { return (*this)(e.measurement,valid_point); }
-	ns_measurement_accessor* clone() { return new ns_movement_accessor; }
-};
-
-struct ns_movement_accessor_4x : public ns_measurement_accessor {
-	const double operator()(const ns_analyzed_image_time_path_element_measurements& e, bool& valid_point) const {
-		//this defines the movement score used by the HMM model!
-		valid_point = true;
-		const double d = e.spatial_averaged_movement_score_uncropped_4x + .1;
-		if (d <= 0) return -DBL_MAX;
-		return log(d);
-	}
-	const double get_from_emission(const ns_hmm_emission& e, bool& valid_point) const { return (*this)(e.measurement, valid_point); }
-	ns_measurement_accessor* clone() { return new ns_movement_accessor; }
-};
-struct ns_movement_accessor_min_4x : public ns_measurement_accessor {
-	const double operator()(const ns_analyzed_image_time_path_element_measurements& e, bool& valid_point) const {
-		//this defines the movement score used by the HMM model!
-		valid_point = true;
-		const double d = e.spatial_averaged_movement_score_uncropped_min_4x + .1;
-		if (d <= 0) return -DBL_MAX;
-		return log(d);
-	}
-	const double get_from_emission(const ns_hmm_emission& e, bool& valid_point) const { return (*this)(e.measurement, valid_point); }
-	ns_measurement_accessor* clone() { return new ns_movement_accessor; }
-};
-
-struct ns_outside_intensity_accessor_1x : public ns_measurement_accessor {
-	const double operator()(const ns_analyzed_image_time_path_element_measurements& e, bool& valid_point) const {
-		valid_point = true;
-		return e.change_in_total_outside_stabilized_intensity_1x/100.0;
-	}
-	const double get_from_emission(const ns_hmm_emission& e, bool& valid_point) const { return (*this)(e.measurement, valid_point); }
-	ns_measurement_accessor* clone() { return new ns_outside_intensity_accessor_1x; }
-};
-struct ns_outside_intensity_accessor_2x : public ns_measurement_accessor {
-	const double operator()(const ns_analyzed_image_time_path_element_measurements& e, bool& valid_point) const {
-		valid_point = true;
-		return e.change_in_total_outside_stabilized_intensity_2x / 100.0;
-	}
-	const double get_from_emission(const ns_hmm_emission& e, bool& valid_point) const { return (*this)(e.measurement, valid_point); }
-	ns_measurement_accessor* clone() { return new ns_outside_intensity_accessor_2x; }
-};
-struct ns_outside_intensity_accessor_4x : public ns_measurement_accessor {
-	const double operator()(const ns_analyzed_image_time_path_element_measurements& e, bool& valid_point) const {
-		valid_point = true;
-		return e.change_in_total_outside_stabilized_intensity_4x / 100.0;
-	}
-	const double get_from_emission(const ns_hmm_emission& e, bool& valid_point) const { return (*this)(e.measurement, valid_point); }
-	ns_measurement_accessor* clone() { return new ns_outside_intensity_accessor_4x; }
-};
-
-struct ns_stabilized_region_vs_outside_intensity_comparitor : public ns_measurement_accessor {
-	const double operator()(const ns_analyzed_image_time_path_element_measurements& e, bool& valid_point) const {
-		valid_point = true;
-		return (e.change_in_total_outside_stabilized_intensity_2x  - e.change_in_total_stabilized_intensity_2x) / 100.0;
-	}
-	const double get_from_emission(const ns_hmm_emission& e, bool & valid_point) const { return (*this)(e.measurement, valid_point); }
-	ns_measurement_accessor* clone() { return new ns_stabilized_region_vs_outside_intensity_comparitor; }
-};
-
-
-class ns_hmm_emission_probability_model_organizer : public ns_emission_probability_model_organizer<ns_measurement_accessor>{
-public:
-
-	ns_covarying_gaussian_dimension<ns_measurement_accessor> create_dimension(const std::string & d) const {
-		if (d == "m") return ns_covarying_gaussian_dimension<ns_measurement_accessor>(new ns_movement_accessor, d);
-		if (d == "m4") return ns_covarying_gaussian_dimension<ns_measurement_accessor>(new ns_movement_accessor_4x, d);
-		if (d == "i1") return ns_covarying_gaussian_dimension<ns_measurement_accessor>(new ns_intensity_accessor_1x, d);
-		if (d == "i2") return ns_covarying_gaussian_dimension<ns_measurement_accessor>(new ns_intensity_accessor_2x, d);
-		if (d == "i4") return ns_covarying_gaussian_dimension<ns_measurement_accessor>(new ns_intensity_accessor_4x, d);
-		if (d == "o1") return ns_covarying_gaussian_dimension<ns_measurement_accessor>(new ns_outside_intensity_accessor_1x, d);
-		if (d == "o2") return ns_covarying_gaussian_dimension<ns_measurement_accessor>(new ns_outside_intensity_accessor_2x, d);
-		if (d == "o4") return ns_covarying_gaussian_dimension<ns_measurement_accessor>(new ns_outside_intensity_accessor_4x, d);
-		if (d == "c") return ns_covarying_gaussian_dimension<ns_measurement_accessor>(new ns_stabilized_region_vs_outside_intensity_comparitor, d);
-		throw ns_ex("ns_emission_probability_model_organizer()::Unknown dimension: ") << d;
-	}
-
-	ns_emission_probabiliy_gaussian_diagonal_covariance_model<ns_measurement_accessor>* default_model() const {
-		auto p = new ns_emission_probabiliy_gaussian_diagonal_covariance_model<ns_measurement_accessor>;
-		p->dimensions.insert(p->dimensions.end(), create_dimension("m"));
-		p->dimensions.insert(p->dimensions.end(), create_dimension("m4"));
-		p->dimensions.insert(p->dimensions.end(), create_dimension("i1"));
-		p->dimensions.insert(p->dimensions.end(), create_dimension("i4"));
-		p->setup_gmm(p->dimensions.size(), 4);
-		return p;
-	}
-	
-};
-
 
 template<class measurement_accessor_t>
 unsigned long ns_emission_probabiliy_gaussian_diagonal_covariance_model<measurement_accessor_t>::training_data_buffer_size = 0;
@@ -1222,7 +1083,9 @@ void ns_hmm_observation_set::clean_up_data_prior_to_model_fitting() {
 	
 }
 
-void ns_emperical_posture_quantification_value_estimator::build_estimator_from_observations(const ns_hmm_observation_set& observation_set,std::string & output,const ns_hmm_states_permitted & states_permitted_) {
+bool ns_emperical_posture_quantification_value_estimator::build_estimator_from_observations(
+	const ns_hmm_observation_set& observation_set, const ns_probability_model_generator* generator, const ns_hmm_states_permitted& states_permitted_, std::string& output){
+
 	states_permitted_int = states_permitted_;
 	software_version_when_built = NS_HMM_VERSION;
 
@@ -1248,7 +1111,6 @@ void ns_emperical_posture_quantification_value_estimator::build_estimator_from_o
 
 	//count states and build probability models for each one as needed
 	std::vector<unsigned long > state_counts((int)(ns_hmm_unknown_state), 0);
-	ns_hmm_emission_probability_model_organizer organizer;
 	const unsigned long minimum_number_of_observations = 100;
 	for (auto q = observations_sorted_by_state.begin(); q != observations_sorted_by_state.end(); q++) {
 		unsigned long& state_count = state_counts[(int)q->first];
@@ -1260,7 +1122,7 @@ void ns_emperical_posture_quantification_value_estimator::build_estimator_from_o
 		if (p2 == emission_probability_models->models.end()) {
 			p2 = emission_probability_models->models.insert(emission_probability_models->models.end(),
 				std::map < ns_hmm_movement_state, ns_emission_probability_model<ns_measurement_accessor>*>::value_type(q->first, 0));
-			p2->second = organizer.default_model();
+			p2->second = (*generator)();
 		}
 
 		p2->second->build_from_data(q->second);

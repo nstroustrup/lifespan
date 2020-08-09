@@ -39,6 +39,7 @@ struct ns_hmm_movement_analysis_optimizatiom_stats_record {
 	std::vector<std::string> state_info_variable_names;
 
 };
+
 struct ns_hmm_movement_analysis_optimizatiom_stats {
 	std::vector<ns_hmm_movement_analysis_optimizatiom_stats_record> animals;
 

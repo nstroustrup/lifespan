@@ -55,13 +55,14 @@ public:
 };
 
 class ns_probability_model_holder;
+class ns_probability_model_generator;
 class ns_emperical_posture_quantification_value_estimator{
 public:
 	static std::string state_permissions_to_string(const ns_hmm_states_permitted& s);
 	static ns_hmm_states_permitted state_permissions_from_string(const std::string & s);
 	~ns_emperical_posture_quantification_value_estimator();
 	friend class ns_time_path_movement_markov_solver;
-	void build_estimator_from_observations(const ns_hmm_observation_set & observation_set,std::string & output, const ns_hmm_states_permitted& states_permitted);
+	bool build_estimator_from_observations(const ns_hmm_observation_set & observation_set, const ns_probability_model_generator* generator,const ns_hmm_states_permitted& states_permitted_,std::string & output);
 
 	void log_probability_for_each_state(const ns_analyzed_image_time_path_element_measurements & e,std::vector<double> & p) const;
 	

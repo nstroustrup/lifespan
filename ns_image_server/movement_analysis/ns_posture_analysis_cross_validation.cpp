@@ -478,7 +478,7 @@ struct ns_hmm_cross_validation_manager {
 					}
 				}
 				if (all_replicates_supported_model_building) {
-					validation_subject++;
+					validation_spec++;
 					validation_spec_id++;
 				}
 				else {
@@ -499,7 +499,7 @@ struct ns_hmm_cross_validation_manager {
 			ns_hmm_cross_validation_set& set = validation_runs_sorted_by_validation_type["none"];
 			set.build_all_vs_all_set(spec);
 			for (unsigned int i = 0; i < set.analysis.size(); i++)
-				for (unsigned int j = 0; i < set.analysis[i].size(); j++)
+				for (unsigned int j = 0; j < set.analysis[i].size(); j++)
 					set.analysis[i][j].generate_detailed_path_info = true;
 			set.description = "No Cross-Validation";
 			

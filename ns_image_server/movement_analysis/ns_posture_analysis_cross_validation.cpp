@@ -503,9 +503,11 @@ struct ns_hmm_cross_validation_manager {
 		if (1){
 			ns_hmm_cross_validation_set& set = validation_runs_sorted_by_validation_type["none"];
 			set.build_all_vs_all_set(spec);
-			for (unsigned int i = 0; i < set.analysis.size(); i++)
-				for (unsigned int j = 0; j < set.analysis[i].size(); j++)
-					set.analysis[i][j].generate_detailed_path_info = true;
+			//for (unsigned int i = 0; i < set.analysis.size(); i++)
+			if (set.analysis.size() > 0) {
+				for (unsigned int j = 0; j < set.analysis[0].size(); j++)
+					set.analysis[0][j].generate_detailed_path_info = true;
+			}
 			set.description = "No Cross-Validation";
 			
 		}

@@ -790,18 +790,29 @@ bool operator==(const GMM& a, const GMM& b) {
 	return true;
 }
 bool operator==(const ns_emperical_posture_quantification_value_estimator & a, const ns_emperical_posture_quantification_value_estimator & b) {
-	if (a.emission_probability_models->models.size() != b.emission_probability_models->models.size()) {
-		std::cerr << "Wrong number of models\n";
+	if (a.emission_probability_models->state_emission_models.size() != b.emission_probability_models->state_emission_models.size()) {
+		std::cerr << "Wrong number of state emission models\n";
+		return false;
+	}if (a.emission_probability_models->state_transition_models.size() != b.emission_probability_models->state_transition_models.size()) {
+		std::cerr << "Wrong number of state transition models\n";
 		return false;
 	}
 	if (a.states_permitted_int != b.states_permitted_int) {
 		std::cerr << "State permission mismatch!";
 		return false;
 	}
-	for (auto p = a.emission_probability_models->models.begin(); p != a.emission_probability_models->models.end(); ++p) {
-		auto q = b.emission_probability_models->models.find(p->first);
-		if (q == b.emission_probability_models->models.end()) {
-			std::cerr << "Missing state\n";
+	for (auto p = a.emission_probability_models->state_emission_models.begin(); p != a.emission_probability_models->state_emission_models.end(); ++p) {
+		auto q = b.emission_probability_models->state_emission_models.find(p->first);
+		if (q == b.emission_probability_models->state_emission_models.end()) {
+			std::cerr << "Missing state emission model\n";
+			return false;
+		}
+		if (!(p->second->equals(q->second)))
+			return false;
+	}for (auto p = a.emission_probability_models->state_transition_models.begin(); p != a.emission_probability_models->state_transition_models.end(); ++p) {
+		auto q = b.emission_probability_models->state_transition_models.find(p->first);
+		if (q == b.emission_probability_models->state_transition_models.end()) {
+			std::cerr << "Missing state transition model\n";
 			return false;
 		}
 		if (!(p->second->equals(q->second)))
@@ -815,13 +826,13 @@ bool operator==(const ns_emperical_posture_quantification_value_estimator & a, c
 
 void ns_emperical_posture_quantification_value_estimator::provide_measurements_and_log_sub_probabilities(const ns_hmm_movement_state & state, const ns_analyzed_image_time_path_element_measurements & e, std::vector<double> & measurement, std::vector<double> & sub_probabilitiy) const {
 	bool undefined_state(false);
-	auto p = emission_probability_models->models.find(state);
+	auto p = emission_probability_models->state_emission_models.find(state);
 	
-	if (p == emission_probability_models->models.end()) {
+	if (p == emission_probability_models->state_emission_models.end()) {
 		//if we are debugging a state for which the emission model isn't trained, output N/A.
-		if (emission_probability_models->models.empty())
+		if (emission_probability_models->state_emission_models.empty())
 			throw ns_ex("No emission models!");
-		p = emission_probability_models->models.begin();
+		p = emission_probability_models->state_emission_models.begin();
 		undefined_state = true;
 	}
 	ns_hmm_emission em;
@@ -836,22 +847,22 @@ void ns_emperical_posture_quantification_value_estimator::provide_measurements_a
 	}
 }
 void ns_emperical_posture_quantification_value_estimator::provide_sub_probability_names(std::vector<std::string> & names) const {
-	if (emission_probability_models->models.empty())
+	if (emission_probability_models->state_emission_models.empty())
 		throw ns_ex("ns_emperical_posture_quantification_value_estimator::provide_sub_probability_names()::Cannot find any probability model");
-	emission_probability_models->models.begin()->second->sub_probability_names(names);
+	emission_probability_models->state_emission_models.begin()->second->sub_probability_names(names);
 }
 unsigned long ns_emperical_posture_quantification_value_estimator::number_of_sub_probabilities() const {
-	if (emission_probability_models->models.empty())
+	if (emission_probability_models->state_emission_models.empty())
 		throw ns_ex("ns_emperical_posture_quantification_value_estimator::provide_sub_probability_names()::Cannot find any probability model");
-	return emission_probability_models->models.begin()->second->number_of_sub_probabilities();
+	return emission_probability_models->state_emission_models.begin()->second->number_of_sub_probabilities();
 }
 
 bool ns_emperical_posture_quantification_value_estimator::state_defined(const ns_hmm_movement_state & m) const {
-	return emission_probability_models->models.find(m) != emission_probability_models->models.end();
+	return emission_probability_models->state_emission_models.find(m) != emission_probability_models->state_emission_models.end();
 
 }
 void ns_emperical_posture_quantification_value_estimator::defined_states(std::set<ns_hmm_movement_state>& s) const {
-	for (auto p = emission_probability_models->models.begin(); p != emission_probability_models->models.end(); p++)
+	for (auto p = emission_probability_models->state_emission_models.begin(); p != emission_probability_models->state_emission_models.end(); p++)
 		s.emplace(p->first);
 }
 
@@ -860,7 +871,7 @@ void ns_emperical_posture_quantification_value_estimator::log_probability_for_ea
 	d.resize((int)ns_hmm_unknown_state,-INFINITY);
 	ns_hmm_emission em;
 	em.measurement = e;
-	for (auto p = emission_probability_models->models.begin(); p != emission_probability_models->models.end(); p++) {
+	for (auto p = emission_probability_models->state_emission_models.begin(); p != emission_probability_models->state_emission_models.end(); p++) {
 		const double tmp(p->second->point_emission_log_probability(em));
 		d[p->first] = tmp;
 	}
@@ -876,7 +887,7 @@ void ns_emperical_posture_quantification_value_estimator::validate_model_setting
 }
 void ns_emperical_posture_quantification_value_estimator::output_debug_info(const ns_analyzed_image_time_path_element_measurements & e, std::ostream & o) const {
 
-	for (auto p = emission_probability_models->models.begin(); p != emission_probability_models->models.end(); p++) {
+	for (auto p = emission_probability_models->state_emission_models.begin(); p != emission_probability_models->state_emission_models.end(); p++) {
 		std::vector<std::string> names;
 		std::vector<double> measurements;
 		std::vector<double> probabilities;
@@ -891,7 +902,7 @@ void ns_emperical_posture_quantification_value_estimator::output_debug_info(cons
 }
 	
 
-void ns_hmm_observation_set::write(std::ostream & out, const std::string & experiment_name) const {
+void ns_hmm_observation_set::write_emissions(std::ostream & out, const std::string & experiment_name) const {
 	out << "device_name,region_name,detection_set_id,group_id,path_id,data_type,time,hmm_movement_state,";
 	ns_analyzed_image_time_path_element_measurements::write_header(out);
 	out << "\n";
@@ -937,19 +948,69 @@ void ns_hmm_observation_set::write(std::ostream & out, const std::string & exper
 	}
 }
 
+void ns_hmm_observation_set::write_durations(std::ostream& out, const std::string& experiment_name) const {
+	out << "device_name,region_name,detection_set_id,group_id,path_id,data_type,time,hmm_movement_state_source,hmm_movement_state_destination";
+	out << "\n";
+	//first write normalization stats
+	out.precision(30);
+	for (std::map<ns_hmm_state_transition, std::vector<ns_hmm_duration> >::const_iterator p = state_durations.begin(); p != state_durations.end(); p++) {
+		for (unsigned int i = 0; i < p->second.size(); i++) {
+			out << *(p->second[i].device_name) << ","
+				<< *(p->second[i].region_name) << ","
+				<< p->second[i].path_id.detection_set_id << ","
+				<< p->second[i].path_id.group_id << ","
+				<< p->second[i].path_id.path_id << ","
+				<< "d,"
+				<< p->second[i].emission_time << ","
+				<< ns_hmm_movement_state_to_string(p->first.first) << ","
+				<< ns_hmm_movement_state_to_string(p->first.second) << ","
+				<< p->second[i].measurement;
+			out << "\n";
+		}
+	}
+	for (std::map<ns_stationary_path_id, ns_hmm_emission_normalization_stats >::const_iterator p = normalization_stats.begin(); p != normalization_stats.end(); p++) {
+		out << *(p->second.device_name) << ","
+			<< *(p->second.region_name) << ","
+			<< p->first.detection_set_id << ","
+			<< p->first.group_id << ","
+			<< p->first.path_id << ",";
+		out << "m,0,all,";
+		p->second.path_mean.write(out, ns_vector_2d(0, 0), false);
+		out << "\n";
+		out << *(p->second.device_name) << ","
+			<< *(p->second.region_name) << ","
+			<< p->first.detection_set_id << ","
+			<< p->first.group_id << ","
+			<< p->first.path_id << ",";
+		out << "v,0,all";
+		p->second.path_variance.write(out, ns_vector_2d(0, 0), false);
+		out << "\n";
+		out << *(p->second.device_name) << ","
+			<< *(p->second.region_name) << ","
+			<< p->first.detection_set_id << ","
+			<< p->first.group_id << ","
+			<< p->first.path_id << ",";
+		out << "a,0,all," << p->second.source.to_string() << "\n";
+	}
+}
 
 
 ns_emperical_posture_quantification_value_estimator::ns_emperical_posture_quantification_value_estimator():emission_probability_models(new ns_probability_model_holder){}
 ns_emperical_posture_quantification_value_estimator::ns_emperical_posture_quantification_value_estimator(const ns_emperical_posture_quantification_value_estimator& a) {
 	emission_probability_models = new ns_probability_model_holder;
-	for (auto p = a.emission_probability_models->models.begin(); p != a.emission_probability_models->models.end(); p++)
-		emission_probability_models->models.insert(emission_probability_models->models.begin(), std::map<ns_hmm_movement_state, ns_emission_probability_model<ns_measurement_accessor>*>::value_type(p->first, p->second->clone()));
+	for (auto p = a.emission_probability_models->state_emission_models.begin(); p != a.emission_probability_models->state_emission_models.end(); p++)
+		emission_probability_models->state_emission_models.insert(emission_probability_models->state_emission_models.begin(), std::map<ns_hmm_movement_state, ns_emission_probability_model<ns_measurement_accessor>*>::value_type(p->first, p->second->clone()));
+	for (auto p = a.emission_probability_models->state_transition_models.begin(); p != a.emission_probability_models->state_transition_models.end(); p++)
+		emission_probability_models->state_transition_models.insert(emission_probability_models->state_transition_models.begin(), std::map<ns_hmm_state_transition, ns_emission_probability_model<ns_duration_accessor>*>::value_type(p->first, p->second->clone()));
 
 }
 ns_emperical_posture_quantification_value_estimator& ns_emperical_posture_quantification_value_estimator::operator=(const ns_emperical_posture_quantification_value_estimator& a) {
-	this->emission_probability_models->models.clear();
-	for (auto p = a.emission_probability_models->models.begin(); p != a.emission_probability_models->models.end(); p++)
-		emission_probability_models->models.insert(emission_probability_models->models.begin(), std::map<ns_hmm_movement_state, ns_emission_probability_model<ns_measurement_accessor>*>::value_type(p->first, p->second->clone()));
+	this->emission_probability_models->state_emission_models.clear();
+	this->emission_probability_models->state_transition_models.clear();
+	for (auto p = a.emission_probability_models->state_emission_models.begin(); p != a.emission_probability_models->state_emission_models.end(); p++)
+		emission_probability_models->state_emission_models.insert(emission_probability_models->state_emission_models.begin(), std::map<ns_hmm_movement_state, ns_emission_probability_model<ns_measurement_accessor>*>::value_type(p->first, p->second->clone()));
+	for (auto p = a.emission_probability_models->state_transition_models.begin(); p != a.emission_probability_models->state_transition_models.end(); p++)
+		emission_probability_models->state_transition_models.insert(emission_probability_models->state_transition_models.begin(), std::map<ns_hmm_state_transition, ns_emission_probability_model<ns_duration_accessor>*>::value_type(p->first, p->second->clone()));
 	return *this;
 }
 
@@ -967,9 +1028,9 @@ void ns_emperical_posture_quantification_value_estimator::read(std::istream & i)
 	while (true) {
 		ns_emission_probabiliy_gaussian_diagonal_covariance_model< ns_measurement_accessor >* model = new ns_emission_probabiliy_gaussian_diagonal_covariance_model< ns_measurement_accessor >; //first load data into a model with the maximum number of dimensions;
 		try {
-			ns_hmm_movement_state state;
+			std::string state_string;
 			int data;
-			if (!model->read(i, state, software_version_for_model, data,&organizer))
+			if (!model->read(i, state_string, software_version_for_model, data, &organizer))
 				break;
 			if (software_version_when_built.empty())
 				software_version_when_built = software_version_for_model;
@@ -977,33 +1038,56 @@ void ns_emperical_posture_quantification_value_estimator::read(std::istream & i)
 				throw ns_ex("Software version mismatch within model");
 			states_permitted_int = (ns_hmm_states_permitted)data;
 
-			if (state == ns_hmm_unknown_state || i.fail()) {
-				if (emission_probability_models->models.size() < number_of_gmm_dimensions)
+			if (state_string.empty() || i.fail()) {
+				if (emission_probability_models->state_emission_models.size() < 1)
 					throw ns_ex("ns_emperical_posture_quantification_value_estimator()::The estimator did not contain enough data.");
 			}
+			bool state_not_transition = ns_string_is_a_state_not_a_transition(state_string);
+			if (state_not_transition) {
+				const ns_hmm_movement_state state = ns_hmm_movement_state_from_string(state_string);
+				auto p2 = emission_probability_models->state_emission_models.find(state);
+				if (p2 == emission_probability_models->state_emission_models.end())
+					p2 = emission_probability_models->state_emission_models.insert(emission_probability_models->state_emission_models.end(),
+						std::map < ns_hmm_movement_state, ns_emission_probability_model<ns_measurement_accessor>*>::value_type(state, model));
 
-			auto p2 = emission_probability_models->models.find(state);
-			if (p2 == emission_probability_models->models.end())
-				p2 = emission_probability_models->models.insert(emission_probability_models->models.end(),
-					std::map < ns_hmm_movement_state, ns_emission_probability_model<ns_measurement_accessor>*>::value_type(state, model));
+			}
+			else {
+				//copy gmm data into the appropriate structure
+				ns_emission_probabiliy_gaussian_diagonal_covariance_model< ns_duration_accessor >* trans_model
+					= new ns_emission_probabiliy_gaussian_diagonal_covariance_model< ns_duration_accessor >;
+				trans_model->gmm = model->gmm;
+				model->gmm = 0;
+				delete model;
+				model = 0;
+
+				ns_hmm_state_transition trans = ns_hmm_state_transition_from_string(state_string);
+				auto p2 = emission_probability_models->state_transition_models.find(trans);
+				if (p2 == emission_probability_models->state_transition_models.end())
+					p2 = emission_probability_models->state_transition_models.insert(emission_probability_models->state_transition_models.end(),
+						std::map < ns_hmm_state_transition, ns_emission_probability_model<ns_duration_accessor>*>::value_type(trans, trans_model));
+			}
 		}
 		catch (...) {
-			delete model;
+			ns_safe_delete(model);
 			throw;
 		}
 	}
 }
 void ns_emperical_posture_quantification_value_estimator::write(std::ostream & o)const {
-	if (emission_probability_models->models.size() != 0)
-		emission_probability_models->models.begin()->second->write_header(o);
+	if (emission_probability_models->state_emission_models.size() != 0)
+		emission_probability_models->state_emission_models.begin()->second->write_header(o);
 	o << "\n";
-	for (auto p = emission_probability_models->models.begin(); p != emission_probability_models->models.end(); p++) {
-		p->second->write(p->first, NS_HMM_VERSION,(int)states_permitted_int,o);
+	for (auto p = emission_probability_models->state_emission_models.begin(); p != emission_probability_models->state_emission_models.end(); p++) {
+		p->second->write(ns_hmm_movement_state_to_string(p->first), NS_HMM_VERSION,(int)states_permitted_int,o);
+		o << "\n";
+	}
+	for (auto p = emission_probability_models->state_transition_models.begin(); p != emission_probability_models->state_transition_models.end(); p++) {
+		p->second->write(ns_hmm_state_transition_to_string(p->first), NS_HMM_VERSION, (int)states_permitted_int, o);
 		o << "\n";
 	}
 }
 
-void ns_hmm_observation_set::read(std::istream & in){
+void ns_hmm_observation_set::read_emissions(std::istream & in){
 	std::string tmp, tmp2;
 	getline(in, tmp, '\n');
 	//read normalization stats
@@ -1118,17 +1202,30 @@ bool ns_emperical_posture_quantification_value_estimator::build_estimator_from_o
 			state_count += (*p)->size();
 		if (state_count < minimum_number_of_observations)
 			continue;	//skip states with to few observations.
-		auto p2 = emission_probability_models->models.find(q->first);
-		if (p2 == emission_probability_models->models.end()) {
-			p2 = emission_probability_models->models.insert(emission_probability_models->models.end(),
+		auto p2 = emission_probability_models->state_emission_models.find(q->first);
+		if (p2 == emission_probability_models->state_emission_models.end()) {
+			p2 = emission_probability_models->state_emission_models.insert(emission_probability_models->state_emission_models.end(),
 				std::map < ns_hmm_movement_state, ns_emission_probability_model<ns_measurement_accessor>*>::value_type(q->first, 0));
 			p2->second = (*generator)();
 		}
 
 		p2->second->build_from_data(q->second);
 	}
-	
-		
+	//now do state transitions
+	for (auto q = observation_set.state_durations.begin(); q != observation_set.state_durations.end(); q++) {
+		auto p2 = emission_probability_models->state_transition_models.find(q->first);
+		if (p2 == emission_probability_models->state_transition_models.end()) {
+			p2 = emission_probability_models->state_transition_models.insert(emission_probability_models->state_transition_models.end(),
+				std::map < ns_hmm_state_transition, ns_emission_probability_model<ns_duration_accessor>*>::value_type(q->first, 0));
+			auto model = new ns_emission_probabiliy_gaussian_diagonal_covariance_model<ns_duration_accessor>;
+			p2->second = model;
+			model->dimensions.insert(model->dimensions.end(), ns_covarying_gaussian_dimension<ns_duration_accessor>(new ns_duration_accessor, "d"));
+			model->setup_gmm(1, 2);
+		}
+		std::vector<const std::vector<ns_hmm_duration>* > data(1);
+		data[0] = &q->second;
+		p2->second->build_from_data(data);
+	}
 
 	std::vector<ns_hmm_movement_state> required_states;
 	required_states.reserve(3);
@@ -1163,19 +1260,19 @@ bool ns_emperical_posture_quantification_value_estimator::build_estimator_from_o
 	
 	//sometimes the number of by hand annotations for states allows models to be built for only a subset of states.
 	//forbid unusual combinations of states, so we don't generate weird models where worms can only enter certain states that don't make sense in combination
-	if (emission_probability_models->models.find(ns_hmm_moving_weakly) == emission_probability_models->models.end() &&
-		(emission_probability_models->models.find(ns_hmm_moving_weakly_expanding) != emission_probability_models->models.end()
-			|| emission_probability_models->models.find(ns_hmm_moving_weakly_post_expansion) != emission_probability_models->models.end())) {
-		emission_probability_models->models.erase(ns_hmm_moving_weakly_expanding);
-		emission_probability_models->models.erase(ns_hmm_moving_weakly_post_expansion);
+	if (emission_probability_models->state_emission_models.find(ns_hmm_moving_weakly) == emission_probability_models->state_emission_models.end() &&
+		(emission_probability_models->state_emission_models.find(ns_hmm_moving_weakly_expanding) != emission_probability_models->state_emission_models.end()
+			|| emission_probability_models->state_emission_models.find(ns_hmm_moving_weakly_post_expansion) != emission_probability_models->state_emission_models.end())) {
+		emission_probability_models->state_emission_models.erase(ns_hmm_moving_weakly_expanding);
+		emission_probability_models->state_emission_models.erase(ns_hmm_moving_weakly_post_expansion);
 		std::cout << "Excluding expansion while weakly moving states because no annotations are provided for weakly moving.\n";
 	}
 
-	if ((emission_probability_models->models.find(ns_hmm_moving_weakly_post_expansion) != emission_probability_models->models.end() ||
-		emission_probability_models->models.find(ns_hmm_contracting_post_expansion) != emission_probability_models->models.end()) &&
-		emission_probability_models->models.find(ns_hmm_not_moving_expanding) == emission_probability_models->models.end()) {
-		emission_probability_models->models.erase(ns_hmm_moving_weakly_post_expansion);
-		emission_probability_models->models.erase(ns_hmm_contracting_post_expansion);
+	if ((emission_probability_models->state_emission_models.find(ns_hmm_moving_weakly_post_expansion) != emission_probability_models->state_emission_models.end() ||
+		emission_probability_models->state_emission_models.find(ns_hmm_contracting_post_expansion) != emission_probability_models->state_emission_models.end()) &&
+		emission_probability_models->state_emission_models.find(ns_hmm_not_moving_expanding) == emission_probability_models->state_emission_models.end()) {
+		emission_probability_models->state_emission_models.erase(ns_hmm_moving_weakly_post_expansion);
+		emission_probability_models->state_emission_models.erase(ns_hmm_contracting_post_expansion);
 		std::cout << "Post-expansion states are defined but expansion is not.\n";
 	}
 
@@ -1246,11 +1343,33 @@ bool ns_hmm_observation_set::add_observation(const std::string& software_version
 				break;
 			}
 		}
+		ns_hmm_movement_state previous_state = (path->element_count() > 0) ?
+			path->by_hand_hmm_movement_state(path->element(0).absolute_time) : ns_hmm_missing;
+		unsigned long previous_state_start = path->element_count() > 0 ? path->element(0).absolute_time : 0;
 
 		for (unsigned int i = 0; i < path->element_count(); i++) {
 			if (path->element(i).excluded || path->element(i).censored)
 				continue;
 			ns_hmm_movement_state by_hand_movement_state(path->by_hand_hmm_movement_state(path->element(i).absolute_time));
+			//quantify how long an animal remains in each state before transitioning to another.
+			if (by_hand_movement_state != previous_state) {
+				std::vector<ns_hmm_duration>& v(state_durations[std::pair<ns_hmm_movement_state, ns_hmm_movement_state>(previous_state, by_hand_movement_state)]);
+				v.resize(v.size() + 1);
+				ns_hmm_duration& e = *v.rbegin();
+				e.path_id = properties.stationary_path_id;
+				e.emission_time = path->element(i).absolute_time;
+				e.region_name = plate_name;
+				e.device_name = device_name;
+				e.region_info_id = properties.region_info_id;
+				e.database_name = database_name;
+				e.experiment_id = experiment_id;
+				e.genotype = genotype_;
+				e.measurement = path->element(i).absolute_time - previous_state_start;
+
+				previous_state_start = path->element(i).absolute_time;
+				previous_state = by_hand_movement_state;
+			}
+
 
 			//we don't enter in as evidence measurements taken after expansion has stopped but before contraction has begun.
 			if (animal_contracted) {
@@ -1338,8 +1457,8 @@ bool ns_hmm_observation_set::add_observation(const std::string& software_version
 }
 
 bool ns_emperical_posture_quantification_value_estimator::state_specified_by_model(const ns_hmm_movement_state s) const {
-	auto p = emission_probability_models->models.find(s);
-	return p != emission_probability_models->models.end();
+	auto p = emission_probability_models->state_emission_models.find(s);
+	return p != emission_probability_models->state_emission_models.end();
 }
 
 ns_posture_analysis_model ns_posture_analysis_model::dummy(){

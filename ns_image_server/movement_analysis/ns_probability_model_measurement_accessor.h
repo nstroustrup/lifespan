@@ -12,11 +12,26 @@ struct ns_measurement_accessor {
 	const double get_from_emission(const data_t& e, bool& valid_point) const { return (*this)(e.measurement, valid_point); }
 };
 
+struct ns_duration_accessor {
+	typedef ns_hmm_duration data_t;
+	const double operator()(const unsigned long& e, bool& valid_point) {
+		valid_point = true; 
+		return e;
+	}
+	ns_duration_accessor* clone() {
+		return new ns_duration_accessor;
+	}
+	const double operator()(const data_t& e, bool& valid_point) const { return (*this)(e, valid_point); }
+};
+
 class ns_probability_model_holder {
 public:
-	std::map<ns_hmm_movement_state, ns_emission_probability_model<ns_measurement_accessor>*> models;
+	std::map<ns_hmm_movement_state, ns_emission_probability_model<ns_measurement_accessor>*> state_emission_models;
+	std::map<ns_hmm_state_transition, ns_emission_probability_model<ns_duration_accessor>*> state_transition_models;
 	~ns_probability_model_holder() {
-		for (auto p = models.begin(); p != models.end(); ++p)
+		for (auto p = state_emission_models.begin(); p != state_emission_models.end(); ++p)
+			delete p->second;
+		for (auto p = state_transition_models.begin(); p != state_transition_models.end(); ++p)
 			delete p->second;
 	}
 };

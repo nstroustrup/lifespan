@@ -186,9 +186,9 @@ public:
 	virtual void sub_probability_names(std::vector<std::string>& names) const = 0;
 	virtual unsigned long number_of_sub_probabilities() const = 0;
 	virtual void write_header(std::ostream& o) = 0;
-	virtual void write(const ns_hmm_movement_state state, const std::string& version, int extra_data, std::ostream& o) const = 0;
+	virtual void write(const std::string & state, const std::string& version, int extra_data, std::ostream& o) const = 0;
 	virtual void read_dimension(const unsigned int dim, std::vector<double>& weights, std::vector<double>& means, std::vector<double>& vars, std::istream& in) = 0;
-	virtual bool read(std::istream& i, ns_hmm_movement_state& state, std::string& software_version, int& extra_data, const ns_emission_probability_model_organizer<measurement_accessor_t>* organizer) = 0;
+	virtual bool read(std::istream& i, std::string & state, std::string& software_version, int& extra_data, const ns_emission_probability_model_organizer<measurement_accessor_t>* organizer) = 0;
 	virtual ns_emission_probability_model< measurement_accessor_t> * clone() const =0 ;
 	virtual bool equals(const ns_emission_probability_model*) const = 0;
 };
@@ -199,6 +199,7 @@ class ns_emission_probabiliy_gaussian_diagonal_covariance_model : public ns_emis
 	enum { ns_max_dimensions  = 8};
 public:
 	ns_emission_probabiliy_gaussian_diagonal_covariance_model<measurement_accessor_t>() : gmm(0), number_of_dimensions(0), number_of_gaussians(0){}
+	
 	ns_emission_probabiliy_gaussian_diagonal_covariance_model<measurement_accessor_t>(const ns_emission_probabiliy_gaussian_diagonal_covariance_model<measurement_accessor_t> & s){
 		dimensions = s.dimensions;
 		gmm = 0;
@@ -216,7 +217,7 @@ public:
 			throw ns_ex("ns_emission_probabiliy_gaussian_diagonal_covariance_model()::Too many dimensions");
 		if (gmm != 0) {
 			if (overwrite)
-				delete gmm;
+				ns_safe_delete(gmm);
 			else 
 				throw ns_ex("Overwriting");
 		}
@@ -366,10 +367,10 @@ public:
 			o << ",Weight " << i << ", Mean " << i << ", Var " << i;
 		}
 	}
-	void write(const ns_hmm_movement_state state, const std::string& version, int extra_data, std::ostream& o) const {
+	void write(const std ::string & state, const std::string& version, int extra_data, std::ostream& o) const {
 		o.precision(30);
 		for (unsigned int d = 0; d < number_of_dimensions; d++) {
-			o << version << "," << extra_data << "," << ns_hmm_movement_state_to_string(state) << "," << number_of_dimensions << "," << number_of_gaussians << "," << dimensions[d].name;
+			o << version << "," << extra_data << "," << state <<  "," << number_of_dimensions << "," << number_of_gaussians << "," << dimensions[d].name;
 
 			for (unsigned int g = 0; g < number_of_gaussians; g++)
 				o << "," << log(gmm->Prior(g)) << "," << gmm->Mean(g)[d] << "," << gmm->Variance(g)[d];
@@ -393,11 +394,11 @@ public:
 		}
 	}
 
-	bool read(std::istream& i, ns_hmm_movement_state& state, std::string& software_version, int& extra_data, const ns_emission_probability_model_organizer<measurement_accessor_t> * organizer) {
+	bool read(std::istream& i, std::string & state, std::string& software_version, int& extra_data, const ns_emission_probability_model_organizer<measurement_accessor_t> * organizer) {
 
 		ns_get_string get_string;
 		ns_get_int get_int;
-		std::string tmp;
+		std::string tmp, state_temp;
 		std::string dimension_name;
 		int file_number_of_dimensions(-1), file_number_of_gaussians(-1);
 		int tmp_int;
@@ -409,7 +410,7 @@ public:
 
 		software_version = "";
 		extra_data = 0;
-		state = ns_hmm_unknown_state;
+		state = "";
 		if (i.fail())
 			return false;
 		while (!i.fail()) {
@@ -432,8 +433,8 @@ public:
 				throw ns_ex("ns_emission_probabiliy_model()::Mixed versions in model file");
 			get_string(i, tmp);
 			extra_data = atoi(tmp.c_str());
-			get_string(i, tmp);
-			ns_hmm_movement_state state_temp = ns_hmm_movement_state_from_string(tmp);	//all information for each state should be written to files in contiguous lines
+			get_string(i, state_temp);
+			//all information for each state should be written to files in contiguous lines
 			if (r != 0 && state_temp != state)
 				throw ns_ex("ns_emission_probabiliy_model::read()::Mixed up order of emission probability model!");
 			state = state_temp;

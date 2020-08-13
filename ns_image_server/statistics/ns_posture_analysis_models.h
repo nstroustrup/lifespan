@@ -12,9 +12,10 @@
 #define NS_CURRENT_THRESHOLD_POSTURE_MODEL_VERSION "2.2"
 
 class ns_analyzed_image_time_path;
-struct ns_hmm_emission {
-	ns_hmm_emission() :genotype(0),region_name(0),device_name(0),experiment_id(0) {}
-	ns_analyzed_image_time_path_element_measurements measurement;
+template<class data_t>
+struct ns_hmm_labeled_data {
+	ns_hmm_labeled_data() :genotype(0),region_name(0),device_name(0),experiment_id(0) {}
+	data_t measurement;
 	ns_stationary_path_id path_id;
 	ns_64_bit region_info_id;
 	ns_64_bit experiment_id;
@@ -28,6 +29,9 @@ struct ns_hmm_emission {
 	/*NOT USED IN TRAINING...only for debugging and data visualization*/
 	unsigned long emission_time; 
 };
+typedef ns_hmm_labeled_data< ns_analyzed_image_time_path_element_measurements> ns_hmm_emission;
+typedef ns_hmm_labeled_data< double > ns_hmm_duration;
+
 struct ns_hmm_emission_normalization_stats {
 	ns_analyzed_image_time_path_element_measurements path_mean, path_variance;
 	ns_death_time_annotation source;
@@ -42,9 +46,12 @@ class ns_hmm_observation_set {
 public:
 	ns_hmm_observation_set() :volatile_number_of_individuals_fully_annotated(0), volatile_number_of_individuals_observed(0) {}
 	typedef std::map<ns_hmm_movement_state, std::vector<ns_hmm_emission> > ns_hmm_observed_values_list;
+	typedef std::map<ns_hmm_state_transition, std::vector<ns_hmm_duration> > ns_hmm_state_duration_list;
 	ns_hmm_observed_values_list obs;
-	void read(std::istream& in);
-	void write(std::ostream& out, const std::string& experiment_name = "") const; 
+	ns_hmm_state_duration_list state_durations;
+	void read_emissions(std::istream& in);
+	void write_emissions(std::ostream& out, const std::string& experiment_name = "") const;
+	void write_durations(std::ostream& out, const std::string& experiment_name = "") const;
 	bool add_observation(const std::string& software_version, const ns_death_time_annotation& properties, const ns_analyzed_image_time_path* path, const std::string* database_name, const ns_64_bit& experiment_id, const std::string* plate_name, const std::string* device_name, const std::string * genotype);
 	void clean_up_data_prior_to_model_fitting();
 	std::map<ns_stationary_path_id, ns_hmm_emission_normalization_stats > normalization_stats;

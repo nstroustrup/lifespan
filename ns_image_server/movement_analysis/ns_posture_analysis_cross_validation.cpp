@@ -635,8 +635,23 @@ void ns_run_hmm_cross_validation(std::string& results_summary, ns_image_server_r
 			ns_select_database_for_scope db("", sql);
 			if (!sub.database_name.empty())
 				db.select(sub.database_name);
+			ns_acquire_for_scope<ns_ostream> all_observations(image_server.results_storage.time_path_image_analysis_quantification(sub, std::string("hmm_dur=") + p->first, true, sql).output());
+			p->second.observations->write_emissions(all_observations()(), sub.experiment_name);
+			all_observations.release();
+		}
+	}
+	if (1) {
+		std::cout << "Writing state duration data to disk...\n";
+		//for each type of plate, build an estimator from the observations collected.
+		for (auto p = models_to_fit.begin(); p != models_to_fit.end(); p++) {
+			std::cout << ns_to_string_short((100.0 * estimators_compiled) / models_to_fit.size(), 2) << "%...";
+			estimators_compiled++;
+			//all estimator types share the same input data--we don't need to write multiple times.
+			ns_select_database_for_scope db("", sql);
+			if (!sub.database_name.empty())
+				db.select(sub.database_name);
 			ns_acquire_for_scope<ns_ostream> all_observations(image_server.results_storage.time_path_image_analysis_quantification(sub, std::string("hmm_obs=") + p->first, true, sql).output());
-			p->second.observations->write(all_observations()(), sub.experiment_name);
+			p->second.observations->write_durations(all_observations()(), sub.experiment_name);
 			all_observations.release();
 		}
 	}

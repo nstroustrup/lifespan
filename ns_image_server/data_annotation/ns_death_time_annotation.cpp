@@ -341,16 +341,16 @@ std::string ns_hmm_movement_state_to_string(const ns_hmm_movement_state & t) {
 	default: throw ns_ex("ns_hmm_movement_state_to_string():Unknown hmm movement state");
 	}
 }
- ns_hmm_movement_state ns_hmm_movement_state_from_string(const std::string & s) {
+ns_hmm_movement_state ns_hmm_movement_state_from_string_nothrow(const std::string& s) {
 	if (s == "moving vigorously")
-		 return ns_hmm_moving_vigorously;
+		return ns_hmm_moving_vigorously;
 	if (s == "missing")
 		return ns_hmm_missing;
 	if (s == "moving weakly")
-		return ns_hmm_moving_weakly ;
+		return ns_hmm_moving_weakly;
 	if (s == "moving weakly; expanding")
 		return ns_hmm_moving_weakly_expanding;
-	if (s == "moving weakly; post expansion" )
+	if (s == "moving weakly; post expansion")
 		return ns_hmm_moving_weakly_post_expansion;
 	if (s == "not moving; alive")
 		return ns_hmm_not_moving_alive;
@@ -362,8 +362,30 @@ std::string ns_hmm_movement_state_to_string(const ns_hmm_movement_state & t) {
 		return ns_hmm_contracting_post_expansion;
 	if (s == "unknown")
 		return ns_hmm_unknown_state;
+	return ns_number_of_state_types;
 	throw ns_ex("ns_hmm_movement_state_from_string():Unknown state ") << s;
 }
+bool ns_string_is_a_state_not_a_transition(std::string & s){
+	return (ns_hmm_movement_state_from_string_nothrow(s) != ns_number_of_state_types);
+}
+ ns_hmm_movement_state ns_hmm_movement_state_from_string(const std::string & s) {
+	ns_hmm_movement_state ss = ns_hmm_movement_state_from_string_nothrow(s);
+	if (ss == ns_number_of_state_types)
+		throw ns_ex("ns_hmm_movement_state_from_string():Unknown state ") << s;
+	return ss;
+}
+ std::string& ns_hmm_state_transition_to_string(const ns_hmm_state_transition & s) {
+	 return ns_hmm_movement_state_to_string(s.first) + "->" + ns_hmm_movement_state_to_string(s.second);
+ }
+ ns_hmm_state_transition ns_hmm_state_transition_from_string(const std::string& s) {
+	 auto p = s.find("->");
+	 if (p == s.npos)
+		 throw ns_ex("Could not parse state transition: ") << s;
+	 ns_hmm_state_transition trans;
+	 trans.first = ns_hmm_movement_state_from_string(s.substr(0, p));
+	 trans.second = ns_hmm_movement_state_from_string(s.substr(p+2,s.npos));
+	 return trans;
+ }
 
 bool ns_movement_event_is_a_state_transition_event(const ns_movement_event & t){
 	switch(t){

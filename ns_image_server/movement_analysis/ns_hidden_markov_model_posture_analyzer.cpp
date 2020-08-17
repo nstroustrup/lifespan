@@ -965,7 +965,7 @@ void ns_hmm_observation_set::write_emissions(std::ostream & out, const std::stri
 }
 
 void ns_hmm_observation_set::write_durations(std::ostream& out, const std::string& experiment_name) const {
-	out << "device_name,region_name,detection_set_id,group_id,path_id,data_type,time,hmm_movement_state_source,hmm_movement_state_destination";
+	out << "device_name,region_name,detection_set_id,group_id,path_id,data_type,time,hmm_movement_state_source,hmm_movement_state_destination,duration";
 	out << "\n";
 	//first write normalization stats
 	out.precision(30);
@@ -983,30 +983,6 @@ void ns_hmm_observation_set::write_durations(std::ostream& out, const std::strin
 				<< p->second[i].measurement;
 			out << "\n";
 		}
-	}
-	for (std::map<ns_stationary_path_id, ns_hmm_emission_normalization_stats >::const_iterator p = normalization_stats.begin(); p != normalization_stats.end(); p++) {
-		out << *(p->second.device_name) << ","
-			<< *(p->second.region_name) << ","
-			<< p->first.detection_set_id << ","
-			<< p->first.group_id << ","
-			<< p->first.path_id << ",";
-		out << "m,0,all,";
-		p->second.path_mean.write(out, ns_vector_2d(0, 0), false);
-		out << "\n";
-		out << *(p->second.device_name) << ","
-			<< *(p->second.region_name) << ","
-			<< p->first.detection_set_id << ","
-			<< p->first.group_id << ","
-			<< p->first.path_id << ",";
-		out << "v,0,all";
-		p->second.path_variance.write(out, ns_vector_2d(0, 0), false);
-		out << "\n";
-		out << *(p->second.device_name) << ","
-			<< *(p->second.region_name) << ","
-			<< p->first.detection_set_id << ","
-			<< p->first.group_id << ","
-			<< p->first.path_id << ",";
-		out << "a,0,all," << p->second.source.to_string() << "\n";
 	}
 }
 

@@ -652,7 +652,7 @@ void ns_run_hmm_cross_validation(std::string& results_summary, ns_image_server_r
 			ns_select_database_for_scope db("", sql);
 			if (!sub.database_name.empty())
 				db.select(sub.database_name);
-			ns_acquire_for_scope<ns_ostream> all_observations(image_server.results_storage.time_path_image_analysis_quantification(sub, std::string("hmm_obs=") + p->first, true, sql).output());
+			ns_acquire_for_scope<ns_ostream> all_observations(image_server.results_storage.time_path_image_analysis_quantification(sub, std::string("hmm_dur=") + p->first, true, sql).output());
 			p->second.observations->write_durations(all_observations()(), sub.experiment_name);
 			all_observations.release();
 		}

@@ -165,17 +165,15 @@ struct ns_covarying_gaussian_dimension {
 template<class ns_measurement_accessor>
 bool operator==(const ns_covarying_gaussian_dimension< ns_measurement_accessor >& a, const ns_covarying_gaussian_dimension< ns_measurement_accessor >& b);
 
-template<class measurement_accessor_t>
-class ns_emission_probability_model;
 
 template<class measurement_accessor_t>
-class ns_emission_probability_model_organizer {
+class ns_hmm_probability_model_organizer {
 public:
 	virtual ns_covarying_gaussian_dimension< measurement_accessor_t > create_dimension(const std::string& d) const = 0;
 };
 
 template<class measurement_accessor_t>
-class ns_emission_probability_model {
+class ns_hmm_probability_model {
 public:
 	virtual void build_from_data(const std::vector<const std::vector<typename measurement_accessor_t::data_t>* >& observations) = 0;
 	virtual double point_emission_log_probability(const typename measurement_accessor_t::data_t & e) const = 0;
@@ -187,14 +185,15 @@ public:
 	virtual unsigned long number_of_sub_probabilities() const = 0;
 	virtual void write_header(std::ostream& o) = 0;
 	virtual void write(const std::string & state, const std::string& version, int extra_data, std::ostream& o) const = 0;
-	virtual void read_dimension(const unsigned int dim, std::vector<double>& weights, std::vector<double>& means, std::vector<double>& vars, std::istream& in) = 0;
-	virtual bool read(std::istream& i, std::string & state, std::string& software_version, int& extra_data, const ns_emission_probability_model_organizer<measurement_accessor_t>* organizer) = 0;
-	virtual ns_emission_probability_model< measurement_accessor_t> * clone() const =0 ;
-	virtual bool equals(const ns_emission_probability_model*) const = 0;
+	//virtual void read_dimension(const unsigned int dim, std::vector<double>& weights, std::vector<double>& means, std::vector<double>& vars, std::istream& in) = 0;
+	virtual bool read(std::istream& i, std::string & state, std::string& software_version, int& extra_data, const ns_hmm_probability_model_organizer<measurement_accessor_t>* organizer) = 0;
+	virtual ns_hmm_probability_model< measurement_accessor_t> * clone() const =0 ;
+
+	virtual bool equals(const ns_hmm_probability_model<measurement_accessor_t>* p) const = 0;
 };
 
 template<class measurement_accessor_t>
-class ns_emission_probabiliy_gaussian_diagonal_covariance_model : public ns_emission_probability_model<measurement_accessor_t>{
+class ns_emission_probabiliy_gaussian_diagonal_covariance_model : public ns_hmm_probability_model<measurement_accessor_t>{
 	unsigned long number_of_dimensions, number_of_gaussians;
 	enum { ns_max_dimensions  = 8};
 public:
@@ -209,7 +208,7 @@ public:
 		gmm->Copy(s.gmm);
 	}
 	~ns_emission_probabiliy_gaussian_diagonal_covariance_model<measurement_accessor_t>() { ns_safe_delete(gmm); }
-	ns_emission_probability_model< measurement_accessor_t>* clone() const {
+	ns_hmm_probability_model< measurement_accessor_t>* clone() const {
 		return new ns_emission_probabiliy_gaussian_diagonal_covariance_model<measurement_accessor_t>(*this);
 	}
 	void setup_gmm(int number_of_dimensions_, int number_of_gaussians_, bool overwrite = false) {
@@ -394,7 +393,7 @@ public:
 		}
 	}
 
-	bool read(std::istream& i, std::string & state, std::string& software_version, int& extra_data, const ns_emission_probability_model_organizer<measurement_accessor_t> * organizer) {
+	bool read(std::istream& i, std::string & state, std::string& software_version, int& extra_data, const ns_hmm_probability_model_organizer<measurement_accessor_t> * organizer) {
 
 		ns_get_string get_string;
 		ns_get_int get_int;
@@ -503,9 +502,8 @@ public:
 		}
 
 	}
-	virtual bool equals(const ns_emission_probability_model<measurement_accessor_t>* a) const {
-		const ns_emission_probabiliy_gaussian_diagonal_covariance_model<measurement_accessor_t>* p =
-			static_cast<const ns_emission_probabiliy_gaussian_diagonal_covariance_model<measurement_accessor_t> * >(a);
+	bool equals(const ns_hmm_probability_model<measurement_accessor_t>* a) const {
+		auto p = static_cast<const ns_emission_probabiliy_gaussian_diagonal_covariance_model<measurement_accessor_t>*>(a);
 		if (!(*this->gmm == *p->gmm)) {
 			std::cerr << "GMMS aren't equal\n";
 			write_gmm(this->gmm);
@@ -522,6 +520,183 @@ public:
 				return false;
 			}
 		return true;
+	}
+	template<class T>
+	friend class ns_state_transition_probability_model;
+};
+template<class measurement_accessor_t>
+class ns_state_transition_probability_model : public ns_hmm_probability_model<measurement_accessor_t> {
+	//timescale of fitted exponential
+	double lambda;
+public:
+	ns_state_transition_probability_model<measurement_accessor_t>() : lambda(0) {}
+
+	ns_state_transition_probability_model<measurement_accessor_t>(const ns_state_transition_probability_model<measurement_accessor_t>& s) {
+		lambda = s.lambda;
+	}
+	~ns_state_transition_probability_model<measurement_accessor_t>() { }
+	ns_hmm_probability_model< measurement_accessor_t>* clone() const {
+		return new ns_state_transition_probability_model<measurement_accessor_t>(*this);
+	}
+	static std::vector<double> training_data_buffer;
+	static ns_lock training_data_buffer_lock;
+
+	void build_from_data(const std::vector<const std::vector<typename measurement_accessor_t::data_t>* >& observations) {
+		
+		unsigned long N(0);
+		for (unsigned int i = 0; i < observations.size(); i++)
+			N += observations[i]->size();
+
+		ns_acquire_lock_for_scope lock(training_data_buffer_lock, __FILE__, __LINE__);
+		training_data_buffer.resize(N);
+		N = 0;
+		measurement_accessor_t m;
+		for (unsigned long i = 0; i < observations.size(); i++) {
+			for (unsigned int j = 0; j < observations[i]->size(); j++) {
+				bool valid_data_point;
+				const double val = m((*observations[i])[j], valid_data_point);
+				if (valid_data_point) {
+					if (!std::isfinite(val))
+						throw ns_ex("Invalid training data: ") << val << ": observations[" << i << "][" << j << "]\n";
+					training_data_buffer[N] = val;
+					N++;
+				}
+			}
+		}
+		training_data_buffer.resize(N);
+		std::sort(training_data_buffer.begin(), training_data_buffer.end());
+		double median;
+		if (N % 2 == 0) {
+			median = training_data_buffer[N / 2];
+		}
+		else {
+			const std::size_t p = N / 2;
+			median = .5 * (training_data_buffer[p] + training_data_buffer[p + 1]);
+		}
+
+		//median of exponential distribution is log(2)/sigma
+		//so, lambda  = log(2)/median
+		lambda = log(2) / median;
+	}
+	//the pdf values are proportional to the probability of observing a range of values within a small dt of an observation.
+	//so as long as we are always comparing observations at the same t, we can multiply these together.
+	//So we can use them for viterbi algorithm 
+	double point_emission_log_probability(const typename measurement_accessor_t::data_t& e) const {
+		bool valid_point;
+		measurement_accessor_t m;
+		const double d = m(e, valid_point);
+		//pdf  = lambda * exp(-lambda * d)
+		//cdf = 1-exp(-lambda*d)
+		//liklihood = 1 - (1-exp(-lambda*d))
+		return log(exp(-lambda*d));
+	}
+
+	double point_emission_likelihood(const typename measurement_accessor_t::data_t& e) const {
+		return point_emission_log_probability(e);
+	}
+
+	void log_sub_probabilities(const typename measurement_accessor_t::data_t& m, std::vector<double>& measurements, std::vector<double>& probabilities) const {
+		measurements.resize(1);
+		probabilities.resize(1);
+
+		bool valid_point;
+		measurement_accessor_t accessor ;
+		const double d = accessor(m, valid_point);
+
+		measurements[0] = d;
+		probabilities[0] = point_emission_log_probability(m);
+	}
+	void sub_probability_names(std::vector<std::string>& names) const {
+		names.resize(1);
+		names[0] = "dur";
+
+	}
+	unsigned long number_of_sub_probabilities() const {
+		return 1;
+	}
+	//keep compatibility with GMM model file format
+	void write_header(std::ostream& o) {
+		o << "Version,Permissions,Movement State,Number of Dimensions ,Number of Gaussians, Dimension Name";
+		o << ",Weight , Lambda ,Empty";
+	}
+	//keep compatibility with GMM model file format
+	void write(const std::string& state, const std::string& version, int extra_data, std::ostream& o) const {
+		o.precision(30);
+		o << version << "," << extra_data << "," << state << "," << 1 << "," << 1 << "," << "dur";
+		o << "1," << lambda << ",0\n";
+	}
+	//allows exponential models to be read from a file.  But this is rarely used 
+	//as model data is usually stored along with gmm models, and read in using the gmm model code and then
+	//converted later.
+	bool read(std::istream& i, std::string& state, std::string& software_version, int& extra_data, const ns_hmm_probability_model_organizer<measurement_accessor_t>* organizer) {
+
+		ns_get_string get_string;
+		ns_get_int get_int;
+		ns_get_double get_double;
+		std::string tmp, state_temp;
+		std::string dimension_name;
+		int file_number_of_dimensions(-1), file_number_of_gaussians(-1);
+		int tmp_int;
+		int r = 0;
+		
+		software_version = "";
+		extra_data = 0;
+		state = "";
+		if (i.fail())
+			return false;
+		while (!i.fail()) {
+			get_string(i, tmp);
+			if (i.fail()) {
+				if (r == 0) {
+					return false;
+				}
+				else
+					break;
+			}
+			if (tmp == "") {
+				if (software_version == "")
+					throw ns_ex("ns_emission_probabiliy_model()::Warning: no software version specified in model.");
+				else break;
+			}
+			else if (software_version == "")
+				software_version = tmp;
+			else if (software_version != tmp)
+				throw ns_ex("ns_emission_probabiliy_model()::Mixed versions in model file");
+			get_string(i, tmp);
+			extra_data = atoi(tmp.c_str());
+			get_string(i, state_temp);
+			//all information for each state should be written to files in contiguous lines
+			if (r != 0 && state_temp != state)
+				throw ns_ex("ns_emission_probabiliy_model::read()::Mixed up order of emission probability model!");
+			state = state_temp;
+
+			get_int(i, file_number_of_dimensions);
+			get_int(i, file_number_of_gaussians);
+			if (file_number_of_gaussians != 1 || file_number_of_dimensions != 1)
+				throw ns_ex("Invalid exponential state transition model.");
+			
+			get_string(i, dimension_name);
+			if (i.fail())
+				throw ns_ex("ns_emission_probabiliy_model::read()::Bad model file");
+			get_string(i, tmp); //not used but retained for compatibility with gmm model
+			get_double(i, lambda);
+			get_string(i, tmp); //not used but retained for compatibility with gmm model
+			break;
+		}
+
+		return true;
+	}
+
+	template<class T>
+	void convert_from_gmm_file_format(const ns_emission_probabiliy_gaussian_diagonal_covariance_model<T>& a) {
+		if (a.gmm->GetDimNum() != 1 || a.gmm->GetMixNum() != 1)
+			throw ns_ex("Trying to convert invalid GMM model to exponential state transition model.");
+		lambda = *a.gmm->Mean(0);
+	}
+	bool equals(const ns_hmm_probability_model<measurement_accessor_t>* a) const {
+
+		auto p = static_cast<const ns_state_transition_probability_model<measurement_accessor_t>*>(a);
+		return lambda == p->lambda;
 	}
 };
 

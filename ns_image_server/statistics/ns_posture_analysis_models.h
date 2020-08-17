@@ -72,7 +72,8 @@ public:
 	bool build_estimator_from_observations(const ns_hmm_observation_set & observation_set, const ns_probability_model_generator* generator,const ns_hmm_states_permitted& states_permitted_,std::string & output);
 
 	void log_probability_for_each_state(const ns_analyzed_image_time_path_element_measurements & e,std::vector<double> & p) const;
-	
+	//probabiliy of a worm transitioning from the start to the finish state after duration seconds.
+	double log_transition_probability(const ns_hmm_movement_state& start, const ns_hmm_movement_state& finish, const unsigned long duration_in_seconds);
 	void read(std::istream & i);
 	void write(std::ostream & o)const;
 	static ns_emperical_posture_quantification_value_estimator dummy();

@@ -743,6 +743,13 @@ double* ns_emission_probabiliy_gaussian_diagonal_covariance_model<measurement_ac
 template<class measurement_accessor_t>
 ns_lock ns_emission_probabiliy_gaussian_diagonal_covariance_model<measurement_accessor_t>::training_data_buffer_lock("tbl");
 
+
+template<class measurement_accessor_t>
+std::vector<double> ns_state_transition_probability_model<measurement_accessor_t>::training_data_buffer;
+
+template<class measurement_accessor_t>
+ns_lock ns_state_transition_probability_model<measurement_accessor_t>::training_data_buffer_lock("tbl2");
+
 template<class ns_movement_accessor_t>
 bool operator==(const ns_covarying_gaussian_dimension< ns_movement_accessor_t >& a, const ns_covarying_gaussian_dimension< ns_movement_accessor_t >& b) {
 	return a.name == b.name;
@@ -866,6 +873,15 @@ void ns_emperical_posture_quantification_value_estimator::defined_states(std::se
 		s.emplace(p->first);
 }
 
+
+double ns_emperical_posture_quantification_value_estimator::log_transition_probability(const ns_hmm_movement_state& start, const ns_hmm_movement_state& finish, const unsigned long duration_in_seconds) {
+	auto p = emission_probability_models->state_transition_models.find(ns_hmm_state_transition(start, finish));
+	if (p == emission_probability_models->state_transition_models.end())
+		throw ns_ex("Undefined transition");
+	ns_hmm_labeled_data<double> d;
+	d.measurement = duration_in_seconds;
+	return p->second->point_emission_log_probability(d);
+}
 void ns_emperical_posture_quantification_value_estimator::log_probability_for_each_state(const ns_analyzed_image_time_path_element_measurements & e, std::vector<double> & d) const {
 	d.resize(0);
 	d.resize((int)ns_hmm_unknown_state,-INFINITY);
@@ -999,18 +1015,18 @@ ns_emperical_posture_quantification_value_estimator::ns_emperical_posture_quanti
 ns_emperical_posture_quantification_value_estimator::ns_emperical_posture_quantification_value_estimator(const ns_emperical_posture_quantification_value_estimator& a) {
 	emission_probability_models = new ns_probability_model_holder;
 	for (auto p = a.emission_probability_models->state_emission_models.begin(); p != a.emission_probability_models->state_emission_models.end(); p++)
-		emission_probability_models->state_emission_models.insert(emission_probability_models->state_emission_models.begin(), std::map<ns_hmm_movement_state, ns_emission_probability_model<ns_measurement_accessor>*>::value_type(p->first, p->second->clone()));
+		emission_probability_models->state_emission_models.insert(emission_probability_models->state_emission_models.begin(), std::map<ns_hmm_movement_state, ns_hmm_probability_model<ns_measurement_accessor>*>::value_type(p->first, p->second->clone()));
 	for (auto p = a.emission_probability_models->state_transition_models.begin(); p != a.emission_probability_models->state_transition_models.end(); p++)
-		emission_probability_models->state_transition_models.insert(emission_probability_models->state_transition_models.begin(), std::map<ns_hmm_state_transition, ns_emission_probability_model<ns_duration_accessor>*>::value_type(p->first, p->second->clone()));
+		emission_probability_models->state_transition_models.insert(emission_probability_models->state_transition_models.begin(), std::map<ns_hmm_state_transition, ns_hmm_probability_model<ns_duration_accessor>*>::value_type(p->first, p->second->clone()));
 
 }
 ns_emperical_posture_quantification_value_estimator& ns_emperical_posture_quantification_value_estimator::operator=(const ns_emperical_posture_quantification_value_estimator& a) {
 	this->emission_probability_models->state_emission_models.clear();
 	this->emission_probability_models->state_transition_models.clear();
 	for (auto p = a.emission_probability_models->state_emission_models.begin(); p != a.emission_probability_models->state_emission_models.end(); p++)
-		emission_probability_models->state_emission_models.insert(emission_probability_models->state_emission_models.begin(), std::map<ns_hmm_movement_state, ns_emission_probability_model<ns_measurement_accessor>*>::value_type(p->first, p->second->clone()));
+		emission_probability_models->state_emission_models.insert(emission_probability_models->state_emission_models.begin(), std::map<ns_hmm_movement_state, ns_hmm_probability_model<ns_measurement_accessor>*>::value_type(p->first, p->second->clone()));
 	for (auto p = a.emission_probability_models->state_transition_models.begin(); p != a.emission_probability_models->state_transition_models.end(); p++)
-		emission_probability_models->state_transition_models.insert(emission_probability_models->state_transition_models.begin(), std::map<ns_hmm_state_transition, ns_emission_probability_model<ns_duration_accessor>*>::value_type(p->first, p->second->clone()));
+		emission_probability_models->state_transition_models.insert(emission_probability_models->state_transition_models.begin(), std::map<ns_hmm_state_transition, ns_hmm_probability_model<ns_duration_accessor>*>::value_type(p->first, p->second->clone()));
 	return *this;
 }
 
@@ -1048,15 +1064,13 @@ void ns_emperical_posture_quantification_value_estimator::read(std::istream & i)
 				auto p2 = emission_probability_models->state_emission_models.find(state);
 				if (p2 == emission_probability_models->state_emission_models.end())
 					p2 = emission_probability_models->state_emission_models.insert(emission_probability_models->state_emission_models.end(),
-						std::map < ns_hmm_movement_state, ns_emission_probability_model<ns_measurement_accessor>*>::value_type(state, model));
-
+						std::map < ns_hmm_movement_state, ns_hmm_probability_model<ns_measurement_accessor>*>::value_type(state, model));
+				else throw ns_ex("Duplicae state emission model found in file: ") << state_string;
 			}
 			else {
 				//copy gmm data into the appropriate structure
-				ns_emission_probabiliy_gaussian_diagonal_covariance_model< ns_duration_accessor >* trans_model
-					= new ns_emission_probabiliy_gaussian_diagonal_covariance_model< ns_duration_accessor >;
-				trans_model->gmm = model->gmm;
-				model->gmm = 0;
+				auto trans_model = new ns_state_transition_probability_model<ns_duration_accessor>;
+				trans_model->convert_from_gmm_file_format(*model);
 				delete model;
 				model = 0;
 
@@ -1064,7 +1078,8 @@ void ns_emperical_posture_quantification_value_estimator::read(std::istream & i)
 				auto p2 = emission_probability_models->state_transition_models.find(trans);
 				if (p2 == emission_probability_models->state_transition_models.end())
 					p2 = emission_probability_models->state_transition_models.insert(emission_probability_models->state_transition_models.end(),
-						std::map < ns_hmm_state_transition, ns_emission_probability_model<ns_duration_accessor>*>::value_type(trans, trans_model));
+						std::map < ns_hmm_state_transition, ns_hmm_probability_model<ns_duration_accessor>*>::value_type(trans, trans_model));
+				else throw ns_ex("Duplicate state transition found in file: ") << state_string;
 			}
 		}
 		catch (...) {
@@ -1205,7 +1220,7 @@ bool ns_emperical_posture_quantification_value_estimator::build_estimator_from_o
 		auto p2 = emission_probability_models->state_emission_models.find(q->first);
 		if (p2 == emission_probability_models->state_emission_models.end()) {
 			p2 = emission_probability_models->state_emission_models.insert(emission_probability_models->state_emission_models.end(),
-				std::map < ns_hmm_movement_state, ns_emission_probability_model<ns_measurement_accessor>*>::value_type(q->first, 0));
+				std::map < ns_hmm_movement_state, ns_hmm_probability_model<ns_measurement_accessor>*>::value_type(q->first, 0));
 			p2->second = (*generator)();
 		}
 
@@ -1216,7 +1231,7 @@ bool ns_emperical_posture_quantification_value_estimator::build_estimator_from_o
 		auto p2 = emission_probability_models->state_transition_models.find(q->first);
 		if (p2 == emission_probability_models->state_transition_models.end()) {
 			p2 = emission_probability_models->state_transition_models.insert(emission_probability_models->state_transition_models.end(),
-				std::map < ns_hmm_state_transition, ns_emission_probability_model<ns_duration_accessor>*>::value_type(q->first, 0));
+				std::map < ns_hmm_state_transition, ns_hmm_probability_model<ns_duration_accessor>*>::value_type(q->first, 0));
 			auto model = new ns_emission_probabiliy_gaussian_diagonal_covariance_model<ns_duration_accessor>;
 			p2->second = model;
 			model->dimensions.insert(model->dimensions.end(), ns_covarying_gaussian_dimension<ns_duration_accessor>(new ns_duration_accessor, "d"));
@@ -1365,6 +1380,12 @@ bool ns_hmm_observation_set::add_observation(const std::string& software_version
 				e.experiment_id = experiment_id;
 				e.genotype = genotype_;
 				e.measurement = path->element(i).absolute_time - previous_state_start;
+
+				//keep a list of how long animals stayed within a state before transitioning to any other state
+				std::vector<ns_hmm_duration>& self_v(state_durations[std::pair<ns_hmm_movement_state, ns_hmm_movement_state>(previous_state, previous_state)]);
+				self_v.resize(self_v.size() + 1);
+				ns_hmm_duration& self_e = *self_v.rbegin();
+				self_e = e;
 
 				previous_state_start = path->element(i).absolute_time;
 				previous_state = by_hand_movement_state;

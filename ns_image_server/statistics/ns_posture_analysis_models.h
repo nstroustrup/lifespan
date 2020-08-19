@@ -65,7 +65,7 @@ class ns_probability_model_generator;
 class ns_emperical_posture_quantification_value_estimator{
 public:
 
-	typedef enum { ns_static, ns_empirical,ns_empirical_without_weights } ns_hmm_states_transition_types;
+	typedef enum { ns_static, ns_static_mod,ns_empirical,ns_empirical_without_weights } ns_hmm_states_transition_types;
 	static std::string state_permissions_to_string(const ns_hmm_states_permitted& s);
 	static ns_hmm_states_permitted state_permissions_from_string(const std::string & s);
 	~ns_emperical_posture_quantification_value_estimator();

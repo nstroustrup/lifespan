@@ -495,6 +495,8 @@ struct ns_hmm_cross_validation_manager {
 				switch (validation_spec->state_transition_type) {
 				case ns_model_building_specification::ns_static:
 					transition_type = ns_emperical_posture_quantification_value_estimator::ns_static; break;
+				case ns_model_building_specification::ns_static_mod:
+					transition_type = ns_emperical_posture_quantification_value_estimator::ns_static_mod; break;
 				case ns_model_building_specification::ns_empirical:
 						transition_type = ns_emperical_posture_quantification_value_estimator::ns_empirical; break;
 				case ns_model_building_specification::ns_empirical_without_weights:

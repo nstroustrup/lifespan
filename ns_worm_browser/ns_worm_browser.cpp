@@ -2061,6 +2061,13 @@ void ns_set_up_hmm_model_specs_to_test(std::vector<ns_model_building_specificati
 	strict_spec.name = "strict_4D";
 	s.push_back(strict_spec);
 
+	ns_model_building_specification strict_spec_mod;
+	strict_spec_mod.cross_replicate_estimator_type = ns_model_building_specification::ns_strict_ordering;
+	strict_spec_mod.model_features_to_use = flexible_spec.model_features_to_use;
+	strict_spec_mod.state_transition_type = ns_model_building_specification::ns_static_mod;
+	strict_spec_mod.name = "strict_4D_static_mod";
+	s.push_back(strict_spec_mod);
+
 	ns_model_building_specification strict_empiric_state_spec;
 	strict_empiric_state_spec.cross_replicate_estimator_type = ns_model_building_specification::ns_strict_ordering;
 	strict_empiric_state_spec.model_features_to_use = flexible_spec.model_features_to_use;

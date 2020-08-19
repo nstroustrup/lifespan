@@ -8,11 +8,13 @@ typedef enum { ns_lifespan, ns_thermotolerance, ns_quiecent, ns_v2 } ns_paramete
 struct ns_model_building_specification{
 
 	typedef enum { ns_standard, ns_strict_ordering, ns_simultaneous_movement_cessation_and_expansion } ns_cross_replicate_estimator_type;
-	typedef enum { ns_static, ns_empirical,ns_empirical_without_weights} ns_state_transition_type;
+	typedef enum { ns_static, ns_static_mod,ns_empirical,ns_empirical_without_weights} ns_state_transition_type;
 	static std::string state_transition_type_to_string(const ns_state_transition_type& e) {
 		switch (e) {
 		case ns_static:
 			return "static";
+		case ns_static_mod:
+			return "static_mod";
 		case ns_empirical:
 			return "empirical";
 		case ns_empirical_without_weights:

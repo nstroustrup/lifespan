@@ -564,7 +564,7 @@ void ns_emperical_posture_quantification_value_estimator::state_transition_log_p
 				log_prob[i][j] = weight_matrix[i][j];
 		}
 	}
-	if (state_transition_type == ns_static)
+	if (state_transition_type == ns_static || state_transition_type == ns_static_mod)
 		return;
 
 	for (auto p = emission_probability_models->state_transition_models.begin(); p != emission_probability_models->state_transition_models.end(); p++) {
@@ -592,7 +592,13 @@ void ns_hmm_solver::build_state_transition_weight_matrix(const ns_emperical_post
 	for (unsigned int i = 0; i < (int)ns_hmm_unknown_state; i++) {
 		m[i].resize(0);
 		m[i].resize((int)ns_hmm_unknown_state, 0);
-		m[i][i] = 1;	
+		switch (estimator.states_transitions()) {
+		case ns_emperical_posture_quantification_value_estimator::ns_static:
+			m[i][i] = 1000;	break;
+		case ns_emperical_posture_quantification_value_estimator::ns_static_mod:
+			m[i][i] = 1;	break;
+		default: m[i][i] = 1; break;
+		}
 	}
 
 	std::set<ns_hmm_movement_state> defined_states;

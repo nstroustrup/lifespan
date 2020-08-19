@@ -1329,6 +1329,8 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 		else {
 			if (subject[0].flag == "device")
 				translated_flag = ns_worm_learner::ns_device;
+			else if (subject[0].subject.region_id != 0)
+				translated_flag = ns_worm_learner::ns_plate;
 			else translated_flag = ns_worm_learner::ns_whole_experiment;
 		}
 			

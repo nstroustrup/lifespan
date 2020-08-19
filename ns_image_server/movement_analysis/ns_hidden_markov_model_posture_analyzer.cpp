@@ -1088,16 +1088,22 @@ void ns_emperical_posture_quantification_value_estimator::read(std::istream & i)
 			else {
 				//copy gmm data into the appropriate structure
 				auto trans_model = new ns_state_transition_probability_model<ns_duration_accessor>;
-				trans_model->convert_from_gmm_file_format(*model);
-				delete model;
-				model = 0;
+				try {
+					trans_model->convert_from_gmm_file_format(*model);
+					delete model;
+					model = 0;
 
-				ns_hmm_state_transition trans = ns_hmm_state_transition_from_string(state_string);
-				auto p2 = emission_probability_models->state_transition_models.find(trans);
-				if (p2 == emission_probability_models->state_transition_models.end())
-					p2 = emission_probability_models->state_transition_models.insert(emission_probability_models->state_transition_models.end(),
-						std::map < ns_hmm_state_transition, ns_hmm_probability_model<ns_duration_accessor>*>::value_type(trans, trans_model));
-				else throw ns_ex("Duplicate state transition found in file: ") << state_string;
+					ns_hmm_state_transition trans = ns_hmm_state_transition_from_string(state_string);
+					auto p2 = emission_probability_models->state_transition_models.find(trans);
+					if (p2 == emission_probability_models->state_transition_models.end())
+						p2 = emission_probability_models->state_transition_models.insert(emission_probability_models->state_transition_models.end(),
+							std::map < ns_hmm_state_transition, ns_hmm_probability_model<ns_duration_accessor>*>::value_type(trans, trans_model));
+					else throw ns_ex("Duplicate state transition found in file: ") << state_string;
+				}
+				catch (...) {
+					delete trans_model;
+					throw;
+				}
 			}
 		}
 		catch (...) {
@@ -1250,16 +1256,13 @@ bool ns_emperical_posture_quantification_value_estimator::build_estimator_from_o
 		if (p2 == emission_probability_models->state_transition_models.end()) {
 			p2 = emission_probability_models->state_transition_models.insert(emission_probability_models->state_transition_models.end(),
 				std::map < ns_hmm_state_transition, ns_hmm_probability_model<ns_duration_accessor>*>::value_type(q->first, 0));
-			auto model = new ns_emission_probabiliy_gaussian_diagonal_covariance_model<ns_duration_accessor>;
+			auto model = new ns_state_transition_probability_model<ns_duration_accessor>;
 			p2->second = model;
-			model->dimensions.insert(model->dimensions.end(), ns_covarying_gaussian_dimension<ns_duration_accessor>(new ns_duration_accessor, "d"));
-			model->setup_gmm(1, 2);
 		}
 		std::vector<const std::vector<ns_hmm_duration>* > data(1);
 		data[0] = &q->second;
 		p2->second->build_from_data(data, observation_set.volatile_number_of_individuals_fully_annotated);
 	}
-
 	std::vector<ns_hmm_movement_state> required_states;
 	required_states.reserve(3);
 	required_states.push_back(ns_hmm_missing);
@@ -1286,6 +1289,7 @@ bool ns_emperical_posture_quantification_value_estimator::build_estimator_from_o
 			//	output += "Warning: No annotations were made for state " + ns_hmm_movement_state_to_string((ns_hmm_movement_state)i) + ".  It will not be considered in the model.\n";
 		}
 	}
+
 	if (states_permitted_ != ns_no_expansion_nor_contraction &&
 		states_permitted_ != ns_require_movement_expansion_synchronicity &&
 		state_counts[ns_hmm_not_moving_expanding] >= minimum_number_of_observations && state_counts[ns_hmm_not_moving_alive] < minimum_number_of_observations)
@@ -1309,8 +1313,14 @@ bool ns_emperical_posture_quantification_value_estimator::build_estimator_from_o
 		std::cout << "Post-expansion states are defined but expansion is not.\n";
 	}
 
+	if (observation_set.state_durations.size() == 0) {
+		std::cout << "Too few state transitions were annotated\n";
+		return false;
+	}
+
 	if (!ex.text().empty())
 		throw ex;
+	return true;
 }
 
 std::string ns_emperical_posture_quantification_value_estimator::state_permissions_to_string(const ns_hmm_states_permitted & s) {
@@ -1487,6 +1497,9 @@ bool ns_hmm_observation_set::add_observation(const std::string& software_version
 			stats.region_name = plate_name;
 			stats.device_name = device_name;
 		}
+		if (this->obs.size() > 1 && state_durations.size() == 0)
+			std::cerr << "Empty duration!";
+
 		volatile_number_of_individuals_fully_annotated++;
 		volatile_number_of_individuals_observed++;
 		return true;

@@ -73,6 +73,6 @@ typedef std::pair< ns_hmm_movement_state, ns_hmm_movement_state> ns_hmm_state_tr
 std::string ns_hmm_movement_state_to_string(const ns_hmm_movement_state & t);
 ns_hmm_movement_state ns_hmm_movement_state_from_string(const std::string & s);
 bool ns_string_is_a_state_not_a_transition(std::string& s);
-std::string& ns_hmm_state_transition_to_string(const ns_hmm_state_transition& s);
+std::string ns_hmm_state_transition_to_string(const ns_hmm_state_transition& s);
 ns_hmm_state_transition ns_hmm_state_transition_from_string(const std::string& s);
 #endif

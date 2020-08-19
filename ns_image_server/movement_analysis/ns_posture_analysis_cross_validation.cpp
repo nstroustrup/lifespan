@@ -119,9 +119,11 @@ public:
 struct ns_plate_replicate_generator {
 	typedef std::pair<const std::string *,const std::string *> index_type;
 	typedef std::size_t subgroup_index_type;
-	static index_type get_index_for_observation(const ns_hmm_emission& e) { return index_type(e.database_name,e.region_name); }
+	template<class T>
+	static index_type get_index_for_observation(const ns_hmm_labeled_data<T>& e) { return index_type(e.database_name,e.region_name); }
 	static int minimum_population_size() { return 10; }	//don't use plates with fewer than 10 individuals.
-	static subgroup_index_type get_index_for_subgroup(const ns_hmm_emission& e) { return 0; }
+	template<class T>
+	static subgroup_index_type get_index_for_subgroup(const ns_hmm_labeled_data <T>& e) { return 0; }
 	static int minimum_number_of_subgroups() { return 0; }	//no subgroup requirements
 }; 
 std::string ns_to_string(const ns_plate_replicate_generator::index_type& i) {
@@ -130,23 +132,27 @@ std::string ns_to_string(const ns_plate_replicate_generator::index_type& i) {
 struct ns_genotype_replicate_generator {
 	typedef std::string index_type;
 	typedef std::size_t subgroup_index_type;
-	static index_type get_index_for_observation(const ns_hmm_emission& e) {
+	template<class T>
+	static index_type get_index_for_observation(const ns_hmm_labeled_data <T> & e) {
 		if (e.genotype == 0)
 			return "";
 		return *e.genotype;
 	}
 	static int minimum_population_size() { return 25; }	//don't use genotypes with fewer than 25 individuals.
-	static subgroup_index_type get_index_for_subgroup(const ns_hmm_emission& e) { return 0; }
+	template<class T>
+	static subgroup_index_type get_index_for_subgroup(const ns_hmm_labeled_data <T>& e) { return 0; }
 	static int minimum_number_of_subgroups() { return 0; }	//no subgroup requirements
 };
 struct ns_device_replicate_generator {
 	typedef std::tuple<const std::string *,ns_64_bit,const std::string *> index_type;
 	typedef std::string subgroup_index_type;
-	static index_type get_index_for_observation(const ns_hmm_emission& e) {
+	template<class T>
+	static index_type get_index_for_observation(const ns_hmm_labeled_data <T> & e) {
 		return index_type(e.database_name, e.experiment_id, e.device_name);
 	}
 	static int minimum_population_size() { return 20; }
-	static subgroup_index_type get_index_for_subgroup(const ns_hmm_emission& e) { return *e.region_name; }
+	template<class T>
+	static subgroup_index_type get_index_for_subgroup(const ns_hmm_labeled_data <T>& e) { return *e.region_name; }
 	static int minimum_number_of_subgroups() { return 2; }	//don't use devices with fewer than two plates. (this leads to overfitting on specific plates)
 };
 
@@ -156,11 +162,13 @@ std::string ns_to_string(const ns_device_replicate_generator::index_type& i) {
 struct ns_individual_replicate_generator {
 	typedef ns_hmm_test_subject index_type;
 	typedef std::size_t subgroup_index_type;
-	static index_type get_index_for_observation(const ns_hmm_emission& e) {
+	template<class T>
+	static index_type get_index_for_observation(const ns_hmm_labeled_data <T>& e) {
 		return ns_hmm_test_subject(e.database_name,e.experiment_id,e.region_name, e.region_info_id, e.path_id.group_id);
 	}
 	static int minimum_population_size() { return 1; }
-	static subgroup_index_type get_index_for_subgroup(const ns_hmm_emission& e) { return 0; }
+	template<class T>
+	static subgroup_index_type get_index_for_subgroup(const ns_hmm_labeled_data <T>& e) { return 0; }
 	static int minimum_number_of_subgroups() { return 0; }	//no subgroup requirements
 };
 
@@ -419,6 +427,23 @@ private:
 				}
 			}
 		}
+		for (auto duration_list = all_observations.state_durations.begin(); duration_list != all_observations.state_durations.end(); duration_list++) {
+			//find appropriate movement state list in this estimator  
+			//go through each observation
+			for (auto duration = duration_list->second.begin(); duration != duration_list->second.end(); duration++) {
+				const auto rep_id = replicate_for_which_device_is_in_the_test_set.find(ns_replicate_generator::get_index_for_observation(*duration));
+
+				if (rep_id == replicate_for_which_device_is_in_the_test_set.end())
+					continue;	//observations from devices that have been discarded for having too few individuals
+				//for each replicate, each observation either gets added to the testing or the training sets.
+				const ns_hmm_test_subject subject(duration->database_name, duration->experiment_id, duration->region_name, duration->region_info_id, duration->path_id.group_id);
+				for (unsigned int i = 0; i < replicates.size(); i++) {
+					if (rep_id->second != i) {
+						replicates[i].training_set.state_durations[duration_list->first].push_back(*duration);
+					}
+				}
+			}
+		}
 		for (unsigned int i = 0; i < replicates.size(); i++) {
 			replicates[i].training_set.volatile_number_of_individuals_fully_annotated = replicates[i].training_set.volatile_number_of_individuals_observed = replicates[i].training_set_individuals.size();
 			replicates[i].replicate_id = i;
@@ -471,10 +496,9 @@ struct ns_hmm_cross_validation_manager {
 					try {
 						ns_probability_model_generator gen(validation_subject->second.analysis[validation_spec_id][replicate_id].spec.model_features_to_use);
 						
-						validation_subject->second.analysis[validation_spec_id][replicate_id].model.build_estimator_from_observations(
+						validation_subject->second.analysis[validation_spec_id][replicate_id].model_building_completed = 
+							validation_subject->second.analysis[validation_spec_id][replicate_id].model.build_estimator_from_observations(
 							validation_subject->second.replicates[replicate_id].training_set,&gen,state_specification,output);
-
-						validation_subject->second.analysis[validation_spec_id][replicate_id].model_building_completed = true;
 					}
 					catch (ns_ex& ex) {
 						std::cout << "Error building HMM model: " << ex.text() << "\n";
@@ -742,6 +766,9 @@ void ns_run_hmm_cross_validation(std::string& results_summary, ns_image_server_r
 				std::vector<std::vector<double> > state_transition_weight_matrix, state_transition_matrix;
 				solver.build_state_transition_weight_matrix(q->begin()->model, state_transition_matrix);
 				q->begin()->model.state_transition_log_probabilities(60 * 60 * 2, state_transition_weight_matrix, state_transition_matrix);
+				for (unsigned int i = 0; i < state_transition_matrix.size(); i++)
+					for (unsigned int j = 0; j < state_transition_matrix[i].size(); j++)
+						state_transition_matrix[i][j] = exp(state_transition_matrix[i][j]);
 				solver.output_state_transition_matrix(state_transition_matrix, graphvis_file()());
 				graphvis_file.release();
 			}

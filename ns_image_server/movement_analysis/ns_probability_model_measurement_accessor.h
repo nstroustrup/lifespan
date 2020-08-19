@@ -125,6 +125,15 @@ struct ns_outside_intensity_accessor_4x : public ns_measurement_accessor {
 	ns_measurement_accessor* clone() { return new ns_outside_intensity_accessor_4x; }
 };
 
+struct ns_dummy_accessor : public ns_measurement_accessor {
+	const double operator()(const ns_analyzed_image_time_path_element_measurements& e, bool& valid_point) const {
+		throw ns_ex("Accessing dummy accessor!");
+	}
+	const double get_from_emission(const ns_hmm_emission& e, bool& valid_point) const { return (*this)(e.measurement, valid_point); }
+	ns_measurement_accessor* clone() { return new ns_dummy_accessor; }
+};
+
+
 struct ns_stabilized_region_vs_outside_intensity_comparitor : public ns_measurement_accessor {
 	const double operator()(const ns_analyzed_image_time_path_element_measurements& e, bool& valid_point) const {
 		valid_point = true;
@@ -148,6 +157,8 @@ public:
 		if (d == "o2") return ns_covarying_gaussian_dimension<ns_measurement_accessor>(new ns_outside_intensity_accessor_2x, d);
 		if (d == "o4") return ns_covarying_gaussian_dimension<ns_measurement_accessor>(new ns_outside_intensity_accessor_4x, d);
 		if (d == "c") return ns_covarying_gaussian_dimension<ns_measurement_accessor>(new ns_stabilized_region_vs_outside_intensity_comparitor, d);
+		//state transition models are first read into state emission models, and then converted.
+		if (d == "dur") return ns_covarying_gaussian_dimension<ns_measurement_accessor>(new ns_dummy_accessor, d);
 		throw ns_ex("ns_emission_probability_model_organizer()::Unknown dimension: ") << d;
 	}
 

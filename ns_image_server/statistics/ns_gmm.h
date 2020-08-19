@@ -481,7 +481,7 @@ public:
 			if (!std::isfinite(weights[g]))
 				gmm->setPrior(g, 0);
 			else
-				gmm->setPrior(g, exp(weights[g]));
+				gmm->setPrior(g, exp(weights[g]));	//we logged priors before writting them to disk
 			gmm->setMean(g, &means[number_of_dimensions * g]);
 			gmm->setVariance(g, &vars[number_of_dimensions * g]);
 		}
@@ -579,7 +579,7 @@ public:
 		//median of exponential distribution is log(2)/sigma
 		//so, lambda  = log(2)/median
 		lambda = log(2) / median;
-		weight = N / number_of_individuals;
+		weight = N / (double)number_of_individuals;
 	}
 	//the pdf values are proportional to the probability of observing a range of values within a small dt of an observation.
 	//so as long as we are always comparing observations at the same t, we can multiply these together.
@@ -625,8 +625,8 @@ public:
 	//keep compatibility with GMM model file format
 	void write(const std::string& state, const std::string& version, int extra_data, std::ostream& o) const {
 		o.precision(30);
-		o << version << "," << extra_data << "," << state << "," << 1 << "," << 1 << "," << "dur";
-		o << weight << "," << lambda << ",0\n";
+		o << version << "," << extra_data << "," << state << ",1,1,dur,";
+		o << log(weight) << "," << lambda << ",0";
 	}
 	//allows exponential models to be read from a file.  But this is rarely used 
 	//as model data is usually stored along with gmm models, and read in using the gmm model code and then
@@ -682,6 +682,7 @@ public:
 			if (i.fail())
 				throw ns_ex("ns_emission_probabiliy_model::read()::Bad model file");
 			get_double(i, weight); 
+			weight = exp(weight);	//we wrote it out logged
 			get_double(i, lambda);
 			get_string(i, tmp); //not used but retained for compatibility with gmm model
 			break;
@@ -695,12 +696,12 @@ public:
 		if (a.gmm->GetDimNum() != 1 || a.gmm->GetMixNum() != 1)
 			throw ns_ex("Trying to convert invalid GMM model to exponential state transition model.");
 		lambda = *a.gmm->Mean(0);
-		lambda = a.gmm->Prior(0);
+		weight = a.gmm->Prior(0);
 	}
 	bool equals(const ns_hmm_probability_model<measurement_accessor_t>* a) const {
 
 		auto p = static_cast<const ns_state_transition_probability_model<measurement_accessor_t>*>(a);
-		return lambda == p->lambda && weight == p->weight;
+		return ns_double_equal(lambda,p->lambda) && ns_double_equal(weight, p->weight);
 	}
 };
 

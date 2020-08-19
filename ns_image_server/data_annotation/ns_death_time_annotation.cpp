@@ -374,7 +374,7 @@ bool ns_string_is_a_state_not_a_transition(std::string & s){
 		throw ns_ex("ns_hmm_movement_state_from_string():Unknown state ") << s;
 	return ss;
 }
- std::string& ns_hmm_state_transition_to_string(const ns_hmm_state_transition & s) {
+ std::string ns_hmm_state_transition_to_string(const ns_hmm_state_transition & s) {
 	 return ns_hmm_movement_state_to_string(s.first) + "->" + ns_hmm_movement_state_to_string(s.second);
  }
  ns_hmm_state_transition ns_hmm_state_transition_from_string(const std::string& s) {

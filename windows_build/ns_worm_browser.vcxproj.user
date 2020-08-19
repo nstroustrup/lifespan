@@ -5,7 +5,7 @@
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <LocalDebuggerCommandArguments>"Calibration/Posture Analaysis/Build new HMM Model from storyboard annnotations" image_server_archive_2015::2012_12_14_worm_zoo_25C </LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>"Calibration/Posture Analaysis/Build new HMM Model from storyboard annnotations" image_server_archive_2015::2012_12_14_worm_zoo_25C</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
 </Project>

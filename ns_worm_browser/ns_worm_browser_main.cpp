@@ -4291,15 +4291,15 @@ bool ns_parse_commandline_subject(const std::string& subject, ns_image_server_re
 		return false;
 	}
 	if (plate != 0) {
-		if (experiment != 0) {
+		if (experiment == 0) {
 			err = ns_ex("Regions cannot be specified without the experiment name.");
 			return false;
 		}
 
 		sql << "SELECT s.id, r.id FROM experiments as e, capture_samples as s, sample_region_image_info as r WHERE "
 			"e.name = '" << sql.escape_string(*experiment)
-			<< "' AND s.name =' " << sql.escape_string(*sample)
-			<< "' AND r.name = " << sql.escape_string(*plate)
+			<< "' AND s.name = '" << sql.escape_string(*sample)
+			<< "' AND r.name = '" << sql.escape_string(*plate)
 			<< "' AND s.experiment_id = e.id AND r.sample_id = s.id";
 		ns_sql_result res;
 		sql.get_rows(res);

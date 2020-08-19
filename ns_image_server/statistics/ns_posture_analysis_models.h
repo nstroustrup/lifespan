@@ -74,6 +74,12 @@ public:
 	void log_probability_for_each_state(const ns_analyzed_image_time_path_element_measurements & e,std::vector<double> & p) const;
 	//probabiliy of a worm transitioning from the start to the finish state after duration seconds.
 	double log_transition_probability(const ns_hmm_movement_state& start, const ns_hmm_movement_state& finish, const unsigned long duration_in_seconds);
+
+	//log probability of an animal moving between states after duration_in_seconds seconds.
+	//logprob[i][j] is the probability of moving from state i to state j.
+	//weight matrix is used to modify log_probabilities. The value should be the log of a weight between 0 and 1 .
+	void state_transition_log_probabilities(const double& duration_in_seconds, const std::vector < std::vector<double> >& weight_matrix, std::vector < std::vector<double> >& log_prob) const;
+
 	void read(std::istream & i);
 	void write(std::ostream & o)const;
 	static ns_emperical_posture_quantification_value_estimator dummy();

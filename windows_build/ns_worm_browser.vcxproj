@@ -748,6 +748,7 @@
     <ClInclude Include="..\ns_image_server\movement_analysis\ns_time_path_posture_movement_solution.h" />
     <ClInclude Include="..\ns_image_server\movement_analysis\ns_time_path_solver.h" />
     <ClInclude Include="..\ns_image_server\statistics\ns_by_hand_lifespan.h" />
+    <ClInclude Include="..\ns_image_server\statistics\ns_gmm.h" />
     <ClInclude Include="..\ns_image_server\statistics\ns_jmp_file.h" />
     <ClInclude Include="..\ns_image_server\statistics\ns_lifespan_statistics.h" />
     <ClInclude Include="..\ns_image_server\statistics\ns_linear_regression_model.h" />

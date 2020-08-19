@@ -175,7 +175,7 @@ public:
 template<class measurement_accessor_t>
 class ns_hmm_probability_model {
 public:
-	virtual void build_from_data(const std::vector<const std::vector<typename measurement_accessor_t::data_t>* >& observations) = 0;
+	virtual void build_from_data(const std::vector<const std::vector<typename measurement_accessor_t::data_t>* >& observations, const long number_of_individuals) = 0;
 	virtual double point_emission_log_probability(const typename measurement_accessor_t::data_t & e) const = 0;
 	//these are the actual likelihoods of an observation being drawn from the GMM.
 	//They are more expensive to calculate so we only use them when necessary
@@ -188,8 +188,8 @@ public:
 	//virtual void read_dimension(const unsigned int dim, std::vector<double>& weights, std::vector<double>& means, std::vector<double>& vars, std::istream& in) = 0;
 	virtual bool read(std::istream& i, std::string & state, std::string& software_version, int& extra_data, const ns_hmm_probability_model_organizer<measurement_accessor_t>* organizer) = 0;
 	virtual ns_hmm_probability_model< measurement_accessor_t> * clone() const =0 ;
-
 	virtual bool equals(const ns_hmm_probability_model<measurement_accessor_t>* p) const = 0;
+	virtual double model_weight() const = 0;
 };
 
 template<class measurement_accessor_t>
@@ -258,13 +258,14 @@ public:
 		}
 	}
 
+	double model_weight() const { return 1; }
 	void check_gmm_configuration() const {
 		if (gmm == 0)
 			throw ns_ex("Unspecified GMM!");
 		if (gmm->GetMixNum() != this->number_of_gaussians || gmm->GetDimNum() != this->number_of_dimensions)
 			throw ns_ex("GMM structure container mismatch!");
 	}
-	void build_from_data(const std::vector<const std::vector<typename measurement_accessor_t::data_t>* >& observations) {
+	void build_from_data(const std::vector<const std::vector<typename measurement_accessor_t::data_t>* >& observations, const long number_of_individuals) {
 		check_gmm_configuration();
 		unsigned long N(0);
 		for (unsigned int i = 0; i < observations.size(); i++)
@@ -528,6 +529,7 @@ template<class measurement_accessor_t>
 class ns_state_transition_probability_model : public ns_hmm_probability_model<measurement_accessor_t> {
 	//timescale of fitted exponential
 	double lambda;
+	double weight; //fraction of all animals that made this state transition
 public:
 	ns_state_transition_probability_model<measurement_accessor_t>() : lambda(0) {}
 
@@ -540,8 +542,8 @@ public:
 	}
 	static std::vector<double> training_data_buffer;
 	static ns_lock training_data_buffer_lock;
-
-	void build_from_data(const std::vector<const std::vector<typename measurement_accessor_t::data_t>* >& observations) {
+	double model_weight() const { return weight; }
+	void build_from_data(const std::vector<const std::vector<typename measurement_accessor_t::data_t>* >& observations, const long number_of_individuals) {
 		
 		unsigned long N(0);
 		for (unsigned int i = 0; i < observations.size(); i++)
@@ -577,6 +579,7 @@ public:
 		//median of exponential distribution is log(2)/sigma
 		//so, lambda  = log(2)/median
 		lambda = log(2) / median;
+		weight = N / number_of_individuals;
 	}
 	//the pdf values are proportional to the probability of observing a range of values within a small dt of an observation.
 	//so as long as we are always comparing observations at the same t, we can multiply these together.
@@ -623,7 +626,7 @@ public:
 	void write(const std::string& state, const std::string& version, int extra_data, std::ostream& o) const {
 		o.precision(30);
 		o << version << "," << extra_data << "," << state << "," << 1 << "," << 1 << "," << "dur";
-		o << "1," << lambda << ",0\n";
+		o << weight << "," << lambda << ",0\n";
 	}
 	//allows exponential models to be read from a file.  But this is rarely used 
 	//as model data is usually stored along with gmm models, and read in using the gmm model code and then
@@ -678,7 +681,7 @@ public:
 			get_string(i, dimension_name);
 			if (i.fail())
 				throw ns_ex("ns_emission_probabiliy_model::read()::Bad model file");
-			get_string(i, tmp); //not used but retained for compatibility with gmm model
+			get_double(i, weight); 
 			get_double(i, lambda);
 			get_string(i, tmp); //not used but retained for compatibility with gmm model
 			break;
@@ -692,11 +695,12 @@ public:
 		if (a.gmm->GetDimNum() != 1 || a.gmm->GetMixNum() != 1)
 			throw ns_ex("Trying to convert invalid GMM model to exponential state transition model.");
 		lambda = *a.gmm->Mean(0);
+		lambda = a.gmm->Prior(0);
 	}
 	bool equals(const ns_hmm_probability_model<measurement_accessor_t>* a) const {
 
 		auto p = static_cast<const ns_state_transition_probability_model<measurement_accessor_t>*>(a);
-		return lambda == p->lambda;
+		return lambda == p->lambda && weight == p->weight;
 	}
 };
 

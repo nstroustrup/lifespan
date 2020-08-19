@@ -1124,7 +1124,7 @@ public:
 		//o << "val1,val2,p,outlier\n";
 		const double p_cutoff = .02;
 		try {
-			normal_fit.build_from_data(data_holder);
+			normal_fit.build_from_data(data_holder, number_of_points);
 			{
 				for (auto p = points_to_plot.begin(); p != points_to_plot.end(); p++) {
 					for (unsigned int i = 0; i < p->second.size(); i++) {

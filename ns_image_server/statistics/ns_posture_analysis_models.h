@@ -41,7 +41,6 @@ struct ns_hmm_emission_normalization_stats {
 
 
 typedef enum { ns_all_states_permitted, ns_no_post_expansion_contraction, ns_no_expansion_while_alive, no_expansion_while_alive_nor_contraction, ns_no_expansion_nor_contraction, ns_require_movement_expansion_synchronicity, ns_number_of_state_settings } ns_hmm_states_permitted;
-
 class ns_hmm_observation_set {
 public:
 	ns_hmm_observation_set() :volatile_number_of_individuals_fully_annotated(0), volatile_number_of_individuals_observed(0) {}
@@ -65,11 +64,13 @@ class ns_probability_model_holder;
 class ns_probability_model_generator;
 class ns_emperical_posture_quantification_value_estimator{
 public:
+
+	typedef enum { ns_static, ns_empirical,ns_empirical_without_weights } ns_hmm_states_transition_types;
 	static std::string state_permissions_to_string(const ns_hmm_states_permitted& s);
 	static ns_hmm_states_permitted state_permissions_from_string(const std::string & s);
 	~ns_emperical_posture_quantification_value_estimator();
 	friend class ns_time_path_movement_markov_solver;
-	bool build_estimator_from_observations(const ns_hmm_observation_set & observation_set, const ns_probability_model_generator* generator,const ns_hmm_states_permitted& states_permitted_,std::string & output);
+	bool build_estimator_from_observations(const ns_hmm_observation_set & observation_set, const ns_probability_model_generator* generator,const ns_hmm_states_permitted& states_permitted_, const ns_hmm_states_transition_types & transition_type_, std::string & output);
 
 	void log_probability_for_each_state(const ns_analyzed_image_time_path_element_measurements & e,std::vector<double> & p) const;
 	//probabiliy of a worm transitioning from the start to the finish state after duration seconds.
@@ -97,6 +98,7 @@ public:
 	unsigned long number_of_sub_probabilities() const;
 	bool state_defined(const ns_hmm_movement_state & m) const;
 	const ns_hmm_states_permitted & states_permitted() const { return states_permitted_int; }
+	const ns_hmm_states_transition_types & states_transitions() const { return state_transition_type; }
 	void defined_states(std::set<ns_hmm_movement_state>& s) const;
 	std::string software_version_when_built;
 	friend bool operator==(const ns_emperical_posture_quantification_value_estimator & a, const ns_emperical_posture_quantification_value_estimator & b);
@@ -104,6 +106,9 @@ private:
 	void write_visualization(std::ostream & o,const std::string & experiment_name="") const;
 	ns_probability_model_holder * emission_probability_models;
 	ns_hmm_states_permitted states_permitted_int;
+	ns_hmm_states_transition_types state_transition_type;
+	int flags_to_int() const;
+	void update_flags_from_int(int flag_int);
 };
 bool operator==(const ns_emperical_posture_quantification_value_estimator & a, const ns_emperical_posture_quantification_value_estimator & b);
 

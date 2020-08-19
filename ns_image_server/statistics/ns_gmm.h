@@ -184,9 +184,9 @@ public:
 	virtual void sub_probability_names(std::vector<std::string>& names) const = 0;
 	virtual unsigned long number_of_sub_probabilities() const = 0;
 	virtual void write_header(std::ostream& o) = 0;
-	virtual void write(const std::string & state, const std::string& version, int extra_data, std::ostream& o) const = 0;
+	virtual void write(const std::string & state, const std::string& version, const ns_64_bit & extra_data, std::ostream& o) const = 0;
 	//virtual void read_dimension(const unsigned int dim, std::vector<double>& weights, std::vector<double>& means, std::vector<double>& vars, std::istream& in) = 0;
-	virtual bool read(std::istream& i, std::string & state, std::string& software_version, int& extra_data, const ns_hmm_probability_model_organizer<measurement_accessor_t>* organizer) = 0;
+	virtual bool read(std::istream& i, std::string & state, std::string& software_version, ns_64_bit & extra_data, const ns_hmm_probability_model_organizer<measurement_accessor_t>* organizer) = 0;
 	virtual ns_hmm_probability_model< measurement_accessor_t> * clone() const =0 ;
 	virtual bool equals(const ns_hmm_probability_model<measurement_accessor_t>* p) const = 0;
 	virtual double model_weight() const = 0;
@@ -367,7 +367,7 @@ public:
 			o << ",Weight " << i << ", Mean " << i << ", Var " << i;
 		}
 	}
-	void write(const std ::string & state, const std::string& version, int extra_data, std::ostream& o) const {
+	void write(const std ::string & state, const std::string& version, const ns_64_bit & extra_data, std::ostream& o) const {
 		o.precision(30);
 		for (unsigned int d = 0; d < number_of_dimensions; d++) {
 			o << version << "," << extra_data << "," << state <<  "," << number_of_dimensions << "," << number_of_gaussians << "," << dimensions[d].name;
@@ -394,7 +394,7 @@ public:
 		}
 	}
 
-	bool read(std::istream& i, std::string & state, std::string& software_version, int& extra_data, const ns_hmm_probability_model_organizer<measurement_accessor_t> * organizer) {
+	bool read(std::istream& i, std::string & state, std::string& software_version, ns_64_bit& extra_data, const ns_hmm_probability_model_organizer<measurement_accessor_t> * organizer) {
 
 		ns_get_string get_string;
 		ns_get_int get_int;
@@ -432,7 +432,7 @@ public:
 			else if (software_version != tmp)
 				throw ns_ex("ns_emission_probabiliy_model()::Mixed versions in model file");
 			get_string(i, tmp);
-			extra_data = atoi(tmp.c_str());
+			extra_data = ns_atoi64(tmp.c_str());
 			get_string(i, state_temp);
 			//all information for each state should be written to files in contiguous lines
 			if (r != 0 && state_temp != state)
@@ -565,16 +565,28 @@ public:
 				}
 			}
 		}
-		training_data_buffer.resize(N);
-		std::sort(training_data_buffer.begin(), training_data_buffer.end());
+		if (N == 0)
+			throw ns_ex("No duration training data provided!");
+
 		double median;
-		if (N % 2 == 0) {
-			median = training_data_buffer[N / 2];
+		if (N == 1) {
+			median = training_data_buffer[0];
+		}
+		else if (N == 2) {
+			median = (training_data_buffer[0] + training_data_buffer[1]) / 2;
 		}
 		else {
-			const std::size_t p = N / 2;
-			median = .5 * (training_data_buffer[p] + training_data_buffer[p + 1]);
+			training_data_buffer.resize(N);
+			std::sort(training_data_buffer.begin(), training_data_buffer.end());
+			if (N % 2 == 0) {
+				median = training_data_buffer[N / 2];
+			}
+			else {
+				const std::size_t p = N / 2;
+				median = .5 * (training_data_buffer[p] + training_data_buffer[p + 1]);
+			}
 		}
+		lock.release();
 
 		//median of exponential distribution is log(2)/sigma
 		//so, lambda  = log(2)/median
@@ -623,7 +635,7 @@ public:
 		o << ",Weight , Lambda ,Empty";
 	}
 	//keep compatibility with GMM model file format
-	void write(const std::string& state, const std::string& version, int extra_data, std::ostream& o) const {
+	void write(const std::string& state, const std::string& version, const ns_64_bit & extra_data, std::ostream& o) const {
 		o.precision(30);
 		o << version << "," << extra_data << "," << state << ",1,1,dur,";
 		o << log(weight) << "," << lambda << ",0";
@@ -631,7 +643,7 @@ public:
 	//allows exponential models to be read from a file.  But this is rarely used 
 	//as model data is usually stored along with gmm models, and read in using the gmm model code and then
 	//converted later.
-	bool read(std::istream& i, std::string& state, std::string& software_version, int& extra_data, const ns_hmm_probability_model_organizer<measurement_accessor_t>* organizer) {
+	bool read(std::istream& i, std::string& state, std::string& software_version, ns_64_bit & extra_data, const ns_hmm_probability_model_organizer<measurement_accessor_t>* organizer) {
 
 		ns_get_string get_string;
 		ns_get_int get_int;
@@ -639,7 +651,6 @@ public:
 		std::string tmp, state_temp;
 		std::string dimension_name;
 		int file_number_of_dimensions(-1), file_number_of_gaussians(-1);
-		int tmp_int;
 		int r = 0;
 		
 		software_version = "";
@@ -666,7 +677,7 @@ public:
 			else if (software_version != tmp)
 				throw ns_ex("ns_emission_probabiliy_model()::Mixed versions in model file");
 			get_string(i, tmp);
-			extra_data = atoi(tmp.c_str());
+			extra_data = ns_atoi64(tmp.c_str());
 			get_string(i, state_temp);
 			//all information for each state should be written to files in contiguous lines
 			if (r != 0 && state_temp != state)

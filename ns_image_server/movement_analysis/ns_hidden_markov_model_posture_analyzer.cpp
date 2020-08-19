@@ -555,16 +555,27 @@ void ns_emperical_posture_quantification_value_estimator::state_transition_log_p
 		log_prob[i].resize((int)ns_hmm_unknown_state);
 		if (weight_matrix.size() != 0 && weight_matrix[i].size() != log_prob[i].size())
 			throw ns_ex("Invalid weight matrix");
-		for (unsigned int j = 0; j < (unsigned int)ns_hmm_unknown_state; j++) 
-			log_prob[i][j] = -INFINITY;
+		if (weight_matrix.size() == 0) {
+			for (unsigned int j = 0; j < (unsigned int)ns_hmm_unknown_state; j++)
+				log_prob[i][j] = -INFINITY;
+		}
+		else {
+			for (unsigned int j = 0; j < (unsigned int)ns_hmm_unknown_state; j++)
+				log_prob[i][j] = weight_matrix[i][j];
+		}
 	}
+	if (state_transition_type == ns_static)
+		return;
 
 	for (auto p = emission_probability_models->state_transition_models.begin(); p != emission_probability_models->state_transition_models.end(); p++) {
 		//transition probability is the probability of transitioning to that state at the specified time, multipled by the probability of entering that state ever.
 		double weight = 0;
 		if (weight_matrix.size() != 0)
 			weight = weight_matrix[(int)p->first.first][(int)p->first.second];
-		log_prob[(int)p->first.first][(int)p->first.second] = p->second->point_emission_log_probability(duration)+log(p->second->model_weight()) + weight;
+		if (state_transition_type == ns_empirical_without_weights)
+			log_prob[(int)p->first.first][(int)p->first.second] = p->second->point_emission_log_probability(duration) + weight;
+		else
+			log_prob[(int)p->first.first][(int)p->first.second] = p->second->point_emission_log_probability(duration)+log(p->second->model_weight()) + weight;
 	}
 }
 
@@ -850,6 +861,10 @@ bool operator==(const ns_emperical_posture_quantification_value_estimator & a, c
 		std::cerr << "State permission mismatch!";
 		return false;
 	}
+	if (a.state_transition_type != b.state_transition_type) {
+		std::cerr << "State transition mismatch!";
+		return false;
+	}
 	for (auto p = a.emission_probability_models->state_emission_models.begin(); p != a.emission_probability_models->state_emission_models.end(); ++p) {
 		auto q = b.emission_probability_models->state_emission_models.find(p->first);
 		if (q == b.emission_probability_models->state_emission_models.end()) {
@@ -1063,14 +1078,14 @@ void ns_emperical_posture_quantification_value_estimator::read(std::istream & i)
 		ns_emission_probabiliy_gaussian_diagonal_covariance_model< ns_measurement_accessor >* model = new ns_emission_probabiliy_gaussian_diagonal_covariance_model< ns_measurement_accessor >; //first load data into a model with the maximum number of dimensions;
 		try {
 			std::string state_string;
-			int data;
+			ns_64_bit data;
 			if (!model->read(i, state_string, software_version_for_model, data, &organizer))
 				break;
 			if (software_version_when_built.empty())
 				software_version_when_built = software_version_for_model;
 			else if (software_version_when_built != software_version_for_model)
 				throw ns_ex("Software version mismatch within model");
-			states_permitted_int = (ns_hmm_states_permitted)data;
+			update_flags_from_int(data);
 
 			if (state_string.empty() || i.fail()) {
 				if (emission_probability_models->state_emission_models.size() < 1)
@@ -1112,16 +1127,28 @@ void ns_emperical_posture_quantification_value_estimator::read(std::istream & i)
 		}
 	}
 }
+
+int ns_emperical_posture_quantification_value_estimator::flags_to_int()const {
+	int a = states_permitted_int;
+	int b = state_transition_type;
+	return (a & 0xFF) | ((b & 0xFF) << 8);
+}
+
+void ns_emperical_posture_quantification_value_estimator::update_flags_from_int(int flag_int) {
+	states_permitted_int = (ns_hmm_states_permitted)(flag_int& 0xFF);
+	state_transition_type = (ns_hmm_states_transition_types)((flag_int >> 8) & 0xFF);
+}
+
 void ns_emperical_posture_quantification_value_estimator::write(std::ostream & o)const {
 	if (emission_probability_models->state_emission_models.size() != 0)
 		emission_probability_models->state_emission_models.begin()->second->write_header(o);
 	o << "\n";
 	for (auto p = emission_probability_models->state_emission_models.begin(); p != emission_probability_models->state_emission_models.end(); p++) {
-		p->second->write(ns_hmm_movement_state_to_string(p->first), NS_HMM_VERSION,(int)states_permitted_int,o);
+		p->second->write(ns_hmm_movement_state_to_string(p->first), NS_HMM_VERSION,flags_to_int(),o);
 		o << "\n";
 	}
 	for (auto p = emission_probability_models->state_transition_models.begin(); p != emission_probability_models->state_transition_models.end(); p++) {
-		p->second->write(ns_hmm_state_transition_to_string(p->first), NS_HMM_VERSION, (int)states_permitted_int, o);
+		p->second->write(ns_hmm_state_transition_to_string(p->first), NS_HMM_VERSION, flags_to_int(), o);
 		o << "\n";
 	}
 }
@@ -1207,9 +1234,10 @@ void ns_hmm_observation_set::clean_up_data_prior_to_model_fitting() {
 }
 
 bool ns_emperical_posture_quantification_value_estimator::build_estimator_from_observations(
-	const ns_hmm_observation_set& observation_set, const ns_probability_model_generator* generator, const ns_hmm_states_permitted& states_permitted_, std::string& output){
+	const ns_hmm_observation_set& observation_set, const ns_probability_model_generator* generator, const ns_hmm_states_permitted& states_permitted_, const ns_hmm_states_transition_types & transition_type_, std::string& output){
 
 	states_permitted_int = states_permitted_;
+	state_transition_type = transition_type_;
 	software_version_when_built = NS_HMM_VERSION;
 
 	//a list of observations for each state.

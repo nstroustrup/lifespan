@@ -480,6 +480,7 @@ struct ns_hmm_cross_validation_manager {
 	void build_models_for_cross_validation(std::string& output) {
 		for (auto validation_subject = validation_runs_sorted_by_validation_type.begin(); validation_subject != validation_runs_sorted_by_validation_type.end();) {
 			ns_hmm_states_permitted state_specification;
+			ns_emperical_posture_quantification_value_estimator::ns_hmm_states_transition_types transition_type;
 			//ns_emperical_posture_quantification_value_estimator::ns_all_states;
 			std::size_t validation_spec_id = 0;
 			for (auto validation_spec = validation_subject->second.spec.specification.begin(); validation_spec != validation_subject->second.spec.specification.end(); ) {
@@ -491,6 +492,16 @@ struct ns_hmm_cross_validation_manager {
 				default:
 					state_specification = ns_all_states_permitted; break;
 				}
+				switch (validation_spec->state_transition_type) {
+				case ns_model_building_specification::ns_static:
+					transition_type = ns_emperical_posture_quantification_value_estimator::ns_static; break;
+				case ns_model_building_specification::ns_empirical:
+						transition_type = ns_emperical_posture_quantification_value_estimator::ns_empirical; break;
+				case ns_model_building_specification::ns_empirical_without_weights:
+					transition_type = ns_emperical_posture_quantification_value_estimator::ns_empirical_without_weights; break;
+				default:
+					state_specification = ns_all_states_permitted; break;
+				}
 				bool all_replicates_supported_model_building = true;
 				for (int replicate_id = 0; replicate_id < validation_subject->second.replicates.size(); ++replicate_id) {
 					try {
@@ -498,7 +509,7 @@ struct ns_hmm_cross_validation_manager {
 						
 						validation_subject->second.analysis[validation_spec_id][replicate_id].model_building_completed = 
 							validation_subject->second.analysis[validation_spec_id][replicate_id].model.build_estimator_from_observations(
-							validation_subject->second.replicates[replicate_id].training_set,&gen,state_specification,output);
+							validation_subject->second.replicates[replicate_id].training_set,&gen,state_specification, transition_type,output);
 					}
 					catch (ns_ex& ex) {
 						std::cout << "Error building HMM model: " << ex.text() << "\n";

@@ -2046,22 +2046,39 @@ void ns_set_up_hmm_model_specs_to_test(std::vector<ns_model_building_specificati
 	s.reserve(8);
 	ns_model_building_specification flexible_spec;
 	flexible_spec.cross_replicate_estimator_type = ns_model_building_specification::ns_standard;
+	flexible_spec.state_transition_type = ns_model_building_specification::ns_static;
 	flexible_spec.model_features_to_use.push_back("i1");
 	flexible_spec.model_features_to_use.push_back("i4");
 	flexible_spec.model_features_to_use.push_back("m");
 	flexible_spec.model_features_to_use.push_back("m4");
 	flexible_spec.name = "flexible_4D";
-	s.push_back(flexible_spec);
+	//s.push_back(flexible_spec);	//this is never the best model.
 
 	ns_model_building_specification strict_spec;
 	strict_spec.cross_replicate_estimator_type = ns_model_building_specification::ns_strict_ordering;
 	strict_spec.model_features_to_use = flexible_spec.model_features_to_use;
+	strict_spec.state_transition_type = ns_model_building_specification::ns_static;
 	strict_spec.name = "strict_4D";
 	s.push_back(strict_spec);
+
+	ns_model_building_specification strict_empiric_state_spec;
+	strict_empiric_state_spec.cross_replicate_estimator_type = ns_model_building_specification::ns_strict_ordering;
+	strict_empiric_state_spec.model_features_to_use = flexible_spec.model_features_to_use;
+	strict_empiric_state_spec.state_transition_type = ns_model_building_specification::ns_empirical;
+	strict_empiric_state_spec.name = "strict_4D_empiric";
+	s.push_back(strict_empiric_state_spec);
+
+	ns_model_building_specification strict_empiric_without_weights_state_spec;
+	strict_empiric_without_weights_state_spec.cross_replicate_estimator_type = ns_model_building_specification::ns_strict_ordering;
+	strict_empiric_without_weights_state_spec.model_features_to_use = flexible_spec.model_features_to_use;
+	strict_empiric_without_weights_state_spec.state_transition_type = ns_model_building_specification::ns_empirical_without_weights;
+	strict_empiric_without_weights_state_spec.name = "strict_4D_empiric_no_weights";
+	s.push_back(strict_empiric_without_weights_state_spec);
 
 	ns_model_building_specification simultaneous_spec;
 	simultaneous_spec.cross_replicate_estimator_type = ns_model_building_specification::ns_simultaneous_movement_cessation_and_expansion;
 	simultaneous_spec.model_features_to_use = flexible_spec.model_features_to_use;
+	simultaneous_spec.state_transition_type = ns_model_building_specification::ns_static;
 	simultaneous_spec.name = "simultaneous_4D";
 	s.push_back(simultaneous_spec);
 
@@ -2071,14 +2088,16 @@ void ns_set_up_hmm_model_specs_to_test(std::vector<ns_model_building_specificati
 	strict_spec_3D_i1.model_features_to_use.push_back("i4");
 	strict_spec_3D_i1.model_features_to_use.push_back("m");
 	strict_spec_3D_i1.model_features_to_use.push_back("m4");
+	strict_spec_3D_i1.state_transition_type = ns_model_building_specification::ns_static;
 	s.push_back(strict_spec_3D_i1);
 
 	ns_model_building_specification strict_spec_3D_m4;
 	strict_spec_3D_m4.cross_replicate_estimator_type = ns_model_building_specification::ns_strict_ordering;
-	strict_spec_3D_m4.name = "strict_3D-i1";
+	strict_spec_3D_m4.name = "strict_3D-m4";
 	strict_spec_3D_m4.model_features_to_use.push_back("i4");
 	strict_spec_3D_m4.model_features_to_use.push_back("m");
 	strict_spec_3D_m4.model_features_to_use.push_back("i1");
+	strict_spec_3D_m4.state_transition_type = ns_model_building_specification::ns_static;
 	s.push_back(strict_spec_3D_m4);
 
 	ns_model_building_specification strict_spec_2D_i4_m4;
@@ -2086,6 +2105,7 @@ void ns_set_up_hmm_model_specs_to_test(std::vector<ns_model_building_specificati
 	strict_spec_2D_i4_m4.name = "strict_2D-i4-m4";
 	strict_spec_2D_i4_m4.model_features_to_use.push_back("m");
 	strict_spec_2D_i4_m4.model_features_to_use.push_back("i1");
+	strict_spec_2D_i4_m4.state_transition_type = ns_model_building_specification::ns_static;
 	s.push_back(strict_spec_2D_i4_m4);
 
 	ns_model_building_specification strict_spec_2D_i1_m1;
@@ -2093,14 +2113,8 @@ void ns_set_up_hmm_model_specs_to_test(std::vector<ns_model_building_specificati
 	strict_spec_2D_i1_m1.name = "strict_2D-i1-m1";
 	strict_spec_2D_i1_m1.model_features_to_use.push_back("m4");
 	strict_spec_2D_i1_m1.model_features_to_use.push_back("i4");
+	strict_spec_2D_i1_m1.state_transition_type = ns_model_building_specification::ns_static;
 	s.push_back(strict_spec_2D_i1_m1);
-
-	ns_model_building_specification strict_spec_2D_i1_m4;
-	strict_spec_2D_i1_m4.cross_replicate_estimator_type = ns_model_building_specification::ns_strict_ordering;
-	strict_spec_2D_i1_m4.name = "strict_2D-i1-m4";
-	strict_spec_2D_i1_m4.model_features_to_use.push_back("m");
-	strict_spec_2D_i1_m4.model_features_to_use.push_back("i4");
-	s.push_back(strict_spec_2D_i1_m4);
 }
 
 void ns_worm_learner::generate_experiment_movement_image_quantification_analysis_data(const ns_browser_command_subject_set& subject, ns_movement_quantification_type  detail_level, const ns_optimization_subject & subject_flag){

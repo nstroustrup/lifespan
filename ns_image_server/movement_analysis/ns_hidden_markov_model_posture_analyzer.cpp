@@ -5,6 +5,7 @@
 #include "ns_threshold_and_hmm_posture_analyzer.h"
 #include "ns_gmm.h"
 #include "ns_probability_model_measurement_accessor.h"
+#include <iomanip>
 #define NS_HMM_VERSION "2.5"
 
 
@@ -531,37 +532,55 @@ void ns_hmm_solver::build_movement_state_solution_from_movement_transitions(cons
 }
 
 
-void ns_hmm_solver::output_state_transition_matrix(const std::vector<std::vector<double> >& m, std::ostream& o) {
-	o << "digraph state_transition_matrix {\n";
+void ns_hmm_solver::output_state_transition_matrix(const std::string & title, std::vector<std::vector<double> >& m, std::ostream& o) {
+	o << std::setprecision(5);
+	o << "digraph " << title << " {\n";
 	o << "forcelabels=true;\n";
-	for (unsigned int i = 0; i < m.size(); i++) 
+	std::vector<char> node_has_neighbors(m.size(),0);
+	for (unsigned int i = 0; i < m.size(); i++) {
+		for (unsigned int j = 0; j < m[i].size(); j++) {
+			if (i == j) continue;
+			if (m[i][j] != 0 || m[j][i] != 0) {
+				node_has_neighbors[i] = true;
+				break;
+			}
+		}
+	}
+	for (unsigned int i = 0; i < m.size(); i++) {
+		if (!node_has_neighbors[i])
+			continue;
 		o << "a_" << i << " [label=\"" << ns_hmm_movement_state_to_string((ns_hmm_movement_state)i) << "\"];\n";
+	}
 	
 	for (unsigned int i = 0; i < m.size(); i++) {
+		if (!node_has_neighbors[i])
+			continue;
 		for (unsigned int j = 0; j < m[i].size(); j++)
 			if (m[i][j] != 0)
-				o << "a_" << i << " -> " << "a_" << j << " [label=\"" << ns_to_string_scientific(m[i][j]) << "\"];\n";
+				o << "a_" << i << " -> " << "a_" << j << " [label=\"" << std::fixed << m[i][j] << "\"];\n";
 	}
 	o << "}";
 }
 
 
-void ns_emperical_posture_quantification_value_estimator::state_transition_log_probabilities(const double& duration_in_seconds, const std::vector < std::vector<double> >& weight_matrix, std::vector<std::vector<double>>& log_prob) const{	ns_hmm_duration duration;
+void ns_emperical_posture_quantification_value_estimator::state_transition_log_probabilities(const double& duration_in_seconds, const std::vector < std::vector<double> >& log_weight_matrix, std::vector<std::vector<double>>& log_prob) const{	ns_hmm_duration duration;
 	duration.measurement = duration_in_seconds;
 	log_prob.resize((int)ns_hmm_unknown_state);
-	if (weight_matrix.size() != 0 && weight_matrix.size() != log_prob.size())
+	const bool using_static_probs(state_transition_type == ns_static || state_transition_type == ns_static_mod);
+	//set up default matrix
+	if ((log_weight_matrix.size() != 0 || using_static_probs) && log_weight_matrix.size() != log_prob.size())
 		throw ns_ex("Invalid weight matrix");
 	for (unsigned int i = 0; i < (unsigned int)ns_hmm_unknown_state; i++) {
 		log_prob[i].resize((int)ns_hmm_unknown_state);
-		if (weight_matrix.size() != 0 && weight_matrix[i].size() != log_prob[i].size())
+		if ((log_weight_matrix.size() != 0 || using_static_probs )&& log_weight_matrix[i].size() != log_prob[i].size())
 			throw ns_ex("Invalid weight matrix");
-		if (weight_matrix.size() == 0) {
+		if (!using_static_probs) {
 			for (unsigned int j = 0; j < (unsigned int)ns_hmm_unknown_state; j++)
 				log_prob[i][j] = -INFINITY;
 		}
 		else {
 			for (unsigned int j = 0; j < (unsigned int)ns_hmm_unknown_state; j++)
-				log_prob[i][j] = weight_matrix[i][j];
+				log_prob[i][j] = log_weight_matrix[i][j];
 		}
 	}
 	if (state_transition_type == ns_static || state_transition_type == ns_static_mod)
@@ -569,13 +588,30 @@ void ns_emperical_posture_quantification_value_estimator::state_transition_log_p
 
 	for (auto p = emission_probability_models->state_transition_models.begin(); p != emission_probability_models->state_transition_models.end(); p++) {
 		//transition probability is the probability of transitioning to that state at the specified time, multipled by the probability of entering that state ever.
-		double weight = 0;
-		if (weight_matrix.size() != 0)
-			weight = weight_matrix[(int)p->first.first][(int)p->first.second];
-		if (state_transition_type == ns_empirical_without_weights)
-			log_prob[(int)p->first.first][(int)p->first.second] = p->second->point_emission_log_probability(duration) + weight;
-		else
-			log_prob[(int)p->first.first][(int)p->first.second] = p->second->point_emission_log_probability(duration)+log(p->second->model_weight()) + weight;
+		double external_weight = 0;
+		if (log_weight_matrix.size() != 0)
+			external_weight = log_weight_matrix[(int)p->first.first][(int)p->first.second];
+		double prob, model_weight;
+		//	Self transitions are the probability of /not/ exiting the current state to any other state...we calculate this later.
+		if (p->first.first != p->first.second){
+			prob = log(p->second->point_emission_likelihood(duration));
+			if (state_transition_type == ns_empirical_without_weights)
+				model_weight = 0;
+			else model_weight = log(p->second->model_weight());		//this is analogous to the gillespie algorithm.  if an event happens, scale the probability by the fraction of animals that make that transition.
+		}
+		log_prob[(int)p->first.first][(int)p->first.second] = prob+ model_weight + external_weight;
+	}
+	//now we handle self transition probabilities;
+	for (unsigned int i = 0; i < log_prob.size(); i++) {
+		double total_exit_prob = 0;
+		for (unsigned int j = 0; j < log_prob.size(); j++) {
+			if (i == j) continue;
+			if (std::isfinite(log_prob[i][j]))
+				total_exit_prob += exp(log_prob[i][j]);
+		}
+		if (total_exit_prob > 1)
+			throw ns_ex("Invalid exit probability");
+		log_prob[i][i] = log(1 - total_exit_prob);
 	}
 }
 
@@ -937,14 +973,6 @@ void ns_emperical_posture_quantification_value_estimator::defined_states(std::se
 }
 
 
-double ns_emperical_posture_quantification_value_estimator::log_transition_probability(const ns_hmm_movement_state& start, const ns_hmm_movement_state& finish, const unsigned long duration_in_seconds) {
-	auto p = emission_probability_models->state_transition_models.find(ns_hmm_state_transition(start, finish));
-	if (p == emission_probability_models->state_transition_models.end())
-		throw ns_ex("Undefined transition");
-	ns_hmm_labeled_data<double> d;
-	d.measurement = duration_in_seconds;
-	return p->second->point_emission_log_probability(d);
-}
 void ns_emperical_posture_quantification_value_estimator::log_probability_for_each_state(const ns_analyzed_image_time_path_element_measurements & e, std::vector<double> & d) const {
 	d.resize(0);
 	d.resize((int)ns_hmm_unknown_state,-INFINITY);
@@ -1285,6 +1313,13 @@ bool ns_emperical_posture_quantification_value_estimator::build_estimator_from_o
 		p2->second->build_from_data(q->second,observation_set.volatile_number_of_individuals_fully_annotated);
 	}
 	//now do state transitions
+	//first we calculate the total number of transitions from one state to a different state, which we'll use to normalize the transition probabilities
+	std::vector<unsigned long> state_transition_count(ns_hmm_unknown_state, 0);
+	for (auto q = observation_set.state_durations.begin(); q != observation_set.state_durations.end(); q++) {
+		if (q->first.first != q->first.second)
+			state_transition_count[(int)q->first.first] += q->second.size();
+	}
+
 	for (auto q = observation_set.state_durations.begin(); q != observation_set.state_durations.end(); q++) {
 		auto p2 = emission_probability_models->state_transition_models.find(q->first);
 		if (p2 == emission_probability_models->state_transition_models.end()) {
@@ -1295,7 +1330,8 @@ bool ns_emperical_posture_quantification_value_estimator::build_estimator_from_o
 		}
 		std::vector<const std::vector<ns_hmm_duration>* > data(1);
 		data[0] = &q->second;
-		p2->second->build_from_data(data, observation_set.volatile_number_of_individuals_fully_annotated);
+
+		p2->second->build_from_data(data, state_transition_count[(int)q->first.first]);
 	}
 	std::vector<ns_hmm_movement_state> required_states;
 	required_states.reserve(3);

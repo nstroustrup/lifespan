@@ -760,7 +760,9 @@ void ns_run_hmm_cross_validation(std::string& results_summary, ns_image_server_r
 				db.select(sub.database_name);
 			//all vs all has all multiple types of analysis, each with a single replicate containing all individuals
 			for (auto q = p->second.all_vs_all().analysis.begin(); q != p->second.all_vs_all().analysis.end(); q++) {
-				ns_image_server_results_file ps(image_server.results_storage.optimized_posture_analysis_parameter_set(sub, std::string("hmm=") + p->first + "=" + ns_model_building_specification::estimator_type_to_short_string(q->begin()->spec.cross_replicate_estimator_type), sql));
+				std::string file_suffix(p->first + "=" + ns_model_building_specification::estimator_type_to_short_string(q->begin()->spec.cross_replicate_estimator_type) + "=" + q->begin()->spec.name);
+				//ns_model_building_specification::state_transition_type_to_string(q->begin()->spec.state_transition_type));
+				ns_image_server_results_file ps(image_server.results_storage.optimized_posture_analysis_parameter_set(sub, std::string("hmm=") + file_suffix, sql));
 				model_filenames[p->first] = ps.output_filename();
 				ns_acquire_for_scope<ns_ostream> both_parameter_set(ps.output());
 				q->begin()->model.write(both_parameter_set()());
@@ -774,15 +776,20 @@ void ns_run_hmm_cross_validation(std::string& results_summary, ns_image_server_r
 
 				both_parameter_set2.release();
 
-				ns_acquire_for_scope<ns_ostream>  graphvis_file(image_server.results_storage.time_path_image_analysis_quantification(sub, std::string("state_transition_graph=") + p->first, true, sql).output());
+				ns_acquire_for_scope<ns_ostream>  graphvis_file(image_server.results_storage.time_path_image_analysis_quantification(sub, std::string("state_transition_graph=") + file_suffix, true, sql).output());
 				ns_hmm_solver solver;
 				std::vector<std::vector<double> > state_transition_weight_matrix, state_transition_matrix;
-				solver.build_state_transition_weight_matrix(q->begin()->model, state_transition_matrix);
-				q->begin()->model.state_transition_log_probabilities(60 * 60 * 2, state_transition_weight_matrix, state_transition_matrix);
+				solver.build_state_transition_weight_matrix(q->begin()->model, state_transition_weight_matrix);
+				for (unsigned int i = 0; i < state_transition_weight_matrix.size(); i++)
+					for (unsigned int j = 0; j < state_transition_weight_matrix[i].size(); j++)
+						state_transition_weight_matrix[i][j] = log(state_transition_weight_matrix[i][j]);
+				q->begin()->model.state_transition_log_probabilities(60 * 60 * 6, state_transition_weight_matrix, state_transition_matrix);
 				for (unsigned int i = 0; i < state_transition_matrix.size(); i++)
 					for (unsigned int j = 0; j < state_transition_matrix[i].size(); j++)
 						state_transition_matrix[i][j] = exp(state_transition_matrix[i][j]);
-				solver.output_state_transition_matrix(state_transition_matrix, graphvis_file()());
+				for (unsigned int i = 0; i < file_suffix.size(); i++)
+					if (file_suffix[i] == '=' || file_suffix[i] == ' ') file_suffix[i] = '_';
+				solver.output_state_transition_matrix("g_"+ file_suffix,state_transition_matrix, graphvis_file()());
 				graphvis_file.release();
 			}
 

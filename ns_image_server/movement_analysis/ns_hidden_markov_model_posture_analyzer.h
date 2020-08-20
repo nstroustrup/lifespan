@@ -75,7 +75,7 @@ public:
 	//the actual probabilities are calculated from empiric transition probabilities multiplied by these weights
 	static void build_state_transition_weight_matrix(const ns_emperical_posture_quantification_value_estimator & estimator, std::vector<std::vector<double> > & m);
 
-	static void output_state_transition_matrix(const std::vector<std::vector<double> >& m, std::ostream& o);
+	static void output_state_transition_matrix(const std::string & title, std::vector<std::vector<double> >& m, std::ostream& o);
 
 	static ns_hmm_movement_state most_probable_state(const std::vector<double> & d);
 

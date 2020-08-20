@@ -308,17 +308,35 @@ public:
 		}
 		//gmm.SetMaxIterNum(1e6);
 		//gmm.SetEndError(1e-5);
-		gmm->Train(training_data_buffer, N);
+		bool estimation_succeeded = gmm->Train(training_data_buffer, N);
 		lock.release();
 		double sum_of_weights = 0;
 		for (unsigned int i = 0; i < number_of_gaussians; i++) {
+			if (isnan(gmm->Prior(i))) {
+				estimation_succeeded = false;
+				break;
+			}
 			sum_of_weights += gmm->Prior(i);
-
-			if (isnan(gmm->Prior(i)))
-				throw ns_ex("GMM problem");
+		}
+		if (!estimation_succeeded) {
+			ogzstream debug_out("c:\\server\\gmm_debug.csv.gz");
+			debug_out.precision(10);
+			if (!debug_out.fail()) {
+				debug_out << "d 0";
+				for (unsigned int d = 1; d < number_of_dimensions; d++)
+					debug_out << ",d " << d;
+				debug_out << "\n";
+				for (unsigned int j = 0; j < N; j++) {
+					debug_out << training_data_buffer[number_of_dimensions * j];
+					for (unsigned int d = 1; d < number_of_dimensions; d++)
+						debug_out << "," << training_data_buffer[number_of_dimensions * j + d];
+					debug_out << "\n";
+				}
+				debug_out.close();
+			}
 		}
 
-		if (abs(sum_of_weights - 1) > 0.01)
+		if (!estimation_succeeded || abs(sum_of_weights - 1) > 0.01)
 			throw ns_ex("GMM problem");
 	}
 	//the pdf values are proportional to the probability of observing a range of values within a small dt of an observation.
@@ -543,7 +561,7 @@ public:
 	static std::vector<double> training_data_buffer;
 	static ns_lock training_data_buffer_lock;
 	double model_weight() const { return weight; }
-	void build_from_data(const std::vector<const std::vector<typename measurement_accessor_t::data_t>* >& observations, const long number_of_individuals) {
+	void build_from_data(const std::vector<const std::vector<typename measurement_accessor_t::data_t>* >& observations, const long total_number_of_transitions_out_of_starting_state) {
 		
 		unsigned long N(0);
 		for (unsigned int i = 0; i < observations.size(); i++)
@@ -591,23 +609,24 @@ public:
 		//median of exponential distribution is log(2)/sigma
 		//so, lambda  = log(2)/median
 		lambda = log(2) / median;
-		weight = N / (double)number_of_individuals;
+		if (total_number_of_transitions_out_of_starting_state == 0)
+			weight = 1;
+		else
+			weight = N / (double)total_number_of_transitions_out_of_starting_state;
 	}
-	//the pdf values are proportional to the probability of observing a range of values within a small dt of an observation.
-	//so as long as we are always comparing observations at the same t, we can multiply these together.
-	//So we can use them for viterbi algorithm 
+	
 	double point_emission_log_probability(const typename measurement_accessor_t::data_t& e) const {
+		return log(point_emission_likelihood(e));
+	}
+
+	double point_emission_likelihood(const typename measurement_accessor_t::data_t& e) const {
 		bool valid_point;
 		measurement_accessor_t m;
 		const double d = m(e, valid_point);
 		//pdf  = lambda * exp(-lambda * d)
 		//cdf = 1-exp(-lambda*d)
-		//liklihood = 1 - (1-exp(-lambda*d))
-		return log(exp(-lambda*d));
-	}
-
-	double point_emission_likelihood(const typename measurement_accessor_t::data_t& e) const {
-		return point_emission_log_probability(e);
+		//probability of event happening during the specified interval == cdf
+		return 1 - exp(-lambda * d);
 	}
 
 	void log_sub_probabilities(const typename measurement_accessor_t::data_t& m, std::vector<double>& measurements, std::vector<double>& probabilities) const {

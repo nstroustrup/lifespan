@@ -52,7 +52,7 @@ public:
     void Init(const char* sampleFileName);
 	void Train(const char* sampleFileName);
 	void Init(double *data, int N);
-	void Train(double *data, int N);
+	bool Train(double *data, int N);
 
 	void DumpSampleFile(const char* fileName);
 

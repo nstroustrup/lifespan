@@ -73,8 +73,6 @@ public:
 	bool build_estimator_from_observations(const ns_hmm_observation_set & observation_set, const ns_probability_model_generator* generator,const ns_hmm_states_permitted& states_permitted_, const ns_hmm_states_transition_types & transition_type_, std::string & output);
 
 	void log_probability_for_each_state(const ns_analyzed_image_time_path_element_measurements & e,std::vector<double> & p) const;
-	//probabiliy of a worm transitioning from the start to the finish state after duration seconds.
-	double log_transition_probability(const ns_hmm_movement_state& start, const ns_hmm_movement_state& finish, const unsigned long duration_in_seconds);
 
 	//log probability of an animal moving between states after duration_in_seconds seconds.
 	//logprob[i][j] is the probability of moving from state i to state j.

@@ -314,7 +314,7 @@ void GMM::Train(const char* sampleFileName)
 	delete[] x;
 }
 
-void GMM::Train(double *data, int N)
+bool GMM::Train(double *data, int N)
 {
 	Init(data,N);
 
@@ -360,7 +360,10 @@ void GMM::Train(double *data, int N)
 			for (int j = 0; j < m_mixNum; j++)
 			{
 				double pj = GetProbability(x, j) * m_priors[j] / p;
-
+				if (!std::isfinite(pj)) {
+					cout << "GMM Error: P(" << x << "," << j << ")=" << GetProbability(x, j) << "*" << m_priors[j] << "/" << p << "\n";
+					return false;
+				}
 				next_priors[j] += pj;
 
 				for (int d = 0; d < m_dimNum; d++)
@@ -416,6 +419,7 @@ void GMM::Train(double *data, int N)
 	delete[] next_means;
 	delete[] next_vars;
 	delete[] x;
+	return true;
 }
 
 void GMM::Init(double *data, int N)

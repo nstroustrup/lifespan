@@ -8,6 +8,7 @@
 #include "ns_annotation_handling_for_visualization.h"
 #include "ns_hidden_markov_model_posture_analyzer.h"
 #include "ns_image_statistics.h"
+#include <algorithm>
 #include <queue>
 
 #ifdef NS_CALCULATE_OPTICAL_FLOW
@@ -2253,9 +2254,9 @@ void ns_analyzed_image_time_path_element_measurements::read(istream & in, ns_vec
 	ns_get_int get_int;
 	ns_get_double get_double;
 	ns_get_string get_string; 
-	get_double(in, spatial_averaged_movement_score_uncropped_4x);//5										
+	get_double(in, spatial_averaged_movement_sum_uncropped_4x);//5										
 	if (in.fail()) throw ns_ex("Invalid Specification 5");
-	get_double(in, spatial_averaged_movement_score_uncropped_min_4x);//6												
+	get_double(in, spatial_averaged_scaled_movement_sum_uncropped);//6												
 	if (in.fail()) throw ns_ex("Invalid Specification 6");
 	get_double(in, change_in_total_region_intensity);//7										
 	if (in.fail()) throw ns_ex("Invalid Specification 7");
@@ -2295,9 +2296,10 @@ void ns_analyzed_image_time_path_element_measurements::read(istream & in, ns_vec
 	if (in.fail())		throw ns_ex("Invalid Specification 22");
 	get_double(in, spatial_averaged_movement_sum_uncropped);//23
 	if (in.fail())		throw ns_ex("Invalid Specification 23");
-	get_double(in, spatial_averaged_movement_score_uncropped);//24
+	get_double(in, spatial_averaged_scaled_movement_sum_uncropped_4x);//24
 	if (in.fail())		throw ns_ex("Invalid Specification 24");
-	get_double(in, spatial_averaged_movement_score_cropped);//25
+	string tmp;
+	get_int(in, tmp);//25	//blank
 	if (in.fail())		throw ns_ex("Invalid Specification 25");
 	get_double(in, intensity_normalization_scale_factor);//26
 	if (in.fail())		throw ns_ex("Invalid Specification 26");
@@ -2319,7 +2321,6 @@ void ns_analyzed_image_time_path_element_measurements::read(istream & in, ns_vec
 	if (in.fail())	throw ns_ex("Invalid Specification 34");
 	get_int(in, total_intensity_outside_stabilized_denoised);//35	
 	if (in.fail()) throw ns_ex("Invalid Specification 35");
-	string tmp;
 	char a = get_int(in, tmp);
 	if (in.fail())
 	
@@ -2459,8 +2460,8 @@ void ns_time_path_image_movement_analyzer<allocator_T>::get_processing_stats_fro
 
 
 void ns_analyzed_image_time_path_element_measurements::write_header(ostream & out) {
-	out << "spatial_averaged_movement_score_uncropped_4x"
-		",spatial_averaged_movement_score_uncropped_min_4x"
+	out << "spatial_averaged_movement_sum_uncropped_4x"
+		",spatial_averaged_scaled_movement_sum_uncropped"
 		",change_in_total_region_intensity"
 		",change_in_total_foreground_intensity"
 		",total_foreground_area"
@@ -2478,8 +2479,8 @@ void ns_analyzed_image_time_path_element_measurements::write_header(ostream & ou
 		",total_intensity_within_stabilized"
 		",spatial_averaged_movement_sum_cropped "
 		",spatial_averaged_movement_sum_uncropped "
-		",spatial_averaged_movement_score_uncropped "
-		",spatial_averaged_movement_score_cropped "
+		",spatial_averaged_scaled_movement_sum_uncropped_4x "
+		", blank"
 		",intensity_scale_factor"
 		",total_stabilized_area"
 		",change_in_total_stabilized_intensity_1x"
@@ -2495,8 +2496,8 @@ void ns_analyzed_image_time_path_element_measurements::write_header(ostream & ou
 		out << ",blank";
 }
 void ns_analyzed_image_time_path_element_measurements::write(ostream & out,const ns_vector_2d & offset, const bool & saturated_offset) const {
-	out << spatial_averaged_movement_score_uncropped_4x << ","//5
-		<< spatial_averaged_movement_score_uncropped_min_4x << ","//6
+	out << spatial_averaged_movement_sum_uncropped_4x << ","//5
+		<< spatial_averaged_scaled_movement_sum_uncropped << ","//6
 		<< change_in_total_region_intensity << ","//7
 		<< change_in_total_foreground_intensity << ","//8
 		<< total_foreground_area << ","//9
@@ -2514,8 +2515,8 @@ void ns_analyzed_image_time_path_element_measurements::write(ostream & out,const
 		<< total_intensity_within_stabilized << ","//21
 		<< spatial_averaged_movement_sum_cropped << ","//22
 		<< spatial_averaged_movement_sum_uncropped << ","//23
-		<< spatial_averaged_movement_score_uncropped << ","//24
-		<< spatial_averaged_movement_score_cropped << ","//25
+		<< spatial_averaged_scaled_movement_sum_uncropped_4x << ","//24
+		<< ","//25
 		<< intensity_normalization_scale_factor << ","//26
 		<< total_stabilized_area << ","//27
 		<< change_in_total_stabilized_intensity_1x << ","//28
@@ -2864,10 +2865,9 @@ void ns_analyzed_image_time_path::write_detailed_movement_quantification_analysi
 		"Movement Sum, Movement Score, Denoised Movement Score,"
 		"Spatially Averaged Movement Sum Cropped,"
 		"Spatially Averaged Movement Sum Uncropped,"
-		"Spatially Averaged Movement Score Cropped,"
-		"Spatially Averaged Movement Score Uncropped,"
-		"Spatially Averaged Movement Score Uncropped 4x,"
-		"Spatially Averaged Movement Score Uncropped Min 4x,"
+		"Spatially Averaged Movement Sum Uncropped 4x,"
+		"Spatially Averaged Movement Sum Scaled Uncropped,"
+		"Spatially Averaged Movement Sum Scaled Uncropped 4x,"
 		"Movement quantification used to identify threshold death,"
 		"Movement quantification used to identify HMM death,"
 		"Movement Alternate Worm Sum,"
@@ -3143,10 +3143,9 @@ void ns_analyzed_image_time_path::write_detailed_movement_quantification_analysi
 				<< elements[k].measurements.denoised_movement_score << ","
 				<< elements[k].measurements.spatial_averaged_movement_sum_cropped << ","
 				<< elements[k].measurements.spatial_averaged_movement_sum_uncropped << ","
-				<< elements[k].measurements.spatial_averaged_movement_score_cropped << ","
-				<< elements[k].measurements.spatial_averaged_movement_score_uncropped << ","
-				<< elements[k].measurements.spatial_averaged_movement_score_uncropped_4x << ","
-				<< elements[k].measurements.spatial_averaged_movement_score_uncropped_min_4x << ","
+				<< elements[k].measurements.spatial_averaged_movement_sum_uncropped_4x << ","
+				<< elements[k].measurements.spatial_averaged_scaled_movement_sum_uncropped << ","
+				<< elements[k].measurements.spatial_averaged_scaled_movement_sum_uncropped_4x << ","
 				<< elements[k].measurements.death_time_posture_analysis_measure_v2_cropped() << ","
 				<< elements[k].measurements.death_time_posture_analysis_measure_v2_uncropped() << ","
 				//	<< elements[k].measurements.total_intensity_in_previous_frame_scaled_to_current_frames_histogram << ","												
@@ -5119,14 +5118,31 @@ public:
 	unsigned long size()const { return elements->size(); }
 	const unsigned long time(const unsigned long i) { return (*elements)[i].absolute_time; }
 	double raw(const unsigned long i) {
-		return (*elements)[i].measurements.spatial_averaged_movement_score_uncropped;
+		return (*elements)[i].measurements.spatial_averaged_movement_sum_uncropped;
 	}
 	double& processed(const unsigned long i) {
-		return (*elements)[i].measurements.spatial_averaged_movement_score_uncropped_4x;
+		return (*elements)[i].measurements.spatial_averaged_movement_sum_uncropped_4x;
 	}
 private:
 	ns_analyzed_image_time_path::ns_element_list* elements;
 };
+
+class ns_stabilized_scaled_movement_data_accessor {
+public:
+	ns_stabilized_scaled_movement_data_accessor(ns_analyzed_image_time_path::ns_element_list& l) :elements(&l) {}
+	unsigned long size()const { return elements->size(); }
+	const unsigned long time(const unsigned long i) { return (*elements)[i].absolute_time; }
+	double raw(const unsigned long i) {
+		return (*elements)[i].measurements.spatial_averaged_scaled_movement_sum_uncropped;
+	}
+	double& processed(const unsigned long i) {
+		return (*elements)[i].measurements.spatial_averaged_scaled_movement_sum_uncropped_4x;
+	}
+private:
+	ns_analyzed_image_time_path::ns_element_list* elements;
+};
+
+/*
 class ns_stabilized_movement_data_min_accessor {
 public:
 	ns_stabilized_movement_data_min_accessor(ns_analyzed_image_time_path::ns_element_list& l) :elements(&l) {}
@@ -5140,7 +5156,7 @@ public:
 	}
 private:
 	ns_analyzed_image_time_path::ns_element_list* elements;
-};
+};*/
 
 class ns_stabilized_intensity_data_accessor {
 public:
@@ -5408,9 +5424,36 @@ void ns_analyzed_image_time_path::denoise_movement_series_and_calculate_intensit
 	for (unsigned int i = 0; i < elements.size(); i++) {
 		elements[i].measurements.registration_displacement = elements[i].registration_offset;
 		elements[i].measurements.movement_score = acc.raw(i);
-		elements[i].measurements.spatial_averaged_movement_score_cropped = elements[i].measurements.spatial_averaged_movement_sum_cropped;
-		elements[i].measurements.spatial_averaged_movement_score_uncropped = elements[i].measurements.spatial_averaged_movement_sum_uncropped;
 	}
+
+	{
+		//scale movement scores by median
+		auto start = (3 * elements.size()) / 4;
+		tmp1.resize(elements.size() - start);
+		for (unsigned int i = start; i < tmp1.size(); i++)
+			tmp1[i] = elements[i - start].measurements.spatial_averaged_movement_sum_uncropped;
+		double median;
+
+		if (tmp1.size() == 1)
+			median = tmp1[0];
+		if (tmp1.size() == 2)
+			median = .5 * (tmp1[0] + tmp1[1]);
+		else {
+			std::nth_element(tmp1.begin(), tmp1.begin() + tmp1.size() / 2 + 1, tmp1.end());
+			if (tmp1.size() % 2 == 0) {
+				median = tmp1[tmp1.size() / 2];
+			}
+			else {
+				const std::size_t p = tmp1.size() / 2;
+				median = .5 * (tmp1[p] + tmp1[p + 1]);
+			}
+			if (median == 0) median = 1;
+			for (unsigned int i = 0; i < tmp1.size(); i++)
+				elements[i].measurements.spatial_averaged_scaled_movement_sum_uncropped = elements[i].measurements.spatial_averaged_movement_sum_uncropped / median;
+		}
+		
+	}
+
 	{
 		//smooth raw movement data
 		ns_kernel_smoother<ns_movement_data_accessor, ns_mean> smooth_data;
@@ -5428,9 +5471,15 @@ void ns_analyzed_image_time_path::denoise_movement_series_and_calculate_intensit
 		ns_kernel_smoother < ns_stabilized_movement_data_accessor, ns_mean> smooth_data_4;
 		smooth_data_4(v2_movement_kernel_width, acc_4);
 
+		ns_stabilized_scaled_movement_data_accessor acc_5(elements);
+		ns_kernel_smoother < ns_stabilized_scaled_movement_data_accessor, ns_mean> smooth_data_5;
+		smooth_data_5(v2_movement_kernel_width, acc_5);
+
+		/*
 		ns_stabilized_movement_data_min_accessor acc_5(elements);
 		ns_kernel_smoother < ns_stabilized_movement_data_min_accessor, ns_min> smooth_data_5;
-		smooth_data_5(v2_movement_kernel_width, acc_5);
+		
+		smooth_data_5(v2_movement_kernel_width, acc_5);*/
 	}
 
 		
@@ -5444,6 +5493,7 @@ void ns_analyzed_image_time_path::denoise_movement_series_and_calculate_intensit
 	ns_slope_calculator<2, 2, ns_slope_accessor_total_outside_stabilized_1x, ns_set_to_zero, ns_set_to_local_mean> stabilized_outside_change_calculator_1x(elements, start_i, tmp1, tmp2);
 	ns_slope_calculator<4, 2, ns_slope_accessor_total_outside_stabilized_2x, ns_set_to_zero, ns_set_to_local_mean> stabilized_outside_change_calculator_2x(elements, start_i, tmp1, tmp2);
 	ns_slope_calculator<8, 2, ns_slope_accessor_total_outside_stabilized_4x, ns_set_to_zero, ns_set_to_local_mean> stabilized_outside_change_calculator_4x(elements, start_i, tmp1, tmp2);
+
 }
 //aggregate histogram into larger categories to remove noise, retaining 0 as a special case.
 ns_histogram<unsigned int, ns_8_bit>  ns_downsample_histogram(const ns_histogram<unsigned int, ns_8_bit>& source) {
@@ -5634,13 +5684,18 @@ void ns_analyzed_image_time_path::quantify_movement(const ns_analyzed_time_image
 				if (worm_threshold) {
 					long averaged_sum, count;
 					spatially_average_movement(y, x, ns_time_path_image_movement_analyzer<ns_overallocation_resizer>::ns_spatially_averaged_movement_kernal_half_size, elements[i].registered_images->movement_image_, averaged_sum, count);
+					ns_8_bit cur_intensity = elements[i].registered_images->image[y][x];
+					ns_8_bit prev_intensity = cur_intensity;
+					if (i > 0 && elements[i-1].registered_image_is_loaded())
+						prev_intensity = elements[i-1].registered_images->image[y][x];
 					long averaged_sum_cropped = averaged_sum;
 					if (abs(averaged_sum) < count * ns_time_path_image_movement_analyzer<ns_overallocation_resizer>::ns_spatially_averaged_movement_threshold)
 						averaged_sum_cropped = 0;
 					//if (abs(averaged_sum) < count*(ns_time_path_image_movement_analyzer<ns_overallocation_resizer>::ns_spatially_averaged_movement_threshold/2))
 					//	averaged_sum = 0;
 					if (count > 0) {
-						elements[i].measurements.spatial_averaged_movement_sum_uncropped += abs(averaged_sum / (float)count);
+						const float unc = abs(averaged_sum / (float)count);
+						elements[i].measurements.spatial_averaged_movement_sum_uncropped += unc;
 						elements[i].measurements.spatial_averaged_movement_sum_cropped += abs(averaged_sum_cropped / (float)count);
 						spatial_averaged_movement_signed_sum += averaged_sum / (float)count;
 						spatial_averaged_movement_signed_sum_cropped += averaged_sum_cropped / (float)count;
@@ -5934,7 +5989,7 @@ void ns_analyzed_image_time_path::calculate_movement_images(const ns_analyzed_ti
 				//hist_data[k - intensity_normalization_kernal_start] = &elements[k].histogram_matching_data;
 			}
 			//find the image with the median mean intensity, and use it as the reference.
-			std::sort(means.begin(), means.end());
+			std::nth_element(means.begin(), means.begin()+ intensity_normalization_kernel_half_width,means.end());
 			const unsigned long ref_id = means[intensity_normalization_kernel_half_width].source_id;
 			cur_scaling = ns_calc_whole_image_scaling(elements[i].registered_images->image, elements[ref_id].registered_images->image);
 		}
@@ -7177,11 +7232,10 @@ void ns_analyzed_image_time_path_element_measurements::zero(){
 	denoised_movement_score = 0; 
 	spatial_averaged_movement_sum_cropped = 0;
 	spatial_averaged_movement_sum_uncropped = 0;
-	spatial_averaged_movement_score_cropped = 0;
-	spatial_averaged_movement_score_uncropped = 0;
-
-	spatial_averaged_movement_score_uncropped_4x = 0;
-	spatial_averaged_movement_score_uncropped_min_4x = 0;
+	spatial_averaged_movement_sum_cropped = 0;
+	spatial_averaged_movement_sum_uncropped_4x = 0;
+	spatial_averaged_scaled_movement_sum_uncropped = 0;
+	spatial_averaged_scaled_movement_sum_uncropped_4x = 0;
 
 	registration_displacement = ns_vector_2d(0,0);
 }
@@ -7221,11 +7275,10 @@ void ns_analyzed_image_time_path_element_measurements::square() {
 	denoised_movement_score = denoised_movement_score*denoised_movement_score;
 	spatial_averaged_movement_sum_cropped = spatial_averaged_movement_sum_cropped*spatial_averaged_movement_sum_cropped;
 	spatial_averaged_movement_sum_uncropped = spatial_averaged_movement_sum_uncropped * spatial_averaged_movement_sum_uncropped;
-	spatial_averaged_movement_score_cropped = spatial_averaged_movement_score_cropped * spatial_averaged_movement_score_cropped;
-	spatial_averaged_movement_score_uncropped = spatial_averaged_movement_score_uncropped * spatial_averaged_movement_score_uncropped;
+	spatial_averaged_movement_sum_uncropped_4x = spatial_averaged_movement_sum_uncropped_4x * spatial_averaged_movement_sum_uncropped_4x;
 
-	spatial_averaged_movement_score_uncropped_4x = spatial_averaged_movement_score_uncropped_4x* spatial_averaged_movement_score_uncropped_4x;
-	spatial_averaged_movement_score_uncropped_min_4x = spatial_averaged_movement_score_uncropped_min_4x* spatial_averaged_movement_score_uncropped_min_4x;
+	spatial_averaged_scaled_movement_sum_uncropped = spatial_averaged_scaled_movement_sum_uncropped * spatial_averaged_scaled_movement_sum_uncropped;
+	spatial_averaged_scaled_movement_sum_uncropped_4x = spatial_averaged_scaled_movement_sum_uncropped_4x * spatial_averaged_scaled_movement_sum_uncropped_4x;
 
 	registration_displacement.x = registration_displacement.x*registration_displacement.x;
 	registration_displacement.y = registration_displacement.y*registration_displacement.y;
@@ -7257,11 +7310,10 @@ void ns_analyzed_image_time_path_element_measurements::square_root() {
 	denoised_movement_score = sqrt(denoised_movement_score);
 	spatial_averaged_movement_sum_cropped = sqrt(spatial_averaged_movement_sum_cropped);
 	spatial_averaged_movement_sum_uncropped = sqrt(spatial_averaged_movement_sum_uncropped);
-	spatial_averaged_movement_score_cropped = sqrt(spatial_averaged_movement_score_cropped);
-	spatial_averaged_movement_score_uncropped = sqrt(spatial_averaged_movement_score_uncropped);
+	spatial_averaged_movement_sum_uncropped_4x = sqrt(spatial_averaged_movement_sum_uncropped_4x);
 
-	spatial_averaged_movement_score_uncropped_4x = sqrt(spatial_averaged_movement_score_uncropped_4x);
-	spatial_averaged_movement_score_uncropped_min_4x = sqrt(spatial_averaged_movement_score_uncropped_min_4x);
+	spatial_averaged_scaled_movement_sum_uncropped = sqrt(spatial_averaged_scaled_movement_sum_uncropped);
+	spatial_averaged_scaled_movement_sum_uncropped_4x = sqrt(spatial_averaged_scaled_movement_sum_uncropped_4x);
 
 	registration_displacement.x = sqrt(registration_displacement.x);
 	registration_displacement.y = sqrt(registration_displacement.y);
@@ -7296,10 +7348,9 @@ ns_analyzed_image_time_path_element_measurements operator+(const ns_analyzed_ima
 	ret.denoised_movement_score = a.denoised_movement_score+b.denoised_movement_score;
 	ret.spatial_averaged_movement_sum_cropped = a.spatial_averaged_movement_sum_cropped+b.spatial_averaged_movement_sum_cropped;
 	ret.spatial_averaged_movement_sum_uncropped = a.spatial_averaged_movement_sum_uncropped + b.spatial_averaged_movement_sum_uncropped;
-	ret.spatial_averaged_movement_score_cropped = a.spatial_averaged_movement_score_cropped +b.spatial_averaged_movement_score_cropped;
-	ret.spatial_averaged_movement_score_uncropped = a.spatial_averaged_movement_score_uncropped + b.spatial_averaged_movement_score_uncropped;
-	ret.spatial_averaged_movement_score_uncropped_4x = a.spatial_averaged_movement_score_uncropped_4x + b.spatial_averaged_movement_score_uncropped_4x;
-	ret.spatial_averaged_movement_score_uncropped_min_4x = a.spatial_averaged_movement_score_uncropped_min_4x + b.spatial_averaged_movement_score_uncropped_min_4x;
+	ret.spatial_averaged_movement_sum_uncropped_4x = a.spatial_averaged_movement_sum_uncropped_4x + b.spatial_averaged_movement_sum_uncropped_4x;
+	ret.spatial_averaged_scaled_movement_sum_uncropped = a.spatial_averaged_scaled_movement_sum_uncropped + b.spatial_averaged_scaled_movement_sum_uncropped;
+	ret.spatial_averaged_scaled_movement_sum_uncropped_4x = a.spatial_averaged_scaled_movement_sum_uncropped_4x + b.spatial_averaged_scaled_movement_sum_uncropped_4x;
 
 	ret.registration_displacement.x = a.registration_displacement.x+b.registration_displacement.x;
 	ret.registration_displacement.y = a.registration_displacement.y+b.registration_displacement.y;
@@ -7333,11 +7384,10 @@ ns_analyzed_image_time_path_element_measurements operator-(const ns_analyzed_ima
 	ret.denoised_movement_score = a.denoised_movement_score - b.denoised_movement_score;
 	ret.spatial_averaged_movement_sum_cropped = a.spatial_averaged_movement_sum_cropped - b.spatial_averaged_movement_sum_cropped;
 	ret.spatial_averaged_movement_sum_uncropped = a.spatial_averaged_movement_sum_uncropped - b.spatial_averaged_movement_sum_uncropped;
-	ret.spatial_averaged_movement_score_cropped = a.spatial_averaged_movement_score_cropped - b.spatial_averaged_movement_score_cropped;
-	ret.spatial_averaged_movement_score_uncropped = a.spatial_averaged_movement_score_uncropped - b.spatial_averaged_movement_score_uncropped;
 
-	ret.spatial_averaged_movement_score_uncropped_4x = a.spatial_averaged_movement_score_uncropped_4x - b.spatial_averaged_movement_score_uncropped_4x;
-	ret.spatial_averaged_movement_score_uncropped_min_4x = a.spatial_averaged_movement_score_uncropped_min_4x - b.spatial_averaged_movement_score_uncropped_min_4x;
+	ret.spatial_averaged_movement_sum_uncropped_4x = a.spatial_averaged_movement_sum_uncropped_4x - b.spatial_averaged_movement_sum_uncropped_4x;
+	ret.spatial_averaged_scaled_movement_sum_uncropped = a.spatial_averaged_scaled_movement_sum_uncropped - b.spatial_averaged_scaled_movement_sum_uncropped;
+	ret.spatial_averaged_scaled_movement_sum_uncropped_4x = a.spatial_averaged_scaled_movement_sum_uncropped_4x - b.spatial_averaged_scaled_movement_sum_uncropped_4x;
 
 	ret.registration_displacement.x = a.registration_displacement.x - b.registration_displacement.x;
 	ret.registration_displacement.y = a.registration_displacement.y - b.registration_displacement.y;
@@ -7371,10 +7421,9 @@ ns_analyzed_image_time_path_element_measurements operator/(const ns_analyzed_ima
 	ret.denoised_movement_score = a.denoised_movement_score / d;
 	ret.spatial_averaged_movement_sum_cropped = a.spatial_averaged_movement_sum_cropped / d;
 	ret.spatial_averaged_movement_sum_uncropped = a.spatial_averaged_movement_sum_uncropped / d;
-	ret.spatial_averaged_movement_score_cropped = a.spatial_averaged_movement_score_cropped / d;
-	ret.spatial_averaged_movement_score_uncropped = a.spatial_averaged_movement_score_uncropped / d;
-	ret.spatial_averaged_movement_score_uncropped_4x = a.spatial_averaged_movement_score_uncropped_4x / d;
-	ret.spatial_averaged_movement_score_uncropped_min_4x = a.spatial_averaged_movement_score_uncropped_min_4x / d;
+	ret.spatial_averaged_scaled_movement_sum_uncropped_4x = a.spatial_averaged_scaled_movement_sum_uncropped_4x / d;
+	ret.spatial_averaged_scaled_movement_sum_uncropped = a.spatial_averaged_scaled_movement_sum_uncropped / d;
+	ret.spatial_averaged_scaled_movement_sum_uncropped_4x = a.spatial_averaged_scaled_movement_sum_uncropped_4x / d;
 
 	ret.registration_displacement.x = a.registration_displacement.x / d;
 	ret.registration_displacement.y = a.registration_displacement.y / d;

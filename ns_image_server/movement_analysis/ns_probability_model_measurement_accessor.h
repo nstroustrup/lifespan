@@ -38,8 +38,6 @@ public:
 	}
 };
 
-
-
 struct ns_intensity_accessor_1x : public ns_measurement_accessor {
 	const double operator()(const ns_analyzed_image_time_path_element_measurements& e, bool& valid_point) const {
 		valid_point = true;
@@ -81,13 +79,36 @@ struct ns_movement_accessor_4x : public ns_measurement_accessor {
 	const double operator()(const ns_analyzed_image_time_path_element_measurements& e, bool& valid_point) const {
 		//this defines the movement score used by the HMM model!
 		valid_point = true;
-		const double d = e.spatial_averaged_movement_score_uncropped_4x + .1;
+		const double d = e.spatial_averaged_movement_sum_uncropped_4x + .1;
 		if (d <= 0) return -DBL_MAX;
 		return log(d);
 	}
 	const double get_from_emission(const ns_hmm_emission& e, bool& valid_point) const { return (*this)(e.measurement, valid_point); }
 	ns_measurement_accessor* clone() { return new ns_movement_accessor; }
 };
+struct ns_scaled_movement_accessor : public ns_measurement_accessor {
+	const double operator()(const ns_analyzed_image_time_path_element_measurements& e, bool& valid_point) const {
+		//this defines the movement score used by the HMM model!
+		valid_point = true;
+		const double d = e.spatial_averaged_scaled_movement_sum_uncropped + .1;
+		if (d <= 0) return -DBL_MAX;
+		return log(d);
+	}
+	const double get_from_emission(const ns_hmm_emission& e, bool& valid_point) const { return (*this)(e.measurement, valid_point); }
+	ns_measurement_accessor* clone() { return new ns_movement_accessor; }
+};
+struct ns_scaled_movement_accessor_4x : public ns_measurement_accessor {
+	const double operator()(const ns_analyzed_image_time_path_element_measurements& e, bool& valid_point) const {
+		//this defines the movement score used by the HMM model!
+		valid_point = true;
+		const double d = e.spatial_averaged_scaled_movement_sum_uncropped_4x + .1;
+		if (d <= 0) return -DBL_MAX;
+		return log(d);
+	}
+	const double get_from_emission(const ns_hmm_emission& e, bool& valid_point) const { return (*this)(e.measurement, valid_point); }
+	ns_measurement_accessor* clone() { return new ns_movement_accessor; }
+};
+/*
 struct ns_movement_accessor_min_4x : public ns_measurement_accessor {
 	const double operator()(const ns_analyzed_image_time_path_element_measurements& e, bool& valid_point) const {
 		//this defines the movement score used by the HMM model!
@@ -98,7 +119,7 @@ struct ns_movement_accessor_min_4x : public ns_measurement_accessor {
 	}
 	const double get_from_emission(const ns_hmm_emission& e, bool& valid_point) const { return (*this)(e.measurement, valid_point); }
 	ns_measurement_accessor* clone() { return new ns_movement_accessor; }
-};
+};*/
 
 struct ns_outside_intensity_accessor_1x : public ns_measurement_accessor {
 	const double operator()(const ns_analyzed_image_time_path_element_measurements& e, bool& valid_point) const {
@@ -150,6 +171,8 @@ public:
 	ns_covarying_gaussian_dimension<ns_measurement_accessor> create_dimension(const std::string& d) const {
 		if (d == "m") return ns_covarying_gaussian_dimension<ns_measurement_accessor>(new ns_movement_accessor, d);
 		if (d == "m4") return ns_covarying_gaussian_dimension<ns_measurement_accessor>(new ns_movement_accessor_4x, d);
+		if (d == "s") return ns_covarying_gaussian_dimension<ns_measurement_accessor>(new ns_scaled_movement_accessor, d);
+		if (d == "s4") return ns_covarying_gaussian_dimension<ns_measurement_accessor>(new ns_scaled_movement_accessor_4x, d);
 		if (d == "i1") return ns_covarying_gaussian_dimension<ns_measurement_accessor>(new ns_intensity_accessor_1x, d);
 		if (d == "i2") return ns_covarying_gaussian_dimension<ns_measurement_accessor>(new ns_intensity_accessor_2x, d);
 		if (d == "i4") return ns_covarying_gaussian_dimension<ns_measurement_accessor>(new ns_intensity_accessor_4x, d);

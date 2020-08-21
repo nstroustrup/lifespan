@@ -509,6 +509,7 @@ public:
 		std::cerr << gmm->GetDimNum() << "/" << gmm->GetMixNum() << ": ";
 		for (unsigned int i = 0; i < gmm->GetMixNum(); i++)
 			std::cerr << gmm->Prior(i) << ",";
+		std::cerr << "\n";
 		for (unsigned int i = 0; i < gmm->GetMixNum(); i++) {
 			std::cerr << "G" << i << ": ";
 			const double* d = gmm->Mean(i);
@@ -595,7 +596,7 @@ public:
 		}
 		else {
 			training_data_buffer.resize(N);
-			std::sort(training_data_buffer.begin(), training_data_buffer.end());
+			std::nth_element(training_data_buffer.begin(),training_data_buffer.begin()+ N / 2 +1, training_data_buffer.end());
 			if (N % 2 == 0) {
 				median = training_data_buffer[N / 2];
 			}

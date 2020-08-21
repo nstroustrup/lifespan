@@ -357,13 +357,11 @@ bool GMM::Train(double *data, int N)
 				x[j]=data[k*m_dimNum+j];
 			double p = GetProbability(x);
 			if (p == 0)		//stop double precision limits from blowing up calculation.
-				p = sqrt(DBL_MIN);
+				continue;
 
 			for (int j = 0; j < m_mixNum; j++)
 			{
 				double pp = GetProbability(x, j);
-				if (pp == 0)		//stop double precision limits from blowing up calculation.
-					pp = sqrt(DBL_MIN);
 
 				double pj = pp * m_priors[j] / p;
 				if (!std::isfinite(pj)) {

@@ -1412,6 +1412,31 @@ ns_hmm_states_permitted ns_emperical_posture_quantification_value_estimator::sta
 }
 
 
+class ns_source_state_matches {
+public:
+	ns_source_state_matches(const ns_hmm_movement_state& state) :state_(state) {}
+	bool operator()(const std::pair<ns_hmm_state_transition,double> & t) const {
+		return t.first.first == state_;
+	}
+	ns_hmm_movement_state state_;
+}; 
+class ns_destination_state_matches {
+public:
+	ns_destination_state_matches(const ns_hmm_movement_state& state) :state_(state) {}
+	bool operator()(const std::pair<ns_hmm_state_transition, double> & t) const {
+		return t.first.second == state_;
+	}
+	ns_hmm_movement_state state_;
+};
+class ns_source_or_destination_state_matches {
+public:
+	ns_source_or_destination_state_matches(const ns_hmm_movement_state& state) :state_(state) {}
+	bool operator()(const std::pair<ns_hmm_state_transition, double> & t) const {
+		return t.first.first == state_ || t.first.second == state_;
+	}
+	ns_hmm_movement_state state_;
+};
+
 void ns_emperical_posture_quantification_value_estimator::write_visualization(std::ostream & o, const std::string & experiment_name)const{
 }
 
@@ -1460,31 +1485,18 @@ bool ns_hmm_observation_set::add_observation(const std::string& software_version
 			path->by_hand_hmm_movement_state(path->element(0).absolute_time) : ns_hmm_missing;
 		unsigned long previous_state_start = path->element_count() > 0 ? path->element(0).absolute_time : 0;
 
+		std::map<ns_hmm_state_transition, double > current_worm_state_durations;
+
+
+
+
 		for (unsigned int i = 0; i < path->element_count(); i++) {
 			if (path->element(i).excluded || path->element(i).censored)
 				continue;
 			ns_hmm_movement_state by_hand_movement_state(path->by_hand_hmm_movement_state(path->element(i).absolute_time));
 			//quantify how long an animal remains in each state before transitioning to another.
 			if (by_hand_movement_state != previous_state) {
-				std::vector<ns_hmm_duration>& v(state_durations[std::pair<ns_hmm_movement_state, ns_hmm_movement_state>(previous_state, by_hand_movement_state)]);
-				v.resize(v.size() + 1);
-				ns_hmm_duration& e = *v.rbegin();
-				e.path_id = properties.stationary_path_id;
-				e.emission_time = path->element(i).absolute_time;
-				e.region_name = plate_name;
-				e.device_name = device_name;
-				e.region_info_id = properties.region_info_id;
-				e.database_name = database_name;
-				e.experiment_id = experiment_id;
-				e.genotype = genotype_;
-				e.measurement = path->element(i).absolute_time - previous_state_start;
-
-				//keep a list of how long animals stayed within a state before transitioning to any other state
-				std::vector<ns_hmm_duration>& self_v(state_durations[std::pair<ns_hmm_movement_state, ns_hmm_movement_state>(previous_state, previous_state)]);
-				self_v.resize(self_v.size() + 1);
-				ns_hmm_duration& self_e = *self_v.rbegin();
-				self_e = e;
-
+				current_worm_state_durations[ns_hmm_state_transition(previous_state, by_hand_movement_state)] = path->element(i).absolute_time - previous_state_start;
 				previous_state_start = path->element(i).absolute_time;
 				previous_state = by_hand_movement_state;
 			}
@@ -1567,6 +1579,73 @@ bool ns_hmm_observation_set::add_observation(const std::string& software_version
 			stats.region_name = plate_name;
 			stats.device_name = device_name;
 		}
+		/*
+		ns_hmm_missing,
+			ns_hmm_moving_vigorously,
+			ns_hmm_moving_weakly,
+			ns_hmm_moving_weakly_expanding,
+			ns_hmm_moving_weakly_post_expansion,
+			ns_hmm_not_moving_alive,
+			ns_hmm_not_moving_expanding,
+			ns_hmm_not_moving_dead,
+			ns_hmm_contracting_post_expansion,
+			ns_hmm_unknown_state,*/
+
+
+		//identify any skipped intervals, and mark them with duration zero.
+		auto moving_weakly_entrance = std::find_if(current_worm_state_durations.begin(), current_worm_state_durations.end(), ns_source_state_matches(ns_hmm_moving_weakly));
+		auto not_moving_alive = std::find_if(current_worm_state_durations.begin(), current_worm_state_durations.end(), ns_source_state_matches(ns_hmm_not_moving_alive));
+		auto not_moving_expanding = std::find_if(current_worm_state_durations.begin(), current_worm_state_durations.end(), ns_source_state_matches(ns_hmm_not_moving_expanding));
+		auto contracting_any = std::find_if(current_worm_state_durations.begin(), current_worm_state_durations.end(), ns_source_or_destination_state_matches(ns_hmm_contracting_post_expansion));
+		auto contracting_start = std::find_if(current_worm_state_durations.begin(), current_worm_state_durations.end(), ns_source_state_matches(ns_hmm_contracting_post_expansion));
+		auto not_moving_dead = std::find_if(current_worm_state_durations.begin(), current_worm_state_durations.end(), ns_source_or_destination_state_matches(ns_hmm_not_moving_dead));
+		auto not_found = current_worm_state_durations.end();
+
+		if (moving_weakly_entrance == not_found) {
+			if (not_moving_alive != not_found)
+				current_worm_state_durations[ns_hmm_state_transition(ns_hmm_moving_weakly, ns_hmm_not_moving_alive)] = 0;
+			else if (not_moving_expanding != not_found)
+				current_worm_state_durations[ns_hmm_state_transition(ns_hmm_moving_weakly, ns_hmm_not_moving_expanding)] = 0;
+			else if (contracting_any != not_found)
+				current_worm_state_durations[ns_hmm_state_transition(ns_hmm_moving_weakly, ns_hmm_contracting_post_expansion)] = 0;
+			else if (not_moving_dead != not_found)
+				current_worm_state_durations[ns_hmm_state_transition(ns_hmm_moving_weakly, ns_hmm_not_moving_dead)] = 0;
+		}
+		if (not_moving_alive == not_found) {
+			if (not_moving_expanding != not_found)
+				current_worm_state_durations[ns_hmm_state_transition(ns_hmm_not_moving_alive, ns_hmm_not_moving_expanding)] = 0;
+			else if (contracting_any != not_found)
+				current_worm_state_durations[ns_hmm_state_transition(ns_hmm_not_moving_alive, ns_hmm_contracting_post_expansion)] = 0;
+			else if (not_moving_dead != not_found)
+				current_worm_state_durations[ns_hmm_state_transition(ns_hmm_not_moving_alive, ns_hmm_not_moving_dead)] = 0;
+		}
+		if (not_moving_expanding != not_found && contracting_start == not_found) {
+			if (not_moving_dead != not_found)
+				current_worm_state_durations[ns_hmm_state_transition(ns_hmm_contracting_post_expansion, ns_hmm_not_moving_dead)] = 0;
+		}
+		//now we have a list of all state transitions for the current path, add them to the observation list.
+		for (auto p = current_worm_state_durations.begin(); p != current_worm_state_durations.end(); p++) {
+			std::vector<ns_hmm_duration>& v(state_durations[p->first]);
+			v.resize(v.size() + 1);
+			ns_hmm_duration& e = *v.rbegin();
+			e.path_id = properties.stationary_path_id;
+			e.emission_time = 0;
+			e.region_name = plate_name;
+			e.device_name = device_name;
+			e.region_info_id = properties.region_info_id;
+			e.database_name = database_name;
+			e.experiment_id = experiment_id;
+			e.genotype = genotype_;
+			e.measurement = p->second;
+
+			//keep a list of how long animals stayed within a state before transitioning to any other state
+			std::vector<ns_hmm_duration>& self_v(state_durations[ns_hmm_state_transition(p->first.first, p->first.first)]);
+			self_v.resize(self_v.size() + 1);
+			ns_hmm_duration& self_e = *self_v.rbegin();
+			self_e = e;
+
+		}
+
 		if (this->obs.size() > 1 && state_durations.size() == 0)
 			std::cerr << "Empty duration!";
 

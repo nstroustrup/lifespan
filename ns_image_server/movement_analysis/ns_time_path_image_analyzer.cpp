@@ -5441,12 +5441,12 @@ void ns_analyzed_image_time_path::denoise_movement_series_and_calculate_intensit
 			median = .5 * (tmp3[0] + tmp3[1]);
 		else {
 			std::nth_element(tmp3.begin(), tmp3.begin() + tmp3.size() / 2 + 1, tmp3.end());
-			if (tmp1.size() % 2 == 0) {
-				median = tmp1[tmp1.size() / 2];
+			if (tmp3.size() % 2 == 0) {
+				median = tmp3[tmp3.size() / 2];
 			}
 			else {
-				const std::size_t p = tmp1.size() / 2;
-				median = .5 * (tmp1[p] + tmp1[p + 1]);
+				const std::size_t p = tmp3.size() / 2;
+				median = .5 * (tmp3[p] + tmp3[p + 1]);
 			}
 		}
 		if (median == 0) median = 1;

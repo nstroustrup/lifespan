@@ -2060,6 +2060,27 @@ void ns_set_up_hmm_model_specs_to_test(std::vector<ns_model_building_specificati
 	strict_spec.state_transition_type = ns_model_building_specification::ns_static;
 	strict_spec.name = "strict_4D";
 	s.push_back(strict_spec);
+	{
+		ns_model_building_specification mod;
+		mod.cross_replicate_estimator_type = ns_model_building_specification::ns_strict_ordering;
+		mod.model_features_to_use.push_back("i1");
+		mod.model_features_to_use.push_back("i4");
+		mod.model_features_to_use.push_back("s");
+		mod.model_features_to_use.push_back("s4");
+		mod.state_transition_type = ns_model_building_specification::ns_static;
+		mod.name = "strict_4DS";
+		s.push_back(mod);
+	}
+	{
+		ns_model_building_specification mod;
+		mod.cross_replicate_estimator_type = ns_model_building_specification::ns_strict_ordering;
+		mod.model_features_to_use.push_back("i1");
+		mod.model_features_to_use.push_back("i4");
+		mod.model_features_to_use.push_back("c");
+		mod.state_transition_type = ns_model_building_specification::ns_static;
+		mod.name = "strict_3DC";
+		s.push_back(mod);
+	}
 	/*
 	ns_model_building_specification strict_spec_mod;
 	strict_spec_mod.cross_replicate_estimator_type = ns_model_building_specification::ns_strict_ordering;
@@ -2098,7 +2119,8 @@ void ns_set_up_hmm_model_specs_to_test(std::vector<ns_model_building_specificati
 	simultaneous_spec.model_features_to_use = flexible_spec.model_features_to_use;
 	simultaneous_spec.state_transition_type = ns_model_building_specification::ns_static;
 	simultaneous_spec.name = "simultaneous_4D";
-	s.push_back(simultaneous_spec);
+	//s.push_back(simultaneous_spec);
+
 	/*
 	ns_model_building_specification strict_spec_3D_i1;
 	strict_spec_3D_i1.cross_replicate_estimator_type = ns_model_building_specification::ns_strict_ordering;

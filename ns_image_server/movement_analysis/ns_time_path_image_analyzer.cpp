@@ -5447,11 +5447,10 @@ void ns_analyzed_image_time_path::denoise_movement_series_and_calculate_intensit
 				const std::size_t p = tmp1.size() / 2;
 				median = .5 * (tmp1[p] + tmp1[p + 1]);
 			}
-			if (median == 0) median = 1;
-			for (unsigned int i = 0; i < tmp1.size(); i++)
-				elements[i].measurements.spatial_averaged_scaled_movement_sum_uncropped = elements[i].measurements.spatial_averaged_movement_sum_uncropped / median;
 		}
-		
+		if (median == 0) median = 1;
+		for (unsigned int i = 0; i < elements.size(); i++)
+			elements[i].measurements.spatial_averaged_scaled_movement_sum_uncropped = elements[i].measurements.spatial_averaged_movement_sum_uncropped / median;
 	}
 
 	{

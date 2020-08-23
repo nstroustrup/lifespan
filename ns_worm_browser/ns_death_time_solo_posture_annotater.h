@@ -20,13 +20,15 @@ void ns_specify_worm_details(const ns_64_bit region_info_id, const ns_stationary
 
 class ns_death_time_solo_posture_annotater_timepoint : public ns_annotater_timepoint {
 public:
-	typedef enum { ns_image, ns_movement, ns_movement_threshold, ns_movement_and_image, ns_movement_threshold_and_image } ns_visualization_type;
+	typedef enum { ns_image, ns_movement, ns_movement_threshold_0, ns_movement_threshold_1, ns_movement_threshold_2, ns_movement_and_image, ns_movement_threshold_and_image } ns_visualization_type;
 
 	static std::string visulazation_type_string(const ns_visualization_type& t) {
 		switch (t) {
 		case ns_image: return "brightfield image";
 		case ns_movement: return "movement quantification";
-		case ns_movement_threshold:return "thresholded movement quantification";
+		case ns_movement_threshold_0:return "thresholded movement quantification 0";
+		case ns_movement_threshold_1:return "thresholded movement quantification 1";
+		case ns_movement_threshold_2:return "thresholded movement quantification 2";
 		case ns_movement_and_image: return "movement quantification, superimposed on brightfield image";
 		case ns_movement_threshold_and_image: return "thresholded movement quantification, superimposed on brightfield image";
 		default: throw ns_ex("ns_death_time_solo_posture_annotater_timepoint::visulazation_type_string()::Unknown visualization type");
@@ -127,14 +129,21 @@ public:
 					}
 				}
 				break;
-			case ns_movement_threshold:
+			case ns_movement_threshold_0:
+			case ns_movement_threshold_1:
+			case ns_movement_threshold_2:
+			{
+				int cropped_level(0);
+				if (vis_type == ns_movement_threshold_0) cropped_level = 0;
+				else if (vis_type == ns_movement_threshold_1) cropped_level = 1;
+				else if (vis_type == ns_movement_threshold_2) cropped_level = 2;
 				for (unsigned int x = 0; x < image.properties().width; x++) {
 					ns_8_bit t;
 					if (registered_images.get_stabilized_worm_neighborhood_threshold(y / ns_resolution_increase_factor, x)) {
 						long sum, count;
 						ns_analyzed_image_time_path::spatially_average_movement(y / ns_resolution_increase_factor, x, ns_time_path_image_movement_analyzer<ns_wasteful_overallocation_resizer>::ns_spatially_averaged_movement_kernal_half_size, movement_image, sum, count);
 
-						if (abs(sum) < count * ns_time_path_image_movement_analyzer<ns_wasteful_overallocation_resizer>::ns_spatially_averaged_movement_threshold)
+						if (abs(sum) < count * ns_time_path_image_movement_analyzer<ns_wasteful_overallocation_resizer>::ns_spatially_averaged_movement_threshold[cropped_level])
 							t = 0;
 						else {
 							t = 255 * ((abs(sum / count) - min_mov) / mov_r);
@@ -155,6 +164,7 @@ public:
 					}
 				}
 				break;
+			}
 			case ns_movement_and_image:
 				for (unsigned int x = 0; x < image.properties().width; x++) {
 					float f;
@@ -191,7 +201,7 @@ public:
 					if (registered_images.get_stabilized_worm_neighborhood_threshold(y / ns_resolution_increase_factor, x)) {
 						long sum, count;
 						ns_analyzed_image_time_path::spatially_average_movement(y / ns_resolution_increase_factor, x, ns_time_path_image_movement_analyzer<ns_wasteful_overallocation_resizer>::ns_spatially_averaged_movement_kernal_half_size, movement_image, sum, count);
-						if (count == 0 || abs(sum) < count * ns_time_path_image_movement_analyzer<ns_wasteful_overallocation_resizer>::ns_spatially_averaged_movement_threshold)
+						if (count == 0 || abs(sum) < count * ns_time_path_image_movement_analyzer<ns_wasteful_overallocation_resizer>::ns_spatially_averaged_movement_threshold[1])
 							f = 0;
 						else {
 							f = ((abs(sum / count) - min_mov) / mov_r);

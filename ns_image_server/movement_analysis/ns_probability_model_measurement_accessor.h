@@ -75,35 +75,36 @@ struct ns_movement_accessor : public ns_measurement_accessor {
 	ns_measurement_accessor* clone() { return new ns_movement_accessor; }
 };
 
+template<int crop_level>
 struct ns_cropped_movement_accessor : public ns_measurement_accessor {
 	const double operator()(const ns_analyzed_image_time_path_element_measurements& e, bool& valid_point) const {
 		//this defines the movement score used by the HMM model!
 		valid_point = true;
-		const double d = e.spatial_averaged_movement_sum_cropped + .1;
+		const double d = e.spatial_averaged_movement_sum_cropped[crop_level] + .1;
 		if (d <= 0) return -DBL_MAX;
 		return log(d);
 	}
 	const double get_from_emission(const ns_hmm_emission& e, bool& valid_point) const { return (*this)(e.measurement, valid_point); }
-	ns_measurement_accessor* clone() { return new ns_cropped_movement_accessor; }
+	ns_measurement_accessor* clone() { return new ns_cropped_movement_accessor<crop_level>; }
 };
 
 
-struct ns_movement_accessor_4x : public ns_measurement_accessor {
+struct ns_cropped_movement_accessor_4x : public ns_measurement_accessor {
 	const double operator()(const ns_analyzed_image_time_path_element_measurements& e, bool& valid_point) const {
 		//this defines the movement score used by the HMM model!
 		valid_point = true;
-		const double d = e.spatial_averaged_movement_sum_uncropped_4x + .1;
+		const double d = e.spatial_averaged_movement_sum_cropped_4x + .1;
 		if (d <= 0) return -DBL_MAX;
 		return log(d);
 	}
 	const double get_from_emission(const ns_hmm_emission& e, bool& valid_point) const { return (*this)(e.measurement, valid_point); }
-	ns_measurement_accessor* clone() { return new ns_movement_accessor_4x; }
+	ns_measurement_accessor* clone() { return new ns_cropped_movement_accessor_4x; }
 };
 struct ns_scaled_movement_accessor : public ns_measurement_accessor {
 	const double operator()(const ns_analyzed_image_time_path_element_measurements& e, bool& valid_point) const {
 		//this defines the movement score used by the HMM model!
 		valid_point = true;
-		const double d = e.spatial_averaged_scaled_movement_sum_uncropped + .1;
+		const double d = e.spatial_averaged_scaled_movement_sum_cropped + .1;
 		if (d <= 0) return -DBL_MAX;
 		return log(d);
 	}
@@ -114,7 +115,7 @@ struct ns_scaled_movement_accessor_4x : public ns_measurement_accessor {
 	const double operator()(const ns_analyzed_image_time_path_element_measurements& e, bool& valid_point) const {
 		//this defines the movement score used by the HMM model!
 		valid_point = true;
-		const double d = e.spatial_averaged_scaled_movement_sum_uncropped_4x + .1;
+		const double d = e.spatial_averaged_scaled_movement_sum_cropped_4x + .1;
 		if (d <= 0) return -DBL_MAX;
 		return log(d);
 	}
@@ -183,10 +184,12 @@ public:
 
 	ns_covarying_gaussian_dimension<ns_measurement_accessor> create_dimension(const std::string& d) const {
 		if (d == "m") return ns_covarying_gaussian_dimension<ns_measurement_accessor>(new ns_movement_accessor, d);
-		if (d == "m4") return ns_covarying_gaussian_dimension<ns_measurement_accessor>(new ns_movement_accessor_4x, d);
-		if (d == "c") return ns_covarying_gaussian_dimension<ns_measurement_accessor>(new ns_cropped_movement_accessor, d);
+		if (d == "c0") return ns_covarying_gaussian_dimension<ns_measurement_accessor>(new ns_cropped_movement_accessor<0>, d);
+		if (d == "c1") return ns_covarying_gaussian_dimension<ns_measurement_accessor>(new ns_cropped_movement_accessor<1>, d);
+		if (d == "c2") return ns_covarying_gaussian_dimension<ns_measurement_accessor>(new ns_cropped_movement_accessor<2>, d);
+		if (d == "c1_4x") return ns_covarying_gaussian_dimension<ns_measurement_accessor>(new ns_cropped_movement_accessor_4x, d);
 		if (d == "s") return ns_covarying_gaussian_dimension<ns_measurement_accessor>(new ns_scaled_movement_accessor, d);
-		if (d == "s4") return ns_covarying_gaussian_dimension<ns_measurement_accessor>(new ns_scaled_movement_accessor_4x, d);
+		if (d == "s_4x") return ns_covarying_gaussian_dimension<ns_measurement_accessor>(new ns_scaled_movement_accessor_4x, d);
 		if (d == "i1") return ns_covarying_gaussian_dimension<ns_measurement_accessor>(new ns_intensity_accessor_1x, d);
 		if (d == "i2") return ns_covarying_gaussian_dimension<ns_measurement_accessor>(new ns_intensity_accessor_2x, d);
 		if (d == "i4") return ns_covarying_gaussian_dimension<ns_measurement_accessor>(new ns_intensity_accessor_4x, d);

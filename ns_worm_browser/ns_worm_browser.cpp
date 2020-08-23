@@ -2050,15 +2050,14 @@ void ns_set_up_hmm_model_specs_to_test(std::vector<ns_model_building_specificati
 	flexible_spec.model_features_to_use.push_back("i1");
 	flexible_spec.model_features_to_use.push_back("i4");
 	flexible_spec.model_features_to_use.push_back("m");
-	flexible_spec.model_features_to_use.push_back("m4");
-	flexible_spec.name = "flexible_4D";
+	flexible_spec.name = "flexible_3D";
 	//s.push_back(flexible_spec);	//this is never the best model.
 
 	ns_model_building_specification strict_spec;
 	strict_spec.cross_replicate_estimator_type = ns_model_building_specification::ns_strict_ordering;
 	strict_spec.model_features_to_use = flexible_spec.model_features_to_use;
 	strict_spec.state_transition_type = ns_model_building_specification::ns_static;
-	strict_spec.name = "strict_4D";
+	strict_spec.name = "strict_3D_UC";
 	s.push_back(strict_spec);
 	{
 		ns_model_building_specification mod;
@@ -2066,9 +2065,9 @@ void ns_set_up_hmm_model_specs_to_test(std::vector<ns_model_building_specificati
 		mod.model_features_to_use.push_back("i1");
 		mod.model_features_to_use.push_back("i4");
 		mod.model_features_to_use.push_back("s");
-		mod.model_features_to_use.push_back("s4");
+		mod.model_features_to_use.push_back("s_4x");
 		mod.state_transition_type = ns_model_building_specification::ns_static;
-		mod.name = "strict_4DS";
+		mod.name = "strict_4D_S";
 		s.push_back(mod);
 	}
 	{
@@ -2076,9 +2075,50 @@ void ns_set_up_hmm_model_specs_to_test(std::vector<ns_model_building_specificati
 		mod.cross_replicate_estimator_type = ns_model_building_specification::ns_strict_ordering;
 		mod.model_features_to_use.push_back("i1");
 		mod.model_features_to_use.push_back("i4");
-		mod.model_features_to_use.push_back("c");
+		mod.model_features_to_use.push_back("c0");
 		mod.state_transition_type = ns_model_building_specification::ns_static;
-		mod.name = "strict_3DC";
+		mod.name = "strict_3D_C0";
+		s.push_back(mod);
+	} 
+	{
+		ns_model_building_specification mod;
+		mod.cross_replicate_estimator_type = ns_model_building_specification::ns_strict_ordering;
+		mod.model_features_to_use.push_back("i1");
+		mod.model_features_to_use.push_back("i4");
+		mod.model_features_to_use.push_back("c1");
+		mod.state_transition_type = ns_model_building_specification::ns_static;
+		mod.name = "strict_3D_C1";
+		s.push_back(mod);
+	}
+	{
+		ns_model_building_specification mod;
+		mod.cross_replicate_estimator_type = ns_model_building_specification::ns_strict_ordering;
+		mod.model_features_to_use.push_back("i1");
+		mod.model_features_to_use.push_back("i4");
+		mod.model_features_to_use.push_back("c2");
+		mod.state_transition_type = ns_model_building_specification::ns_static;
+		mod.name = "strict_3D_C2";
+		s.push_back(mod);
+	}
+	{
+		ns_model_building_specification mod;
+		mod.cross_replicate_estimator_type = ns_model_building_specification::ns_strict_ordering;
+		mod.model_features_to_use.push_back("i1");
+		mod.model_features_to_use.push_back("i4");
+		mod.model_features_to_use.push_back("c1");
+		mod.model_features_to_use.push_back("c1_4x");
+		mod.state_transition_type = ns_model_building_specification::ns_static;
+		mod.name = "strict_4D_C1";
+		s.push_back(mod);
+	} {
+		ns_model_building_specification mod;
+		mod.cross_replicate_estimator_type = ns_model_building_specification::ns_strict_ordering;
+		mod.model_features_to_use.push_back("i1");
+		mod.model_features_to_use.push_back("i4");
+		mod.model_features_to_use.push_back("c1");
+		mod.model_features_to_use.push_back("c1_4x");
+		mod.state_transition_type = ns_model_building_specification::ns_empirical;
+		mod.name = "strict_4D_C1_empiric";
 		s.push_back(mod);
 	}
 	/*
@@ -2110,7 +2150,7 @@ void ns_set_up_hmm_model_specs_to_test(std::vector<ns_model_building_specificati
 	mod.model_features_to_use.push_back("i1");
 	mod.model_features_to_use.push_back("i4");
 	mod.model_features_to_use.push_back("s");
-	mod.model_features_to_use.push_back("s4");
+	mod.model_features_to_use.push_back("s_4x");
 	mod.name = "strict_4DS_empiric";
 	s.push_back(mod);
 	

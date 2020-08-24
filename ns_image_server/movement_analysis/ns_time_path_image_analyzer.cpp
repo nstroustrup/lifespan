@@ -5117,7 +5117,7 @@ public:
 	unsigned long size()const { return elements->size(); }
 	const unsigned long time(const unsigned long i) { return (*elements)[i].absolute_time; }
 	double raw(const unsigned long i) {
-		return (*elements)[i].measurements.spatial_averaged_movement_sum_cropped[1];
+		return (*elements)[i].measurements.spatial_averaged_movement_sum_cropped[0];
 	}
 	double& processed(const unsigned long i) {
 		return (*elements)[i].measurements.spatial_averaged_movement_sum_cropped_4x;
@@ -5132,7 +5132,7 @@ public:
 	unsigned long size()const { return elements->size(); }
 	const unsigned long time(const unsigned long i) { return (*elements)[i].absolute_time; }
 	double raw(const unsigned long i) {
-		return (*elements)[i].measurements.spatial_averaged_movement_sum_cropped[1];
+		return (*elements)[i].measurements.spatial_averaged_scaled_movement_sum_cropped;
 	}
 	double& processed(const unsigned long i) {
 		return (*elements)[i].measurements.spatial_averaged_scaled_movement_sum_cropped_4x;
@@ -5432,7 +5432,7 @@ void ns_analyzed_image_time_path::denoise_movement_series_and_calculate_intensit
 		std::vector<double> tmp3;
 		tmp3.resize(elements.size() - start);
 		for (unsigned int i = start; i < tmp3.size(); i++)
-			tmp3[i] = elements[i - start].measurements.spatial_averaged_movement_sum_cropped[1];
+			tmp3[i] = elements[i - start].measurements.spatial_averaged_movement_sum_cropped[0];
 		double median;
 
 		if (tmp3.size() == 1)
@@ -5451,7 +5451,7 @@ void ns_analyzed_image_time_path::denoise_movement_series_and_calculate_intensit
 		}
 		if (median == 0) median = 1;
 		for (unsigned int i = 0; i < elements.size(); i++)
-			elements[i].measurements.spatial_averaged_scaled_movement_sum_cropped = elements[i].measurements.spatial_averaged_movement_sum_cropped[1] / median;
+			elements[i].measurements.spatial_averaged_scaled_movement_sum_cropped = elements[i].measurements.spatial_averaged_movement_sum_cropped[0] / median;
 	}
 
 	{

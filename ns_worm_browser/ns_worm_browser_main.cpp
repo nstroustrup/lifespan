@@ -1641,12 +1641,17 @@ public:
 	Menu Specification
 	*****************************/
 	void redraw_menus(Fl_Menu_Bar & bar) {
-		bar.menu(NULL);
-		clear();	
+
+		Fl::lock();
+		ns_acquire_lock_for_scope lock(menu_bar_processing_lock, __FILE__, __LINE__);
+		clear();
 		add_menus();
+		bar.menu(NULL);
 		build_menus(bar);
+		lock.release();
 		bar.redraw();
 		::update_region_choice_menu();
+		Fl::unlock();
 	}
 	void update_experiment_choice(Fl_Menu_Bar & bar){
 		ns_sql & sql(worm_learner.get_sql_connection());
@@ -1655,6 +1660,7 @@ public:
 
 		worm_learner.data_gui_selector.load_experiment_names(sql);
 		worm_learner.data_gui_selector.set_current_experiment(-1,sql);
+		lock.release();
 		redraw_menus(bar);
 	}
 
@@ -2039,9 +2045,10 @@ class ns_stats_strain_asynch_picker : public ns_asynch_menu_picker {
 
 	void launch(const std::string& value) {
 		worm_learner.statistics_data_gui_selector.select_strain(value);
-
+		Fl::lock();
 		::update_strain_choice_menu();
 		::update_region_choice_menu();
+		Fl::unlock();
 	}
 };
 class ns_storyboard_strain_asynch_picker : public ns_asynch_menu_picker {
@@ -2050,9 +2057,11 @@ class ns_storyboard_strain_asynch_picker : public ns_asynch_menu_picker {
 		worm_learner.data_gui_selector.select_strain(value);
 
 
+		Fl::lock();
 		::update_strain_choice_menu();
 		::update_region_choice_menu();
 		::update_exclusion_choice_menu();
+		Fl::unlock();
 	}
 };
 
@@ -2257,14 +2266,18 @@ struct ns_storyboard_annotation_region_picker : public ns_asynch_menu_picker {
 					return;
 				worm_learner.stop_death_time_annotation();
 				worm_learner.data_gui_selector.select_region(region_name);
+				Fl::lock();
 				::update_region_choice_menu();
+				Fl::unlock();
 				worm_learner.start_death_time_annotation(ns_worm_learner::ns_annotate_storyboard_region, worm_learner.current_storyboard_flavor);
 				report_changes_made_to_screen();
 				return;
 			}
 			else {
 				worm_learner.data_gui_selector.select_region(region_name);
+				Fl::lock();
 				::update_region_choice_menu();
+				Fl::unlock();
 			}
 		}
 		catch (ns_ex& ex) {
@@ -3511,10 +3524,12 @@ void ns_show_worm_display_error(){
 }
 
 void schedule_repeating_callback(void *a ) {
+	ns_fl_lock(__FILE__, __LINE__);
 	if (a == 0)
 		Fl::add_timeout(1.0 / IDLE_THROTTLE_FPS, idle_main_window_update_callback,0);
 	else
 		Fl::repeat_timeout(1.0 / IDLE_THROTTLE_FPS, idle_main_window_update_callback,0);
+	ns_fl_unlock(__FILE__, __LINE__);
 }
 void ns_handle_menu_bar_activity_request();
 
@@ -3571,28 +3586,43 @@ void request_rate_limited_window_redraw_from_main_thread() {
 	if (debug_handlers) cout << "R";
 	redrawing_rate_limiter = true;
 	redraw_rate_limiting_lock.release();
+	ns_fl_lock(__FILE__, __LINE__);
 	Fl::awake(perform_screen_redraw_callback, 0);
+	ns_fl_unlock(__FILE__, __LINE__);
 }
 
 void demand_window_redraw_from_main_thread() {
+	ns_fl_lock(__FILE__, __LINE__);
 	Fl::awake(perform_screen_redraw_callback, 0);
+	ns_fl_unlock(__FILE__, __LINE__);
 }
 
 void report_changes_made_to_screen() {
 	if (debug_handlers) cout << "z";
+	ns_fl_lock(__FILE__, __LINE__);
 	//this will also call idle_window_update_callback
 	Fl::awake(idle_main_window_update_callback,(void *) 1);
+	ns_fl_unlock(__FILE__, __LINE__);
 
 }
 
 ns_lock fl_output_lock("Fl::lock");
+unsigned long lock_counter(0);
 void ns_fl_lock(const char * file,unsigned long line){
-  //cerr << "FL_LOCK: " << file << "\n";
+	/*cerr << "L: ";
+	for (unsigned int i = 53; file[i] != 0; i++)
+		cerr << file[i];
+	cerr << "::" << line << " " << lock_counter << "\n";*/
+  lock_counter++;
   Fl::lock();
   //fl_output_lock.wait_to_acquire(file,line);
 }
 void ns_fl_unlock(const char * file, unsigned long line){
-//cerr << "FL_UNLOCK: " << file << "\n";
+	/*cerr << "U: ";
+	for (unsigned int i = 53; file[i] != 0; i++)
+		cerr << file[i]; 
+	cerr << "::" << line << "\n";*/
+	lock_counter--;
   //fl_output_lock.release();
   Fl::unlock();
 }
@@ -3666,7 +3696,9 @@ void idle_main_window_update_callback(void * force_redraw) {
 					worm_learner.worm_window.redraw_requested = true;
 					worm_learner.stats_window.redraw_requested = true;
 				}
+				ns_fl_lock(__FILE__, __LINE__);
 				Fl::awake(schedule_repeating_callback, (void*)1);// Fl::repeat_timeout(1.0 / IDLE_THROTTLE_FPS, idle_main_window_update_callback);
+				ns_fl_unlock(__FILE__, __LINE__);
 			}
 		}
 	  //else ns_fl_unlock(__FILE__,__LINE__);
@@ -3678,8 +3710,10 @@ void idle_main_window_update_callback(void * force_redraw) {
 		  last_callback_time = GetTime();
 		  ns_64_bit last_interval = last_callback_time - last_time;
 		  ns_fl_lock(__FILE__, __LINE__);
-		  if (worm_window == 0 || main_window == 0 || stats_window == 0)
+		  if (worm_window == 0 || main_window == 0 || stats_window == 0) {
+			  ns_fl_unlock(__FILE__, __LINE__);
 			  return;
+		  }
 		  ns_handle_menu_bar_activity_request();
 		  //always call both functions together
 		  if (!main_window->draw_animation || main_window->last_draw_animation){

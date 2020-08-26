@@ -2159,7 +2159,10 @@ void ns_set_up_hmm_model_specs_to_test(std::vector<ns_model_building_specificati
 	simultaneous_spec.model_features_to_use = flexible_spec.model_features_to_use;
 	simultaneous_spec.state_transition_type = ns_model_building_specification::ns_static;
 	simultaneous_spec.name = "simultaneous_4D";
-	//s.push_back(simultaneous_spec);
+	s.push_back(simultaneous_spec);
+	simultaneous_spec.state_transition_type = ns_model_building_specification::ns_empirical;
+	simultaneous_spec.name = "simultaneous_4D_empiric";
+	s.push_back(simultaneous_spec);
 
 	/*
 	ns_model_building_specification strict_spec_3D_i1;
@@ -4333,7 +4336,7 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(const ns_bro
 					}
 				}
 				*/
-				cerr << "IF THE WORM BROWSER APPEARS TO BE HUNG, DRAG THE MAIN WINDOW AROUND THE SCREEN--THIS GETS IT UNSTUCK.  Sorry for the unusual bug!\n";
+				//cerr << "IF THE WORM BROWSER APPEARS TO BE HUNG, DRAG THE MAIN WINDOW AROUND THE SCREEN--THIS GETS IT UNSTUCK.  Sorry for the unusual bug!\n";
 				ns_thread_pool< ns_immediately_recalc_censoring_job,
 					ns_immediately_recalc_censoring_job_persistant_data> thread_pool;
 				thread_pool.set_number_of_threads(image_server_const.maximum_number_of_processing_threads());

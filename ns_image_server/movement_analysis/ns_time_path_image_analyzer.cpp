@@ -1846,7 +1846,7 @@ bool ns_time_path_image_movement_analyzer<allocator_T>::calculate_optimzation_st
 			found_worm = true;
 			bool by_hand_modified_to_remove_forbidden_states;
 
-			ns_time_path_posture_movement_solution by_hand_posture_movement_solution_with_forbidden_states_removed(reconstruct_movement_state_solution_from_annotations(true,groups[g].paths[p].reconstruct_movement_state_solution_from_annotations(groups[g].paths[p].movement_analysis_result.first_valid_element_id.period_start_index, groups[g].paths[p].movement_analysis_result.last_valid_element_id.period_end_index, e, groups[g].paths[p].by_hand_annotation_event_times,by_hand_modified_to_remove_forbidden_states));
+			ns_time_path_posture_movement_solution by_hand_posture_movement_solution_with_forbidden_states_removed(groups[g].paths[p].reconstruct_movement_state_solution_from_annotations(true, groups[g].paths[p].movement_analysis_result.first_valid_element_id.period_start_index, groups[g].paths[p].movement_analysis_result.last_valid_element_id.period_end_index, e, groups[g].paths[p].by_hand_annotation_event_times, by_hand_modified_to_remove_forbidden_states));
 
 
 			//if (by_hand_posture_movement_solution.moving.skipped) {

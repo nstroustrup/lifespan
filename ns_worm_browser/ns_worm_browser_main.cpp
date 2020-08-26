@@ -3886,7 +3886,7 @@ void idle_worm_window_update_callback(void * force_redraw){
 				worm_learner.death_time_solo_annotater.display_current_frame();
 				something_done = true;
 			}
-			else if (worm_learner.death_time_solo_annotater.refresh_requested(), worm_learner.worm_window.display_rescale_factor) {
+			else if (worm_learner.death_time_solo_annotater.refresh_requested()) {
 				worm_learner.death_time_solo_annotater.display_current_frame();
 				something_done = true;
 			}
@@ -3934,7 +3934,7 @@ void idle_stats_window_update_callback(void* force_redraw) {
 				worm_learner.death_time_solo_annotater.display_current_frame();
 				something_done = true;
 			}
-			else if (worm_learner.death_time_solo_annotater.refresh_requested(), worm_learner.stats_window.display_rescale_factor) {
+			else if (worm_learner.death_time_solo_annotater.refresh_requested()) {
 				worm_learner.death_time_solo_annotater.display_current_frame();
 				something_done = true;
 			}

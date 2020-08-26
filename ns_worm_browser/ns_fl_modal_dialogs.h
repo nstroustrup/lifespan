@@ -231,7 +231,9 @@ public:
 	ns_run_in_main_thread(T * t){
 		data = t;
 		wait_for_it = true;
+		ns_fl_lock(__FILE__, __LINE__);
 		Fl::awake(ns_run_in_main_thread<T>::main_thread_call,(void *)(this));
+		ns_fl_unlock(__FILE__, __LINE__);
 		while(wait_for_it)ns_thread::sleep_milliseconds(100);
 	}
 	static void main_thread_call(void * t){
@@ -256,7 +258,9 @@ public:
 	ns_run_in_main_thread_wait_for_close(T * t){
 		data = t;
 		t->wait_for_it = true;
+		ns_fl_lock(__FILE__, __LINE__);
 		Fl::awake(ns_run_in_main_thread_wait_for_close<T>::main_thread_call,(void *)(this));
+		ns_fl_unlock(__FILE__, __LINE__);
 		//wait for window to be launched
 		while(t->wait_for_it)
 			ns_thread::sleep_milliseconds(100);

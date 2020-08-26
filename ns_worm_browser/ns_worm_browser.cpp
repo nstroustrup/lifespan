@@ -2079,7 +2079,22 @@ void ns_set_up_hmm_model_specs_to_test(std::vector<ns_model_building_specificati
 		mod.state_transition_type = ns_model_building_specification::ns_static;
 		mod.name = "strict_3D_C0";
 		s.push_back(mod);
-	} 
+		mod.cross_replicate_estimator_type = ns_model_building_specification::ns_simultaneous_movement_cessation_and_expansion;
+		mod.name = "strict_3D_C0_simultaneous";
+		s.push_back(mod);
+	}
+	{
+		ns_model_building_specification mod;
+		mod.cross_replicate_estimator_type = ns_model_building_specification::ns_strict_ordering;
+		mod.model_features_to_use.push_back("i1");
+		mod.model_features_to_use.push_back("c0");
+		mod.state_transition_type = ns_model_building_specification::ns_static;
+		mod.name = "strict_2D_C0";
+		s.push_back(mod);
+		mod.cross_replicate_estimator_type = ns_model_building_specification::ns_simultaneous_movement_cessation_and_expansion;
+		mod.name = "strict_2D_C0_simultaneous";
+		s.push_back(mod);
+	}
 	{
 		ns_model_building_specification mod;
 		mod.cross_replicate_estimator_type = ns_model_building_specification::ns_strict_ordering;
@@ -2088,6 +2103,9 @@ void ns_set_up_hmm_model_specs_to_test(std::vector<ns_model_building_specificati
 		mod.model_features_to_use.push_back("c1");
 		mod.state_transition_type = ns_model_building_specification::ns_static;
 		mod.name = "strict_3D_C1";
+		s.push_back(mod);
+		mod.cross_replicate_estimator_type = ns_model_building_specification::ns_simultaneous_movement_cessation_and_expansion;
+		mod.name = "strict_3D_C1_simultaneous";
 		s.push_back(mod);
 	}
 	{
@@ -2098,6 +2116,9 @@ void ns_set_up_hmm_model_specs_to_test(std::vector<ns_model_building_specificati
 		mod.model_features_to_use.push_back("c2");
 		mod.state_transition_type = ns_model_building_specification::ns_static;
 		mod.name = "strict_3D_C2";
+		s.push_back(mod);
+		mod.cross_replicate_estimator_type = ns_model_building_specification::ns_simultaneous_movement_cessation_and_expansion;
+		mod.name = "strict_3D_C2_simultaneous";
 		s.push_back(mod);
 	}
 	{
@@ -2116,9 +2137,11 @@ void ns_set_up_hmm_model_specs_to_test(std::vector<ns_model_building_specificati
 		mod.model_features_to_use.push_back("i1");
 		mod.model_features_to_use.push_back("i4");
 		mod.model_features_to_use.push_back("c0");
-		mod.model_features_to_use.push_back("c0_4x");
 		mod.state_transition_type = ns_model_building_specification::ns_empirical;
-		mod.name = "strict_4D_C0_empiric";
+		mod.name = "strict_3D_C0_empiric";
+		s.push_back(mod);
+		mod.cross_replicate_estimator_type = ns_model_building_specification::ns_simultaneous_movement_cessation_and_expansion;
+		mod.name = "strict_3D_C0_empiric_simultaneous";
 		s.push_back(mod);
 	}
 	/*
@@ -2150,20 +2173,9 @@ void ns_set_up_hmm_model_specs_to_test(std::vector<ns_model_building_specificati
 	mod.model_features_to_use.push_back("i1");
 	mod.model_features_to_use.push_back("i4");
 	mod.model_features_to_use.push_back("s");
-	mod.model_features_to_use.push_back("s_4x");
-	mod.name = "strict_4DS_empiric";
+	mod.name = "strict_3DS_empiric";
 	s.push_back(mod);
 	
-	ns_model_building_specification simultaneous_spec;
-	simultaneous_spec.cross_replicate_estimator_type = ns_model_building_specification::ns_simultaneous_movement_cessation_and_expansion;
-	simultaneous_spec.model_features_to_use = flexible_spec.model_features_to_use;
-	simultaneous_spec.state_transition_type = ns_model_building_specification::ns_static;
-	simultaneous_spec.name = "simultaneous_4D";
-	s.push_back(simultaneous_spec);
-	simultaneous_spec.state_transition_type = ns_model_building_specification::ns_empirical;
-	simultaneous_spec.name = "simultaneous_4D_empiric";
-	s.push_back(simultaneous_spec);
-
 	/*
 	ns_model_building_specification strict_spec_3D_i1;
 	strict_spec_3D_i1.cross_replicate_estimator_type = ns_model_building_specification::ns_strict_ordering;
@@ -4345,7 +4357,9 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(const ns_bro
 				for (unsigned int i = 0; i < regions_needing_censoring_recalculation.size(); i++)
 					thread_pool.add_job_while_pool_is_not_running(ns_immediately_recalc_censoring_job(regions_needing_censoring_recalculation[i], &data));
 				thread_pool.run_pool();
+				ns_fl_lock(__FILE__,__LINE__);
 				Fl::awake();
+				ns_fl_unlock(__FILE__, __LINE__);
 				thread_pool.wait_for_all_threads_to_become_idle();
 				ns_immediately_recalc_censoring_job tmp;
 				ns_ex tmp2;

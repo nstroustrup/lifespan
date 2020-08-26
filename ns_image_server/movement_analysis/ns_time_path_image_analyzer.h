@@ -625,8 +625,8 @@ private:
 	
 	std::vector<ns_death_time_annotation_time_interval> by_hand_annotation_event_times;
 	std::vector<ns_death_time_annotation::ns_event_explicitness> by_hand_annotation_event_explicitness;
-	ns_time_path_posture_movement_solution reconstruct_movement_state_solution_from_annotations(const unsigned long first_index, const unsigned long last_index, const ns_emperical_posture_quantification_value_estimator * e, const std::vector<ns_death_time_annotation_time_interval> & intervals) const;
-
+	//note that by hand annotations must be modified to forbid animals entering undefined states.
+	ns_time_path_posture_movement_solution reconstruct_movement_state_solution_from_annotations(const bool & modify_to_exclude_forbidden_states, const unsigned long first_index, const unsigned long last_index, const ns_emperical_posture_quantification_value_estimator * e, const std::vector<ns_death_time_annotation_time_interval> & intervals, bool & by_hand_annotations_were_modified_to_exclude_forbidden_states) const;
 
 	void quantify_movement(const ns_analyzed_time_image_chunk & chunk);
 

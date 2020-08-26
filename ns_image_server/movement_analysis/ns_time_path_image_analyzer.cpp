@@ -1844,14 +1844,18 @@ bool ns_time_path_image_movement_analyzer<allocator_T>::calculate_optimzation_st
 			if (!paths_to_test.empty() && paths_to_test.find(this->generate_stationary_path_id(g, p)) == paths_to_test.end())
 				continue;
 			found_worm = true;
-			ns_time_path_posture_movement_solution by_hand_posture_movement_solution(groups[g].paths[p].reconstruct_movement_state_solution_from_annotations(groups[g].paths[p].movement_analysis_result.first_valid_element_id.period_start_index, groups[g].paths[p].movement_analysis_result.last_valid_element_id.period_end_index, e, groups[g].paths[p].by_hand_annotation_event_times));
+			bool by_hand_modified_to_remove_forbidden_states;
+
+			ns_time_path_posture_movement_solution by_hand_posture_movement_solution_with_forbidden_states_removed(reconstruct_movement_state_solution_from_annotations(true,groups[g].paths[p].reconstruct_movement_state_solution_from_annotations(groups[g].paths[p].movement_analysis_result.first_valid_element_id.period_start_index, groups[g].paths[p].movement_analysis_result.last_valid_element_id.period_end_index, e, groups[g].paths[p].by_hand_annotation_event_times,by_hand_modified_to_remove_forbidden_states));
+
+
 			//if (by_hand_posture_movement_solution.moving.skipped) {
 				//cout << "Encountered a by hand annotation in which the animal never slowed: " << g << "\n";
 			//	continue;
 			//}
 			output_stats.animals.resize(output_stats.animals.size() + 1);
 			ns_hmm_movement_analysis_optimizatiom_stats_record& stat(*output_stats.animals.rbegin());
-			//set upstructures for debug output
+			//set up structures for debug output
 			ns_hmm_solver hmm_solver;
 			if (generate_path_info) {
 				stat.state_info_times.resize(groups[g].paths[p].element_count());
@@ -1870,7 +1874,7 @@ bool ns_time_path_image_movement_analyzer<allocator_T>::calculate_optimzation_st
 			//first calculate the probabilities of the machine and by hand solutions
 			hmm_solver.probability_of_path_solution(groups[g].paths[p], *e, groups[g].paths[p].movement_analysis_result.machine_movement_state_solution, stat.machine_state_info, generate_path_info);
 	
-			hmm_solver.probability_of_path_solution(groups[g].paths[p], *e, by_hand_posture_movement_solution, stat.by_hand_state_info, generate_path_info);
+			hmm_solver.probability_of_path_solution(groups[g].paths[p], *e, by_hand_posture_movement_solution_with_forbidden_states_removed, stat.by_hand_state_info, generate_path_info);
 			
 			stat.solution_loglikelihood = groups[g].paths[p].movement_analysis_result.machine_movement_state_solution.loglikelihood_of_solution;
 		
@@ -4806,7 +4810,8 @@ ns_movement_state_observation_boundaries ns_set_boundary(const ns_death_time_ann
 	return b;
 }
 
-ns_time_path_posture_movement_solution ns_analyzed_image_time_path::reconstruct_movement_state_solution_from_annotations(const unsigned long first_index, const unsigned long last_index, const ns_emperical_posture_quantification_value_estimator * e, const std::vector<ns_death_time_annotation_time_interval> & time_intervals) const {
+//note that by hand annotations must be modified to forbid animals entering undefined states.
+ns_time_path_posture_movement_solution ns_analyzed_image_time_path::reconstruct_movement_state_solution_from_annotations(const bool & modify_to_exclude_forbidden_states,const unsigned long first_index, const unsigned long last_index, const ns_emperical_posture_quantification_value_estimator * e, const std::vector<ns_death_time_annotation_time_interval> & time_intervals, bool& by_hand_annotations_were_modified_to_exclude_forbidden_states) const {
 	ns_time_path_posture_movement_solution s;
 	if (time_intervals[(ns_translation_cessation)].fully_unbounded()) {
 		s.moving.skipped = true;
@@ -4836,11 +4841,11 @@ ns_time_path_posture_movement_solution ns_analyzed_image_time_path::reconstruct_
 	if (translation_cessation.second == -1)
 		throw ns_ex("Worm never stopped!");
 
-
+	by_hand_annotations_were_modified_to_exclude_forbidden_states = false;
 	//we can only use by hand annotations that have corresponding states defined by the current hmm estimator.  
 	//Estimators will lack states if the user has no by-hand annotations in the data set used to fit the hmm estimator, so we need to be flexible.
 	//If extra by-hand states exist in the by-hand annotations not found in the estimator, we need to ignore them.
-	{
+	if (modify_to_exclude_forbidden_states){
 		if (!e->state_defined(ns_hmm_moving_weakly) && movement_cessation != undefined) {
 			fast_movement_cessation = undefined;
 			translation_cessation.second = movement_cessation.first;
@@ -4849,10 +4854,14 @@ ns_time_path_posture_movement_solution ns_analyzed_image_time_path::reconstruct_
 		//if animals can't expand before death, truncate expansion at movement cessation time
 		if (!e->state_defined(ns_hmm_moving_weakly_expanding) || !e->state_defined(ns_hmm_moving_weakly_post_expansion) || !e->state_defined(ns_hmm_not_moving_alive)) {
 			if (expansion_end.second != -1 && movement_cessation.second != -1) {
-				if (expansion_end.second < movement_cessation.second)  //if all expansion happens before movement cessation, eliminate the expansion entirely
+				if (expansion_end.second < movement_cessation.second) {
+					by_hand_annotations_were_modified_to_exclude_forbidden_states = true; //if all expansion happens before movement cessation, eliminate the expansion entirely
 					expansion_start = expansion_end = undefined;
-				if (expansion_start.second != -1 && expansion_start.second < movement_cessation.second)
+				}
+				else if (expansion_start.second != -1 && expansion_start.second < movement_cessation.second) {
+					by_hand_annotations_were_modified_to_exclude_forbidden_states = true;
 					expansion_start = movement_cessation;	//truncate expansion at movement cessation time
+				}
 			}
 		}
 		if (!e->state_defined(ns_hmm_not_moving_expanding)) 

@@ -1931,18 +1931,23 @@ void ns_death_time_annotation_compiler::generate_animal_event_method_comparison(
 					<< q->properties.number_of_worms_at_location_marked_by_machine << ","
 					<< q->properties.number_of_worms_at_location_marked_by_hand << ","
 					<< (q->properties.is_excluded() ? "1" : "0") << ",";
+				
 				if (death_spec) {
 					const double m((machine_movement_cessation - (double)vis_movement_cessation) / 60.0);
-					o << m / (60.0 * 24.0);
-					death_N++;
-					total_death_mean_squared_error += m * m;
+					o << m / (60.0 * 24.0); 
+					if (animal.descriptions.size() == 1) {		//don't include multiple worm clumps in error calculation
+						death_N++;
+						total_death_mean_squared_error += m * m;
+					}
 				}
 				o << ",";
 				if (expansion_spec) {
 					const double m((machine_expansion - (double)vis_expansion) / 60.0);
 					o << m / (60.0 * 24.0);
-					expansion_N++;
-					total_expansion_mean_squared_error += m * m;
+					if (animal.descriptions.size() == 1) {		//don't include multiple worm clumps in error calculation
+						expansion_N++;
+						total_expansion_mean_squared_error += m * m;
+					}
 				}
 				o << ",";
 				if (q->properties.flag.specified())

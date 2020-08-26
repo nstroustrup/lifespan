@@ -812,7 +812,7 @@ void ns_run_hmm_cross_validation(std::string& results_summary, ns_image_server_r
 		if (changed_db || experiment->second != movement_results.experiment_id())
 			movement_results.load(ns_death_time_annotation_set::ns_censoring_and_movement_transitions, 0, 0, experiment->second, sql, false);
 
-		std::cout << "\nTesting HMM models on experiment " << movement_results.experiment_name();
+		std::cout << "\nCross-validating HMM models on experiment " << movement_results.experiment_name();
 		num_built = 0;
 		unsigned long region_count = 0;
 		for (unsigned int i = 0; i < movement_results.samples.size(); i++) {

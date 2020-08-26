@@ -187,7 +187,7 @@ public:
 		if (d == "c0") return ns_covarying_gaussian_dimension<ns_measurement_accessor>(new ns_cropped_movement_accessor<0>, d);
 		if (d == "c1") return ns_covarying_gaussian_dimension<ns_measurement_accessor>(new ns_cropped_movement_accessor<1>, d);
 		if (d == "c2") return ns_covarying_gaussian_dimension<ns_measurement_accessor>(new ns_cropped_movement_accessor<2>, d);
-		if (d == "c1_4x") return ns_covarying_gaussian_dimension<ns_measurement_accessor>(new ns_cropped_movement_accessor_4x, d);
+		if (d == "c0_4x") return ns_covarying_gaussian_dimension<ns_measurement_accessor>(new ns_cropped_movement_accessor_4x, d);
 		if (d == "s") return ns_covarying_gaussian_dimension<ns_measurement_accessor>(new ns_scaled_movement_accessor, d);
 		if (d == "s_4x") return ns_covarying_gaussian_dimension<ns_measurement_accessor>(new ns_scaled_movement_accessor_4x, d);
 		if (d == "i1") return ns_covarying_gaussian_dimension<ns_measurement_accessor>(new ns_intensity_accessor_1x, d);

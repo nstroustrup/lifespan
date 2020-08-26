@@ -4421,14 +4421,16 @@ int main(int argc, char** argv) {
 		return 0;
 	}
 
+
+	ns_worm_browser_output_debug(__LINE__,__FILE__,"Launching worm browser");
+	init_time = GetTime();
+	//initialize locking.  Note that this does not actually lock anything on the first call.
+	Fl::lock();
+
 	main_window = new ns_worm_terminal_main_window(1000, 1000, "Worm Browser");
 	worm_window = new ns_worm_terminal_worm_window(100, 100, "Inspect Worm");
 	stats_window = new ns_worm_terminal_stats_window(100, 100, "Population Statistics");
 
-	ns_worm_browser_output_debug(__LINE__,__FILE__,"Launching worm browser");
-	init_time = GetTime();
-	//initialize locking
-	Fl::lock();
 	Fl_File_Icon::load_system_icons();
 	Fl::scheme("none");
 

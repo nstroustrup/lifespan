@@ -8,9 +8,6 @@
 #include "ns_death_time_annotation.h"
 #include <set>
 
-//posture version specifically for threshold models.
-#define NS_CURRENT_THRESHOLD_POSTURE_MODEL_VERSION "2.2"
-
 class ns_analyzed_image_time_path;
 template<class data_t>
 struct ns_hmm_labeled_data {

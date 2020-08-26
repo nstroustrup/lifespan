@@ -6,7 +6,7 @@
 #include "ns_gmm.h"
 #include "ns_probability_model_measurement_accessor.h"
 #include <iomanip>
-#define NS_HMM_VERSION "2.5"
+#define NS_HMM_VERSION "2.3"
 
 
 

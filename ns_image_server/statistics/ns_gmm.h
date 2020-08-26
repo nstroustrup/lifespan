@@ -161,10 +161,8 @@ struct ns_covarying_gaussian_dimension {
 	}
 	ns_covarying_gaussian_dimension<measurement_accessor_t>(ns_covarying_gaussian_dimension<measurement_accessor_t>&& c) { measurement_accessor = c.measurement_accessor; c.measurement_accessor = 0; name = c.name; }
 	~ns_covarying_gaussian_dimension<measurement_accessor_t>() { ns_safe_delete(measurement_accessor); }
+  bool equals(const ns_covarying_gaussian_dimension<measurement_accessor_t> & a) const {return name == a.name;}
 };
-template<class ns_measurement_accessor>
-bool operator==(const ns_covarying_gaussian_dimension< ns_measurement_accessor >& a, const ns_covarying_gaussian_dimension< ns_measurement_accessor >& b);
-
 
 template<class measurement_accessor_t>
 class ns_hmm_probability_model_organizer {
@@ -535,7 +533,7 @@ public:
 			return false;
 		}
 		for (unsigned int i = 0; i < this->dimensions.size(); i++)
-			if (!(this->dimensions[i] == p->dimensions[i])) {
+		  if (!(this->dimensions[i].equals(p->dimensions[i]))) {
 				std::cerr << "Dimension " << i << " isn't equal\n";
 				return false;
 			}

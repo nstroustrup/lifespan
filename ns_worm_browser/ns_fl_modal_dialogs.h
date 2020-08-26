@@ -14,6 +14,9 @@
 #include <string>
 #include <iostream>
 
+void ns_fl_lock(const char * a, long unsigned int b);
+void ns_fl_unlock(const char * a, long unsigned int b);
+
 class ns_input_dialog{
 public:
 	std::string title,default_value, result;

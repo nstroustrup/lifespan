@@ -845,11 +845,6 @@ std::vector<double> ns_state_transition_probability_model<measurement_accessor_t
 template<class measurement_accessor_t>
 ns_lock ns_state_transition_probability_model<measurement_accessor_t>::training_data_buffer_lock("tbl2");
 
-template<class ns_movement_accessor_t>
-bool operator==(const ns_covarying_gaussian_dimension< ns_movement_accessor_t >& a, const ns_covarying_gaussian_dimension< ns_movement_accessor_t >& b) {
-	return a.name == b.name;
-}
-
 bool operator<(const ns_gmm_sorter& a, const ns_gmm_sorter& b) {
 	return a.weight < b.weight;
 }

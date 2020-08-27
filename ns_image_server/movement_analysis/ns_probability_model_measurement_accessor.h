@@ -201,6 +201,25 @@ public:
 		if (d == "dur") return ns_covarying_gaussian_dimension<ns_measurement_accessor>(new ns_dummy_accessor, d);
 		throw ns_ex("ns_emission_probability_model_organizer()::Unknown dimension: ") << d;
 	}
+	static std::string dimension_description(const std::string& d)  {
+		if (d == "m") return "Un-Cropped Spatially Averaged Movement Sum";
+		if (d == "c0") return "Spatially Averaged Movement Sum Cropped at level 0";
+		if (d == "c1") return "Spatially Averaged Movement Sum Cropped at level 1";
+		if (d == "c2") return "Spatially Averaged Movement Sum Cropped at level 2";
+		if (d == "c0_4x") return "4x temporally smoothed, Spatially Averaged Movement Sum Cropped at level 0";
+		if (d == "s") return "Scaled, Un-cropped Spatially Averaged Movement Sum";
+		if (d == "s_4x") return "Temporally smoothed, Scaled, Un-cropped Spatially Averaged Movement Sum";
+		if (d == "i1") return "Change in total intensity around the worm";
+		if (d == "i2") return "2x Temporally smoothed, Change in total intensity around the worm";
+		if (d == "i4") return "4x Temporally smoothed, Change in total intensity around the worm";
+		if (d == "o1") return "Change in total intensity far from the worm";
+		if (d == "o2") return "2x Temporally smoothed, Change in total intensity far from the worm";
+		if (d == "o4") return "4x Temporally smoothed, Change in total intensity far from the worm";
+		if (d == "c") return  "Ratio between betweeen total intensity close and total intensity far from the worm";
+		//state transition models are first read into state emission models, and then converted.
+		if (d == "dur") return "Dummy Dimension used to store state durations";
+		throw ns_ex("ns_emission_probability_model_organizer()::Unknown dimension: ") << d;
+	}
 
 	ns_emission_probabiliy_gaussian_diagonal_covariance_model<ns_measurement_accessor>* default_model() const {
 		auto p = new ns_emission_probabiliy_gaussian_diagonal_covariance_model<ns_measurement_accessor>;

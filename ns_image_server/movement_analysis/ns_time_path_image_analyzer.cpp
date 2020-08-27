@@ -685,8 +685,10 @@ template<class allocator_T>
 void ns_time_path_image_movement_analyzer<allocator_T>::process_raw_images(const ns_64_bit region_id,const ns_time_path_solution & solution_, const ns_time_series_denoising_parameters & times_series_denoising_parameters,
 																const ns_analyzed_image_time_path_death_time_estimator * e,ns_sql & sql, const long group_number,const bool write_status_to_db,
 																const ns_analysis_db_options &id_reanalysis_options){
-	if (e->software_version_number() != NS_CURRENT_THRESHOLD_POSTURE_MODEL_VERSION)
-	  throw ns_ex("This software, which is running threshold posture analysis version ") << ns_to_string(NS_CURRENT_THRESHOLD_POSTURE_MODEL_VERSION) << ", cannot use the incompatible posture analysis parameter set " << e->name << ", which is version " << e->software_version_number();
+
+	if (e->current_software_version_number() != e->model_software_version_number()) 
+		throw ns_ex("The specified model was generated using an old model version: \"") << e->model_software_version_number() << "\" but this software uses version \"" << e->current_software_version_number() << "\". You can fix this by using the latest model file version.";
+
 	region_info_id = region_id; 
 	obtain_analysis_id_and_save_movement_data(region_id, sql, id_reanalysis_options,ns_do_not_write_data);
 	if (analysis_id == 0)
@@ -1177,7 +1179,7 @@ void ns_time_path_image_movement_analyzer<allocator_T>::process_raw_images(const
 
 			//OK! Now we have /everything/ finished with the images.
 			//calculate some final stats and then we're done.
-			normalize_movement_scores_over_all_paths(e->software_version_number(), times_series_denoising_parameters, sql);
+			normalize_movement_scores_over_all_paths(e->model_software_version_number(), times_series_denoising_parameters, sql);
 			//xxx this could be paraellelized if it was worth it.
 			for (unsigned int i = 0; i < groups.size(); i++) {
 				for (unsigned int j = 0; j < groups[i].paths.size(); j++) {
@@ -1775,7 +1777,7 @@ bool ns_time_path_image_movement_analyzer<allocator_T>::compare(const ns_time_pa
 		cerr << "paths_loaded_from_solution";
 		same = false;
 	}
-	if (t.posture_model_version_used != posture_model_version_used) {
+	if (t.measurement_format_version_used != measurement_format_version_used) {
 		cerr << "posture_model_version_used";
 		same = false;
 	}
@@ -1917,10 +1919,11 @@ void ns_time_path_image_movement_analyzer<allocator_T>::reanalyze_with_different
 	if (region_info_id == 0)
 		throw ns_ex("Attempting to reanalyze an unloaded image!");
 
-	if (posture_model_version_used != e->software_version_number()){
-	  //for (unsigned int i = 0; i <posture_model_version_used.size(); i++)
-	  //cout << (int)posture_model_version_used[i];
-	  throw ns_ex("This region's movement analysis was run using threshold posture analysis version \"") << ns_to_string(posture_model_version_used) << "\".  This is incompatible with the posture analysis file you have specified, \"" << e->name << "\" which is v " << e->software_version_number() << ".  You can fix this by running the job \"Analyze Worm Movement using Cached Images\" which will preserve all by hand annotations.";
+	if (ns_analyzed_image_time_path_element_measurements::measurement_format_version() != measurement_format_version_used) 
+		throw ns_ex("This region's movement analysis was run using an old measurement software version: \"") << measurement_format_version_used << "\".  This is incompatible with the current software: \"" << ns_analyzed_image_time_path_element_measurements::measurement_format_version() << "\". You can fix this by running the job \"Analyze Worm Movement using Cached Solution\" which will preserve all by hand annotations.";
+
+	if (e->current_software_version_number() != e->model_software_version_number()){
+	  throw ns_ex("The specified model was generated using an old model version: \"") << e->model_software_version_number()  << "\" but this software uses version \"" << e->current_software_version_number() << "\". You can fix this by using the latest model file version.";
 	}
 
 
@@ -1962,10 +1965,9 @@ bool ns_time_path_image_movement_analyzer<allocator_T>::load_image_quantificatio
 	if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Populating movement quantification from file"));
 	load_stored_movement_analysis_results(sql, ns_only_quantification);
 
-	if (posture_model_version_used != e->software_version_number()) {
-		cout << posture_model_version_used << "\n";
-		throw ns_ex("This region's movement analysis was run using threshold posture analysis version \"") << ns_to_string(posture_model_version_used) << "\".  This is incompatible with the movement analysis model you have specified, \"" << e->name << "\" which is v " << e->software_version_number() << ".  You can fix this by running the job \"Analyze Worm Movement using Cached Images\" which will preserve all by hand annotations.";
-	}
+	if (ns_analyzed_image_time_path_element_measurements::measurement_format_version() != measurement_format_version_used)
+		throw ns_ex("This region's movement analysis was run using an old measurement software version: \"") << measurement_format_version_used << "\".  This is incompatible with the current software: \"" << ns_analyzed_image_time_path_element_measurements::measurement_format_version() << "\". You can fix this by running the job \"Analyze Worm Movement using Cached Solution\" which will preserve all by hand annotations.";
+
 
 
 
@@ -2000,7 +2002,7 @@ bool ns_time_path_image_movement_analyzer<allocator_T>::load_image_quantificatio
 		}
 
 	//if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Normalizing scores"));
-	normalize_movement_scores_over_all_paths(e->software_version_number(), times_series_denoising_parameters, sql);
+	normalize_movement_scores_over_all_paths(e->model_software_version_number(), times_series_denoising_parameters, sql);
 	if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Calculating quantifications"));
 	std::vector< ns_64_bit> tmp1, tmp2;
 	//ofstream o("c:\\server\\debug_" + ns_format_time_string(ns_current_time()));
@@ -2066,7 +2068,7 @@ bool ns_time_path_image_movement_analyzer<allocator_T>::load_completed_analysis(
 
 	/*if (posture_model_version_used != e->software_version_number()){
 	  cout << posture_model_version_used << "\n";
-	  throw ns_ex("This region's movement analysis was run using threshold posture analysis version \"") << ns_to_string(posture_model_version_used) << "\".  This is incompatible with the movement analysis model you have specified, \"" << e->name << "\" which is v " << e->software_version_number() << ".  You can fix this by running the job \"Analyze Worm Movement using Cached Images\" which will preserve all by hand annotations.";
+	  throw ns_ex("This region's movement analysis was run using threshold posture analysis version \"") << ns_to_string(posture_model_version_used) << "\".  This is incompatible with the movement analysis model you have specified, \"" << e->name << "\" which is v " << e->software_version_number() << "\".  You can fix this by running the job \"Analyze Worm Movement using Cached Images\" which will preserve all by hand annotations.";
 	}*/
 
 
@@ -2370,7 +2372,6 @@ void ns_analyzed_image_time_path_element_measurements::read(istream & in, ns_vec
 }
 template<class allocator_T>
 void ns_time_path_image_movement_analyzer<allocator_T>::load_movement_data_from_disk(istream & in, bool skip_movement_data){
-
 	ns_get_int get_int;
 	ns_get_double get_double;
 	ns_get_string get_string;
@@ -2382,17 +2383,17 @@ void ns_time_path_image_movement_analyzer<allocator_T>::load_movement_data_from_
 	get_string(in, tmp);
 	if (tmp == "v:") {
 		get_string(in, tmp);
-		posture_model_version_used.resize(0);
-		posture_model_version_used.reserve(tmp.size());
+		measurement_format_version_used.resize(0);
+		measurement_format_version_used.reserve(tmp.size());
 		for (unsigned int i = 0; i < tmp.size(); i++)
 		  if (!isspace(tmp[i]))
-		    posture_model_version_used+=tmp[i];
+			  measurement_format_version_used +=tmp[i];
 
 		version_specified = true;
       
 	} 
 	if (!version_specified)
-		posture_model_version_used = "2";
+		measurement_format_version_used = "2";
       
 	if (skip_movement_data)
 		return;
@@ -2545,7 +2546,7 @@ void ns_analyzed_image_time_path_element_measurements::write(ostream & out,const
 }
 template<class allocator_T>
 void ns_time_path_image_movement_analyzer<allocator_T>::save_movement_data_to_disk(ostream & o) const{
-	o << this->analysis_id << ",v:,"<< posture_model_version_used<<"\n";
+	o << this->analysis_id << ",v:,"<< measurement_format_version_used <<"\n";
 	for (unsigned long i = 0; i < groups.size(); i++){
 		for (unsigned long j = 0; j < groups[i].paths.size(); j++){
 			for (unsigned long k = 0; k < groups[i].paths[j].elements.size(); k++){
@@ -7934,9 +7935,17 @@ void ns_time_path_image_movement_analyzer<allocator_T>::output_histogram_telemet
 
 template<class allocator_T>
 void ns_time_path_image_movement_analyzer<allocator_T>::reanalyze_stored_aligned_images(const ns_64_bit region_id,const ns_time_path_solution & solution_,const ns_time_series_denoising_parameters & times_series_denoising_parameters,const ns_analyzed_image_time_path_death_time_estimator * e,ns_sql & sql,const bool load_images_after_last_valid_sample,const bool recalculate_flow_images){
+	
+	const std::string allow_measurement_format_mismatch = ns_to_lower(image_server_const.get_cluster_constant_value("allow_measurement_format_mismatch", "false", &sql));
+	bool allow_measurement_format_mismatch_ = allow_measurement_format_mismatch == "false" || allow_measurement_format_mismatch == "no" || allow_measurement_format_mismatch == "0";
 
-	if (e->software_version_number() != NS_CURRENT_THRESHOLD_POSTURE_MODEL_VERSION)
-		throw ns_ex("This software, which is running threshold posture analysis version ") << NS_CURRENT_THRESHOLD_POSTURE_MODEL_VERSION << ", cannot use the incompatible posture analysis parameter set " << e->name << ", which is version " << e->software_version_number();
+	if (!allow_measurement_format_mismatch_ && ns_analyzed_image_time_path_element_measurements::measurement_format_version() != measurement_format_version_used)
+		throw ns_ex("This region's movement analysis was run using an old measurement software version: \"") << measurement_format_version_used << "\".  This is incompatible with the current software: \"" << ns_analyzed_image_time_path_element_measurements::measurement_format_version() << "\". You can fix this by running the job \"Analyze Worm Movement using Cached Solution\" which will preserve all by hand annotations.";
+
+	if (e->current_software_version_number() != e->model_software_version_number()) 
+		throw ns_ex("The specified model was generated using an old model version: \"") << e->model_software_version_number() << "\" but this software uses version \"" << e->current_software_version_number() << "\". You can fix this by using the latest model file version.";
+	
+
 
 	#ifndef NS_CALCULATE_OPTICAL_FLOW
 	if (recalculate_flow_images)
@@ -7980,7 +7989,7 @@ void ns_time_path_image_movement_analyzer<allocator_T>::reanalyze_stored_aligned
 
 		//this will set the analysis id based on the file contents
 		load_stored_movement_analysis_results(sql, ns_only_quantification);
-		posture_model_version_used = NS_CURRENT_THRESHOLD_POSTURE_MODEL_VERSION;
+		measurement_format_version_used = ns_analyzed_image_time_path_element_measurements::measurement_format_version();
 		ns_64_bit file_specified_analysis_id = this->analysis_id;
 		obtain_analysis_id_and_save_movement_data(region_id, sql, ns_require_existing_record, ns_do_not_write_data);
 		if (file_specified_analysis_id != this->analysis_id)
@@ -8066,7 +8075,7 @@ void ns_time_path_image_movement_analyzer<allocator_T>::reanalyze_stored_aligned
 			//	groups[i].paths[j].output_image_movement_summary(tmp);
 			}
 		}
-		normalize_movement_scores_over_all_paths(e->software_version_number(),times_series_denoising_parameters,sql);
+		normalize_movement_scores_over_all_paths(e->model_software_version_number(),times_series_denoising_parameters,sql);
 		//ofstream o("c:\\server\\debug_" + ns_format_time_string(ns_current_time()));
 		//groups[0].paths[0].write_detailed_movement_quantification_analysis_header(o);
 		//o << "\n";
@@ -9264,10 +9273,10 @@ ns_time_path_posture_movement_solution ns_threshold_movement_posture_analyzer::r
 		throw ns_ex("Encountered a path without valid elements!");
 	}
 	long last_time_point_at_which_slow_movement_was_observed(first_valid_event_index),
-		last_time_point_at_which_posture_changes_were_observed(first_valid_event_index),
-		time_point_at_which_death_time_expansion_peaked(first_valid_event_index),
-		time_point_at_which_death_time_expansion_started(first_valid_event_index),
-		time_point_at_which_death_time_expansion_stopped(first_valid_event_index);
+		last_time_point_at_which_posture_changes_were_observed(first_valid_event_index);
+		//time_point_at_which_death_time_expansion_peaked(first_valid_event_index),
+		//time_point_at_which_death_time_expansion_started(first_valid_event_index),
+		//time_point_at_which_death_time_expansion_stopped(first_valid_event_index);
 
 	unsigned long longest_gap_in_slow(0),longest_gap_in_posture(0),longest_gap_in_dead(0);
 
@@ -9335,7 +9344,7 @@ ns_time_path_posture_movement_solution ns_threshold_movement_posture_analyzer::r
 			}
 	}
 	//identify time of death expansion
-	if (found_posture_change_cessation) {
+	/*if (found_posture_change_cessation) {
 		vector<double> thresholds(1, parameters.death_time_expansion_cutoff);
 		vector<unsigned long> hold_times(1,parameters.death_time_expansion_time_kernel_in_seconds);
 		vector<ns_death_time_expansion_info> results(1);	
@@ -9351,7 +9360,7 @@ ns_time_path_posture_movement_solution ns_threshold_movement_posture_analyzer::r
 			time_point_at_which_death_time_expansion_started = results[0].time_point_at_which_death_time_expansion_started;
 			time_point_at_which_death_time_expansion_stopped = results[0].time_point_at_which_death_time_expansion_stopped;
 
-	}
+	}*/
 
 	ns_time_path_posture_movement_solution solution;
 	//assumed to start as slow, so it's only skipped if it is skipped over
@@ -9388,8 +9397,9 @@ ns_time_path_posture_movement_solution ns_threshold_movement_posture_analyzer::r
 	}
 	solution.expanding.skipped = !found_death_time_expansion;
 	if (!solution.expanding.skipped) {
-		solution.expanding.start_index = time_point_at_which_death_time_expansion_started;
-		solution.expanding.end_index = time_point_at_which_death_time_expansion_stopped;
+		throw ns_ex("Death time using thresholding parameters is depreciated!");
+		//solution.expanding.start_index = time_point_at_which_death_time_expansion_started;
+		//solution.expanding.end_index = time_point_at_which_death_time_expansion_stopped;
 	}
 	solution.post_expansion_contracting.skipped = true; //this is not detected using this algorithm.
 

@@ -6,6 +6,7 @@
 #include "ns_time_path_solver.h"
 #include "ns_image_server_results_storage.h"
 #include "ns_hand_annotation_loader.h"
+#include "ns_threshold_movement_posture_analyzer.h"
 
 #include "ns_probability_model_measurement_accessor.h"
 #include <map>
@@ -464,6 +465,20 @@ private:
 
 
 
+std::string ns_model_building_specification::model_description() const {
+	std::string o;
+	o += "Model " + name + "\n";
+	o += "Generated on " + ns_format_time_string_for_human(ns_current_time()) + "\n";
+	o += "State transitions are made" + estimator_type_to_long_string(cross_replicate_estimator_type) + "\n";
+	o += "Transition probabilities are " + this->state_transition_type_to_string(state_transition_type) + "\n";
+	o += "The following quantitative metrics are used to classify states: \n";
+	for (unsigned int i = 0; i < model_features_to_use.size(); i++) {
+		o += "\t" + ns_hmm_emission_probability_model_organizer::dimension_description(model_features_to_use[i]) + "\n";
+	}
+	return o;
+}
+
+
 struct ns_hmm_cross_validation_manager {
 	std::map<std::string, ns_hmm_cross_validation_set > validation_runs_sorted_by_validation_type;
 
@@ -511,7 +526,9 @@ struct ns_hmm_cross_validation_manager {
 						
 						validation_subject->second.analysis[validation_spec_id][replicate_id].model_building_completed = 
 							validation_subject->second.analysis[validation_spec_id][replicate_id].model.build_estimator_from_observations(
-							validation_subject->second.replicates[replicate_id].training_set,&gen,state_specification, transition_type,output);
+								validation_spec->model_description(),
+								validation_subject->second.replicates[replicate_id].training_set,&gen,state_specification, transition_type,output
+							);
 					}
 					catch (ns_ex& ex) {
 						std::cout << "Error building HMM model: " << ex.text() << "\n";
@@ -937,6 +954,8 @@ void ns_run_hmm_cross_validation(std::string& results_summary, ns_image_server_r
 
 					const bool many_movement_failures(results.movement.mean_event_not_found > results.movement.mean_N / 10),
 						many_expansion_failures(results.expansion.mean_event_not_found > results.expansion.mean_N / 10);
+					double movement_failure_rate = (100.0*results.movement.mean_event_not_found) / results.movement.mean_N;
+					double expansion_failure_rate = (100.0 * results.expansion.mean_event_not_found) / results.expansion.mean_N;
 					std::string& txt(model_building_and_testing_info[p->first].result);
 					txt += "= ";
 					if (validation_run->second.replicates.size() > 1)
@@ -949,9 +968,9 @@ void ns_run_hmm_cross_validation(std::string& results_summary, ns_image_server_r
 						txt += "[Death-Associated expansion]: Average error: " + ns_to_string_short(results.expansion.mean_err, 2) + " +-" + ns_to_string_short(results.expansion.var_err, 2) + " days across " + ns_to_string((int)results.expansion.mean_N) + " animals, with " + ns_to_string((int)results.expansion.mean_event_not_found) + "+-" + ns_to_string((int)results.expansion.var_event_not_found) + " animals' expansion times remaining unidentifiable.\n";
 
 					if (many_movement_failures)
-						txt += "Movement cessation times could not be found for more than 10% of animals.  This is probably not a useful model file.\n";
+						txt += "Movement cessation times could not be found for " +ns_to_string_short(movement_failure_rate,1) + "% of individuals. This is probably not a useful model file.\n";
 					if (many_expansion_failures)
-						txt += "Death-associated expansion times could not be found for more than 10% of animals.  This is probably not a useful model file.\n";
+						txt += "Death-associated expansion times could not be found for " + ns_to_string_short(expansion_failure_rate, 1) + "% of individuals. This is probably not a useful model file.\n";
 					if (!many_movement_failures && !many_expansion_failures && (results.movement.mean_N < 50 || results.expansion.mean_N < 50))
 						txt += "Warning: These results will not be meaningful until ~50 animals are annotated by hand.\n";
 					txt += "The model file was written to \"" + model_filenames[p->first] + "\"\n";
@@ -1105,11 +1124,12 @@ struct ns_parameter_set_optimization_record {
 			if (how_much_deviation_from_best_mean_square_error_to_tolerate_for_better_convergence * best_mean_squared_error_by_count[i - min_number_of_counts] <= overall_smallest_mean_squared_error) {
 				if (posture_not_expansion) {
 					best.stationary_cutoff = best_parameter_set_by_count[i - min_number_of_counts].first;
+					best.posture_cutoff = best.stationary_cutoff * 10;
 					best.permanance_time_required_in_seconds = best_parameter_set_by_count[i - min_number_of_counts].second;
 				}
 				else {
-					best.death_time_expansion_cutoff = best_parameter_set_by_count[i - min_number_of_counts].first;
-					best.death_time_expansion_time_kernel_in_seconds = best_parameter_set_by_count[i - min_number_of_counts].second;
+				//	best.death_time_expansion_cutoff = best_parameter_set_by_count[i - min_number_of_counts].first;
+				//	best.death_time_expansion_time_kernel_in_seconds = best_parameter_set_by_count[i - min_number_of_counts].second;
 				}
 				smallest_mean_squared_error = best_mean_squared_error_by_count[i - min_number_of_counts];
 				best_parameter_count = i;
@@ -1215,15 +1235,15 @@ void ns_identify_best_threshold_parameteters(std::string& results_text, const ns
 	for (unsigned int i = 0; i < 16; i++)
 		expansion_analysis_hold_times.push_back((i) * 30 * 60);
 
-	ns_acquire_for_scope<ns_ostream> posture_analysis_optimization_output, expansion_analysis_optimization_output;
+	ns_acquire_for_scope<ns_ostream> posture_analysis_optimization_output;// , expansion_analysis_optimization_output;
 	if (run_posture) {
 		posture_analysis_optimization_output.attach(image_server.results_storage.time_path_image_analysis_quantification(sub, "threshold_posture_optimization_stats", true, sql).output());
 		ns_analyzed_image_time_path::write_posture_analysis_optimization_data_header(posture_analysis_optimization_output()());
 	}
-	if (run_expansion) {
-		expansion_analysis_optimization_output.attach(image_server.results_storage.time_path_image_analysis_quantification(sub, "threshold_expansion_optimization_stats", true, sql).output());
-		ns_analyzed_image_time_path::write_expansion_analysis_optimization_data_header(expansion_analysis_optimization_output()());
-	}
+	//if (run_expansion) {
+	//	expansion_analysis_optimization_output.attach(image_server.results_storage.time_path_image_analysis_quantification(sub, "threshold_expansion_optimization_stats", true, sql).output());
+	//	ns_analyzed_image_time_path::write_expansion_analysis_optimization_data_header(expansion_analysis_optimization_output()());
+	//}
 	unsigned region_count(0);
 
 	//0:region name, 1:region_id, 2:sample_name, 3:sample_id, 4:device_name, 5:excluded
@@ -1280,13 +1300,14 @@ void ns_identify_best_threshold_parameteters(std::string& results_text, const ns
 				image_server.get_posture_analysis_model_for_region(region_id, handle, sql);
 
 				if (posture_model_used == "")
-					posture_model_used = time_path_image_analyzer.posture_model_version_used;
-				else if (posture_model_used != time_path_image_analyzer.posture_model_version_used)
-					throw ns_ex("Not all regions are using the same posture analysis version!  Please run the  \"Analyze Worm Movement Using Cached Images\" for all regions.");
+					posture_model_used = time_path_image_analyzer.measurement_format_version_used;
+				else if (posture_model_used != time_path_image_analyzer.measurement_format_version_used)
+					throw ns_ex("Not all regions are using the same posture analysis version!  Please update to the latest model version and run \"ReBuild Worm Analysis from Cached Solution\" for all regions.");
 
 				ns_posture_analysis_model mod(handle().model_specification);
-				mod.threshold_parameters.use_v1_movement_score = time_path_image_analyzer.posture_model_version_used == "1";
-				mod.threshold_parameters.version_flag = time_path_image_analyzer.posture_model_version_used;
+				ns_threshold_movement_posture_analyzer_parameters default_model_parameters = mod.threshold_parameters;
+				default_model_parameters.use_v1_movement_score = time_path_image_analyzer.measurement_format_version_used == "1";
+				default_model_parameters.version_flag = ns_threshold_movement_posture_analyzer::current_software_version();
 
 				handle.release();
 				//ns_acquire_for_scope<ns_analyzed_image_time_path_death_time_estimator> death_time_estimator(
@@ -1310,8 +1331,8 @@ void ns_identify_best_threshold_parameteters(std::string& results_text, const ns
 
 				if (run_posture)
 					posture_analysis_optimization_output()() << "\n";
-				if (run_expansion)
-					expansion_analysis_optimization_output()() << "\n";
+				//if (run_expansion)
+				//	expansion_analysis_optimization_output()() << "\n";
 				std::cerr << metadata.plate_name() << "\n";
 
 				//get current parameters
@@ -1329,7 +1350,7 @@ void ns_identify_best_threshold_parameteters(std::string& results_text, const ns
 						p_all = best_posture_parameter_sets.insert(best_posture_parameter_sets.begin(),
 							std::pair<std::string, ns_parameter_set_optimization_record>("all",
 								ns_parameter_set_optimization_record(posture_analysis_thresholds, posture_analysis_hold_times)));
-						p_all->second.best = posture_analysis_model_handle().model_specification.threshold_parameters;   //set default parameters
+						p_all->second.best = default_model_parameters;
 					}
 					std::map<std::string, ns_parameter_set_optimization_record>::iterator p = best_posture_parameter_sets.find(strain_name);
 					if (p == best_posture_parameter_sets.end()) {
@@ -1340,7 +1361,7 @@ void ns_identify_best_threshold_parameteters(std::string& results_text, const ns
 						p = best_posture_parameter_sets.insert(best_posture_parameter_sets.begin(),
 							std::pair<std::string, ns_parameter_set_optimization_record>(strain_name,
 								ns_parameter_set_optimization_record(posture_analysis_thresholds, posture_analysis_hold_times)));
-						p->second.best = posture_analysis_model_handle().model_specification.threshold_parameters;   //set default parameters
+						p->second.best = default_model_parameters;
 
 					}
 					else {
@@ -1349,7 +1370,7 @@ void ns_identify_best_threshold_parameteters(std::string& results_text, const ns
 							std::cout << "Adding to record for plate type " << strain_name << "\n";
 					}
 
-					time_path_image_analyzer.write_posture_analysis_optimization_data(time_path_image_analyzer.posture_model_version_used, posture_analysis_thresholds, posture_analysis_hold_times, metadata, posture_analysis_optimization_output()(), p->second.new_parameters_results, &(p_all->second.new_parameters_results));
+					time_path_image_analyzer.write_posture_analysis_optimization_data(time_path_image_analyzer.measurement_format_version_used, posture_analysis_thresholds, posture_analysis_hold_times, metadata, posture_analysis_optimization_output()(), p->second.new_parameters_results, &(p_all->second.new_parameters_results));
 
 					//include existing model file
 					std::vector<double> thresh;
@@ -1359,9 +1380,10 @@ void ns_identify_best_threshold_parameteters(std::string& results_text, const ns
 					else {
 						thresh.push_back(posture_analysis_model_handle().model_specification.threshold_parameters.stationary_cutoff);
 						hold_t.push_back(posture_analysis_model_handle().model_specification.threshold_parameters.permanance_time_required_in_seconds);
-						time_path_image_analyzer.write_posture_analysis_optimization_data(time_path_image_analyzer.posture_model_version_used, thresh, hold_t, metadata, posture_analysis_optimization_output()(), p->second.current_parameter_results, &(p_all->second.current_parameter_results));
+						time_path_image_analyzer.write_posture_analysis_optimization_data(time_path_image_analyzer.measurement_format_version_used, thresh, hold_t, metadata, posture_analysis_optimization_output()(), p->second.current_parameter_results, &(p_all->second.current_parameter_results));
 					}
 				}
+				/*
 				if (run_expansion) {
 					std::map<std::string, ns_parameter_set_optimization_record>::iterator p = best_expansion_parameter_sets.find(strain_name);
 					if (p == best_expansion_parameter_sets.end()) {
@@ -1377,13 +1399,14 @@ void ns_identify_best_threshold_parameteters(std::string& results_text, const ns
 					}
 					time_path_image_analyzer.write_expansion_analysis_optimization_data(expansion_analysis_thresholds, expansion_analysis_hold_times, metadata, expansion_analysis_optimization_output()(), p->second.new_parameters_results, &(p_all->second.new_parameters_results));
 
-
+					
 					std::vector<double> thresh;
 					std::vector<unsigned long>hold_t;
 					thresh.push_back(posture_analysis_model_handle().model_specification.threshold_parameters.death_time_expansion_cutoff);
 					hold_t.push_back(posture_analysis_model_handle().model_specification.threshold_parameters.death_time_expansion_time_kernel_in_seconds);
 					time_path_image_analyzer.write_expansion_analysis_optimization_data(thresh, hold_t, metadata, expansion_analysis_optimization_output()(), p->second.current_parameter_results, &(p_all->second.current_parameter_results));
-				}
+					
+				}*/
 
 			}
 
@@ -1407,12 +1430,13 @@ void ns_identify_best_threshold_parameteters(std::string& results_text, const ns
 			hold = &posture_analysis_hold_times;
 		}
 		else {
-			if (!run_expansion)
+		if (!run_expansion)
 				continue;
+		/*
 			data_name = "Expansion Analysis";
 			best_parameter_sets = &best_expansion_parameter_sets;
 			thresh = &expansion_analysis_thresholds;
-			hold = &expansion_analysis_hold_times;
+			hold = &expansion_analysis_hold_times;*/
 		}
 
 		results_text += "===Automated " + data_name + " Calibration Results == \n";
@@ -1480,7 +1504,7 @@ void ns_identify_best_threshold_parameteters(std::string& results_text, const ns
 	}
 
 	//output best parameters to disk
-	if (run_posture && run_expansion) {
+	/*if (run_posture && run_expansion) {
 		for (auto expansion_p = best_expansion_parameter_sets.begin(); expansion_p != best_expansion_parameter_sets.end(); expansion_p++) {
 			//build parameter file with optimal posture and expansion parameters		
 			auto posture_p = best_posture_parameter_sets.find(expansion_p->first);
@@ -1496,22 +1520,26 @@ void ns_identify_best_threshold_parameteters(std::string& results_text, const ns
 			expansion_p->second.best.write(both_parameter_set()());
 			both_parameter_set.release();
 		}
-	}
-	else {
+	}*/
+	//else {
 		std::map<std::string, ns_parameter_set_optimization_record>* best_parameter_sets;
 		if (run_posture) {
 			best_parameter_sets = &best_posture_parameter_sets;
 		}
-		else if (run_expansion) {
-			best_parameter_sets = &best_expansion_parameter_sets;
-		}
+		//else if (run_expansion) {
+		//	best_parameter_sets = &best_expansion_parameter_sets;
+		//}
 		else throw ns_ex("Err");
 		for (auto p = best_parameter_sets->begin(); p != best_parameter_sets->end(); p++) {
 			if (p->second.new_parameters_results.number_valid_worms == 0)
 				continue;
 			ns_acquire_for_scope<ns_ostream> parameter_set_output(image_server.results_storage.optimized_posture_analysis_parameter_set(sub, p->second.filename, sql).output());
+			std::string& d(p->second.best.model_description_text);
+			d += p->second.filename + "\n";
+			d += "Model generated on " + ns_format_time_string_for_human(ns_current_time()) + "\n";
+			d += "Model is based on " + ns_to_string(p->second.total_count) + " annotated individuals.";
 			p->second.best.write(parameter_set_output()());
 			parameter_set_output.release();
 		}
-	}
+	//}
 }

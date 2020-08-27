@@ -2572,7 +2572,7 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 													standard_model.observations = observation_cache.get_new();
 													standard_model.genotype = "all_experiments";
 												}
-												standard_model.observations->add_observation(NS_CURRENT_THRESHOLD_POSTURE_MODEL_VERSION, a, path, database_name, movement_results.experiment_id(), &(*plate_name), &(*device), &(*genotype));
+												standard_model.observations->add_observation(a, path, database_name, movement_results.experiment_id(), &(*plate_name), &(*device), &(*genotype));
 												
 											}
 											if (!hmm_condition.empty())
@@ -2585,7 +2585,7 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 														hmm_group_model.observations = observation_cache.get_new();
 														hmm_group_model.genotype = hmm_condition;
 													}
-													hmm_group_model.observations->add_observation(NS_CURRENT_THRESHOLD_POSTURE_MODEL_VERSION, a, path, database_name, movement_results.experiment_id(), &(*plate_name), &(*device), &(*genotype));
+													hmm_group_model.observations->add_observation(a, path, database_name, movement_results.experiment_id(), &(*plate_name), &(*device), &(*genotype));
 												}
 												{
 													ns_cross_validation_subject& hmm_group_model = models_to_build[experiment_name_to_use + "=" + hmm_condition];
@@ -2596,7 +2596,7 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 														hmm_group_model.subject = experiment_name_to_use;
 														hmm_group_model.genotype = hmm_condition;
 													}
-													hmm_group_model.observations->add_observation(NS_CURRENT_THRESHOLD_POSTURE_MODEL_VERSION, a, path, database_name, movement_results.experiment_id(), &(*plate_name), &(*device), &(*genotype));
+													hmm_group_model.observations->add_observation(a, path, database_name, movement_results.experiment_id(), &(*plate_name), &(*device), &(*genotype));
 												}
 											}
 
@@ -2610,7 +2610,7 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 													genotype_model.genotype = (*genotype);
 													genotype_model.subject = "all_experiments";
 												}
-												genotype_model.observations->add_observation(NS_CURRENT_THRESHOLD_POSTURE_MODEL_VERSION, a, path, database_name, movement_results.experiment_id(), &(*plate_name), &(*device), &(*genotype));
+												genotype_model.observations->add_observation(a, path, database_name, movement_results.experiment_id(), &(*plate_name), &(*device), &(*genotype));
 											}
 											//now set up model for each experiment individually
 											if (experiments_specified.size() > 1) {
@@ -2621,7 +2621,7 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 													exp_specific_standard_model.subject = experiment_name_to_use;
 													exp_specific_standard_model.observations = observation_cache.get_new();
 												}
-												exp_specific_standard_model.observations->add_observation(NS_CURRENT_THRESHOLD_POSTURE_MODEL_VERSION, a, path, database_name, movement_results.experiment_id(), &(*plate_name), &(*device), &(*genotype));
+												exp_specific_standard_model.observations->add_observation(a, path, database_name, movement_results.experiment_id(), &(*plate_name), &(*device), &(*genotype));
 
 											}
 

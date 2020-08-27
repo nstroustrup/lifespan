@@ -4,7 +4,7 @@
 #include "ns_vector.h"
 #include <ostream>
 struct ns_analyzed_image_time_path_element_measurements {
-
+	static std::string measurement_format_version() { return "2.3"; }
 	//This is the quantification used to identify death times in old versions of the lifespan machine
 	inline const double & death_time_posture_analysis_measure_v1() const { return denoised_movement_score; }
 	inline double & death_time_posture_analysis_measure_v1() { return denoised_movement_score; }

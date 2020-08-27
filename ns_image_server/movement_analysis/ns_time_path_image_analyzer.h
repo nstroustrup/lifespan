@@ -10,8 +10,6 @@
 #include "ns_analyzed_image_time_path_element_measurements.h"
 #include "ns_hidden_markov_model_posture_analyzer.h"
 
-//posture version specifically for threshold models.
-#define NS_CURRENT_THRESHOLD_POSTURE_MODEL_VERSION "2.3"
 
 #undef NS_CALCULATE_OPTICAL_FLOW
 #define NS_USE_FAST_IMAGE_REGISTRATION
@@ -738,7 +736,7 @@ public:
 	enum {ns_spatially_averaged_movement_kernal_half_size=2};
 	ns_time_path_image_movement_analyzer(ns_time_path_image_movement_analysis_memory_pool<allocator_T>& memory_pool_) :paths_loaded_from_solution(false),
 		region_info_id(0), last_timepoint_in_analysis_(0), _number_of_invalid_images_encountered(0), image_cache(1024 * 1024 * 64),
-		number_of_timepoints_in_analysis_(0), image_db_info_loaded(false), externally_specified_plate_observation_interval(0, ULONG_MAX), posture_model_version_used(NS_CURRENT_THRESHOLD_POSTURE_MODEL_VERSION),
+		number_of_timepoints_in_analysis_(0), image_db_info_loaded(false), externally_specified_plate_observation_interval(0, ULONG_MAX), measurement_format_version_used(),
 		memory_pool(memory_pool_), asynch_group_loading_is_running(false), cancel_asynch_group_load(false), asynch_group_loading_failed(false){}
 
 	~ns_time_path_image_movement_analyzer(){
@@ -868,7 +866,7 @@ public:
 
 	void match_plat_areas_to_paths(std::vector<ns_region_area> & areas);
 	template<class T2>friend class ns_worm_morphology_data_integrator;
-	std::string posture_model_version_used;
+	std::string measurement_format_version_used;
 
 	bool calculate_optimzation_stats_for_current_hmm_estimator(const std::string* database_name, ns_hmm_movement_analysis_optimizatiom_stats & s, const ns_emperical_posture_quantification_value_estimator * e, std::set<ns_stationary_path_id> & paths_to_test, bool generate_path_info);
 private:

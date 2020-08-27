@@ -79,6 +79,11 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 	ns_acquire_for_scope<ns_analyzed_image_time_path_death_time_estimator> death_time_estimator(
 		ns_get_death_time_estimator_from_posture_analysis_model(posture_analysis_model_handle().model_specification));
 
+
+	if (death_time_estimator().current_software_version_number() != death_time_estimator().model_software_version_number())
+		throw ns_ex("The specified model was generated using an old model version: \"") << death_time_estimator().model_software_version_number() << "\" but this software uses version \"" << death_time_estimator().current_software_version_number() << "\". You can fix this by using the latest model file version.";
+
+
 	ns_posture_analysis_model posture_analysis_method_used;
 	bool posture_analysis_method_was_used(false);
 	posture_analysis_method_used = posture_analysis_model_handle().model_specification;
@@ -105,6 +110,8 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 		job.maintenance_task == ns_maintenance_rebuild_movement_from_stored_image_quantification || 
 		job.maintenance_task == ns_maintenance_rebuild_movement_data_from_stored_solution ||
 		job.maintenance_task ==	ns_maintenance_recalculate_censoring) {
+
+
 		if (log_output)
 			image_server->register_server_event(ns_image_server_event("Loading point cloud solution from disk."), &sql);
 		time_path_solution.load_from_db(job.region_id, sql, false);

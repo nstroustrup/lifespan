@@ -6,7 +6,6 @@
 #include "ns_gmm.h"
 #include "ns_probability_model_measurement_accessor.h"
 #include <iomanip>
-#define NS_HMM_VERSION "2.3"
 
 
 
@@ -817,10 +816,13 @@ ns_hmm_movement_state ns_hmm_solver::most_probable_state(const std::vector<doubl
 }
 */
 
+std::string ns_time_path_movement_markov_solver::model_software_version_number() const {
+	return estimator.software_version_when_built;
+}
 
 ns_time_path_posture_movement_solution ns_time_path_movement_markov_solver::estimate_posture_movement_states(int software_version,const ns_analyzed_image_time_path * path, std::vector<double > & tmp_storage_1, std::vector<unsigned long > & tmp_storage_2, ns_analyzed_image_time_path * output_path, std::ostream * debug_output)const{
-	if (estimator.software_version_when_built != NS_HMM_VERSION)
-		throw ns_ex("The specified HMM model was built with an outdated version, ") << estimator.software_version_when_built << ", whereas this software was compiled as version " << NS_HMM_VERSION;
+	if (estimator.software_version_when_built != current_software_version_number())
+		throw ns_ex("The specified HMM model was built with an outdated version, ") << estimator.software_version_when_built << ", whereas this software was compiled as version " << current_software_version_number();
 	ns_hmm_solver solver;
 	solver.solve(*path, estimator, tmp_storage_1, tmp_storage_2);
 
@@ -1096,11 +1098,19 @@ ns_emperical_posture_quantification_value_estimator::~ns_emperical_posture_quant
 	delete emission_probability_models;
 }
 
-void ns_emperical_posture_quantification_value_estimator::read(std::istream & i) {
+void ns_emperical_posture_quantification_value_estimator::read(std::istream& i) {
 	std::string tmp;
-	getline(i, tmp, '\n');
+	software_version_when_built = model_description_text = "";
+	while (true) {
+		getline(i, tmp, '\n');
+		if (i.fail())
+			throw ns_ex("ns_emperical_posture_quantification_value_estimator::read()::Model file on disk appears to be empty.");
+		if (tmp.size() > 0 && tmp[0] == '#')
+			model_description_text += tmp.substr(1) + '\n';
+		else //this is the header line, which we discard.  The data starts on the next line.
+			break;
+	}
 	ns_get_string get_string;
-	software_version_when_built = "";
 	std::string software_version_for_model;
 	ns_hmm_emission_probability_model_organizer organizer;
 	while (true) {
@@ -1168,16 +1178,26 @@ void ns_emperical_posture_quantification_value_estimator::update_flags_from_int(
 	state_transition_type = (ns_hmm_states_transition_types)((flag_int >> 8) & 0xFF);
 }
 
-void ns_emperical_posture_quantification_value_estimator::write(std::ostream & o)const {
+void ns_emperical_posture_quantification_value_estimator::write( std::ostream & o)const {
+	if (model_description_text.size() > 0) {
+		o << "#";
+		for (unsigned int i = 0; i < model_description_text.size(); i++) {
+			if (model_description_text[i] == '\n' && i+1 != model_description_text.size()) 
+				o << "\n#";
+			else o << model_description_text[i];
+		}
+		if (*model_description_text.rbegin() != '\n')
+			o << "\n";
+	}
 	if (emission_probability_models->state_emission_models.size() != 0)
 		emission_probability_models->state_emission_models.begin()->second->write_header(o);
 	o << "\n";
 	for (auto p = emission_probability_models->state_emission_models.begin(); p != emission_probability_models->state_emission_models.end(); p++) {
-		p->second->write(ns_hmm_movement_state_to_string(p->first), NS_HMM_VERSION,flags_to_int(),o);
+		p->second->write(ns_hmm_movement_state_to_string(p->first), ns_time_path_movement_markov_solver::current_software_version(),flags_to_int(),o);
 		o << "\n";
 	}
 	for (auto p = emission_probability_models->state_transition_models.begin(); p != emission_probability_models->state_transition_models.end(); p++) {
-		p->second->write(ns_hmm_state_transition_to_string(p->first), NS_HMM_VERSION, flags_to_int(), o);
+		p->second->write(ns_hmm_state_transition_to_string(p->first), ns_time_path_movement_markov_solver::current_software_version(), flags_to_int(), o);
 		o << "\n";
 	}
 }
@@ -1262,12 +1282,16 @@ void ns_hmm_observation_set::clean_up_data_prior_to_model_fitting() {
 	
 }
 
-bool ns_emperical_posture_quantification_value_estimator::build_estimator_from_observations(
-	const ns_hmm_observation_set& observation_set, const ns_probability_model_generator* generator, const ns_hmm_states_permitted& states_permitted_, const ns_hmm_states_transition_types & transition_type_, std::string& output){
+bool ns_emperical_posture_quantification_value_estimator::build_estimator_from_observations(const std::string & description, const ns_hmm_observation_set& observation_set, const ns_probability_model_generator* generator, 
+	const ns_hmm_states_permitted& states_permitted_, const ns_hmm_states_transition_types & transition_type_, std::string& output){
+
+	model_description_text.resize(0);
+	model_description_text += description;
+	model_description_text += "Generated from annotations of " + ns_to_string(observation_set.volatile_number_of_individuals_fully_annotated) + " individuals\n";
 
 	states_permitted_int = states_permitted_;
 	state_transition_type = transition_type_;
-	software_version_when_built = NS_HMM_VERSION;
+	software_version_when_built = ns_time_path_movement_markov_solver::current_software_version();
 
 	//a list of observations for each state.
 	//because we mix and match these, we need to have a vector of vectors.
@@ -1435,7 +1459,7 @@ public:
 void ns_emperical_posture_quantification_value_estimator::write_visualization(std::ostream & o, const std::string & experiment_name)const{
 }
 
-bool ns_hmm_observation_set::add_observation(const std::string& software_version, const ns_death_time_annotation& properties, const ns_analyzed_image_time_path* path, const std::string* database_name, const ns_64_bit& experiment_id, const std::string* plate_name, const std::string* device_name, const std::string * genotype_){
+bool ns_hmm_observation_set::add_observation(const ns_death_time_annotation& properties, const ns_analyzed_image_time_path* path, const std::string* database_name, const ns_64_bit& experiment_id, const std::string* plate_name, const std::string* device_name, const std::string * genotype_){
 	//only consider paths with death times annotated.
 	if (!path->by_hand_movement_cessation_time().fully_unbounded() &&
 		!path->by_hand_death_associated_expansion_time().fully_unbounded()) {
@@ -1662,9 +1686,8 @@ ns_posture_analysis_model ns_posture_analysis_model::dummy(){
 		m.posture_analysis_method = ns_posture_analysis_model::ns_threshold;
 		m.threshold_parameters.stationary_cutoff = 0;
 		m.threshold_parameters.permanance_time_required_in_seconds = 0;
-		m.threshold_parameters.death_time_expansion_cutoff = 0;
-		m.threshold_parameters.death_time_expansion_time_kernel_in_seconds = 0;
-		m.threshold_parameters.version_flag = NS_CURRENT_THRESHOLD_POSTURE_MODEL_VERSION;
+		m.threshold_parameters.version_flag = ns_threshold_movement_posture_analyzer::current_software_version();
+
 		return m;
 	}
 
@@ -1695,12 +1718,26 @@ ns_threshold_movement_posture_analyzer_parameters ns_threshold_movement_posture_
 	return p;
 }
 void ns_threshold_movement_posture_analyzer_parameters::read(std::istream & i){
+	model_description_text = "";
 	std::string tmp;
-	getline(i,tmp,',');
-	if (tmp != "posture_cutoff" || i.fail())
-		throw ns_ex("ns_threshold_movement_posture_analyzer_parameters::read()::Syntax error 1");
-	i >> posture_cutoff;
-	getline(i,tmp,'\n');
+	while (true) {
+		getline(i, tmp, '\n');
+		if (i.fail())
+			throw ns_ex("ns_threshold_movement_posture_analyzer_parameters::read()::Model file on disk appears to be empty.");
+		if (tmp.size() > 0 && tmp[0] == '#')
+			model_description_text += tmp.substr(1) + '\n';
+		else //this is the posture cutoff line, which we'll need to parse.
+			break;
+	}
+	auto p = tmp.find(',');
+	if (i.fail() || p == tmp.npos || tmp.substr(0,p) != "posture_cutoff")
+		throw ns_ex("ns_threshold_movement_posture_analyzer_parameters::read()::Syntax error.  First specification should be posture cutoff; instead it is ") << tmp.substr(0,p);
+	posture_cutoff = atof(tmp.substr(p + 1).c_str());
+
+	//getline(i,tmp,',');
+	//if (tmp != "posture_cutoff" || i.fail())
+	//i >> posture_cutoff;
+	//getline(i,tmp,'\n');
 	getline(i,tmp,',');
 	if (tmp != "stationary_cutoff" || i.fail())
 		throw ns_ex("ns_threshold_movement_posture_analyzer_parameters::read()::Syntax error 2");
@@ -1725,12 +1762,10 @@ void ns_threshold_movement_posture_analyzer_parameters::read(std::istream & i){
 	   if (!isspace(tmp[i]))
 	     version_flag+=tmp[i];
 
-
-
 	 use_v1_movement_score = version_flag == "1";
 	 if (use_v1_movement_score)
 		 return;
-	 getline(i, tmp, '\n');
+	 /*getline(i, tmp, '\n');
 	 getline(i, tmp, ',');
 	 if (tmp != "death_time_expansion_cutoff" || i.fail())
 		 throw ns_ex("ns_threshold_movement_posture_analyzer_parameters::read()::Syntax error 5");
@@ -1739,16 +1774,26 @@ void ns_threshold_movement_posture_analyzer_parameters::read(std::istream & i){
 	 getline(i, tmp, ',');
 	 if (tmp != "death_time_expansion_time_kernel" || i.fail())
 		 throw ns_ex("ns_threshold_movement_posture_analyzer_parameters::read()::Syntax error 6");
-	 i >> death_time_expansion_time_kernel_in_seconds;
+	 i >> death_time_expansion_time_kernel_in_seconds;*/
 }
 void ns_threshold_movement_posture_analyzer_parameters::write(std::ostream & o)const{
+	if (model_description_text.size() > 0) {
+		o << "#";
+		for (unsigned int i = 0; i < model_description_text.size(); i++) {
+			if (model_description_text[i] == '\n')
+				o << "\n#";
+			else o << model_description_text[i];
+		}
+		if (*model_description_text.rbegin() != '\n')
+			o << "\n";
+	}
 	o << "posture_cutoff, " << posture_cutoff << "\n"
 		"stationary_cutoff, " << stationary_cutoff << "\n"
 		"hold_time_seconds, " << permanance_time_required_in_seconds << "\n"
-		"software_version, " <<  version_flag << "\n"
-		"death_time_expansion_cutoff, " << death_time_expansion_cutoff << "\n"
-		"death_time_expansion_time_kernel, " << death_time_expansion_time_kernel_in_seconds << "\n";
+		"software_version, " << version_flag << "\n";
 }
+
+
 
 
 

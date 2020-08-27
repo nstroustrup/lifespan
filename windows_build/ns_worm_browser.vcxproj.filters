@@ -1176,6 +1176,9 @@
     <ClInclude Include="..\ns_image_server\statistics\ns_gmm.h">
       <Filter>statistics</Filter>
     </ClInclude>
+    <ClInclude Include="..\ns_image_server\movement_analysis\ns_threshold_movement_posture_analyzer.h">
+      <Filter>movement_analysis</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="start.tif">

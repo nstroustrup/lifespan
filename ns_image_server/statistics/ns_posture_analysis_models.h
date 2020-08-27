@@ -48,7 +48,7 @@ public:
 	void read_emissions(std::istream& in);
 	void write_emissions(std::ostream& out, const std::string& experiment_name = "") const;
 	void write_durations(std::ostream& out, const std::string& experiment_name = "") const;
-	bool add_observation(const std::string& software_version, const ns_death_time_annotation& properties, const ns_analyzed_image_time_path* path, const std::string* database_name, const ns_64_bit& experiment_id, const std::string* plate_name, const std::string* device_name, const std::string * genotype);
+	bool add_observation(const ns_death_time_annotation& properties, const ns_analyzed_image_time_path* path, const std::string* database_name, const ns_64_bit& experiment_id, const std::string* plate_name, const std::string* device_name, const std::string * genotype);
 	void clean_up_data_prior_to_model_fitting();
 	std::map<ns_stationary_path_id, ns_hmm_emission_normalization_stats > normalization_stats;
 	std::set<std::string> volatile_string_storage;
@@ -67,7 +67,7 @@ public:
 	static ns_hmm_states_permitted state_permissions_from_string(const std::string & s);
 	~ns_emperical_posture_quantification_value_estimator();
 	friend class ns_time_path_movement_markov_solver;
-	bool build_estimator_from_observations(const ns_hmm_observation_set & observation_set, const ns_probability_model_generator* generator,const ns_hmm_states_permitted& states_permitted_, const ns_hmm_states_transition_types & transition_type_, std::string & output);
+	bool build_estimator_from_observations(const std::string& description, const ns_hmm_observation_set & observation_set, const ns_probability_model_generator* generator,const ns_hmm_states_permitted& states_permitted_, const ns_hmm_states_transition_types & transition_type_, std::string & output);
 
 	void log_probability_for_each_state(const ns_analyzed_image_time_path_element_measurements & e,std::vector<double> & p) const;
 
@@ -95,7 +95,7 @@ public:
 	const ns_hmm_states_permitted & states_permitted() const { return states_permitted_int; }
 	const ns_hmm_states_transition_types & states_transitions() const { return state_transition_type; }
 	void defined_states(std::set<ns_hmm_movement_state>& s) const;
-	std::string software_version_when_built;
+	std::string software_version_when_built, model_description_text;
 	friend bool operator==(const ns_emperical_posture_quantification_value_estimator & a, const ns_emperical_posture_quantification_value_estimator & b);
 private:
 	void write_visualization(std::ostream & o,const std::string & experiment_name="") const;
@@ -109,13 +109,10 @@ bool operator==(const ns_emperical_posture_quantification_value_estimator & a, c
 
 struct ns_threshold_movement_posture_analyzer_parameters{
 	double stationary_cutoff,
-		posture_cutoff,
-		death_time_expansion_cutoff;
+		posture_cutoff;
 	unsigned long permanance_time_required_in_seconds;
-
-	unsigned long death_time_expansion_time_kernel_in_seconds;
 	bool use_v1_movement_score;
-	std::string version_flag;
+	std::string version_flag, model_description_text;
 	static ns_threshold_movement_posture_analyzer_parameters default_parameters(const unsigned long experiment_duration_in_seconds);
 	void read(std::istream & i);
 	void write(std::ostream & o)const;

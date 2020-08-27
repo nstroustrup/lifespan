@@ -50,6 +50,8 @@ struct ns_model_building_specification{
 	ns_state_transition_type state_transition_type;
 	std::string name;
 	std::vector<std::string> model_features_to_use;
+
+	std::string model_description() const;
 };
 
 struct ns_cross_validation_subject {

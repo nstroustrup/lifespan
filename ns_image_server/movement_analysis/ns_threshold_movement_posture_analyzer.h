@@ -12,7 +12,11 @@ public:
 		return (*this)(path, debug_output);
 	}
 	unsigned long latest_possible_death_time(const ns_analyzed_image_time_path * path,const unsigned long last_observation_time) const;
-	std::string software_version_number() const { return parameters.version_flag; }
+
+	static std::string current_software_version() { return "2.2"; }
+	std::string current_software_version_number() const { return current_software_version(); }
+	std::string model_software_version_number() const { return parameters.version_flag; }
+	const std::string& model_description() const { return parameters.model_description_text; }
 private:
 	ns_time_path_posture_movement_solution run(const ns_analyzed_image_time_path * path, std::ostream * debug_output=0) const;
 	const ns_threshold_movement_posture_analyzer_parameters parameters;

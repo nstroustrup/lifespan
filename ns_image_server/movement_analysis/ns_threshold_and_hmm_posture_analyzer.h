@@ -25,7 +25,9 @@ public:
 	ns_time_path_posture_movement_solution estimate_posture_movement_states(int software_value, const ns_analyzed_image_time_path* source_path, std::vector<double >& tmp_storage_1, std::vector<unsigned long >& tmp_storage_2, ns_analyzed_image_time_path* output_path = 0, std::ostream * debug_output = 0) const;
 
 	unsigned long latest_possible_death_time(const ns_analyzed_image_time_path* path, const unsigned long last_observation_time) const;
-	std::string software_version_number() const { return model->threshold_parameters.version_flag; }
+	std::string model_software_version_number() const { return model->threshold_parameters.version_flag; }
+	std::string current_software_version_number() const { return "2.2"; }
+	const std::string & model_description() const { return model->threshold_parameters.model_description_text; }
 private:
 	ns_time_path_posture_movement_solution run(const ns_analyzed_image_time_path* path, std::ostream* debug_output = 0) const;
 	const ns_posture_analysis_model * model;

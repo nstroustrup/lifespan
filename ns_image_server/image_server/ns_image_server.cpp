@@ -1279,11 +1279,19 @@ bool ns_image_server::upgrade_tables(ns_sql_connection * sql, const bool just_te
 			cout << "Adding column for dispatcher refresh interval\n";
 			*sql << "ALTER TABLE `" << t_suf << "hosts` "
 				"ADD COLUMN `dispatcher_refresh_interval` INT NOT NULL DEFAULT '0' AFTER `database_used`";
-
 			sql->send_query();
-
 			changes_made = true;
 		}
+		if (!ns_sql_column_exists(t_suf + "analysis_model_registry", "details", sql)) {
+			if (just_test_if_needed)
+				return true;
+			cout << "Updating model registry\n";
+			*sql << "ALTER TABLE `" << t_suf << "analysis_model_registry` "
+				"ADD COLUMN `details` TEXT NOT NULL DEFAULT '\'\'' AFTER `filename`";
+			sql->send_query();
+			changes_made = true;
+		}
+
 
 	}
 	if (!ns_sql_column_exists(t_suf + "experiments", "mask_time", sql)) {
@@ -3563,9 +3571,9 @@ void ns_posture_analysis_model_entry::load_from_external_source(const ns_posture
 
 struct ns_posture_analysis_model_registry_entry {
 	ns_posture_analysis_model_registry_entry(){}
-	ns_posture_analysis_model_registry_entry(const std::string& name_, const std::string & filename_, const ns_posture_analysis_model::ns_posture_analysis_method& m, const std::string& v, const unsigned long f) :
+	ns_posture_analysis_model_registry_entry(const std::string& name_, const std::string & filename_, const ns_posture_analysis_model::ns_posture_analysis_method& m, const std::string& v, const unsigned long f, const std::string & details) :
 		name(name_),filename(filename_), method(m), version(v),file_time(f){}
-	std::string name, filename;
+	std::string name, filename, details;
 	ns_posture_analysis_model::ns_posture_analysis_method method;
 	std::string version;
 	unsigned long file_time;
@@ -3582,7 +3590,6 @@ void ns_image_server::update_posture_analysis_model_registry(ns_sql& sql, bool f
 
 	ns_posture_analysis_model_entry_source source;
 	source.model_directory = image_server.long_term_storage_directory + DIR_CHAR_STR + image_server.posture_analysis_model_directory() + DIR_CHAR_STR;
-
 
 	std::vector<ns_model_registry_info> model_files_on_disk;
 	{
@@ -3671,7 +3678,7 @@ void ns_image_server::update_posture_analysis_model_registry(ns_sql& sql, bool f
 				source.analysis_method = *m;
 				ns_posture_analysis_model_cache::const_handle_t handle;
 				posture_analysis_model_cache.get_for_read(ns_posture_analysis_model_cache_specification(model_files_on_disk[i].model_name,*m), handle, source);
-				model_files_on_disk[i].model_entry = ns_posture_analysis_model_registry_entry(model_files_on_disk[i].model_name, model_files_on_disk[i].filename, source.analysis_method, handle().model_specification.software_version_when_built(), model_files_on_disk[i].last_modified_time_on_disk);
+				model_files_on_disk[i].model_entry = ns_posture_analysis_model_registry_entry(model_files_on_disk[i].model_name, model_files_on_disk[i].filename, source.analysis_method, handle().model_specification.software_version_when_built(), model_files_on_disk[i].last_modified_time_on_disk, handle().model_specification.model_description_text());
 				handle.release();
 				break;
 			}
@@ -3679,7 +3686,7 @@ void ns_image_server::update_posture_analysis_model_registry(ns_sql& sql, bool f
 				if (*m == ns_posture_analysis_model::ns_threshold_and_hmm)	//some files might not exist so don't automatically add them as missing.
 					continue;
 				cout << "Encountered an un-loadable file in the model directory:" << model_files_on_disk[i].filename << ": " << ex.text() << "\n";
-				model_files_on_disk[i].model_entry = ns_posture_analysis_model_registry_entry(model_files_on_disk[i].model_name, model_files_on_disk[i].filename, ns_posture_analysis_model::ns_unknown, "?", model_files_on_disk[i].last_modified_time_on_disk);
+				model_files_on_disk[i].model_entry = ns_posture_analysis_model_registry_entry(model_files_on_disk[i].model_name, model_files_on_disk[i].filename, ns_posture_analysis_model::ns_unknown, "?", model_files_on_disk[i].last_modified_time_on_disk,"");
 			}
 		}
 	}
@@ -3689,7 +3696,10 @@ void ns_image_server::update_posture_analysis_model_registry(ns_sql& sql, bool f
 	sql.send_query("LOCK TABLES analysis_model_registry WRITE");
 	sql.send_query("DELETE FROM analysis_model_registry WHERE analysis_step='posture'");
 	for (unsigned int i = 0; i < model_files_on_disk.size(); i++) {
-		sql << "INSERT INTO analysis_model_registry SET name='" << model_files_on_disk[i].model_entry.name << "', analysis_method='" << ns_posture_analysis_model::method_to_string(model_files_on_disk[i].model_entry.method) << "', version='" << model_files_on_disk[i].model_entry.version << "', analysis_step='posture', file_time = " << model_files_on_disk[i].model_entry.file_time << ", filename='" << model_files_on_disk[i].model_entry.filename << "'";
+		sql << "INSERT INTO analysis_model_registry SET name='" << model_files_on_disk[i].model_entry.name << "', analysis_method='" << ns_posture_analysis_model::method_to_string(model_files_on_disk[i].model_entry.method)
+			<< "', version='" << model_files_on_disk[i].model_entry.version << "', analysis_step='posture', file_time = " << model_files_on_disk[i].model_entry.file_time
+			<< ", filename='" << model_files_on_disk[i].model_entry.filename
+			<< "', details='" << model_files_on_disk[i].model_entry.details << "'";
 		sql.send_query();
 	}
 	sql.send_query("COMMIT");

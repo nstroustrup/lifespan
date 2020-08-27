@@ -7937,7 +7937,7 @@ template<class allocator_T>
 void ns_time_path_image_movement_analyzer<allocator_T>::reanalyze_stored_aligned_images(const ns_64_bit region_id,const ns_time_path_solution & solution_,const ns_time_series_denoising_parameters & times_series_denoising_parameters,const ns_analyzed_image_time_path_death_time_estimator * e,ns_sql & sql,const bool load_images_after_last_valid_sample,const bool recalculate_flow_images){
 	
 	const std::string allow_measurement_format_mismatch = ns_to_lower(image_server_const.get_cluster_constant_value("allow_measurement_format_mismatch", "false", &sql));
-	bool allow_measurement_format_mismatch_ = allow_measurement_format_mismatch == "false" || allow_measurement_format_mismatch == "no" || allow_measurement_format_mismatch == "0";
+	bool allow_measurement_format_mismatch_ = !(allow_measurement_format_mismatch == "false" || allow_measurement_format_mismatch == "no" || allow_measurement_format_mismatch == "0");
 
 	if (!allow_measurement_format_mismatch_ && ns_analyzed_image_time_path_element_measurements::measurement_format_version() != measurement_format_version_used)
 		throw ns_ex("This region's movement analysis was run using an old measurement software version: \"") << measurement_format_version_used << "\".  This is incompatible with the current software: \"" << ns_analyzed_image_time_path_element_measurements::measurement_format_version() << "\". You can fix this by running the job \"Analyze Worm Movement using Cached Solution\" which will preserve all by hand annotations.";

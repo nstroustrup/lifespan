@@ -154,6 +154,19 @@ struct ns_posture_analysis_model{
 	ns_emperical_posture_quantification_value_estimator hmm_posture_estimator;
 	
 	ns_threshold_movement_posture_analyzer_parameters threshold_parameters;
+	std::string model_description_text() const {
+		switch (posture_analysis_method) {
+		case ns_not_specified:
+			return "";
+		case ns_threshold:
+			return threshold_parameters.model_description_text;
+		case ns_hidden_markov:
+			return hmm_posture_estimator.model_description_text;
+		case ns_threshold_and_hmm:
+			return hmm_posture_estimator.model_description_text + "\n" + threshold_parameters.model_description_text;
+		default: return "";
+		}
+	}
 
 	static ns_posture_analysis_model dummy();
 	ns_posture_analysis_method posture_analysis_method;

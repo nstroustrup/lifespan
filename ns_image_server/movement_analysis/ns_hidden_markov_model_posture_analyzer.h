@@ -101,7 +101,7 @@ public:
 
 	ns_time_path_posture_movement_solution estimate_posture_movement_states(int software_value,const ns_analyzed_image_time_path * source_path, std::vector<double > & tmp_storage_1, std::vector<unsigned long > & tmp_storage_2, ns_analyzed_image_time_path * output_path = 0,std::ostream * debug_output=0) const;
 	const ns_emperical_posture_quantification_value_estimator & estimator;
-	static std::string current_software_version() { return "2.3"; }
+	static std::string current_software_version() { return "2.5"; }
 	std::string current_software_version_number() const { return current_software_version(); }
 	std::string model_software_version_number() const;
 

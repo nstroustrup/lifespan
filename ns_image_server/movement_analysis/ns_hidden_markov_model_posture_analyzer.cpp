@@ -54,6 +54,8 @@ void ns_hmm_solver::solve(const ns_analyzed_image_time_path & path, const ns_emp
 
  void ns_hmm_solver::probability_of_path_solution(const ns_analyzed_image_time_path & path, const ns_emperical_posture_quantification_value_estimator & estimator, const ns_time_path_posture_movement_solution & solution, ns_hmm_movement_optimization_stats_record_path & state_info, bool generate_path_info) {
 	std::vector < ns_hmm_movement_state > movement_states(path.element_count(), ns_hmm_unknown_state);
+	if (solution.moving.skipped && solution.slowing.skipped && solution.dead.skipped)
+		throw ns_ex("ns_hmm_solver::probability_of_path_solution()::Encountered an empty solution");
 	if (!solution.moving.skipped) {
 		for (unsigned int i = 0; i <= solution.moving.start_index; i++)
 			movement_states[i] = ns_hmm_missing;
@@ -586,18 +588,18 @@ void ns_emperical_posture_quantification_value_estimator::state_transition_log_p
 		return;
 
 	for (auto p = emission_probability_models->state_transition_models.begin(); p != emission_probability_models->state_transition_models.end(); p++) {
+
+		if (p->first.first == p->first.second) // Self transitions are the probability of /not/ exiting the current state to any other state...we calculate this later.
+			continue; 
 		//transition probability is the probability of transitioning to that state at the specified time, multipled by the probability of entering that state ever.
 		double external_weight = 0;
 		if (log_weight_matrix.size() != 0)
 			external_weight = log_weight_matrix[(int)p->first.first][(int)p->first.second];
-		double prob, model_weight;
-		//	Self transitions are the probability of /not/ exiting the current state to any other state...we calculate this later.
-		if (p->first.first != p->first.second){
-			prob = log(p->second->point_emission_likelihood(duration));
-			if (state_transition_type == ns_empirical_without_weights)
-				model_weight = 0;
-			else model_weight = log(p->second->model_weight());		//this is analogous to the gillespie algorithm.  if an event happens, scale the probability by the fraction of animals that make that transition.
-		}
+		double prob = log(p->second->point_emission_likelihood(duration)), 
+			model_weight = 0;
+		if (state_transition_type != ns_empirical_without_weights)
+			model_weight = log(p->second->model_weight());		//this is analogous to the gillespie algorithm.  if an event happens, scale the probability by the fraction of animals that make that transition.
+
 		log_prob[(int)p->first.first][(int)p->first.second] = prob+ model_weight + external_weight;
 	}
 	//now we handle self transition probabilities;
@@ -608,9 +610,13 @@ void ns_emperical_posture_quantification_value_estimator::state_transition_log_p
 			if (std::isfinite(log_prob[i][j]))
 				total_exit_prob += exp(log_prob[i][j]);
 		}
+		double external_weight = 0;
+		if (log_weight_matrix.size() != 0)
+			external_weight = log_weight_matrix[(int)i][(int)i];
+
 		if (total_exit_prob > 1)
 			throw ns_ex("Invalid exit probability");
-		log_prob[i][i] = log(1 - total_exit_prob);
+		log_prob[i][i] = log(1 - total_exit_prob) + external_weight;
 	}
 }
 

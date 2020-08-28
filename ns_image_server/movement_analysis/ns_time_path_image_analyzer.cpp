@@ -1826,7 +1826,7 @@ bool operator!=(const ns_analyzed_image_specification& a, const ns_analyzed_imag
 
 
 template<class allocator_T>
-bool ns_time_path_image_movement_analyzer<allocator_T>::calculate_optimzation_stats_for_current_hmm_estimator(const std::string * database_name,ns_hmm_movement_analysis_optimizatiom_stats & output_stats, const ns_emperical_posture_quantification_value_estimator * e, std::set<ns_stationary_path_id> & paths_to_test, bool generate_path_info) {
+bool ns_time_path_image_movement_analyzer<allocator_T>::calculate_optimzation_stats_for_current_hmm_estimator(const std::string * database_name,ns_hmm_movement_analysis_optimizatiom_stats & output_stats, const ns_emperical_posture_quantification_value_estimator * e, const std::set<ns_stationary_path_id> & paths_to_test, bool generate_path_info) {
 	bool found_worm(false);
 	output_stats.animals.reserve(groups.size());
 	for (unsigned long g = 0; g < groups.size(); g++)
@@ -1859,12 +1859,12 @@ bool ns_time_path_image_movement_analyzer<allocator_T>::calculate_optimzation_st
 			ns_hmm_movement_analysis_optimizatiom_stats_record& stat(*output_stats.animals.rbegin());
 			//set up structures for debug output
 			ns_hmm_solver hmm_solver;
-			if (generate_path_info) {
-				stat.state_info_times.resize(groups[g].paths[p].element_count());
-				for (unsigned int i = 0; i < stat.state_info_times.size(); i++)
-					stat.state_info_times[i] = groups[g].paths[p].element(i).absolute_time;
-				e->provide_sub_probability_names(stat.state_info_variable_names);
-			}
+			//if (generate_path_info) {
+			stat.state_info_times.resize(groups[g].paths[p].element_count());
+			for (unsigned int i = 0; i < stat.state_info_times.size(); i++)
+				stat.state_info_times[i] = groups[g].paths[p].element(i).absolute_time;
+			e->provide_sub_probability_names(stat.state_info_variable_names);
+			//}
 
 			/*std::ofstream o("c:\\server\\state_transitions.dot");
 			if (!o.fail()) {
@@ -2027,7 +2027,7 @@ bool ns_time_path_image_movement_analyzer<allocator_T>::load_image_quantificatio
 				if (debug_specific_worm != g)
 					continue;
 				//for debug, recalculate the smoothed data
-				groups[g].paths[p].denoise_movement_series_and_calculate_intensity_slopes(times_series_denoising_parameters, tmp1, tmp2);
+				//groups[g].paths[p].denoise_movement_series_and_calculate_intensity_slopes(times_series_denoising_parameters, tmp1, tmp2);
 			}
 			//xxx
 			//ns_region_metadata m;
@@ -3877,8 +3877,12 @@ void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_fr
 		analysis_result.death_time_annotation_set.add(e2);
 	}
 	
-	if (posture_changing_interval_including_missed_states.skipped && dead_interval_including_missed_states.skipped)
+	if (posture_changing_interval_including_missed_states.skipped && dead_interval_including_missed_states.skipped) {
+
+		if (analysis_result.machine_movement_state_solution.slowing.skipped && analysis_result.machine_movement_state_solution.moving.skipped && analysis_result.machine_movement_state_solution.dead.skipped)
+			throw ns_ex("ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_from_movement_quantification()::Empty solution produced!");
 		return;
+	}
 	if (posture_changing_interval_including_missed_states.entrance_interval.period_start_index >
 		posture_changing_interval_including_missed_states.entrance_interval.period_end_index)
 		throw ns_ex("Death start interval boundaries appear to be reversed:") << posture_changing_interval_including_missed_states.entrance_interval.period_end_index << " vs "
@@ -4010,6 +4014,7 @@ void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_fr
 				elements[analysis_result.last_valid_element_id.period_end_index].subregion_info, ns_death_time_annotation::ns_explicitly_observed,
 				"Alive at end of observation",loglikelihood_of_solution));
 	}
+
 }
 
 

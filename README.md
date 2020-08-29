@@ -12,13 +12,15 @@ This repository contains v2 of the lifespan machine software, comprised of
 
 
 
-Copyright 2019
+Copyright 2020
 Reservation of Rights
 All Rights Reserved
 
 
 
 **Major Revisions**
+
+2020.08.29: version 2.5 is finished and merged into the v2 branch.  This update adds feature-complete support for the new hidden markov model (HMM) posture analysis models, upgrades to the worm browser UI, and many bugfixes.
 
 2019.08.01: version 2.3 is finished and merged into the v2 branch.  This update contains major user interface performance improvements in the worm browser, performance upgrades, and many bugfixes. 
 

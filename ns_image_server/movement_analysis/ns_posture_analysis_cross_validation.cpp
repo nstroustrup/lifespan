@@ -483,7 +483,7 @@ std::string ns_model_building_specification::model_description() const {
 	std::string o;
 	o += "Model " + name + "\n";
 	o += "Generated on " + ns_format_time_string_for_human(ns_current_time()) + "\n";
-	o += "State transitions are made" + estimator_type_to_long_string(cross_replicate_estimator_type) + "with " + this->state_transition_type_to_string(state_transition_type) + " transition probabilities.\n";
+	o += "State transitions are made" + estimator_type_to_long_string(cross_replicate_estimator_type) + " with " + this->state_transition_type_to_string(state_transition_type) + " transition probabilities.\n";
 	o += "The following quantitative metrics are used to classify states: \n";
 	for (unsigned int i = 0; i < model_features_to_use.size(); i++) {
 		o += "\t" + ns_hmm_emission_probability_model_organizer::dimension_description(model_features_to_use[i]) + "\n";

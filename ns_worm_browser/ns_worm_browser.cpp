@@ -2049,9 +2049,9 @@ void ns_set_up_hmm_model_specs_to_test(std::vector<ns_model_building_specificati
 	flexible_spec.state_transition_type = ns_model_building_specification::ns_static;
 	flexible_spec.model_features_to_use.push_back("i1");
 	flexible_spec.model_features_to_use.push_back("i4");
-	flexible_spec.model_features_to_use.push_back("m");
+	flexible_spec.model_features_to_use.push_back("c0");
 	flexible_spec.name = "flexible_3D";
-	//s.push_back(flexible_spec);	//this is never the best model.
+	s.push_back(flexible_spec);	//this is never the best model.
 
 	ns_model_building_specification strict_spec;
 	strict_spec.cross_replicate_estimator_type = ns_model_building_specification::ns_strict_ordering;

@@ -65,8 +65,14 @@ typedef enum {
 	ns_hmm_not_moving_expanding,
 	ns_hmm_not_moving_dead,
 	ns_hmm_contracting_post_expansion,
-	ns_hmm_unknown_state
+	ns_hmm_unknown_state,
+	ns_number_of_state_types
 } ns_hmm_movement_state;
+typedef std::pair< ns_hmm_movement_state, ns_hmm_movement_state> ns_hmm_state_transition;
+
 std::string ns_hmm_movement_state_to_string(const ns_hmm_movement_state & t);
 ns_hmm_movement_state ns_hmm_movement_state_from_string(const std::string & s);
+bool ns_string_is_a_state_not_a_transition(std::string& s);
+std::string ns_hmm_state_transition_to_string(const ns_hmm_state_transition& s);
+ns_hmm_state_transition ns_hmm_state_transition_from_string(const std::string& s);
 #endif

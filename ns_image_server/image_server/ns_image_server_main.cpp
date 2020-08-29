@@ -722,6 +722,7 @@ int main(int argc, char ** argv){
 					;
 				else {
 					schema_filename = argv[i + 1];
+					std::cout << "Using schema file " << schema_filename << "\n";
 					i++; // "consume" the next argument so it doesn't get interpreted as a command-string.
 				}
 			}
@@ -990,7 +991,20 @@ int main(int argc, char ** argv){
 		if (schema_installation_requested) {
 			if (image_server.act_as_an_image_capture_server())
 				image_server.create_and_configure_sql_database(true, "");
-			image_server.create_and_configure_sql_database(false, schema_filename);
+			std::cout << "Do you also want to configure the central (remote) mysql database?  This is not needed if you are adding a server to an existing cluster.\n(y/n):";
+			bool set_up_central(false);
+			while (true) {
+			  string b;
+			  getline(cin,b);
+			  cout << "\n";
+			  if (b == "y")
+			    set_up_central=true;
+			  if (b == "n" || b == "q" || b == "c")
+			    throw ns_ex("The request was cancelled by the user.");
+			  cout << "Unknown response.  Please type y or n :";
+			}
+			if (set_up_central)
+			  image_server.create_and_configure_sql_database(false, schema_filename);
 			std::cout << "Checking for recent sql schema updates...\n";
 			override_sql_db = "";
 			sql_update_requested = true;
@@ -1044,64 +1058,13 @@ int main(int argc, char ** argv){
 			return 0;
 		}
 
-#ifndef _WIN32
-		//if running as an image capture server, launch a second process that moniters the first, and takes over if the first becomes unresponsive.
-		if (image_server_const.act_as_an_image_capture_server()) {
-			//start a crash daemon to handle server crashes
-			ns_image_server_crash_daemon crash_daemon;
-
-			while (true) {
-				if (crash_daemon.start(image_server.server_crash_daemon_port()) == ns_image_server_crash_daemon::ns_ok)
-					break;
-				else {
-					ns_acquire_for_scope<ns_image_server_sql> sql;
-					try {
-						sql.attach(image_server.new_sql_connection(__FILE__, __LINE__));
-					}
-					catch (...) {
-						sql.attach(image_server.new_local_buffer_connection(__FILE__, __LINE__, false));
-					}
-					if (sql().connected_to_central_database()) {
-					  image_server.alert_handler.initialize(image_server.mail_from_address(),*static_cast<ns_sql *>(&sql()));
-						std::string text("The image server node ");
-						text += image_server.host_name_out() + " restarted after a fatal error at ";
-						text += ns_format_time_string_for_human(ns_current_time());
-						ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__, __LINE__));
-						image_server.alert_handler.initialize(image_server.mail_from_address(),sql());
-
-						ns_alert alert(text,
-							text,
-							ns_alert::ns_server_crash,
-							ns_alert::get_notification_type(ns_alert::ns_server_crash, false),
-							ns_alert::ns_rate_limited
-						);
-
-						image_server.alert_handler.submit_alert(alert, *static_cast<ns_sql *>(&sql()));
-					}
-					else {
-						image_server.register_server_event(ns_image_server_event("The image server has restarted after a crash."), &sql());
-					}
-
-				}
-			}
-
-			//register a swath or error handlers to allow recovery from segfaults and such under linux
-			image_server.os_signal_handler.set_signal_handler(ns_segmentation_fault, segmentation_fault_signal_handler);
-			image_server.os_signal_handler.set_signal_handler(ns_bus_error, bus_error_signal_handler);
-			image_server.os_signal_handler.set_signal_handler(ns_illegal_instruction, illegal_instruction_signal_handler);
-			image_server.os_signal_handler.set_signal_handler(ns_floating_point_error, floating_point_error_signal_handler);
-			while (!ns_image_server_crash_daemon::daemon_is_running()) {
-				ns_thread::sleep(1);
-			}
-		}
-	#endif
-
 		//if we are acting as a capture server, we need to have access to the local sql buffer.
 		if (image_server.act_as_an_image_capture_server()) {
 			ns_acquire_for_scope <ns_local_buffer_connection> local_sql(0);
 			//check for a missing local buffer database
 			try {
 				local_sql.attach(image_server.new_local_buffer_connection(__FILE__, __LINE__, false));
+			       
 				image_server.check_for_local_sql_database_access(&local_sql());
 			}
 			catch (ns_ex & ex) {
@@ -1117,8 +1080,62 @@ int main(int argc, char ** argv){
 				if (image_server.upgrade_tables(&local_sql(), true, image_server.current_local_buffer_database(), true))
 					throw ns_ex("The current local buffer database schema is out of date.  Please run the command: ns_image_server update_sql");
 			}
+			else{
+			  image_server.set_up_local_buffer();
+
+			}
 			local_sql.release();
 		}
+		#ifndef _WIN32
+		//if running as an image capture server, launch a second process that moniters the first, and takes over if the first becomes unresponsive.
+		//start a crash daemon to handle server crashes
+		ns_image_server_crash_daemon crash_daemon;
+		
+		while (true) {
+		  if (crash_daemon.start(image_server.server_crash_daemon_port()) == ns_image_server_crash_daemon::ns_ok)
+		    break;
+		  else {
+		    ns_acquire_for_scope<ns_image_server_sql> sql;
+		    try {
+		      sql.attach(image_server.new_sql_connection(__FILE__, __LINE__));
+		    }
+		    catch (...) {
+		      sql.attach(image_server.new_local_buffer_connection(__FILE__, __LINE__, false));
+		    }
+		    if (sql().connected_to_central_database()) {
+		      image_server.alert_handler.initialize(image_server.mail_from_address(),*static_cast<ns_sql *>(&sql()));
+		      std::string text("The image server node ");
+		      text += image_server.host_name_out() + " restarted after a fatal error at ";
+		      text += ns_format_time_string_for_human(ns_current_time());
+		      ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__, __LINE__));
+		      image_server.alert_handler.initialize(image_server.mail_from_address(),sql());
+		      
+		      ns_alert alert(text,
+				     text,
+				     ns_alert::ns_server_crash,
+				     ns_alert::get_notification_type(ns_alert::ns_server_crash, false),
+				     ns_alert::ns_rate_limited
+				     );
+		      
+		      image_server.alert_handler.submit_alert(alert, *static_cast<ns_sql *>(&sql()));
+		    }
+		    else {
+		      image_server.register_server_event(ns_image_server_event("The image server has restarted after a crash."), &sql());
+		    }
+		    
+		  }
+		}
+		
+		//register a swath or error handlers to allow recovery from segfaults and such under linux
+		image_server.os_signal_handler.set_signal_handler(ns_segmentation_fault, segmentation_fault_signal_handler);
+		image_server.os_signal_handler.set_signal_handler(ns_bus_error, bus_error_signal_handler);
+		image_server.os_signal_handler.set_signal_handler(ns_illegal_instruction, illegal_instruction_signal_handler);
+		image_server.os_signal_handler.set_signal_handler(ns_floating_point_error, floating_point_error_signal_handler);
+		while (!ns_image_server_crash_daemon::daemon_is_running()) {
+		  ns_thread::sleep(1);
+		}
+		
+#endif
 		//don't act as an image capture server if we just want to copy over images.
 		if (post_dispatcher_init_command == ns_run_pending_image_transfers) {
 			image_server.override_ini_specified_image_capture_server_behavior(false);
@@ -1434,7 +1451,7 @@ int main(int argc, char ** argv){
 				cerr << "Last known configuration:\n";
 				image_server.device_manager.output_connected_devices(cerr);
 				cerr << "\n";
-				image_server.device_manager.hotplug_new_devices();
+				image_server.device_manager.hotplug_new_devices(true,true,false);
 			}
 			else image_server.device_manager.clear_device_list_and_identify_all_hardware();
 		}

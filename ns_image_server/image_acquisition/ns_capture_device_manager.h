@@ -80,7 +80,7 @@ public:
 	///hotplug_new_devices() checks the USB interface to see if any changes have occured since it was last checked,
 	///and updates the device registry accordingly.
 
-	bool hotplug_new_devices(const bool rescan_bad_barcodes=true,const bool verbose=true);
+	bool hotplug_new_devices(const bool rescan_bad_barcodes,const bool verbose,const bool hotplug_due_to_confusion);
 	///Scanners can report back their human-readable names via a bar-code placed on their surface.  add_barcoded_hardware handles
 	///this identification process, requesting the specified hardware addresses to read their barcode, interpreting it and updating
 	///the device registry accordingly
@@ -118,6 +118,7 @@ private:
 	std::vector<ns_image_server_device_manager_device *> devices_pending_deletion; //all image capture devices connected to the host
 	std::vector<ns_image_server_device_manager_device *> deleted_devices; //all image capture devices that were deleted from host
 	static std::string autoscan_parameters(ns_sql & sql);
+	unsigned long number_of_confused_hotplugs;
 };
 
 #endif

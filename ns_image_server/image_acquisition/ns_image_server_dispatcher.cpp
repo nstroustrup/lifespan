@@ -18,6 +18,7 @@
 #include <stdlib.h>
 #include "ns_high_precision_timer.h"
 #include "ns_sql.h"
+#include <set>
 using namespace std;
 
 #ifdef _WIN32
@@ -54,7 +55,7 @@ ns_thread_return_type handle_dispatcher_request(void * d){
 	return 0;
 }
 
-bool ns_image_server_dispatcher::hotplug_devices(const bool rescan_bad_barcodes,const bool verbose){
+bool ns_image_server_dispatcher::hotplug_devices(const bool rescan_bad_barcodes,const bool verbose,const bool hotplug_is_due_to_confusion){
 	if (!image_server.act_as_an_image_capture_server()){
 		image_server.register_server_event(ns_image_server::ns_register_in_central_db_with_fallback,ns_image_server_event("Cannot execute hotplug command, as query_cluster_for_device_names is set to false in the config file."));
 		return false;
@@ -70,7 +71,7 @@ bool ns_image_server_dispatcher::hotplug_devices(const bool rescan_bad_barcodes,
 	lock.release();
 
 	try{
-		if (image_server.device_manager.hotplug_new_devices(rescan_bad_barcodes, verbose)) {
+		if (image_server.device_manager.hotplug_new_devices(rescan_bad_barcodes, verbose, hotplug_is_due_to_confusion)) {
 			image_server.device_manager.save_last_known_device_configuration();
 		}
 		hotplug_running = false;
@@ -260,7 +261,7 @@ void ns_image_server_dispatcher::handle_remote_requests(){
 					break;
 				case NS_HOTPLUG_NEW_DEVICES:
 					socket_connection.close();
-					if (hotplug_devices()) {
+					if (hotplug_devices(true,true,false)) {
 						try {
 							ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__, __LINE__));
 							image_server.register_devices(false, &sql());
@@ -858,6 +859,8 @@ void ns_image_server_dispatcher::on_timer(){
 				timer_sql_connection->get_rows(prev_res);
 				//check to see if any unrecognized devices are marked as attached to the current host
 				bool device_record_problem = false;
+				std::set<std::string> devices_missing_in_db;
+				std::set<std::string> devices_missing_locally;
 				for (unsigned int i = 0; i < prev_res.size(); i++){
 					bool found(false);
 					for (unsigned int j = 0; j < devices.size(); j++){
@@ -867,22 +870,49 @@ void ns_image_server_dispatcher::on_timer(){
 						}
 					}
 					if (!found){
+						devices_missing_locally.emplace(prev_res[i][0]);
 						device_record_problem = true;
 						break;
 					}
 				}
-				if (device_record_problem || prev_res.size() != image_server.device_manager.number_of_attached_devices()){
+				for (unsigned int i = 0; i < devices.size(); i++) {
+					bool found(false);
+					for (unsigned int j = 0; j < prev_res.size(); j++) {
+						if (prev_res[j][0] == devices[i].name) {
+							found = true;
+							break;
+						}
+					}
+					if (!found) {
+						devices_missing_in_db.emplace(prev_res[i][0]);
+						device_record_problem = true;
+						break;
+					}
+				}
+				if (device_record_problem){
 				//	image_server.load_constants("server",image_server.get_multiprocess_control_options());
 					ns_image_server_event ev("Found an inconsistent device record in the db.");
-					ev << "Devices registered:";
-					for (unsigned int k = 0; k < prev_res.size(); k++)
-						ev << prev_res[k][0] << ",";
-					ev << "; actual devices: ";
-					for (unsigned k = 0; k < devices.size(); k++)
-						ev << devices[k].name << ",";
-					ev << "; refreshing record.";
+					if (!prev_res.empty()) {
+						ev << "Devices recorded as attached in central db:" << prev_res[0][0];
+						for (unsigned int k = 1; k < prev_res.size(); k++)
+							ev << "," << prev_res[k][0];
+					}
+					else ev << "No devices recorded as attached in central db";
+					ev << ";";
+					if (!devices.empty()) {
+						ev << "Devices this host currently thinks are attached: " << devices[0].name;
+						for (unsigned k = 1; k < devices.size(); k++)
+							ev << "," << devices[k].name;
+					}
+					else ev << "This host does not think it has any devices attached";
 
+					ev << ". Refreshing record and checking to see if the scanner state has changed...\n";
 					image_server.register_server_event(ev,timer_sql_connection);
+
+					//stop infinite looping back and forth by confirming that the current scanner list is updated.
+					if (!devices_missing_in_db.empty() || !devices_missing_locally.empty()) 
+						hotplug_devices(false, false,true);
+					
 				//	image_server.register_host();
 					image_server.register_devices(false,timer_sql_connection);
 					return;
@@ -969,7 +999,7 @@ void ns_image_server_dispatcher::on_timer(){
 			}
 			try{
 				if (hotplug_requested)
-					hotplug_devices();
+					hotplug_devices(true,false,true);
 			}
 			catch(ns_ex & ex){
 				image_server.register_server_event(ex,timer_sql_connection);

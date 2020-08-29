@@ -191,7 +191,7 @@ private:
 
 	ns_ex * delayed_exception;
 	
-	bool hotplug_devices(const bool rescan_bad_barcodes=true,const bool verbose=true);
+	bool hotplug_devices(const bool rescan_bad_barcodes,const bool verbose,const bool hotplug_is_due_to_confusion);
 
 
 	void wait_for_jobs_to_complete(); 

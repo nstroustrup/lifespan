@@ -1011,7 +1011,6 @@ ns_64_bit ns_processing_job_maintenance_processor::run_job(ns_sql & sql) {
 				}
 				throw ns_ex("The storyboard could not be generated as no dead or potentially dead worms were identified");
 			}
-			std::vector<ns_ex> errors;
 			bool there_were_errors(false);
 			//if this is a job for a specific region or sample, just do the work
 			if (job.region_id != 0 || job.sample_id != 0) {
@@ -1038,43 +1037,51 @@ ns_64_bit ns_processing_job_maintenance_processor::run_job(ns_sql & sql) {
 							man.save_image_to_db(i, specs[j], ima, sql);
 						}
 						catch (ns_ex & ex) {
-							errors.push_back(ex);
+							generation_errors.push_back(ex);
 						}
 					}
 				}
 			}
 			//if this is an experiment job, divvy up the tasks among the cluster
 			else {
-				ns_experiment_storyboard_manager man;
-				man.load_metadata_from_db(specs[0], s, sql);
-
-				ns_processing_job j(job);
-				j.maintenance_task = ns_maintenance_generate_animal_storyboard_subimage;
-				for (unsigned int i = 0; i < man.number_of_sub_images(); i += 5) {
-					j.id = 0;
-					j.image_id = i;
-					try {
-						j.save_to_db(sql);
-					}
-					catch (ns_ex & ex) {
-						errors.push_back(ex);
+				for (unsigned int j = 0; j < specs.size(); j++) {
+					if (!generation_errors[j].text().empty()) {
+						there_were_errors = true;
+						break;
 					}
 				}
-				//update db stats
-				sql << "UPDATE experiments SET "
-					<< "latest_storyboard_build_timestamp = UNIX_TIMESTAMP(NOW()),"
-					<< "last_timepoint_in_latest_storyboard_build = " << s.last_timepoint_in_storyboard << ","
-					<< "number_of_regions_in_latest_storyboard_build = " << s.number_of_regions_in_storyboard
-					<< " WHERE id = " << job.experiment_id;
-				sql.send_query();
-				ns_image_server_push_job_scheduler::request_job_queue_discovery(sql);
+				if (!there_were_errors) {
+					ns_experiment_storyboard_manager man;
+					man.load_metadata_from_db(specs[0], s, sql);
+					ns_processing_job j(job);
+					j.maintenance_task = ns_maintenance_generate_animal_storyboard_subimage;
+					for (unsigned int i = 0; i < man.number_of_sub_images(); i += 5) {
+						j.id = 0;
+						j.image_id = i;
+						try {
+							j.save_to_db(sql);
+						}
+						catch (ns_ex & ex) {
+							generation_errors.push_back(ex);
+						}
+					}
+					//update db stats
+					sql << "UPDATE experiments SET "
+						<< "latest_storyboard_build_timestamp = UNIX_TIMESTAMP(NOW()),"
+						<< "last_timepoint_in_latest_storyboard_build = " << s.last_timepoint_in_storyboard << ","
+						<< "number_of_regions_in_latest_storyboard_build = " << s.number_of_regions_in_storyboard
+						<< " WHERE id = " << job.experiment_id;
+					sql.send_query();
+					ns_image_server_push_job_scheduler::request_job_queue_discovery(sql);
+				}
 			}
-			if (errors.size() > 0) {
-				//register all the errors but only throw the first one
-				for (unsigned long i = 1; i < errors.size(); i++) {
-					image_server->register_server_event(ns_image_server::ns_register_in_central_db, errors[i]);
+			if (generation_errors.size() > 0) {
+				if (there_were_errors) {
+					ns_ex ex("One or more errors were encountered while generating storyboards.");
+					for (unsigned long i = 0; i < generation_errors.size(); i++)
+						ex << "\n" << generation_errors[i].text();
+					throw ex;
 				}
-				throw errors[0];
 			}
 			else {
 				if (there_were_errors)

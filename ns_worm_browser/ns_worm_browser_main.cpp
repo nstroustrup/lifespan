@@ -128,20 +128,19 @@ ns_worm_terminal_stats_window* stats_window;
 //only call from within valid() section of the draw function
 void ns_setup_default_gl_window_settings(Fl_Gl_Window * window) {
 	glShadeModel(GL_FLAT);
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	glFrustum(-1.0, 1.0, -1.0, 1.0, /* transformation */
-		0, 1);
-	glMatrixMode(GL_MODELVIEW);  /* back to modelview matrix */
+	glMatrixMode(GL_MODELVIEW);  //back to modelview matrix *
+	check_gl_err();
 	glViewport(0, 0, window->pixel_w(), window->pixel_h());
 	//glTranslatef(0,0,-10);
 	window->ortho();
 	glMatrixMode(GL_PROJECTION);
+	check_gl_err();
 	glLoadIdentity();
 	//glOrtho(0, 1, 0, 1, -1, 1);
 	glEnable(GL_TEXTURE_2D);
 	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
 	//glDisable(GL_DEPTH_TEST);
+	check_gl_err();
 
 }
 // OPENGL WINDOW CLASS
@@ -692,7 +691,7 @@ public:
 	static std::string remove_menu_formatting(const string & s){
 		string ret;
 		for (unsigned int i = 0; i < s.size(); ++i){
-			if (s[i]!='_' || i > 0 && (s[i-1] != '/')) ret+=s[i];
+			if (s[i] != '&' && (s[i]!='_' || i > 0 && (s[i-1] != '/'))) ret+=s[i];
 		}
 		return ret;
 	}
@@ -1330,6 +1329,8 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 		else {
 			if (subject[0].flag == "device")
 				translated_flag = ns_worm_learner::ns_device;
+			else if (subject[0].subject.region_id != 0)
+				translated_flag = ns_worm_learner::ns_plate;
 			else translated_flag = ns_worm_learner::ns_whole_experiment;
 		}
 			
@@ -1640,12 +1641,17 @@ public:
 	Menu Specification
 	*****************************/
 	void redraw_menus(Fl_Menu_Bar & bar) {
-		bar.menu(NULL);
-		clear();	
+
+		Fl::lock();
+		ns_acquire_lock_for_scope lock(menu_bar_processing_lock, __FILE__, __LINE__);
+		clear();
 		add_menus();
+		bar.menu(NULL);
 		build_menus(bar);
+		lock.release();
 		bar.redraw();
 		::update_region_choice_menu();
+		Fl::unlock();
 	}
 	void update_experiment_choice(Fl_Menu_Bar & bar){
 		ns_sql & sql(worm_learner.get_sql_connection());
@@ -1654,6 +1660,7 @@ public:
 
 		worm_learner.data_gui_selector.load_experiment_names(sql);
 		worm_learner.data_gui_selector.set_current_experiment(-1,sql);
+		lock.release();
 		redraw_menus(bar);
 	}
 
@@ -2038,9 +2045,10 @@ class ns_stats_strain_asynch_picker : public ns_asynch_menu_picker {
 
 	void launch(const std::string& value) {
 		worm_learner.statistics_data_gui_selector.select_strain(value);
-
+		Fl::lock();
 		::update_strain_choice_menu();
 		::update_region_choice_menu();
+		Fl::unlock();
 	}
 };
 class ns_storyboard_strain_asynch_picker : public ns_asynch_menu_picker {
@@ -2049,9 +2057,11 @@ class ns_storyboard_strain_asynch_picker : public ns_asynch_menu_picker {
 		worm_learner.data_gui_selector.select_strain(value);
 
 
+		Fl::lock();
 		::update_strain_choice_menu();
 		::update_region_choice_menu();
 		::update_exclusion_choice_menu();
+		Fl::unlock();
 	}
 };
 
@@ -2256,14 +2266,18 @@ struct ns_storyboard_annotation_region_picker : public ns_asynch_menu_picker {
 					return;
 				worm_learner.stop_death_time_annotation();
 				worm_learner.data_gui_selector.select_region(region_name);
+				Fl::lock();
 				::update_region_choice_menu();
+				Fl::unlock();
 				worm_learner.start_death_time_annotation(ns_worm_learner::ns_annotate_storyboard_region, worm_learner.current_storyboard_flavor);
 				report_changes_made_to_screen();
 				return;
 			}
 			else {
 				worm_learner.data_gui_selector.select_region(region_name);
+				Fl::lock();
 				::update_region_choice_menu();
+				Fl::unlock();
 			}
 		}
 		catch (ns_ex& ex) {
@@ -3510,10 +3524,12 @@ void ns_show_worm_display_error(){
 }
 
 void schedule_repeating_callback(void *a ) {
+	ns_fl_lock(__FILE__, __LINE__);
 	if (a == 0)
 		Fl::add_timeout(1.0 / IDLE_THROTTLE_FPS, idle_main_window_update_callback,0);
 	else
 		Fl::repeat_timeout(1.0 / IDLE_THROTTLE_FPS, idle_main_window_update_callback,0);
+	ns_fl_unlock(__FILE__, __LINE__);
 }
 void ns_handle_menu_bar_activity_request();
 
@@ -3570,28 +3586,43 @@ void request_rate_limited_window_redraw_from_main_thread() {
 	if (debug_handlers) cout << "R";
 	redrawing_rate_limiter = true;
 	redraw_rate_limiting_lock.release();
+	ns_fl_lock(__FILE__, __LINE__);
 	Fl::awake(perform_screen_redraw_callback, 0);
+	ns_fl_unlock(__FILE__, __LINE__);
 }
 
 void demand_window_redraw_from_main_thread() {
+	ns_fl_lock(__FILE__, __LINE__);
 	Fl::awake(perform_screen_redraw_callback, 0);
+	ns_fl_unlock(__FILE__, __LINE__);
 }
 
 void report_changes_made_to_screen() {
 	if (debug_handlers) cout << "z";
+	ns_fl_lock(__FILE__, __LINE__);
 	//this will also call idle_window_update_callback
 	Fl::awake(idle_main_window_update_callback,(void *) 1);
+	ns_fl_unlock(__FILE__, __LINE__);
 
 }
 
 ns_lock fl_output_lock("Fl::lock");
+unsigned long lock_counter(0);
 void ns_fl_lock(const char * file,unsigned long line){
-  //cerr << "FL_LOCK: " << file << "\n";
+	/*cerr << "L: ";
+	for (unsigned int i = 53; file[i] != 0; i++)
+		cerr << file[i];
+	cerr << "::" << line << " " << lock_counter << "\n";*/
+  lock_counter++;
   Fl::lock();
   //fl_output_lock.wait_to_acquire(file,line);
 }
 void ns_fl_unlock(const char * file, unsigned long line){
-//cerr << "FL_UNLOCK: " << file << "\n";
+	/*cerr << "U: ";
+	for (unsigned int i = 53; file[i] != 0; i++)
+		cerr << file[i]; 
+	cerr << "::" << line << "\n";*/
+	lock_counter--;
   //fl_output_lock.release();
   Fl::unlock();
 }
@@ -3665,7 +3696,9 @@ void idle_main_window_update_callback(void * force_redraw) {
 					worm_learner.worm_window.redraw_requested = true;
 					worm_learner.stats_window.redraw_requested = true;
 				}
+				ns_fl_lock(__FILE__, __LINE__);
 				Fl::awake(schedule_repeating_callback, (void*)1);// Fl::repeat_timeout(1.0 / IDLE_THROTTLE_FPS, idle_main_window_update_callback);
+				ns_fl_unlock(__FILE__, __LINE__);
 			}
 		}
 	  //else ns_fl_unlock(__FILE__,__LINE__);
@@ -3677,8 +3710,10 @@ void idle_main_window_update_callback(void * force_redraw) {
 		  last_callback_time = GetTime();
 		  ns_64_bit last_interval = last_callback_time - last_time;
 		  ns_fl_lock(__FILE__, __LINE__);
-		  if (worm_window == 0 || main_window == 0 || stats_window == 0)
+		  if (worm_window == 0 || main_window == 0 || stats_window == 0) {
+			  ns_fl_unlock(__FILE__, __LINE__);
 			  return;
+		  }
 		  ns_handle_menu_bar_activity_request();
 		  //always call both functions together
 		  if (!main_window->draw_animation || main_window->last_draw_animation){
@@ -3851,7 +3886,7 @@ void idle_worm_window_update_callback(void * force_redraw){
 				worm_learner.death_time_solo_annotater.display_current_frame();
 				something_done = true;
 			}
-			else if (worm_learner.death_time_solo_annotater.refresh_requested(), worm_learner.worm_window.display_rescale_factor) {
+			else if (worm_learner.death_time_solo_annotater.refresh_requested()) {
 				worm_learner.death_time_solo_annotater.display_current_frame();
 				something_done = true;
 			}
@@ -3899,7 +3934,7 @@ void idle_stats_window_update_callback(void* force_redraw) {
 				worm_learner.death_time_solo_annotater.display_current_frame();
 				something_done = true;
 			}
-			else if (worm_learner.death_time_solo_annotater.refresh_requested(), worm_learner.stats_window.display_rescale_factor) {
+			else if (worm_learner.death_time_solo_annotater.refresh_requested()) {
 				worm_learner.death_time_solo_annotater.display_current_frame();
 				something_done = true;
 			}
@@ -4292,15 +4327,15 @@ bool ns_parse_commandline_subject(const std::string& subject, ns_image_server_re
 		return false;
 	}
 	if (plate != 0) {
-		if (experiment != 0) {
+		if (experiment == 0) {
 			err = ns_ex("Regions cannot be specified without the experiment name.");
 			return false;
 		}
 
 		sql << "SELECT s.id, r.id FROM experiments as e, capture_samples as s, sample_region_image_info as r WHERE "
 			"e.name = '" << sql.escape_string(*experiment)
-			<< "' AND s.name =' " << sql.escape_string(*sample)
-			<< "' AND r.name = " << sql.escape_string(*plate)
+			<< "' AND s.name = '" << sql.escape_string(*sample)
+			<< "' AND r.name = '" << sql.escape_string(*plate)
 			<< "' AND s.experiment_id = e.id AND r.sample_id = s.id";
 		ns_sql_result res;
 		sql.get_rows(res);
@@ -4420,14 +4455,16 @@ int main(int argc, char** argv) {
 		return 0;
 	}
 
+
+	ns_worm_browser_output_debug(__LINE__,__FILE__,"Launching worm browser");
+	init_time = GetTime();
+	//initialize locking.  Note that this does not actually lock anything on the first call.
+	Fl::lock();
+
 	main_window = new ns_worm_terminal_main_window(1000, 1000, "Worm Browser");
 	worm_window = new ns_worm_terminal_worm_window(100, 100, "Inspect Worm");
 	stats_window = new ns_worm_terminal_stats_window(100, 100, "Population Statistics");
 
-	ns_worm_browser_output_debug(__LINE__,__FILE__,"Launching worm browser");
-	init_time = GetTime();
-	//initialize locking
-	Fl::lock();
 	Fl_File_Icon::load_system_icons();
 	Fl::scheme("none");
 

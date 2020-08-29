@@ -16,6 +16,7 @@ History:
 #include <cassert>
 #include <algorithm>
 #include <memory.h>
+#include "ns_normal_distribution.h"
 using namespace std;
 
 //double M_PI=3.14159;
@@ -111,6 +112,46 @@ GMM & GMM::operator=(const GMM & a) {
 	return *this;
 }
 
+
+double GMM::GetCDF(const double* sample) const
+{
+	double p = 0;
+	for (int i = 0; i < m_mixNum; i++)
+	{
+		p += m_priors[i] * GetCDF(sample, i);
+	}
+	return p;
+}
+
+
+double GMM::GetLikelihood(const double* sample) const
+{
+	double p = 0;
+	for (int i = 0; i < m_mixNum; i++)
+	{
+		p += m_priors[i] * GetLikelihood(sample, i);
+	}
+	return p;
+}
+
+double GMM::Get_1D_Likelihood(int dim, const double* sample) const {
+
+	double p = 0;
+	for (int j = 0; j < m_mixNum; j++) {
+		p += m_priors[j] * ns_likelihood_of_normal_zcore((sample[dim] - m_means[j][dim]) / sqrt(m_vars[j][dim]));
+	}
+	return p;
+}
+
+double GMM::Get_1D_CDF(int dim, const double* sample) const {
+
+	double p = 0;
+	for (int j = 0; j < m_mixNum; j++) {
+		p += m_priors[j] * ns_cdf_of_zcore((sample[dim] - m_means[j][dim]) / sqrt(m_vars[j][dim]));
+	}
+	return p;
+}
+
 double GMM::GetProbability(const double* sample) const
 {
 	double p = 0;
@@ -120,6 +161,7 @@ double GMM::GetProbability(const double* sample) const
 	}
 	return p;
 }
+
 double GMM::Get_1D_Probability(int dim, const double* sample) const {
 
 	double p = 0;
@@ -142,6 +184,24 @@ double GMM::GetProbability(const double* x, int j) const
 	{
 		p *= 1 / sqrt(2 * 3.14159 * m_vars[j][d]);
 		p *= exp(-0.5 * (x[d] - m_means[j][d]) * (x[d] - m_means[j][d]) / m_vars[j][d]);
+	}
+	return p;
+}
+
+double GMM::GetCDF(const double* X, int j) const {
+	double p = 1;
+	for (int d = 0; d < m_dimNum; d++)
+	{
+		p *= ns_cdf_of_zcore((X[d] - m_means[j][d]) / sqrt(m_vars[j][d]));
+	}
+	return p;
+}
+
+double GMM::GetLikelihood(const double* X, int j) const {
+	double p = 1;
+	for (int d = 0; d < m_dimNum; d++)
+	{
+		p *= ns_likelihood_of_normal_zcore((X[d] - m_means[j][d]) / sqrt(m_vars[j][d]));
 	}
 	return p;
 }
@@ -254,7 +314,7 @@ void GMM::Train(const char* sampleFileName)
 	delete[] x;
 }
 
-void GMM::Train(double *data, int N)
+bool GMM::Train(double *data, int N)
 {
 	Init(data,N);
 
@@ -296,11 +356,18 @@ void GMM::Train(double *data, int N)
 			for(int j=0;j<m_dimNum;j++)
 				x[j]=data[k*m_dimNum+j];
 			double p = GetProbability(x);
+			if (p == 0)		//stop double precision limits from blowing up calculation.
+				continue;
 
 			for (int j = 0; j < m_mixNum; j++)
 			{
-				double pj = GetProbability(x, j) * m_priors[j] / p;
+				double pp = GetProbability(x, j);
 
+				double pj = pp * m_priors[j] / p;
+				if (!std::isfinite(pj)) {
+					cout << "GMM Error: P(x," << j << ")=" << pp << "*" << m_priors[j] << "/" << p << "\n";
+					return false;
+				}
 				next_priors[j] += pj;
 
 				for (int d = 0; d < m_dimNum; d++)
@@ -356,6 +423,7 @@ void GMM::Train(double *data, int N)
 	delete[] next_means;
 	delete[] next_vars;
 	delete[] x;
+	return true;
 }
 
 void GMM::Init(double *data, int N)

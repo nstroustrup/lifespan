@@ -15,13 +15,13 @@ void ns_summarize_stats(const std::vector<const ns_detected_worm_info *> & worms
 		stats.width_mean += w_stats[ns_stat_average_width];
 
 		stats.absolute_intensity.mean += w_stats[ns_stat_absolute_intensity_average];
-		stats.absolute_intensity.variance += w_stats[ns_stat_absolute_intensity_variance] * w_stats[ns_stat_absolute_intensity_variance];
+		stats.absolute_intensity.variance += w_stats[ns_stat_absolute_intensity_average] * w_stats[ns_stat_absolute_intensity_average];
 		stats.absolute_intensity.bottom_percentile_average += w_stats[ns_stat_absolute_intensity_dark_pixel_average];
 		stats.absolute_intensity.entropy += w_stats[ns_stat_absolute_intensity_roughness_1];
 		stats.absolute_intensity.top_percentile_average = 0;
 
 		stats.relative_intensity.mean += w_stats[ns_stat_relative_intensity_average];
-		stats.relative_intensity.variance += w_stats[ns_stat_relative_intensity_variance] * w_stats[ns_stat_relative_intensity_variance];
+		stats.relative_intensity.variance += w_stats[ns_stat_relative_intensity_average] * w_stats[ns_stat_relative_intensity_average];
 		stats.relative_intensity.bottom_percentile_average += w_stats[ns_stat_relative_intensity_dark_pixel_average];
 		stats.relative_intensity.entropy += w_stats[ns_stat_relative_intensity_roughness_1];
 		stats.relative_intensity.top_percentile_average = 0;

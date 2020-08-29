@@ -42,11 +42,17 @@ public:
 	double GetProbability(const double* sample) const;
 	double Get_1D_Probability(int dim,const double* sample) const;
 
+	double GetCDF(const double* sample) const;
+	double Get_1D_CDF(int dim, const double* sample) const;
+
+	double GetLikelihood(const double* sample) const;
+	double Get_1D_Likelihood(int dim, const double* sample) const;
+
 	/*	SampleFile: <size><dim><data>...*/
     void Init(const char* sampleFileName);
 	void Train(const char* sampleFileName);
 	void Init(double *data, int N);
-	void Train(double *data, int N);
+	bool Train(double *data, int N);
 
 	void DumpSampleFile(const char* fileName);
 
@@ -68,6 +74,8 @@ private:
 private:
 	// Return the "j"th pdf, p(x|j).
 	double GetProbability(const double* x, int j) const;
+	double GetCDF(const double* X, int j) const;
+	double GetLikelihood(const double* X, int j) const;
 	void Allocate();
 	void Dispose();
 	void set_dimandmixnums(int dimNum, int mixNum);

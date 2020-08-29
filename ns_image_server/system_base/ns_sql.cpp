@@ -62,7 +62,7 @@ void ns_sql_connection::connect(const std::string & server_name, const std::stri
   mysql_internal_data_allocated = true;
 
   ns_mysql_header::MYSQL * success = 0;
-  ns_mysql_header::my_bool reconnect(true);
+  char reconnect(true);
   ns_mysql_header::mysql_options(&mysql,ns_mysql_header::MYSQL_OPT_RECONNECT,&reconnect);
   ns_mysql_header::mysql_options(&mysql,ns_mysql_header::MYSQL_OPT_COMPRESS,0);
 
@@ -107,7 +107,7 @@ void ns_sql_connection::set_autocommit(const bool & commit_){
 	// TODO: why are we both calling mysql_autocommit and then sending a SET AUTOCOMMIT query??
 
 	ns_acquire_lock_for_scope lock(get_lock(__FILE__, __LINE__));
-	ns_mysql_header::my_bool res = ns_mysql_header::mysql_autocommit(&mysql, (ns_mysql_header::my_bool)commit_);
+	char res = ns_mysql_header::mysql_autocommit(&mysql, (char)commit_);
 	
 	lock.release();
 	simulate_errors_if_requested();

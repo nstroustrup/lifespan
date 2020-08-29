@@ -39,14 +39,15 @@ struct ns_hmm_movement_analysis_optimizatiom_stats_record {
 	std::vector<std::string> state_info_variable_names;
 
 };
+
 struct ns_hmm_movement_analysis_optimizatiom_stats {
 	std::vector<ns_hmm_movement_analysis_optimizatiom_stats_record> animals;
 
 	static void write_error_header(std::ostream & o, const std::vector<std::string> & extra_columns);
-	void write_error_data(std::ostream & o, const std::string& genotype_set, const std::string & cross_validation_info, const unsigned long & cross_validation_replicate_id, const std::map<std::string, std::map<ns_64_bit, ns_region_metadata> > & metadata_cache) const;
+	void write_error_data(const std::string & analysis_approach, const std::vector<std::string>& measurement_names_to_write,std::ostream & o, const std::string& genotype_set, const std::string & cross_validation_info, const unsigned long & cross_validation_replicate_id, const std::map<std::string, std::map<ns_64_bit, ns_region_metadata> > & metadata_cache) const;
 
 	void write_hmm_path_header(std::ostream & o) const;
-	void write_hmm_path_data(std::ostream & o, const std::map<std::string, std::map<ns_64_bit, ns_region_metadata> > & metadata_cache) const;
+	void write_hmm_path_data(const std::string& analysis_approach,std::ostream & o, const std::map<std::string, std::map<ns_64_bit, ns_region_metadata> > & metadata_cache) const;
 
 };
 
@@ -70,10 +71,11 @@ public:
 
 	void build_movement_state_solution_from_movement_transitions(const unsigned long first_stationary_path_index,const std::vector<unsigned long> path_indices, const std::vector<ns_hmm_state_transition_time_path_index > & movement_transitions);
 	
-	//m[i][j] is the log probabilitiy that an individual in state i transitions to state j.
-	static void build_state_transition_matrix(const ns_emperical_posture_quantification_value_estimator & estimator, std::vector<std::vector<double> > & m);
+	//m[i][j] is the bais for or against an individual in state i transitioning to state j.
+	//the actual probabilities are calculated from empiric transition probabilities multiplied by these weights
+	static void build_state_transition_weight_matrix(const ns_emperical_posture_quantification_value_estimator & estimator, std::vector<std::vector<double> > & m);
 
-	static void output_state_transition_matrix(const std::vector<std::vector<double> >& m, std::ostream& o);
+	static void output_state_transition_matrix(const std::string & title, std::vector<std::vector<double> >& m, std::ostream& o);
 
 	static ns_hmm_movement_state most_probable_state(const std::vector<double> & d);
 
@@ -99,9 +101,12 @@ public:
 
 	ns_time_path_posture_movement_solution estimate_posture_movement_states(int software_value,const ns_analyzed_image_time_path * source_path, std::vector<double > & tmp_storage_1, std::vector<unsigned long > & tmp_storage_2, ns_analyzed_image_time_path * output_path = 0,std::ostream * debug_output=0) const;
 	const ns_emperical_posture_quantification_value_estimator & estimator;
-	std::string software_version_number() const { return "2.2"; }
-	unsigned long latest_possible_death_time(const ns_analyzed_image_time_path * path,
-		const unsigned long last_observation_time) const{return  last_observation_time; }
+	static std::string current_software_version() { return "2.5"; }
+	std::string current_software_version_number() const { return current_software_version(); }
+	std::string model_software_version_number() const;
+
+	const std::string& model_description() const { return estimator.model_description_text;}
+	unsigned long latest_possible_death_time(const ns_analyzed_image_time_path * path, const unsigned long last_observation_time) const{return  last_observation_time; }
 };
 
 #endif

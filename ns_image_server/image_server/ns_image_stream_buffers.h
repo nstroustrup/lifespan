@@ -86,8 +86,9 @@ private:
 protected:
 	void create_buffer(const ns_image_stream_buffer_properties & p){
 
-		_properties = p;
 		if (p.height == 0 && p.width == 0){
+
+			_properties = p;
 			buffer = 0;
 			return;
 		}
@@ -96,7 +97,8 @@ protected:
 			throw ns_ex("ns_image_stream_static_buffer::Cannot allocate a buffer with dimentions ") << p.width << "x" << p.height;
 		if (p.height > 200000 || p.width > 200000)
 			throw ns_ex("ns_image_stream_static_buffer::Cannot allocate a buffer with dimentions ") << p.width << "x" << p.height;
-		
+
+		_properties = p;
 		#ifdef NS_TRACK_PERFORMANCE_STATISTICS
 		ns_high_precision_timer tp;
 		tp.start();

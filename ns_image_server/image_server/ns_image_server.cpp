@@ -776,6 +776,7 @@ void ns_image_server::set_up_local_buffer(){
 					<< table_names[i] << " was not found.  Drop all tables to allow an automatic rebuild of the buffer schema.";
 			}
 		}
+		std::cerr << "Local db looks great.\n";
 		//if everything is present, we're done!
 		return;
 	}
@@ -1278,11 +1279,19 @@ bool ns_image_server::upgrade_tables(ns_sql_connection * sql, const bool just_te
 			cout << "Adding column for dispatcher refresh interval\n";
 			*sql << "ALTER TABLE `" << t_suf << "hosts` "
 				"ADD COLUMN `dispatcher_refresh_interval` INT NOT NULL DEFAULT '0' AFTER `database_used`";
-
 			sql->send_query();
-
 			changes_made = true;
 		}
+		if (!ns_sql_column_exists(t_suf + "analysis_model_registry", "details", sql)) {
+			if (just_test_if_needed)
+				return true;
+			cout << "Updating model registry\n";
+			*sql << "ALTER TABLE `" << t_suf << "analysis_model_registry` "
+				"ADD COLUMN `details` TEXT NOT NULL DEFAULT '\'\'' AFTER `filename`";
+			sql->send_query();
+			changes_made = true;
+		}
+
 
 	}
 	if (!ns_sql_column_exists(t_suf + "experiments", "mask_time", sql)) {
@@ -1493,7 +1502,11 @@ void ns_image_server::create_and_configure_sql_database(bool local, const std::s
 		password(local ? local_buffer_pwd : sql_pwd),
 		db(local ? local_buffer_db : possible_sql_databases[0]),
 		hostname(local ? local_buffer_ip : sql_server_addresses[0]);
-	std::cout << "**Configuring database " << db << " on server " << hostname << "**\n";
+	std::cout << "**Configuring the ";
+	if (local)
+	  std::cout << "local db buffer ";
+	else std::cout << "central sql database ";
+	std::cout << db << " on server " << hostname << "**\n";
 	std::cout << "To modify schema, please provide a username with administrative privileges on your sql server: ";
 	std::string root_username;
 	getline(cin,root_username);
@@ -1569,9 +1582,9 @@ void ns_image_server::create_and_configure_sql_database(bool local, const std::s
         if (tmp.empty())	
                 throw ns_ex("mysql.user table not found!");
         if (tmp[0][0] == "0"){	
-	sql << "CREATE USER '" << username << "'@'localhost' identified by '" << password << "'";
-	sql.send_query();
-}
+	  sql << "CREATE USER '" << username << "'@'localhost' identified by '" << password << "'";
+	  sql.send_query();
+	}
 
 	sql << "CREATE DATABASE " << db;
 	sql.send_query();
@@ -1601,6 +1614,9 @@ void ns_image_server::create_and_configure_sql_database(bool local, const std::s
 			//upload schema from copy stored in header file
 			std::string ch;
 			bool in_quote = false;
+			if (image_server_db_schema_sql_len == 0)
+			  throw ns_ex("No db schema provided!");
+			else cout << "Schema len: " << image_server_db_schema_sql_len << "\n";
 			for (unsigned long i = 0; i < image_server_db_schema_sql_len; i++) {
 
 				const char a = image_server_db_schema_sql[i];
@@ -1628,6 +1644,7 @@ void ns_image_server::create_and_configure_sql_database(bool local, const std::s
 		sql.send_query("COMMIT");
 	}
 
+	cout << "Done!\n";
 	schema.close();
 	sql.disconnect();
 }
@@ -2560,7 +2577,7 @@ void ns_image_server::register_devices(const bool verbose, ns_image_server_sql *
 	device_manager.request_device_list(connected_devices);
 
 	//we want to remember specified information about devices, so we download it from the db before clearing the db.
-	*sql << "SELECT name, pause_captures,autoscan_interval, next_autoscan_time FROM devices WHERE host_id = " << image_server.host_id();
+	*sql << "SELECT name, pause_captures,autoscan_interval, next_autoscan_time,preview_requested FROM devices WHERE host_id = " << image_server.host_id();
 	ns_sql_result device_state;
 	sql->get_rows(device_state);
 	std::map<string,ns_device_summary> device_state_map;
@@ -2568,6 +2585,7 @@ void ns_image_server::register_devices(const bool verbose, ns_image_server_sql *
 		device_state_map[device_state[i][0]].paused = device_state[i][1]!="0";
 		device_state_map[device_state[i][0]].autoscan_interval = atol(device_state[i][2].c_str());
 		device_state_map[device_state[i][0]].next_autoscan_time = atol(device_state[i][3].c_str());
+		device_state_map[device_state[i][0]].preview_capture_requested = atol(device_state[i][3].c_str());
 	}
 	unsigned long current_time(ns_current_time());
 	//only specify new pause states for devices that are currently connected
@@ -2594,6 +2612,21 @@ void ns_image_server::register_devices(const bool verbose, ns_image_server_sql *
 	for (unsigned int i = 0; i < connected_devices.size(); i++){
 		register_device(connected_devices[i],sql);
 		devices_registered += connected_devices[i].name + ",";
+	}
+
+	for (unsigned int i = 0; i < connected_devices.size(); i++) {
+		std::map<string, ns_device_summary>::iterator p(device_state_map.find(connected_devices[i].name));
+		if (p == device_state_map.end())
+			continue;
+		try {
+			if (p->second.preview_capture_requested) {
+				*sql << "UPDATE devices SET preview_capture_requested = " << device_state_map[device_state[i][0]].preview_capture_requested << " WHERE name='" << connected_devices[i].name << "'";
+				sql->send_query();
+			}
+		}
+		catch (ns_ex & ex) {
+			image_server.register_server_event(ex, sql);
+		}
 	}
 	ns_image_server_event ev("Registering devices ");
 	ev << devices_registered;
@@ -3538,9 +3571,9 @@ void ns_posture_analysis_model_entry::load_from_external_source(const ns_posture
 
 struct ns_posture_analysis_model_registry_entry {
 	ns_posture_analysis_model_registry_entry(){}
-	ns_posture_analysis_model_registry_entry(const std::string& name_, const std::string & filename_, const ns_posture_analysis_model::ns_posture_analysis_method& m, const std::string& v, const unsigned long f) :
+	ns_posture_analysis_model_registry_entry(const std::string& name_, const std::string & filename_, const ns_posture_analysis_model::ns_posture_analysis_method& m, const std::string& v, const unsigned long f, const std::string & details) :
 		name(name_),filename(filename_), method(m), version(v),file_time(f){}
-	std::string name, filename;
+	std::string name, filename, details;
 	ns_posture_analysis_model::ns_posture_analysis_method method;
 	std::string version;
 	unsigned long file_time;
@@ -3557,7 +3590,6 @@ void ns_image_server::update_posture_analysis_model_registry(ns_sql& sql, bool f
 
 	ns_posture_analysis_model_entry_source source;
 	source.model_directory = image_server.long_term_storage_directory + DIR_CHAR_STR + image_server.posture_analysis_model_directory() + DIR_CHAR_STR;
-
 
 	std::vector<ns_model_registry_info> model_files_on_disk;
 	{
@@ -3646,7 +3678,7 @@ void ns_image_server::update_posture_analysis_model_registry(ns_sql& sql, bool f
 				source.analysis_method = *m;
 				ns_posture_analysis_model_cache::const_handle_t handle;
 				posture_analysis_model_cache.get_for_read(ns_posture_analysis_model_cache_specification(model_files_on_disk[i].model_name,*m), handle, source);
-				model_files_on_disk[i].model_entry = ns_posture_analysis_model_registry_entry(model_files_on_disk[i].model_name, model_files_on_disk[i].filename, source.analysis_method, handle().model_specification.software_version_when_built(), model_files_on_disk[i].last_modified_time_on_disk);
+				model_files_on_disk[i].model_entry = ns_posture_analysis_model_registry_entry(model_files_on_disk[i].model_name, model_files_on_disk[i].filename, source.analysis_method, handle().model_specification.software_version_when_built(), model_files_on_disk[i].last_modified_time_on_disk, handle().model_specification.model_description_text());
 				handle.release();
 				break;
 			}
@@ -3654,7 +3686,7 @@ void ns_image_server::update_posture_analysis_model_registry(ns_sql& sql, bool f
 				if (*m == ns_posture_analysis_model::ns_threshold_and_hmm)	//some files might not exist so don't automatically add them as missing.
 					continue;
 				cout << "Encountered an un-loadable file in the model directory:" << model_files_on_disk[i].filename << ": " << ex.text() << "\n";
-				model_files_on_disk[i].model_entry = ns_posture_analysis_model_registry_entry(model_files_on_disk[i].model_name, model_files_on_disk[i].filename, ns_posture_analysis_model::ns_unknown, "?", model_files_on_disk[i].last_modified_time_on_disk);
+				model_files_on_disk[i].model_entry = ns_posture_analysis_model_registry_entry(model_files_on_disk[i].model_name, model_files_on_disk[i].filename, ns_posture_analysis_model::ns_unknown, "?", model_files_on_disk[i].last_modified_time_on_disk,"");
 			}
 		}
 	}
@@ -3664,7 +3696,10 @@ void ns_image_server::update_posture_analysis_model_registry(ns_sql& sql, bool f
 	sql.send_query("LOCK TABLES analysis_model_registry WRITE");
 	sql.send_query("DELETE FROM analysis_model_registry WHERE analysis_step='posture'");
 	for (unsigned int i = 0; i < model_files_on_disk.size(); i++) {
-		sql << "INSERT INTO analysis_model_registry SET name='" << model_files_on_disk[i].model_entry.name << "', analysis_method='" << ns_posture_analysis_model::method_to_string(model_files_on_disk[i].model_entry.method) << "', version='" << model_files_on_disk[i].model_entry.version << "', analysis_step='posture', file_time = " << model_files_on_disk[i].model_entry.file_time << ", filename='" << model_files_on_disk[i].model_entry.filename << "'";
+		sql << "INSERT INTO analysis_model_registry SET name='" << model_files_on_disk[i].model_entry.name << "', analysis_method='" << ns_posture_analysis_model::method_to_string(model_files_on_disk[i].model_entry.method)
+			<< "', version='" << model_files_on_disk[i].model_entry.version << "', analysis_step='posture', file_time = " << model_files_on_disk[i].model_entry.file_time
+			<< ", filename='" << model_files_on_disk[i].model_entry.filename
+			<< "', details='" << model_files_on_disk[i].model_entry.details << "'";
 		sql.send_query();
 	}
 	sql.send_query("COMMIT");

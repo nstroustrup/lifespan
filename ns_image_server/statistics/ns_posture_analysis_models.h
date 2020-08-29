@@ -8,13 +8,11 @@
 #include "ns_death_time_annotation.h"
 #include <set>
 
-//posture version specifically for threshold models.
-#define NS_CURRENT_THRESHOLD_POSTURE_MODEL_VERSION "2.2"
-
 class ns_analyzed_image_time_path;
-struct ns_hmm_emission {
-	ns_hmm_emission() :genotype(0),region_name(0),device_name(0),experiment_id(0) {}
-	ns_analyzed_image_time_path_element_measurements measurement;
+template<class data_t>
+struct ns_hmm_labeled_data {
+	ns_hmm_labeled_data() :genotype(0),region_name(0),device_name(0),experiment_id(0) {}
+	data_t measurement;
 	ns_stationary_path_id path_id;
 	ns_64_bit region_info_id;
 	ns_64_bit experiment_id;
@@ -28,25 +26,29 @@ struct ns_hmm_emission {
 	/*NOT USED IN TRAINING...only for debugging and data visualization*/
 	unsigned long emission_time; 
 };
+typedef ns_hmm_labeled_data< ns_analyzed_image_time_path_element_measurements> ns_hmm_emission;
+typedef ns_hmm_labeled_data< double > ns_hmm_duration;
+
 struct ns_hmm_emission_normalization_stats {
 	ns_analyzed_image_time_path_element_measurements path_mean, path_variance;
 	ns_death_time_annotation source;
 	const std::string* region_name, * device_name;
 };
-class ns_emission_probabiliy_gaussian_diagonal_covariance_model;
-class ns_emission_probabiliy_independent_gaussian_model;
+
 
 
 typedef enum { ns_all_states_permitted, ns_no_post_expansion_contraction, ns_no_expansion_while_alive, no_expansion_while_alive_nor_contraction, ns_no_expansion_nor_contraction, ns_require_movement_expansion_synchronicity, ns_number_of_state_settings } ns_hmm_states_permitted;
-
 class ns_hmm_observation_set {
 public:
 	ns_hmm_observation_set() :volatile_number_of_individuals_fully_annotated(0), volatile_number_of_individuals_observed(0) {}
 	typedef std::map<ns_hmm_movement_state, std::vector<ns_hmm_emission> > ns_hmm_observed_values_list;
+	typedef std::map<ns_hmm_state_transition, std::vector<ns_hmm_duration> > ns_hmm_state_duration_list;
 	ns_hmm_observed_values_list obs;
-	void read(std::istream& in);
-	void write(std::ostream& out, const std::string& experiment_name = "") const; 
-	bool add_observation(const std::string& software_version, const ns_death_time_annotation& properties, const ns_analyzed_image_time_path* path, const std::string* database_name, const ns_64_bit& experiment_id, const std::string* plate_name, const std::string* device_name, const std::string * genotype);
+	ns_hmm_state_duration_list state_durations;
+	void read_emissions(std::istream& in);
+	void write_emissions(std::ostream& out, const std::string& experiment_name = "") const;
+	void write_durations(std::ostream& out, const std::string& experiment_name = "") const;
+	bool add_observation(const ns_death_time_annotation& properties, const ns_analyzed_image_time_path* path, const std::string* database_name, const ns_64_bit& experiment_id, const std::string* plate_name, const std::string* device_name, const std::string * genotype);
 	void clean_up_data_prior_to_model_fitting();
 	std::map<ns_stationary_path_id, ns_hmm_emission_normalization_stats > normalization_stats;
 	std::set<std::string> volatile_string_storage;
@@ -55,16 +57,25 @@ public:
 	unsigned long volatile_number_of_individuals_observed;
 };
 
+class ns_probability_model_holder;
+class ns_probability_model_generator;
 class ns_emperical_posture_quantification_value_estimator{
 public:
+
+	typedef enum { ns_static, ns_static_mod,ns_empirical,ns_empirical_without_weights } ns_hmm_states_transition_types;
 	static std::string state_permissions_to_string(const ns_hmm_states_permitted& s);
 	static ns_hmm_states_permitted state_permissions_from_string(const std::string & s);
 	~ns_emperical_posture_quantification_value_estimator();
 	friend class ns_time_path_movement_markov_solver;
-	void build_estimator_from_observations(const ns_hmm_observation_set & observation_set,std::string & output, const ns_hmm_states_permitted& states_permitted);
+	bool build_estimator_from_observations(const std::string& description, const ns_hmm_observation_set & observation_set, const ns_probability_model_generator* generator,const ns_hmm_states_permitted& states_permitted_, const ns_hmm_states_transition_types & transition_type_, std::string & output);
 
 	void log_probability_for_each_state(const ns_analyzed_image_time_path_element_measurements & e,std::vector<double> & p) const;
-	
+
+	//log probability of an animal moving between states after duration_in_seconds seconds.
+	//logprob[i][j] is the probability of moving from state i to state j.
+	//weight matrix is used to modify log_probabilities. The value should be the log of a weight between 0 and 1 .
+	void state_transition_log_probabilities(const double& duration_in_seconds, const std::vector < std::vector<double> >& weight_matrix, std::vector < std::vector<double> >& log_prob) const;
+
 	void read(std::istream & i);
 	void write(std::ostream & o)const;
 	static ns_emperical_posture_quantification_value_estimator dummy();
@@ -82,28 +93,26 @@ public:
 	unsigned long number_of_sub_probabilities() const;
 	bool state_defined(const ns_hmm_movement_state & m) const;
 	const ns_hmm_states_permitted & states_permitted() const { return states_permitted_int; }
-	void defined_states(std::set<ns_hmm_movement_state> & s) const{ 
-		for (auto p = emission_probability_models.begin(); p != emission_probability_models.end(); p++)
-			s.emplace(p->first);
-	}
-	std::string software_version_when_built;
+	const ns_hmm_states_transition_types & states_transitions() const { return state_transition_type; }
+	void defined_states(std::set<ns_hmm_movement_state>& s) const;
+	std::string software_version_when_built, model_description_text;
 	friend bool operator==(const ns_emperical_posture_quantification_value_estimator & a, const ns_emperical_posture_quantification_value_estimator & b);
 private:
 	void write_visualization(std::ostream & o,const std::string & experiment_name="") const;
-	std::map<ns_hmm_movement_state, ns_emission_probabiliy_gaussian_diagonal_covariance_model*> emission_probability_models;
+	ns_probability_model_holder * emission_probability_models;
 	ns_hmm_states_permitted states_permitted_int;
+	ns_hmm_states_transition_types state_transition_type;
+	int flags_to_int() const;
+	void update_flags_from_int(int flag_int);
 };
 bool operator==(const ns_emperical_posture_quantification_value_estimator & a, const ns_emperical_posture_quantification_value_estimator & b);
 
 struct ns_threshold_movement_posture_analyzer_parameters{
 	double stationary_cutoff,
-		posture_cutoff,
-		death_time_expansion_cutoff;
+		posture_cutoff;
 	unsigned long permanance_time_required_in_seconds;
-
-	unsigned long death_time_expansion_time_kernel_in_seconds;
 	bool use_v1_movement_score;
-	std::string version_flag;
+	std::string version_flag, model_description_text;
 	static ns_threshold_movement_posture_analyzer_parameters default_parameters(const unsigned long experiment_duration_in_seconds);
 	void read(std::istream & i);
 	void write(std::ostream & o)const;
@@ -145,6 +154,19 @@ struct ns_posture_analysis_model{
 	ns_emperical_posture_quantification_value_estimator hmm_posture_estimator;
 	
 	ns_threshold_movement_posture_analyzer_parameters threshold_parameters;
+	std::string model_description_text() const {
+		switch (posture_analysis_method) {
+		case ns_not_specified:
+			return "";
+		case ns_threshold:
+			return threshold_parameters.model_description_text;
+		case ns_hidden_markov:
+			return hmm_posture_estimator.model_description_text;
+		case ns_threshold_and_hmm:
+			return hmm_posture_estimator.model_description_text + "\n" + threshold_parameters.model_description_text;
+		default: return "";
+		}
+	}
 
 	static ns_posture_analysis_model dummy();
 	ns_posture_analysis_method posture_analysis_method;

@@ -17,7 +17,7 @@ class ns_get_int{
 	template<class T>
 		inline char operator()(std::istream & in,T & i){
 			char a((*this)(in,tmp));
-			i = static_cast<T>(atol(tmp.c_str()));
+			i = static_cast<T>(ns_atoi64(tmp.c_str()));
 			return a;
 		}
        

@@ -3,6 +3,7 @@
 
 
 double ns_likelihood_of_normal_zcore(double x);
+double ns_cdf_of_zcore(double x);
 
 double ns_likelihood_of_lognormal_value(double x,double mean, double stdev);
 

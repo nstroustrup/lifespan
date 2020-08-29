@@ -4,6 +4,40 @@
 #include "ns_death_time_annotation.h"
 #include "ns_vector.h"
 #include <random>
+#include "ns_gmm.h"
+
+
+
+
+struct ns_outlier_search_data {
+	ns_outlier_search_data() {}
+	ns_outlier_search_data(const double& w, const double& a) :weak_movement_duration(w), alive_but_not_moving_duration(a),by_hand_annotation_exists(false), is_an_outlier(false){}
+	double weak_movement_duration,
+		alive_but_not_moving_duration;
+	bool by_hand_annotation_exists;
+	bool is_an_outlier;
+	ns_outlier_search_data(const ns_dying_animal_description_base<const ns_death_time_annotation>& source_data) {
+		const ns_death_time_annotation* d =
+			ns_dying_animal_description_group<const ns_death_time_annotation>::calculate_best_guess_death_annotation(source_data.by_hand.movement_based_death_annotation, source_data.by_hand.death_associated_expansion_start);
+		by_hand_annotation_exists = d != 0 && !d->time.fully_unbounded();
+
+		if (source_data.machine.last_fast_movement_annotation == 0 || 
+			source_data.machine.movement_based_death_annotation == 0) {
+			weak_movement_duration = alive_but_not_moving_duration = -1;
+			return;
+		}
+		else weak_movement_duration = source_data.machine.movement_based_death_annotation->time.best_estimate_event_time_for_possible_partially_unbounded_interval() - 
+			source_data.machine.last_fast_movement_annotation->time.best_estimate_event_time_for_possible_partially_unbounded_interval();
+		if (source_data.machine.death_associated_expansion_start == 0) {
+			alive_but_not_moving_duration = -1;
+			return;
+		}
+		else alive_but_not_moving_duration = source_data.machine.death_associated_expansion_start->time.best_estimate_event_time_for_possible_partially_unbounded_interval() 
+			- source_data.machine.movement_based_death_annotation->time.best_estimate_event_time_for_possible_partially_unbounded_interval();
+	}
+};
+
+
 
 struct ns_worm_lookup_info {
 	ns_worm_lookup_info() {}
@@ -24,7 +58,36 @@ struct ns_scatter_plot_element {
 	double x_specified, y_specified;
 	ns_64_bit region_info_id;
 	ns_stationary_path_id stationary_path_id;
+	ns_outlier_search_data outlier_data;
 };
+
+
+struct ns_measurement_accessor {
+	typedef ns_scatter_plot_element data_t;
+	virtual const double operator()(const ns_scatter_plot_element& e, bool& valid_data_point) const = 0;
+	virtual ns_measurement_accessor* clone() = 0;
+};
+
+struct ns_weak_movement_accessor : public ns_measurement_accessor {
+	typedef ns_outlier_search_data data_t;
+	const double operator()(const ns_scatter_plot_element& e, bool& valid_data_point) const { valid_data_point = e.outlier_data.weak_movement_duration != -1;  return e.outlier_data.weak_movement_duration; }
+	ns_weak_movement_accessor* clone() { return new ns_weak_movement_accessor; }
+};
+struct ns_alive_but_non_moving_movement_accessor : ns_measurement_accessor {
+	typedef ns_outlier_search_data data_t;
+	const double operator()(const ns_scatter_plot_element& e, bool & valid_data_point) const { valid_data_point = e.outlier_data.alive_but_not_moving_duration != -1; return e.outlier_data.alive_but_not_moving_duration; }
+	ns_weak_movement_accessor* clone() { return new ns_weak_movement_accessor; }
+};
+
+template<class measurement_accessor_t>
+unsigned long ns_emission_probabiliy_gaussian_diagonal_covariance_model<measurement_accessor_t>::training_data_buffer_size = 0;
+
+template<class measurement_accessor_t>
+double* ns_emission_probabiliy_gaussian_diagonal_covariance_model<measurement_accessor_t>::training_data_buffer = 0;
+
+template<class measurement_accessor_t>
+ns_lock ns_emission_probabiliy_gaussian_diagonal_covariance_model<measurement_accessor_t>::training_data_buffer_lock("tbl");
+
 struct ns_survival_graph {
 	ns_survival_graph() :vals(ns_graph_object::ns_graph_dependant_variable) {}
 	ns_graph_object vals;
@@ -49,6 +112,24 @@ struct ns_survival_telemetry_cache {
 	std::vector< ns_survival_telemetry_set> s;
 };
 
+//first is annotation for x axis, second is annotation for y axis
+struct ns_scatter_plot_coordinate {
+	ns_scatter_plot_coordinate() {}
+	ns_scatter_plot_coordinate(const ns_death_time_annotation* a) :using_value(false), annotation(a) {}
+	ns_scatter_plot_coordinate(const double& a) :using_value(true), value(a) {}
+	const ns_death_time_annotation* annotation;
+	double value;
+	bool using_value;
+};
+
+struct ns_plot_pair {
+	ns_plot_pair() {}
+	ns_plot_pair(const ns_scatter_plot_coordinate& a, const ns_scatter_plot_coordinate& b, ns_outlier_search_data & outlier_d) :
+		first(a), second(b),outlier_data(outlier_d) {}
+	ns_scatter_plot_coordinate first;
+	ns_scatter_plot_coordinate second;
+	ns_outlier_search_data outlier_data;
+};
 
 class ns_population_telemetry {
 public:
@@ -173,7 +254,10 @@ private:
 	ns_graph survival,movement_vs_posture;
 	ns_graph_specifics survival_specifics, movement_vs_posture_specifics;
 	std::vector<ns_survival_graph> survival_curves;
-	std::vector<ns_survival_graph> movement_vs_posture_vals;
+	std::vector<ns_survival_graph> movement_vs_posture_vals_fully_specified;
+	std::vector<ns_survival_graph> movement_vs_posture_vals_by_hand_annotated;
+	std::vector<ns_survival_graph> movement_vs_posture_vals_not_fully_specified;
+	std::vector<ns_survival_graph> movement_vs_posture_vals_outliers;
 	std::string survival_curve_title, survival_curve_note, movement_vs_posture_title, movement_vs_posture_note;
 	std::string movement_vs_posture_x_axis_label, movement_vs_posture_y_axis_label;
 	ns_color_8 movement_vs_posture_x_axis_color, movement_vs_posture_y_axis_color;
@@ -246,21 +330,26 @@ private:
 
 		double tmax(0), tmin(DBL_MAX), ymax(0), ymin(DBL_MAX);
 		unsigned long number_of_points(0);
-		for (unsigned int j = 0; j < movement_vs_posture_vals.size(); j++) {
-			for (unsigned int i = 0; i < movement_vs_posture_vals[j].vals.x.size(); i++) {
-				number_of_points++;
-				if (movement_vs_posture_vals[j].vals.x[i] < tmin)
-					tmin = movement_vs_posture_vals[j].vals.x[i];
-				if (movement_plot == ns_plot_death_times_absolute && movement_vs_posture_vals[j].vals.y[i] < tmin)
-					tmin = movement_vs_posture_vals[j].vals.y[i];
-				if (movement_vs_posture_vals[j].vals.y[i] < ymin)
-					ymin = movement_vs_posture_vals[j].vals.y[i];
-				if (movement_vs_posture_vals[j].vals.x[i] > tmax)
-					tmax = movement_vs_posture_vals[j].vals.x[i];
-				if (movement_plot == ns_plot_death_times_absolute && movement_vs_posture_vals[j].vals.y[i] > tmax)
-					tmax = movement_vs_posture_vals[j].vals.y[i];
-				if (movement_vs_posture_vals[j].vals.y[i] > ymax)
-					ymax = movement_vs_posture_vals[j].vals.y[i];
+		const int number_of_movement_vs_posture_graphs(4);
+		std::vector<ns_survival_graph>* all_movement_vs_posture_graphs[number_of_movement_vs_posture_graphs] = { &movement_vs_posture_vals_fully_specified, &movement_vs_posture_vals_not_fully_specified, &movement_vs_posture_vals_outliers, &movement_vs_posture_vals_by_hand_annotated };
+		for (unsigned int g = 0; g < number_of_movement_vs_posture_graphs; g++) {
+			std::vector<ns_survival_graph>& graph(*all_movement_vs_posture_graphs[g]);
+			for (unsigned int j = 0; j < graph.size(); j++) {
+				for (unsigned int i = 0; i < graph[j].vals.x.size(); i++) {
+					number_of_points++;
+					if (graph[j].vals.x[i] < tmin)
+						tmin = graph[j].vals.x[i];
+					if (movement_plot == ns_plot_death_times_absolute && graph[j].vals.y[i] < tmin)
+						tmin = graph[j].vals.y[i];
+					if (graph[j].vals.y[i] < ymin)
+						ymin = graph[j].vals.y[i];
+					if (graph[j].vals.x[i] > tmax)
+						tmax = graph[j].vals.x[i];
+					if (movement_plot == ns_plot_death_times_absolute && graph[j].vals.y[i] > tmax)
+						tmax = graph[j].vals.y[i];
+					if (graph[j].vals.y[i] > ymax)
+						ymax = graph[j].vals.y[i];
+				}
 			}
 		}
 		if (number_of_points != 0) {
@@ -299,17 +388,35 @@ private:
 		movement_vs_posture.x_axis_label = movement_vs_posture_x_axis_label;
 		movement_vs_posture.y_axis_properties.text.color = ns_color_8(0, 0, 255);
 		movement_vs_posture.y_axis_label = movement_vs_posture_y_axis_label;
-		for (unsigned int i = 0; i < movement_vs_posture_vals.size(); i++) {
-			movement_vs_posture_vals[i].vals.type = ns_graph_object::ns_graph_dependant_variable;
-			movement_vs_posture_vals[i].vals.properties.line.draw = false;
-			movement_vs_posture_vals[i].vals.properties.point.draw = true;
-			movement_vs_posture_vals[i].vals.properties.point.color = movement_vs_posture_vals[i].color;
-			movement_vs_posture_vals[i].vals.properties.point.width = 4;
-			movement_vs_posture_vals[i].vals.properties.point.edge_color = ns_color_8(0, 0, 0);
-			movement_vs_posture_vals[i].vals.properties.point.edge_width = 1;
-			movement_vs_posture_vals[i].vals.properties.point.point_shape = ns_graph_color_set::ns_circle;
-			movement_vs_posture_vals[i].vals.data_label = movement_vs_posture_vals[i].name;
-			movement_vs_posture.add_reference(&movement_vs_posture_vals[i].vals);
+		for (unsigned int g = 0; g < number_of_movement_vs_posture_graphs; g++) {
+			for (unsigned int i = 0; i < all_movement_vs_posture_graphs[g]->size(); i++) {
+				(*all_movement_vs_posture_graphs[g])[i].vals.type = ns_graph_object::ns_graph_dependant_variable;
+				(*all_movement_vs_posture_graphs[g])[i].vals.properties.line.draw = false;
+				(*all_movement_vs_posture_graphs[g])[i].vals.properties.point.draw = true;
+				if (g==0)
+					(*all_movement_vs_posture_graphs[g])[i].vals.data_label = (*all_movement_vs_posture_graphs[g])[i].name;
+
+				(*all_movement_vs_posture_graphs[g])[i].vals.properties.point.color = (*all_movement_vs_posture_graphs[g])[i].color;
+				(*all_movement_vs_posture_graphs[g])[i].vals.properties.point.width = 4;
+				(*all_movement_vs_posture_graphs[g])[i].vals.properties.point.edge_color = ns_color_8(0, 0, 0);
+				(*all_movement_vs_posture_graphs[g])[i].vals.properties.point.edge_width = 1;
+				(*all_movement_vs_posture_graphs[g])[i].vals.properties.point.point_shape = ns_graph_color_set::ns_circle;
+
+				movement_vs_posture.add_reference(&(*all_movement_vs_posture_graphs[g])[i].vals);
+			}
+		}
+		for (unsigned int i = 0; i < movement_vs_posture_vals_not_fully_specified.size(); i++) 
+			movement_vs_posture_vals_not_fully_specified[i].vals.properties.point.edge_color = ns_color_8(125, 125, 125);
+
+		for (unsigned int i = 0; i < movement_vs_posture_vals_outliers.size(); i++) {
+			movement_vs_posture_vals_outliers[i].vals.properties.point.edge_color = movement_vs_posture_vals_not_fully_specified[i].color;
+			movement_vs_posture_vals_outliers[i].vals.properties.point.edge_width = 2;
+			movement_vs_posture_vals_outliers[i].vals.properties.point.color = ns_color_8(255, 255, 255);
+			movement_vs_posture_vals_outliers[i].vals.properties.point.width = 3;
+		}
+		for (unsigned int i = 0; i < movement_vs_posture_vals_by_hand_annotated.size(); i++) {
+			movement_vs_posture_vals_by_hand_annotated[i].vals.properties.point.point_shape = ns_graph_color_set::ns_square;
+			movement_vs_posture_vals_by_hand_annotated[i].vals.properties.point.width = 3;
 		}
 
 
@@ -360,7 +467,10 @@ public:
 		survival.clear();
 		movement_vs_posture.clear();
 		survival_curves.clear();
-		movement_vs_posture_vals.clear();
+		movement_vs_posture_vals_fully_specified.clear();
+		movement_vs_posture_vals_not_fully_specified.clear();
+		movement_vs_posture_vals_by_hand_annotated.clear();
+		movement_vs_posture_vals_outliers.clear();
 		unity_line.clear();
 		last_graph_contents = ns_none;
 		last_start_time = 0;
@@ -370,7 +480,8 @@ public:
 		//last_measurement_cache.clear();
 	}
 	unsigned long get_graph_time_from_graph_position(const float x) { //x is in relative time
-		//xxx not done
+	  return 0;
+	  //xxx not done
 		/*ns_analyzed_image_time_path* path(&region_data->movement_analyzer.group(group_id).paths[0]);
 		long min_i(0);
 		float min_dt(100000);
@@ -468,20 +579,11 @@ public:
 		stats_subset_strain_to_display = strain;
 
 	}
-	//first is annotation for x axis, second is annotation for y axis
-	struct ns_scatter_plot_coordinate {
-		ns_scatter_plot_coordinate() {}
-		ns_scatter_plot_coordinate(const ns_death_time_annotation* a) :using_value(false), annotation(a) {}
-		ns_scatter_plot_coordinate(const double& a) :using_value(true), value(a) {}
-		const ns_death_time_annotation* annotation;
-		double value;
-		bool using_value;
-	};
-	typedef std::pair<ns_scatter_plot_coordinate, ns_scatter_plot_coordinate> ns_plot_pair;
+	
 	void clear_cache() {
 		telemetry_cache.clear();
 	}
-	void update_annotations_and_build_survival(const ns_death_time_annotation_compiler & compiler, const ns_region_metadata & metadata) {
+	void update_annotations_and_build_survival(const ns_death_time_annotation_compiler& compiler, const ns_region_metadata& metadata) {
 		survival_curves.resize(0);
 		ns_lifespan_experiment_set set;
 		compiler.generate_survival_curve_set(set, ns_death_time_annotation::ns_machine_annotations_if_no_by_hand, true, false);
@@ -495,8 +597,8 @@ public:
 
 		const ns_64_bit time_at_zero = metadata.time_at_which_animals_had_zero_age;
 		const ns_64_bit storyboard_region_id = metadata.region_id;
-	
-		
+
+
 		ns_region_metadata data_to_process;
 		const bool filter_by_strain = strain_override_specified || viewing_a_storyboard_for_a_specific_strain;
 		if (filter_by_strain) {
@@ -816,7 +918,13 @@ public:
 			time_axis[i] -= time_at_which_animals_were_age_zero;
 		*/
 
-		movement_vs_posture_vals.resize(0);
+
+		//now make the scatter plots
+
+		movement_vs_posture_vals_fully_specified.resize(0);
+		movement_vs_posture_vals_by_hand_annotated.resize(0);
+		movement_vs_posture_vals_not_fully_specified.resize(0);
+		movement_vs_posture_vals_outliers.resize(0);
 
 
 		movement_id_lookup.clear();
@@ -826,7 +934,10 @@ public:
 			std::map<std::string, unsigned long> group_mappings_to_data;
 			for (auto p = data_categories.begin(); p != data_categories.end(); p++)
 				group_mappings_to_data[p->second.group_name] = 0;
-			movement_vs_posture_vals.resize(group_mappings_to_data.size());
+			movement_vs_posture_vals_fully_specified.resize(group_mappings_to_data.size());
+			movement_vs_posture_vals_not_fully_specified.resize(group_mappings_to_data.size());
+			movement_vs_posture_vals_by_hand_annotated.resize(group_mappings_to_data.size());
+			movement_vs_posture_vals_outliers.resize(group_mappings_to_data.size());
 			{
 				int tm = 0;
 				for (auto p = group_mappings_to_data.begin(); p != group_mappings_to_data.end(); p++) {
@@ -837,8 +948,14 @@ public:
 
 			for (auto p = data_categories.begin(); p != data_categories.end(); p++) {
 				p->second.output_location_id = group_mappings_to_data[p->second.group_name];
-				movement_vs_posture_vals[p->second.output_location_id].name = p->second.group_name;
-				movement_vs_posture_vals[p->second.output_location_id].color = p->second.color;
+				movement_vs_posture_vals_fully_specified[p->second.output_location_id].name = p->second.group_name;
+				movement_vs_posture_vals_fully_specified[p->second.output_location_id].color = p->second.color;
+				movement_vs_posture_vals_not_fully_specified[p->second.output_location_id].name = p->second.group_name;
+				movement_vs_posture_vals_not_fully_specified[p->second.output_location_id].color = p->second.color;
+				movement_vs_posture_vals_by_hand_annotated[p->second.output_location_id].name = p->second.group_name;
+				movement_vs_posture_vals_by_hand_annotated[p->second.output_location_id].color = p->second.color;
+				movement_vs_posture_vals_outliers[p->second.output_location_id].name = p->second.group_name;
+				movement_vs_posture_vals_outliers[p->second.output_location_id].color = p->second.color;
 			}
 		}
 
@@ -846,14 +963,13 @@ public:
 		//later we analyze and plot it.
 		std::map<unsigned long, std::vector<ns_scatter_plot_element> > points_to_plot;
 		double max_x(0), max_y(0), max_y_x_diff(0);
-
 		for (ns_death_time_annotation_compiler::ns_region_list::const_iterator r = compiler.regions.begin(); r != compiler.regions.end(); r++) {
 			if (region_to_view != 0 && r->first != region_to_view)
 				continue;
 			if (filter_by_strain && r->second.metadata.device_regression_match_description() != data_to_process.device_regression_match_description())
 				continue;
 			for (ns_death_time_annotation_compiler_region::ns_location_list::const_iterator l = r->second.locations.begin(); l != r->second.locations.end(); l++) {
-				
+
 				ns_multiple_worm_cluster_death_annotation_handler multiple_worm_handler;
 				//if (l->properties.number_of_worms()>1)
 				ns_dying_animal_description_set_const set;
@@ -867,6 +983,7 @@ public:
 
 				//each location can have multiple worms in a group.  We plot each individually, keeping track of the annotations that mark the x and y position of each point.
 				for (unsigned int i = 0; i < set.descriptions.size(); i++) {
+					pair_to_plot.outlier_data = ns_outlier_search_data(set.descriptions[i]);
 					if (regression_plot == ns_plot_death_types) {
 						movement_vs_posture_x_axis_label = "Movement Cessation Time (days)";
 						movement_vs_posture_y_axis_label = "Death-Associated Expansion Time (days)";
@@ -940,10 +1057,10 @@ public:
 					}
 				}
 
-			
+
 
 				const ns_64_bit region_info_id(r->first);
-				
+
 
 				const unsigned long group_id = data_categories[region_info_id].output_location_id;
 				auto p = points_to_plot.emplace(std::pair<unsigned long, std::vector<ns_scatter_plot_element> >(group_id, std::vector<ns_scatter_plot_element>())).first;
@@ -951,7 +1068,7 @@ public:
 				ns_scatter_plot_element& point = *p->second.rbegin();
 				point.region_info_id = region_info_id;
 				point.stationary_path_id = l->properties.stationary_path_id;
-
+				point.outlier_data = pair_to_plot.outlier_data;
 				if (pair_to_plot.first.using_value) {
 					if (pair_to_plot.first.value > 0)
 						point.x_raw = pair_to_plot.first.value;
@@ -962,7 +1079,7 @@ public:
 						point.x_raw = pair_to_plot.first.annotation->time.best_estimate_event_time_for_possible_partially_unbounded_interval();
 					else point.x_specified = false;
 				}
-					
+
 				if (pair_to_plot.second.using_value) {
 					if (pair_to_plot.second.value > 0)
 						point.y_raw = pair_to_plot.second.value;
@@ -983,6 +1100,54 @@ public:
 
 			}
 		}
+
+		//we want to find and tag outlier points
+		//So, we fit a 2-d gaussian to the data
+		//and then flag points that are on the tails of the distribution.
+		ns_emission_probabiliy_gaussian_diagonal_covariance_model<ns_measurement_accessor> normal_fit;
+		normal_fit.setup_gmm(2, 1);
+		normal_fit.dimensions.reserve(2);
+		normal_fit.dimensions.push_back(ns_covarying_gaussian_dimension<ns_measurement_accessor>(new ns_weak_movement_accessor, "w"));
+		normal_fit.dimensions.push_back(ns_covarying_gaussian_dimension<ns_measurement_accessor>(new ns_alive_but_non_moving_movement_accessor, "a"));
+
+		unsigned long number_of_points(0);
+		std::vector< const std::vector<ns_scatter_plot_element>* > data_holder(points_to_plot.size());
+		{
+			int i = 0;
+			for (auto p = points_to_plot.begin(); p != points_to_plot.end(); p++) {
+				data_holder[i] = &p->second;
+				number_of_points += p->second.size();
+				++i;
+			}
+		}
+		//ofstream o("c:\\server\\outlier_debug.csv");
+		//o << "val1,val2,p,outlier\n";
+		const double p_cutoff = .02;
+		try {
+			normal_fit.build_from_data(data_holder, number_of_points);
+			{
+				for (auto p = points_to_plot.begin(); p != points_to_plot.end(); p++) {
+					for (unsigned int i = 0; i < p->second.size(); i++) {
+						if (p->second[i].outlier_data.alive_but_not_moving_duration == -1 || p->second[i].outlier_data.weak_movement_duration == -1) {
+							p->second[i].outlier_data.is_an_outlier = false;
+							continue;
+						}
+						const double prob = normal_fit.point_emission_likelihood(p->second[i]);
+						p->second[i].outlier_data.is_an_outlier = prob < p_cutoff;
+						//			o << p->second[i].outlier_data.alive_but_not_moving_duration << "," << p->second[i].outlier_data.weak_movement_duration << "," << prob << "," << p->second[i].outlier_data.is_an_outlier << "\n";
+					}
+				}
+			}
+		}
+		catch (ns_ex & ex) {
+			cerr <<"Problem during outlier detection: " << ex.text() << "\n";
+
+		}
+		//o.close();
+
+
+
+
 		std::random_device dev;
 		std::mt19937 rng(dev());
 		std::uniform_real_distribution<> rnd_dist(.95, 1.05);
@@ -1000,22 +1165,36 @@ public:
 		//now we analyze and plot the points_to_plot structure
 		//now replace all the unspecified times with the max value so they fall on top or on the side of the chart.
 		for (auto p = points_to_plot.begin(); p != points_to_plot.end(); ++p) {
-			movement_vs_posture_vals[p->first].vals.x.resize(p->second.size());
-			movement_vs_posture_vals[p->first].vals.y.resize(p->second.size());
+			movement_vs_posture_vals_fully_specified[p->first].vals.x.resize(0);
+			movement_vs_posture_vals_fully_specified[p->first].vals.y.resize(0);
+			movement_vs_posture_vals_by_hand_annotated[p->first].vals.x.resize(0);
+			movement_vs_posture_vals_by_hand_annotated[p->first].vals.y.resize(0);
+			movement_vs_posture_vals_not_fully_specified[p->first].vals.x.resize(0);
+			movement_vs_posture_vals_not_fully_specified[p->first].vals.y.resize(0);
+			movement_vs_posture_vals_outliers[p->first].vals.x.resize(0);
+			movement_vs_posture_vals_outliers[p->first].vals.y.resize(0);
+
+			movement_vs_posture_vals_fully_specified[p->first].vals.x.reserve(p->second.size());
+			movement_vs_posture_vals_fully_specified[p->first].vals.y.reserve(p->second.size());
+			movement_vs_posture_vals_by_hand_annotated[p->first].vals.x.reserve(p->second.size());
+			movement_vs_posture_vals_by_hand_annotated[p->first].vals.y.reserve(p->second.size());
+			movement_vs_posture_vals_not_fully_specified[p->first].vals.x.reserve(p->second.size());
+			movement_vs_posture_vals_not_fully_specified[p->first].vals.y.reserve(p->second.size());
+			movement_vs_posture_vals_outliers[p->first].vals.x.reserve(p->second.size()/5);
+			movement_vs_posture_vals_outliers[p->first].vals.y.reserve(p->second.size()/5);
 
 			for (unsigned int j = 0; j < p->second.size(); j++) {
-
-				//if (!p->second[j].x_specified && !p->second[j].y_specified)
-				//	continue; // throw ns_ex("Completely unspecified event pair!");
-
-
+				bool fully_specified = true;
 				//handle residuals and missing data for y
 				if (movement_plot == ns_plot_death_times_residual) {
-					if (!p->second[j].x_specified || !p->second[j].y_specified)
+					if (!p->second[j].x_specified || !p->second[j].y_specified) {
+						fully_specified = false;
 						p->second[j].y_raw = undefined_y_position * rnd_dist(rng);  //add jitter
+					}
 					else p->second[j].y_raw -= p->second[j].x_raw;
 				}
 				else if (!p->second[j].y_specified) {
+					fully_specified = false;
 					if (regression_plot == ns_death_vs_observation_duration)
 						p->second[j].y_raw = (undefined_y_position)*rnd_dist(rng);  //add jitter 
 					else
@@ -1023,15 +1202,24 @@ public:
 				}
 
 				//handle missing data for x
-				if (!p->second[j].x_specified)
+				if (!p->second[j].x_specified) {
+					fully_specified = false;
 					p->second[j].x_raw = (undefined_x_position)*rnd_dist(rng) + metadata.time_at_which_animals_had_zero_age;  //add jitter
+				}
+				std::vector<ns_survival_graph>* graph_to_add(&movement_vs_posture_vals_fully_specified);
+				if (p->second[j].outlier_data.by_hand_annotation_exists)
+					graph_to_add = &movement_vs_posture_vals_by_hand_annotated;
+				else if (!fully_specified)
+					graph_to_add = &movement_vs_posture_vals_not_fully_specified;
+				else if (p->second[j].outlier_data.is_an_outlier)
+					graph_to_add = &movement_vs_posture_vals_outliers;
 
 				if (movement_plot == ns_plot_death_times_residual || regression_plot == ns_death_vs_observation_duration)
-					movement_vs_posture_vals[p->first].vals.y[j] = p->second[j].y_raw / 60.0 / 60.0 / 24;
+					(*graph_to_add)[p->first].vals.y.push_back(p->second[j].y_raw / 60.0 / 60.0 / 24);
 
-				else movement_vs_posture_vals[p->first].vals.y[j] = ((double)p->second[j].y_raw - metadata.time_at_which_animals_had_zero_age) / 60.0 / 60.0 / 24;
+				else(*graph_to_add)[p->first].vals.y.push_back(((double)p->second[j].y_raw - metadata.time_at_which_animals_had_zero_age) / 60.0 / 60.0 / 24);
 
-				movement_vs_posture_vals[p->first].vals.x[j] = ((double)p->second[j].x_raw - metadata.time_at_which_animals_had_zero_age) / 60.0 / 60.0 / 24;
+				(*graph_to_add)[p->first].vals.x.push_back(((double)p->second[j].x_raw - metadata.time_at_which_animals_had_zero_age) / 60.0 / 60.0 / 24);
 
 
 				ns_lookup_index li(p->second[j].x_raw, p->second[j].y_raw);

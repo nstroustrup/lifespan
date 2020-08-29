@@ -153,7 +153,7 @@
     </ClCompile>
     <Link>
       <GenerateDebugInformation>DebugFastLink</GenerateDebugInformation>
-      <AdditionalDependencies>libmysql.lib;xvidcore.dll.a;freetype26d.lib;openjp2.lib;OpenCL.lib;psapi.lib;comctl32.lib;xvidcored.dll.a;glu32.lib;opengl32.lib;fltkd.lib;fltkimagesd.lib;fltkpngd.lib;fltkformsd.lib;fltkgld.lib;ippcoremt.lib;ippcvmt.lib;ippsmt.lib;ippimt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libmysql.lib;xvidcore.dll.a;freetype26d.lib;openjp2.lib;psapi.lib;comctl32.lib;xvidcored.dll.a;glu32.lib;opengl32.lib;fltkd.lib;fltkimagesd.lib;fltkpngd.lib;fltkformsd.lib;fltkgld.lib;ippcoremt.lib;ippcvmt.lib;ippsmt.lib;ippimt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -211,7 +211,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>libmysql.lib;xvidcore.dll.a;freetype26d.lib;openjp2.lib;psapi.lib;comctl32.lib;freetype26.lib;glu32.lib;opengl32.lib;fltk.lib;fltkimages.lib;fltkpng.lib;fltkforms.lib;ippcoremt.lib;ippcvmt.lib;ippsmt.lib;ippimt.lib;fltkgl.lib;OpenCL.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libmysql.lib;xvidcore.dll.a;freetype26d.lib;openjp2.lib;psapi.lib;comctl32.lib;freetype26.lib;glu32.lib;opengl32.lib;fltk.lib;fltkimages.lib;fltkpng.lib;fltkforms.lib;ippcoremt.lib;ippcvmt.lib;ippsmt.lib;ippimt.lib;fltkgl.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>
       </IgnoreSpecificDefaultLibraries>
     </Link>
@@ -743,10 +743,13 @@
     <ClInclude Include="..\ns_image_server\movement_analysis\ns_experiment_storyboard.h" />
     <ClInclude Include="..\ns_image_server\movement_analysis\ns_hidden_markov_model_posture_analyzer.h" />
     <ClInclude Include="..\ns_image_server\movement_analysis\ns_image_server_time_path_inferred_worm_aggregator.h" />
+    <ClInclude Include="..\ns_image_server\movement_analysis\ns_probability_model_measurement_accessor.h" />
+    <ClInclude Include="..\ns_image_server\movement_analysis\ns_threshold_movement_posture_analyzer.h" />
     <ClInclude Include="..\ns_image_server\movement_analysis\ns_time_path_image_analyzer.h" />
     <ClInclude Include="..\ns_image_server\movement_analysis\ns_time_path_posture_movement_solution.h" />
     <ClInclude Include="..\ns_image_server\movement_analysis\ns_time_path_solver.h" />
     <ClInclude Include="..\ns_image_server\statistics\ns_by_hand_lifespan.h" />
+    <ClInclude Include="..\ns_image_server\statistics\ns_gmm.h" />
     <ClInclude Include="..\ns_image_server\statistics\ns_jmp_file.h" />
     <ClInclude Include="..\ns_image_server\statistics\ns_lifespan_statistics.h" />
     <ClInclude Include="..\ns_image_server\statistics\ns_linear_regression_model.h" />

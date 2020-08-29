@@ -293,19 +293,23 @@ public:
 		death_associated_expansion_start.time = start_time;
 		death_associated_expansion_stop.time = stop_time;
 
+		ns_death_time_annotation_time_interval null_interval(0, 0);
+		null_interval.period_end_was_not_observed = null_interval.period_start_was_not_observed = true;
+
 		switch (cur_exp) {
 		case ns_death_time_annotation::ns_unknown_explicitness:  //deliberate pass-through
 		case ns_death_time_annotation::ns_not_explicit:
 			death_associated_expansion_stop.event_explicitness = ns_death_time_annotation::ns_explicitly_observed;
 			break;
 		case ns_death_time_annotation::ns_explicitly_observed:
-			death_associated_expansion_stop.event_explicitness = ns_death_time_annotation::ns_explicitly_not_observed;
+			death_associated_expansion_stop.event_explicitness = ns_death_time_annotation::ns_explicitly_not_observed; 
+			death_associated_expansion_stop.time = death_associated_expansion_start.time = null_interval;
+			death_associated_post_expansion_contraction_start.time = death_associated_post_expansion_contraction_stop.time = null_interval;
 			break;
 		case ns_death_time_annotation::ns_explicitly_not_observed: {
 			death_associated_expansion_stop.event_explicitness = ns_death_time_annotation::ns_not_explicit;
-			ns_death_time_annotation_time_interval t(0, 0);
-			t.period_end_was_not_observed = t.period_start_was_not_observed = true;
-			death_associated_expansion_stop.time = death_associated_expansion_start.time = t;
+			death_associated_expansion_stop.time = death_associated_expansion_start.time = null_interval;
+			death_associated_post_expansion_contraction_start.time = death_associated_post_expansion_contraction_stop.time = null_interval;
 			break;
 		}
 		default: throw ns_ex("step_death_posture_relaxation_explicitness()::Unkown state!");
@@ -450,7 +454,7 @@ public:
 		}
 		ns_death_time_annotation_compiler c;
 		c.add(set, ns_region_metadata());
-		load_timing_data_from_set(c, ignore_unuseful_annotations, timing_data, orphaned_events, error_message);
+		return load_timing_data_from_set(c, ignore_unuseful_annotations, timing_data, orphaned_events, error_message);
 	}
 	bool load_timing_data_from_set(const ns_death_time_annotation_compiler& c, const bool ignore_unuseful_annotations, timing_data_container& timing_data, std::vector<ns_death_time_annotation>& orphaned_events, std::string& error_message) {
 		//use the compiler to recognize all the stationary worms and put all the annotations together.

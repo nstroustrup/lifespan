@@ -466,6 +466,7 @@ private:
 template<class storage_type, class ns_component>
 class ns_histogram{
 public:
+	ns_histogram(int length_) :hist(length_, 0), length(length_),N(0) {}
 	ns_histogram():hist(max_pixel_depth,0),N(0){
 		//s = 2^(8*sizeof(ns_component))
 		unsigned int s = 1;
@@ -549,7 +550,7 @@ public:
 
 		//calculate the width of the ntile, and the area of the curve beneath the ntile.
 		storage_type ntile_width = c_area/(storage_type)ntile_number_of_divisions;
-		storage_type start=ntile_width*ntile;
+		storage_type start = (storage_type)((ntile * (ns_64_bit)c_area) / ntile_number_of_divisions);
 
 		if (ntile_width == 0) return 0;
 
@@ -558,7 +559,7 @@ public:
 		ns_64_bit cur_ntile_sum(0);
 		storage_type  cur_ntile_width(0);
 		//u and o stored for debugging only
-		ns_64_bit u(0),o(0);
+	//	ns_64_bit u(0),o(0);
 		for (unsigned int i = (ignore_zero?1:0); i < length; i++){
 
 			//go through the histogram until you find the start of the requested ntile.
@@ -570,10 +571,10 @@ public:
 						return (double)i;  //the entire ntile exists in the current histogram level
 					cur_ntile_sum+=(overflow)*(storage_type)i;
 					cur_ntile_width+=overflow;
-					o+=(overflow);
-					u+=start-under_count;
+	//				o+=(overflow);
+			//		u+=start-under_count;
 				}
-				else u+=hist[i];
+	//			else u+=hist[i];
 				under_count+=hist[i];
 			}
 			else{
@@ -583,7 +584,7 @@ public:
 				}
 				cur_ntile_width+=hist[i];
 				cur_ntile_sum+=hist[i]*(storage_type)i;
-				o+=hist[i];
+	//			o+=hist[i];
 			}
 		}
 		if (cur_ntile_width >= ntile_width)
@@ -610,7 +611,7 @@ public:
 	}
 	inline const unsigned long & number_of_pixels() const { return N;}
 private:
-	enum {max_pixel_depth = 256*256};
+	enum {max_pixel_depth = 256};
 	std::vector<storage_type> hist;
 	unsigned long N;
 	unsigned long length;
@@ -874,8 +875,13 @@ public:
 
 	///calculates the image's histogram, neglecting the value 0 which is used to represent
 	///pixels that are not part of the image.
-	ns_histogram<unsigned int, ns_component> histogram() const{
-		ns_histogram<unsigned int,ns_component> hist;
+
+	ns_histogram<unsigned int, ns_component> histogram() const {
+		ns_histogram<unsigned int, ns_component> hist;
+		histogram(hist);
+		return hist;
+	}
+	ns_histogram<unsigned int, ns_component> histogram(ns_histogram<unsigned int, ns_component> & hist) const {
 		hist.clear();
 		unsigned long num_zeros = 0;
 		if (reciever_t::_properties.components == 3)

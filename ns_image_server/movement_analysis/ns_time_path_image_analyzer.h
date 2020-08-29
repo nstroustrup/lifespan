@@ -10,8 +10,6 @@
 #include "ns_analyzed_image_time_path_element_measurements.h"
 #include "ns_hidden_markov_model_posture_analyzer.h"
 
-//posture version specifically for threshold models.
-#define NS_CURRENT_THRESHOLD_POSTURE_MODEL_VERSION "2.2"
 
 #undef NS_CALCULATE_OPTICAL_FLOW
 #define NS_USE_FAST_IMAGE_REGISTRATION
@@ -84,10 +82,15 @@ inline void ns_set_bit(const bool f, //conditional
 
 	w = (w & ~m) | (-f & m);
 }*/
+struct ns_histogram_matching_data {
+	ns_histogram_matching_data() :scaling_calculated(false) {}
+	double overall_scaling;
+	bool scaling_calculated;
+};
 
 struct ns_registered_image_set{
-	ns_registered_image_set(){}
-	ns_registered_image_set(const ns_image_properties & p):histograms_matched(false){
+	ns_registered_image_set():movement_image_calculated(false){}
+	ns_registered_image_set(const ns_image_properties & p){
 		image.use_more_memory_to_avoid_reallocations();	
 		//worm_threshold_.use_more_memory_to_avoid_reallocations();	
 		worm_region_threshold.use_more_memory_to_avoid_reallocations();	
@@ -98,15 +101,15 @@ struct ns_registered_image_set{
 		flow_image_dy.use_more_memory_to_avoid_reallocations();
 		#endif
 		image.init(p);
-		//worm_threshold_.init(p);
 		worm_region_threshold.init(p);
-		//region_threshold.init(p);
 		movement_image_.init(p);
+		movement_image_calculated = false;
 		#ifdef NS_CALCULATE_OPTICAL_FLOW
 		flow_image_dx.init(p);
 		flow_image_dy.init(p);
 		#endif
 	}
+	bool movement_image_calculated;
 	enum{region_mask=1,worm_mask=2,worm_neighborhood_mask=4, stabilized_worm_neighborhood_mask=8};
 	bool get_region_threshold(const int y, const int x) const { return (worm_region_threshold[y][x]&region_mask)!=0;}
 	bool get_worm_neighborhood_threshold(const int y, const int x) const { return (worm_region_threshold[y][x]&worm_neighborhood_mask)!=0;}
@@ -137,15 +140,12 @@ struct ns_registered_image_set{
 		//region_threshold.resize(p);
 		worm_region_threshold.resize(p);
 		movement_image_.resize(p);
+		movement_image_calculated = false;
 		#ifdef NS_CALCULATE_OPTICAL_FLOW
 		flow_image_dx.resize(p);
 		flow_image_dy.resize(p);
 		#endif
 	}
-	//the per-level scane factor that transforms the previous registered image
-	//in the series to have the same histogram as this one.
-	float histogram_matching_factors[256];
-	bool histograms_matched;
 
 	void use_more_memory_to_avoid_reallocations(bool u) {
 		image.use_more_memory_to_avoid_reallocations(u);
@@ -169,7 +169,7 @@ template<class allocator_T> using ns_registered_image_pool = ns_image_pool<ns_re
 class ns_analyzed_image_time_path_element{
 public:
 	ns_analyzed_image_time_path_element():registered_images(0),path_aligned_images(0),
-	inferred_animal_location(false), path_aligned_images_are_loaded_and_released(false),element_before_fast_movement_cessation(false),element_was_processed(false),movement(ns_movement_not_calculated),saturated_offset(false),registration_offset(0,0),number_of_extra_worms_observed_at_position(0),part_of_a_multiple_worm_disambiguation_group(0),excluded(false),censored(false){}
+	inferred_animal_location(false), debug_write_count(0),path_aligned_images_are_loaded_and_released(false),element_before_fast_movement_cessation(false),element_was_processed(false),movement(ns_movement_not_calculated),saturated_offset(false),registration_offset(0,0),number_of_extra_worms_observed_at_position(0),part_of_a_multiple_worm_disambiguation_group(0),excluded(false),censored(false){}
 	~ns_analyzed_image_time_path_element(){
 		if (path_aligned_images != 0 || registered_images != 0)
 			std::cerr << "ABOUT TO LEAK TIME PATH ELEMENT!";
@@ -203,7 +203,8 @@ public:
 	
 	bool inferred_animal_location,
 		 element_before_fast_movement_cessation;
-	
+
+	bool movement_image_calculated() const { return registered_image_is_loaded() && registered_images->movement_image_calculated; }
 	bool registered_image_is_loaded() const{return registered_images != 0 && registered_images->image.properties().height != 0;}
 	bool path_aligned_image_is_loaded() const { return path_aligned_images != 0 && path_aligned_images->image.properties().height != 0 && path_aligned_images_are_loaded_and_released; }
 	const ns_image_standard & image() const { return registered_images->image;}
@@ -234,6 +235,7 @@ public:
 		registered_images = pool.get(p);
 	}
 	void generate_movement_visualization(ns_image_standard & out) const;
+
 private:
 	unsigned long number_of_extra_worms_observed_at_position;
 	bool part_of_a_multiple_worm_disambiguation_group;
@@ -245,8 +247,11 @@ private:
 	//contain extra boundary data around the close region image crop
 	ns_path_aligned_image_set * path_aligned_images;
 	ns_registered_image_set * registered_images;
+	mutable int debug_write_count;
 
-
+	//the per-level scane factor that transforms the previous registered image
+	//in the series to have the same histogram as this one.
+	ns_histogram_matching_data histogram_matching_data;
 	
 	//this is the offset of the worm in the movement registered image
 	//i.e how far the worm is moved by the registration algorithm from it's position in the path_aligned images.
@@ -540,7 +545,7 @@ public:
 
 	static ns_vector_2d maximum_alignment_offset(){return ns_vector_2d(60,60);}
 	static ns_vector_2d maximum_local_alignment_offset(){return ns_vector_2d(4,4);}
-	enum {movement_detection_kernal_half_width=2,sobel_operator_width=1,alignment_time_kernel_width=5,movement_time_kernel_width=1,save_output_buffer_height=16};
+	enum {intensity_normalization_kernel_half_width=1,movement_detection_kernal_half_width=2,sobel_operator_width=1,alignment_time_kernel_width=5,movement_time_kernel_width=1,save_output_buffer_height=16};
 
 	bool entirely_excluded;
 	ns_image_properties registered_image_properties;
@@ -618,8 +623,8 @@ private:
 	
 	std::vector<ns_death_time_annotation_time_interval> by_hand_annotation_event_times;
 	std::vector<ns_death_time_annotation::ns_event_explicitness> by_hand_annotation_event_explicitness;
-	ns_time_path_posture_movement_solution reconstruct_movement_state_solution_from_annotations(const unsigned long first_index, const unsigned long last_index, const ns_emperical_posture_quantification_value_estimator * e, const std::vector<ns_death_time_annotation_time_interval> & intervals) const;
-
+	//note that by hand annotations must be modified to forbid animals entering undefined states.
+	ns_time_path_posture_movement_solution reconstruct_movement_state_solution_from_annotations(const bool & modify_to_exclude_forbidden_states, const unsigned long first_index, const unsigned long last_index, const ns_emperical_posture_quantification_value_estimator * e, const std::vector<ns_death_time_annotation_time_interval> & intervals, bool & by_hand_annotations_were_modified_to_exclude_forbidden_states) const;
 
 	void quantify_movement(const ns_analyzed_time_image_chunk & chunk);
 
@@ -641,7 +646,7 @@ private:
 
 	ns_analyzed_time_image_chunk initiate_image_registration(const ns_analyzed_time_image_chunk & chunk,ns_alignment_state & state, ns_calc_best_alignment_fast & align);
 	void calculate_image_registration(const ns_analyzed_time_image_chunk & chunk,ns_alignment_state & state, const ns_analyzed_time_image_chunk & first_chunk_to_register, ns_calc_best_alignment_fast & align);
-	void calculate_movement_images(const ns_analyzed_time_image_chunk & chunk);
+	void calculate_movement_images(const ns_analyzed_time_image_chunk & chunk, const ns_analyzed_time_image_chunk& first_chunk);
 	template<class allocator_T>
 	void copy_aligned_path_to_registered_image(const ns_analyzed_time_image_chunk & chunk, std::vector < ns_image_standard> & temporary_images, ns_time_path_image_movement_analysis_memory_pool<allocator_T> & memory_pool_);
 
@@ -727,11 +732,12 @@ struct ns_movement_analysis_shared_state;
 template<class allocator_T>
 class ns_time_path_image_movement_analyzer {
 public:
-	enum { ns_spatially_averaged_movement_threshold = 3, ns_spatially_averaged_movement_kernal_half_size=2};
-	ns_time_path_image_movement_analyzer(ns_time_path_image_movement_analysis_memory_pool<allocator_T> & memory_pool_):paths_loaded_from_solution(false),
-		region_info_id(0),last_timepoint_in_analysis_(0), _number_of_invalid_images_encountered(0),image_cache(1024*1024*64),
-		number_of_timepoints_in_analysis_(0),image_db_info_loaded(false),externally_specified_plate_observation_interval(0,ULONG_MAX),posture_model_version_used(NS_CURRENT_THRESHOLD_POSTURE_MODEL_VERSION),
-		memory_pool(memory_pool_),asynch_group_loading_is_running(false),cancel_asynch_group_load(false), asynch_group_loading_failed(false){}
+	static const int ns_spatially_averaged_movement_threshold[3];	//three different thresholds to try
+	enum {ns_spatially_averaged_movement_kernal_half_size=2};
+	ns_time_path_image_movement_analyzer(ns_time_path_image_movement_analysis_memory_pool<allocator_T>& memory_pool_) :paths_loaded_from_solution(false),
+		region_info_id(0), last_timepoint_in_analysis_(0), _number_of_invalid_images_encountered(0), image_cache(1024 * 1024 * 64),
+		number_of_timepoints_in_analysis_(0), image_db_info_loaded(false), externally_specified_plate_observation_interval(0, ULONG_MAX), measurement_format_version_used(),
+		memory_pool(memory_pool_), asynch_group_loading_is_running(false), cancel_asynch_group_load(false), asynch_group_loading_failed(false){}
 
 	~ns_time_path_image_movement_analyzer(){
 		stop_asynch_group_load();
@@ -860,9 +866,9 @@ public:
 
 	void match_plat_areas_to_paths(std::vector<ns_region_area> & areas);
 	template<class T2>friend class ns_worm_morphology_data_integrator;
-	std::string posture_model_version_used;
+	std::string measurement_format_version_used;
 
-	bool calculate_optimzation_stats_for_current_hmm_estimator(const std::string* database_name, ns_hmm_movement_analysis_optimizatiom_stats & s, const ns_emperical_posture_quantification_value_estimator * e, std::set<ns_stationary_path_id> & paths_to_test, bool generate_path_info);
+	bool calculate_optimzation_stats_for_current_hmm_estimator(const std::string* database_name, ns_hmm_movement_analysis_optimizatiom_stats & s, const ns_emperical_posture_quantification_value_estimator * e, const std::set<ns_stationary_path_id> & paths_to_test, bool generate_path_info);
 private:
 
 	unsigned long _number_of_invalid_images_encountered;
@@ -899,6 +905,8 @@ private:
 	void get_output_image_storage_locations(const ns_64_bit region_id,ns_sql & sql,const bool create_only_flow);
 	bool load_movement_image_db_info(const ns_64_bit region_id,ns_sql & sql);
 	void generate_images_from_region_visualization();
+
+	void output_histogram_telemetry_file(ns_sql& sql) const;
 
 
 	bool paths_loaded_from_solution;
@@ -951,7 +959,6 @@ public:
 	void from_xml(const std::string & text);
 };
 
-
-void ns_match_histograms(const ns_image_standard & im1, const ns_image_standard & im2, float * histogram_matching_factors);
+void ns_match_histograms(const ns_histogram<unsigned int, ns_8_bit> h1, const ns_histogram<unsigned int, ns_8_bit> h2, float* histogram_matching_factors);
 
 #endif

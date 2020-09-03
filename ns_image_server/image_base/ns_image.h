@@ -473,7 +473,7 @@ public:
 		for (unsigned i = 0; i < 8*sizeof(ns_component); i++)
 			s*= 2;
 		length = s;
-		if (length >= max_pixel_depth)
+		if (length > max_pixel_depth)
 			throw ns_ex("ns_histogram::Pixel depth is larger than memory allocated--increase allocation.");
 		//hist.resize(s);
 		//cerr << "Histogram has " << s << " elements!";

@@ -1824,7 +1824,6 @@ bool operator!=(const ns_analyzed_image_specification& a, const ns_analyzed_imag
 	return !(a == b);
 }
 
-
 template<class allocator_T>
 bool ns_time_path_image_movement_analyzer<allocator_T>::calculate_optimzation_stats_for_current_hmm_estimator(const std::string * database_name,ns_hmm_movement_analysis_optimizatiom_stats & output_stats, const ns_emperical_posture_quantification_value_estimator * e, const std::set<ns_stationary_path_id> & paths_to_test, bool generate_path_info) {
 	bool found_worm(false);

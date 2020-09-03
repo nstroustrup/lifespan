@@ -344,9 +344,9 @@ private:
 					continue;
 				}else
 					previous_was_alive_column = false;
-				if (ns_to_lower(grid[event_type_row][column]) != "deaths"){
+				if (ns_to_lower(grid[event_type_row][column]) != "deaths" && ns_to_lower(grid[event_type_row][column]) != "dead"){
 					if (ns_to_lower(grid[event_type_row][column]) != "censored"){
-						throw ns_ex("In column ") << column << ": If a \"censored\" column is specified for a strain, it must be on the right of the \"deaths\" column.";
+						throw ns_ex("In column ") << column << ": If a \"censored\" column is specified for a strain, it must be on the right of the \"deaths\" column. " << ns_to_lower(grid[event_type_row][column]) << " was found instead.";
 					}
 					else 
 						throw ns_ex("In column ") << column << ": Unknown Event type: \"" << grid[event_type_row][column] << "\"";

@@ -2587,6 +2587,7 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 													}
 													hmm_group_model.observations->add_observation(a, path, database_name, movement_results.experiment_id(), &(*plate_name), &(*device), &(*genotype));
 												}
+												if (0)
 												{
 													ns_cross_validation_subject& hmm_group_model = models_to_build[experiment_name_to_use + "=" + hmm_condition];
 													if (hmm_group_model.observations == 0) {
@@ -2613,7 +2614,7 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 												genotype_model.observations->add_observation(a, path, database_name, movement_results.experiment_id(), &(*plate_name), &(*device), &(*genotype));
 											}
 											//now set up model for each experiment individually
-											if (experiments_specified.size() > 1) {
+											if (0 && experiments_specified.size() > 1) {
 												ns_cross_validation_subject& exp_specific_standard_model = models_to_build[experiment_name_to_use + "=all_strains"];
 												if (exp_specific_standard_model.observations == 0) {
 													exp_specific_standard_model.cross_replicate_type = ns_cross_validation_subject::ns_experiment_specific;

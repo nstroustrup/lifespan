@@ -56,7 +56,7 @@ public:
 	const std::string * replicate_description;
 	const ns_cross_validation_replicate_spec* replicate_spec;
 
-	void test_model(const ns_time_path_movement_markov_solver& markov_solver, const ns_cross_validation_replicate_spec & replicate_spec,const std::string* database, ns_64_bit& region_id, const ns_death_time_annotation_compiler& by_hand_annotations, const ns_time_series_denoising_parameters& time_series_denoising_parameters, ns_time_path_image_movement_analyzer<ns_wasteful_overallocation_resizer>& time_path_image_analyzer, ns_time_path_solution& time_path_solution, ns_sql& sql,
+	void test_hmm_model(const ns_time_path_movement_markov_solver& markov_solver, const ns_cross_validation_replicate_spec & replicate_spec,const std::string* database, ns_64_bit& region_id, const ns_death_time_annotation_compiler& by_hand_annotations, const ns_time_series_denoising_parameters& time_series_denoising_parameters, ns_time_path_image_movement_analyzer<ns_wasteful_overallocation_resizer>& time_path_image_analyzer, ns_time_path_solution& time_path_solution, ns_sql& sql,
 		ns_hmm_movement_analysis_optimizatiom_stats& output_stats, bool generate_detailed_path_info) {
 
 		bool found_valid_individual(false);
@@ -157,10 +157,27 @@ struct ns_device_replicate_generator {
 	static subgroup_index_type get_index_for_subgroup(const ns_hmm_labeled_data <T>& e) { return *e.region_name; }
 	static int minimum_number_of_subgroups() { return 2; }	//don't use devices with fewer than two plates. (this leads to overfitting on specific plates)
 };
-
 std::string ns_to_string(const ns_device_replicate_generator::index_type& i) {
 	return *std::get<0>(i) + "::" + ns_to_string(std::get<1>(i)) + "::" + *std::get<2>(i);
 }
+
+struct ns_experiment_replicate_generator {
+	static std::string description() { return "experiment"; }
+	typedef std::pair<const std::string*, ns_64_bit> index_type;
+	typedef std::string subgroup_index_type;
+	template<class T>
+	static index_type get_index_for_observation(const ns_hmm_labeled_data <T>& e) {
+		return index_type(e.database_name, e.experiment_id);
+	}
+	static int minimum_population_size() { return 20; }
+	template<class T>
+	static subgroup_index_type get_index_for_subgroup(const ns_hmm_labeled_data <T>& e) { return *e.device_name; }
+	static int minimum_number_of_subgroups() { return 2; }	//don't use devices with fewer than two devices. (this leads to overfitting on specific devices)
+};
+std::string ns_to_string(const ns_experiment_replicate_generator::index_type& i) {
+	return *i.first + "::" + ns_to_string(i.second);
+}
+
 struct ns_individual_replicate_generator {
 	static std::string description() { return "individual"; }
 	typedef ns_hmm_test_subject index_type;
@@ -225,6 +242,10 @@ public:
 	bool build_device_cross_validation_set(int k_fold_validation, const ns_cross_validation_subject& spec_) {
 		spec = spec_;
 		return build_independent_replicates<ns_device_replicate_generator>(k_fold_validation, *spec.observations);
+	}
+	bool build_experiment_cross_validation_set(int k_fold_validation, const ns_cross_validation_subject& spec_) {
+		spec = spec_;
+		return build_independent_replicates<ns_experiment_replicate_generator>(k_fold_validation, *spec.observations);
 	}
 	bool build_plate_cross_validation_set(int k_fold_validation, const ns_cross_validation_subject& spec_) {
 		spec = spec_;
@@ -505,7 +526,7 @@ struct ns_hmm_cross_validation_manager {
 		return p->second;
 	}
 
-	void build_models_for_cross_validation(std::string& output) {
+	void build_hmm_models_for_cross_validation(std::string& output) {
 		for (auto validation_subject = validation_runs_sorted_by_validation_type.begin(); validation_subject != validation_runs_sorted_by_validation_type.end();) {
 			ns_hmm_states_permitted state_specification;
 			ns_emperical_posture_quantification_value_estimator::ns_hmm_states_transition_types transition_type;
@@ -591,6 +612,12 @@ struct ns_hmm_cross_validation_manager {
 			if (!set.build_device_cross_validation_set(k_fold_validation, spec))
 				validation_runs_sorted_by_validation_type.erase("devices");
 			else set.description = "Device Cross-Validation";
+		}
+		{
+			ns_hmm_cross_validation_set& set = validation_runs_sorted_by_validation_type["experiment"];
+			if (!set.build_experiment_cross_validation_set(k_fold_validation, spec))
+				validation_runs_sorted_by_validation_type.erase("experiment");
+			else set.description = "Experiment Cross-Validation";
 		}
 		{
 			ns_hmm_cross_validation_set& set = validation_runs_sorted_by_validation_type["plates"];
@@ -772,7 +799,7 @@ void ns_run_hmm_cross_validation(std::string& results_summary, ns_image_server_r
 		if (!p->second.validation_runs_sorted_by_validation_type.begin()->second.spec.subject.empty())
 			genotype += " in " + p->second.validation_runs_sorted_by_validation_type.begin()->second.spec.subject;
 
-		p->second.build_models_for_cross_validation(model_building_and_testing_info[p->first].result);
+		p->second.build_hmm_models_for_cross_validation(model_building_and_testing_info[p->first].result);
 		//if none of the validation approaches could be used for building a model, delete this whole cross validation set.
 		if (p->second.validation_runs_sorted_by_validation_type.empty()) {
 			model_building_and_testing_info[p->first].result = " No model could be built for " + genotype + " because the existing annotations were insufficient for cross-validation. \n" + model_building_and_testing_info[p->first].result;
@@ -931,13 +958,9 @@ void ns_run_hmm_cross_validation(std::string& results_summary, ns_image_server_r
 						)
 						for (auto cross_validation_runs = p->second.validation_runs_sorted_by_validation_type.begin(); cross_validation_runs != p->second.validation_runs_sorted_by_validation_type.end(); ++cross_validation_runs) {
 
-							//xxx 
-							//if (p->first != "Alcedo+Wildtype-0-20C-uv+nec-control")
-							//	continue;
-
 							for (auto analysis_type = cross_validation_runs->second.analysis_types_and_results.begin(); analysis_type != cross_validation_runs->second.analysis_types_and_results.end(); analysis_type++) {
 								for (auto replicate = analysis_type->results.begin(); replicate != analysis_type->results.end(); replicate++) {
-									replicate->test_model(replicate->model_built_in_this_replicate, *(replicate->replicate_spec), &experiment->first,
+									replicate->test_hmm_model(replicate->model_built_in_this_replicate, *(replicate->replicate_spec), &experiment->first,
 										movement_results.samples[i].regions[j]->metadata.region_id, movement_results.samples[i].regions[j]->by_hand_annotations,
 										time_series_denoising_parameters, *movement_results.samples[i].regions[j]->time_path_image_analyzer, movement_results.samples[i].regions[j]->time_path_solution, sql,
 										replicate->results, analysis_type->generate_detailed_path_info);
@@ -1156,17 +1179,9 @@ struct ns_parameter_set_optimization_record {
 
 };
 
-void ns_identify_best_threshold_parameteters(std::string& results_text, const ns_parameter_set_range& range, ns_image_server_results_subject sub, ns_sql& sql) {
-	ns_sql_result experiment_regions;
-	sql << "SELECT r.name,r.id,s.name,s.id,s.device_name, r.excluded_from_analysis OR r.censored OR s.excluded_from_analysis OR s.censored FROM sample_region_image_info as r, capture_samples as s WHERE r.sample_id = s.id AND s.experiment_id = " << sub.experiment_id;
-	sql.get_rows(experiment_regions);
-
-	bool run_posture(true), run_expansion(false);
-	//posture analysis
-	std::vector<double> posture_analysis_thresholds,
-		expansion_analysis_thresholds;
-	std::vector<unsigned long> posture_analysis_hold_times, //in seconds
-		expansion_analysis_hold_times;
+void ns_generate_threshold_parameters(const ns_parameter_set_range& range, std::vector<double> & posture_analysis_thresholds, std::vector<unsigned long> & posture_analysis_hold_times) {
+	posture_analysis_thresholds.resize(0);
+	posture_analysis_hold_times.resize(0);
 	const bool v1_parameters = false;
 	//old movement scores
 	if (v1_parameters == true) {
@@ -1243,12 +1258,17 @@ void ns_identify_best_threshold_parameteters(std::string& results_text, const ns
 			posture_analysis_hold_times.push_back((i + 5) * 6 * 60 * 60);
 	}
 
+}
+void ns_identify_best_threshold_parameteters(std::string& results_text, const ns_parameter_set_range& range, ns_image_server_results_subject sub, ns_sql& sql) {
+	ns_sql_result experiment_regions;
+	sql << "SELECT r.name,r.id,s.name,s.id,s.device_name, r.excluded_from_analysis OR r.censored OR s.excluded_from_analysis OR s.censored FROM sample_region_image_info as r, capture_samples as s WHERE r.sample_id = s.id AND s.experiment_id = " << sub.experiment_id;
+	sql.get_rows(experiment_regions);
 
-	for (unsigned int i = 0; i < 16; i++)
-		expansion_analysis_thresholds.push_back((i) * 25);
-
-	for (unsigned int i = 0; i < 16; i++)
-		expansion_analysis_hold_times.push_back((i) * 30 * 60);
+	bool run_posture(true), run_expansion(false);
+	//posture analysis
+	std::vector<double> posture_analysis_thresholds;
+	std::vector<unsigned long> posture_analysis_hold_times; //in seconds
+	ns_generate_threshold_parameters(range,posture_analysis_thresholds, posture_analysis_hold_times);
 
 	ns_acquire_for_scope<ns_ostream> posture_analysis_optimization_output;// , expansion_analysis_optimization_output;
 	if (run_posture) {

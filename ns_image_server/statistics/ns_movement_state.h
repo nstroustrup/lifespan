@@ -65,6 +65,7 @@ typedef enum {
 	ns_hmm_not_moving_expanding,
 	ns_hmm_not_moving_dead,
 	ns_hmm_contracting_post_expansion,
+	ns_hmm_end_of_observation,	//the path in which the animal is observed ends
 	ns_hmm_unknown_state,
 	ns_number_of_state_types
 } ns_hmm_movement_state;

@@ -379,7 +379,8 @@ void ns_dir::load(const string & dir){
 #endif
 }
 void ns_dir::load_masked(const string & dir, const string & mask, vector<string> & m_files){
-
+	if (&this->files == &m_files)
+		throw ns_ex("You can't load files into ns_dir's own internal structure.");
 	load(dir);
 	m_files.resize(0);
 	m_files.reserve(files.size());

@@ -433,12 +433,15 @@ public:
 
 
 void ns_training_file_generator::generate_from_curated_set(const std::string & directory, bool use_training_collages=true,ns_sql * sql_for_looking_up_genotypes=0){
-	std::string source_dir = ns_dir::extract_path(directory);
+	std::string source_dir = directory;
 	cerr << "Loading training set images from " << directory << "...\n";
-	ns_dir dir;	
-	dir.load_masked(source_dir,"tif",dir.files);
-	cerr << "Found " << dir.files.size() << " files\n";
-	std::sort(dir.files.begin(),dir.files.end());
+	std::vector<string> files;
+	{
+		ns_dir dir;
+		dir.load_masked(source_dir, "tif", files);
+	}
+	cerr << "Found " << files.size() << " files\n";
+	std::sort(files.begin(),files.end());
 
 	std::string analysis_dir = source_dir + DIR_CHAR_STR + "analysis";
 	training_set_base_dir = analysis_dir + DIR_CHAR_STR + "training_sets";
@@ -495,7 +498,7 @@ void ns_training_file_generator::generate_from_curated_set(const std::string & d
 		shared_data.feature_dir = feature_dir;
 		shared_data.source_dir = source_dir;
 		shared_data.vis_path = vis_path;
-		shared_data.number_of_files_to_process = dir.files.size();
+		shared_data.number_of_files_to_process = files.size();
 		shared_data.log = &log;
 
 		ns_thread_pool<ns_worm_detection_model_training_set_processor_pool_job,
@@ -503,9 +506,9 @@ void ns_training_file_generator::generate_from_curated_set(const std::string & d
 		thread_pool.set_number_of_threads(image_server_const.maximum_number_of_processing_threads() * 2);
 		thread_pool.prepare_pool_to_run();
 
-		for (unsigned int i = 0; i < dir.files.size(); i++)
+		for (unsigned int i = 0; i < files.size(); i++)
 			thread_pool.add_job_while_pool_is_not_running(
-				ns_worm_detection_model_training_set_processor_pool_job(dir.files[i], shared_data));
+				ns_worm_detection_model_training_set_processor_pool_job(files[i], shared_data));
 
 		thread_pool.run_pool();
 		thread_pool.wait_for_all_threads_to_become_idle();

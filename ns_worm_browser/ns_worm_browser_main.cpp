@@ -954,6 +954,7 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 		/*std::vector<dialog_file_type> foo;
 		foo.push_back(dialog_file_type("(*.*)","*"));*/
 		ns_image_file_chooser im_cc;
+		im_cc.dialog_type = Fl_Native_File_Chooser::BROWSE_DIRECTORY;
 		ns_run_in_main_thread<ns_image_file_chooser> run_mt(&im_cc);
 		std::string * filename = new std::string(im_cc.result);
 		if (im_cc.chosen)
@@ -1755,7 +1756,6 @@ public:
 		add(ns_menu_item_spec(false, analyze_svm_results, "Calibration/Worm Detection/_Analyze SVM Training Results"));
 		add(ns_menu_item_spec(false, generate_training_set_from_by_hand_annotations, "Calibration/Worm Detection/_Generate Training Set from By Hand Movement Annotations"));
 
-		add(ns_menu_item_spec(false, generate_movement_image_analysis_optimization_data, "Calibration/Worm Detection/_Build new posture analysis model from storyboard annotations/Threshold Model/Death Time Posture Changes"));
 		add(ns_menu_item_spec(false, masks_generate_composite, "Calibration/_Define Subregions/Generate Subregion Mask Composite"));
 		add(ns_menu_item_spec(false, masks_generate_composite, "Calibration/_Define Subregions/(Draw Plate Locations on Subregion Mask using Photoshop)", 0, FL_MENU_INACTIVE));
 		add(ns_menu_item_spec(false, masks_process_composite, "Calibration/_Define Subregions/Analyze Subregion Labels Drawn on Subregion Mask Composite"));

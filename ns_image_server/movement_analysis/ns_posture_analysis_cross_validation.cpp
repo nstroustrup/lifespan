@@ -987,10 +987,10 @@ void ns_run_hmm_cross_validation(std::string& results_summary, ns_image_server_r
 				for (auto analysis_type = validation_run->second.analysis_types_and_results.begin(); analysis_type != validation_run->second.analysis_types_and_results.end(); analysis_type++) {
 					ns_cross_validation_results results = validation_run->second.calculate_error(*analysis_type);
 
-					const bool many_movement_failures(results.movement.mean_event_not_found > results.movement.mean_N / 10),
-						many_expansion_failures(results.expansion.mean_event_not_found > results.expansion.mean_N / 10);
-					double movement_failure_rate = (100.0 * results.movement.mean_event_not_found) / results.movement.mean_N;
-					double expansion_failure_rate = (100.0 * results.expansion.mean_event_not_found) / results.expansion.mean_N;
+					const bool many_movement_failures(results.movement.mean_event_not_found > (results.movement.mean_N+ results.movement.mean_event_not_found) / 10),
+						many_expansion_failures(results.expansion.mean_event_not_found > (results.expansion.mean_N+ results.expansion.mean_event_not_found )/ 10);
+					double movement_failure_rate = (100.0 * results.movement.mean_event_not_found) / (results.movement.mean_N + results.movement.mean_event_not_found);
+					double expansion_failure_rate = (100.0 * results.expansion.mean_event_not_found) / (results.expansion.mean_N + results.expansion.mean_event_not_found);
 					std::string& txt(model_building_and_testing_info[p->first].result);
 					txt += "= ";
 					if (analysis_type->results.size() > 1)

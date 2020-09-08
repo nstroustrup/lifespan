@@ -350,14 +350,14 @@ double ns_hmm_solver::run_viterbi(const ns_analyzed_image_time_path & path, cons
 				continue;
 			if (!found_valid || probabilitiy_of_path[mstat*last_valid_measurement + j] > optimal_path_log_probability) {
 				optimal_path_log_probability = probabilitiy_of_path[mstat* last_valid_measurement + j];
-				cumulative_renormalization_factor = renormalization_factors[t];
+				cumulative_renormalization_factor = renormalization_factors[last_valid_measurement];
 				*optimal_path_state.rbegin() = j;
 				found_valid = true;
 			}
 		}
 
 		//now work backwards and recrete the path that got us there.
-		for (; t >= 1; t--) {
+		for (t=last_valid_measurement-1; t >= 1; t--) {
 			if (path.element(t).excluded) {
 				optimal_path_state[t - 1] = optimal_path_state[t];
 				continue;
@@ -366,48 +366,53 @@ double ns_hmm_solver::run_viterbi(const ns_analyzed_image_time_path & path, cons
 			optimal_path_log_probability += probabilitiy_of_path[mstat*t + optimal_path_state[t]];
 			cumulative_renormalization_factor += renormalization_factors[t];
 		}
-	
-		//std::cout << "\n";
-	//now find transition of times between states
-	if (optimal_path_state.empty())
-		throw ns_ex("Empty path state!");
-	//now find transition of times between states
-	movement_transitions.resize(0);
-	movement_transitions.push_back(ns_hmm_state_transition_time_path_index((ns_hmm_movement_state)optimal_path_state[0], 0));
-	for (unsigned int i = 1; i < optimal_path_state.size(); i++) {
-		const ns_hmm_movement_state s = (ns_hmm_movement_state)optimal_path_state[i];
-		if (s != movement_transitions.rbegin()->first)
-			movement_transitions.push_back(ns_hmm_state_transition_time_path_index(s, i));
-	}
-	if (0 && movement_transitions.size() == 1) {
-		std::ofstream out("c:\\server\\dbg.csv");
-		out << "t,R";
-		for (unsigned int j = 0; j < mstat; j++)
-			out << "," << "cumulative p " << ns_hmm_movement_state_to_string((ns_hmm_movement_state)j);
-		for (unsigned int j = 0; j < mstat; j++)
-			out << "," << "p(t) " << ns_hmm_movement_state_to_string((ns_hmm_movement_state)j);
-		for (unsigned int j = 0; j < mstat; j++)
-			out << "," << "s(t) " << ns_hmm_movement_state_to_string((ns_hmm_movement_state)j);
-		for (unsigned int j = 0; j < mstat; j++)
-			out << "," << "f(t) " << ns_hmm_movement_state_to_string((ns_hmm_movement_state)j);
-		out << "\n";
-		for (unsigned int t = 0; t < nobs; t++) {
-			out << t << "," << renormalization_factors[t];
-			for (unsigned int j = 0; j < mstat; j++)
-				out << "," << probabilitiy_of_path[mstat*t + j];
-			estimator.log_probability_for_each_state(path.element(path_indices[t]).measurements, emission_log_probabilities);
-			for (unsigned int j = 0; j < mstat; j++)
-				out << "," << emission_log_probabilities[j];
-			for (unsigned int j = 0; j < mstat; j++)
-				out << "," << ns_hmm_movement_state_to_string((ns_hmm_movement_state)previous_state[mstat*t + j]);
-			for (unsigned int j = 0; j < mstat; j++)
-				out << "," << (path_forbidden[mstat*t + j]?"+":"-");
-			out << "\n";
+		if (!path.element(0).excluded) {
+			optimal_path_log_probability += probabilitiy_of_path[mstat * t + optimal_path_state[0]];
+			cumulative_renormalization_factor += renormalization_factors[0];
 		}
-		out.close();
-		std::cerr << "Singleton produced\n";
 
-	}
+	
+			//std::cout << "\n";
+		//now find transition of times between states
+		if (optimal_path_state.empty())
+			throw ns_ex("Empty path state!");
+		//now find transition of times between states
+		movement_transitions.resize(0);
+		movement_transitions.push_back(ns_hmm_state_transition_time_path_index((ns_hmm_movement_state)optimal_path_state[0], 0));
+		for (unsigned int i = 1; i < optimal_path_state.size(); i++) {
+			const ns_hmm_movement_state s = (ns_hmm_movement_state)optimal_path_state[i];
+			if (s != movement_transitions.rbegin()->first)
+				movement_transitions.push_back(ns_hmm_state_transition_time_path_index(s, i));
+		}
+		if (0 && movement_transitions.size() == 1) {
+			std::ofstream out("c:\\server\\dbg.csv");
+			out << "t,R";
+			for (unsigned int j = 0; j < mstat; j++)
+				out << "," << "cumulative p " << ns_hmm_movement_state_to_string((ns_hmm_movement_state)j);
+			for (unsigned int j = 0; j < mstat; j++)
+				out << "," << "p(t) " << ns_hmm_movement_state_to_string((ns_hmm_movement_state)j);
+			for (unsigned int j = 0; j < mstat; j++)
+				out << "," << "s(t) " << ns_hmm_movement_state_to_string((ns_hmm_movement_state)j);
+			for (unsigned int j = 0; j < mstat; j++)
+				out << "," << "f(t) " << ns_hmm_movement_state_to_string((ns_hmm_movement_state)j);
+			out << "\n";
+			for (unsigned int t = 0; t < nobs; t++) {
+				out << t << "," << renormalization_factors[t];
+				for (unsigned int j = 0; j < mstat; j++)
+					out << "," << probabilitiy_of_path[mstat*t + j];
+				estimator.log_probability_for_each_state(path.element(path_indices[t]).measurements, emission_log_probabilities);
+				for (unsigned int j = 0; j < mstat; j++)
+					out << "," << emission_log_probabilities[j];
+				for (unsigned int j = 0; j < mstat; j++)
+					out << "," << ns_hmm_movement_state_to_string((ns_hmm_movement_state)previous_state[mstat*t + j]);
+				for (unsigned int j = 0; j < mstat; j++)
+					out << "," << (path_forbidden[mstat*t + j]?"+":"-");
+				out << "\n";
+			}
+			out.close();
+			std::cerr << "Singleton produced\n";
+
+		}
 	}
 	//if (movement_transitions.size() == 1)
 	//	std::cout << "YIKES";
@@ -1693,6 +1698,8 @@ bool ns_hmm_observation_set::add_observation(const ns_death_time_annotation& pro
 }
 
 bool ns_emperical_posture_quantification_value_estimator::state_specified_by_model(const ns_hmm_movement_state s) const {
+	if (s == ns_hmm_end_of_observation)
+		return true;
 	auto p = emission_probability_models->state_emission_models.find(s);
 	return p != emission_probability_models->state_emission_models.end();
 }

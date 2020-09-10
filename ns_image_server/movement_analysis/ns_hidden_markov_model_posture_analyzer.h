@@ -50,6 +50,7 @@ struct ns_hmm_movement_analysis_optimizatiom_stats {
 	void write_hmm_path_data(const std::string& analysis_approach,std::ostream & o, const std::map<std::string, std::map<ns_64_bit, ns_region_metadata> > & metadata_cache) const;
 
 };
+typedef ns_analyzed_image_time_path_death_time_estimator_reusable_memory ns_hmm_solver_reusable_memory;
 
 class ns_hmm_solver {
 public:
@@ -59,15 +60,13 @@ public:
 
 	ns_time_path_posture_movement_solution movement_state_solution;
 
-	void solve(const ns_analyzed_image_time_path & path, const ns_emperical_posture_quantification_value_estimator & estimator,
-				std::vector<double > & tmp_storage_1, std::vector<unsigned long > & tmp_storage_2);
+	void solve(const ns_analyzed_image_time_path& path, const ns_emperical_posture_quantification_value_estimator& estimator, ns_hmm_solver_reusable_memory& reusable_memory);
 	static void probability_of_path_solution(const ns_analyzed_image_time_path & path, const ns_emperical_posture_quantification_value_estimator & estimator, const ns_time_path_posture_movement_solution & solution, ns_hmm_movement_optimization_stats_record_path  & state_info, bool generate_path_info);
 
 
 	//run the viterbi algorithm using the specified indicies of the path
 	static double run_viterbi(const ns_analyzed_image_time_path & path, const ns_emperical_posture_quantification_value_estimator & estimator, const std::vector<unsigned long> & path_indices,
-		std::vector<ns_hmm_state_transition_time_path_index > &movement_transitions,
-		std::vector<double > & tmp_storage_1, std::vector<unsigned long > & tmp_storage_2);
+		std::vector<ns_hmm_state_transition_time_path_index > &movement_transitions, ns_hmm_solver_reusable_memory& mem);
 
 	void build_movement_state_solution_from_movement_transitions(const unsigned long first_stationary_path_index,const std::vector<unsigned long> path_indices, const std::vector<ns_hmm_state_transition_time_path_index > & movement_transitions);
 	
@@ -86,20 +85,18 @@ class ns_time_path_movement_markov_solver : public ns_analyzed_image_time_path_d
 public:
 	ns_time_path_movement_markov_solver(const ns_emperical_posture_quantification_value_estimator & e):estimator(e){}
 	ns_time_path_posture_movement_solution operator()(const ns_analyzed_image_time_path * path, std::ostream * debug_output_ = 0)const {
-		std::vector<double > tmp_storage_1;
-		std::vector<unsigned long > tmp_storage_2;
-		return estimate_posture_movement_states(2, path, tmp_storage_1, tmp_storage_2,0,debug_output_);
+		ns_hmm_solver_reusable_memory reusable_memory;
+		return estimate_posture_movement_states(2, path, reusable_memory,0,debug_output_);
 	}
-	ns_time_path_posture_movement_solution operator()(const ns_analyzed_image_time_path * path, const bool fill_in_loglikelihood_timeseries,std::vector<double > & tmp_storage_1, std::vector<unsigned long > & tmp_storage_2, std::ostream * debug_output_=0)const{
-		return estimate_posture_movement_states(2,path,tmp_storage_1,tmp_storage_2,0,debug_output_);
+	ns_time_path_posture_movement_solution operator()(const ns_analyzed_image_time_path * path, const bool fill_in_loglikelihood_timeseries, ns_hmm_solver_reusable_memory & reusable_memory, std::ostream * debug_output_=0)const{
+		return estimate_posture_movement_states(2,path, reusable_memory,0,debug_output_);
 	}
 	ns_time_path_posture_movement_solution operator() (ns_analyzed_image_time_path * path, const bool fill_in_loglikelihood_timeseries,std::ostream * debug_output=0)const{
-		std::vector<double > tmp_storage_1;
-		std::vector<unsigned long > tmp_storage_2;
-		return estimate_posture_movement_states(2,path,tmp_storage_1,tmp_storage_2,path,debug_output);
+		ns_hmm_solver_reusable_memory reusable_memory;
+		return estimate_posture_movement_states(2,path, reusable_memory,path,debug_output);
 	}
 
-	ns_time_path_posture_movement_solution estimate_posture_movement_states(int software_value,const ns_analyzed_image_time_path * source_path, std::vector<double > & tmp_storage_1, std::vector<unsigned long > & tmp_storage_2, ns_analyzed_image_time_path * output_path = 0,std::ostream * debug_output=0) const;
+	ns_time_path_posture_movement_solution estimate_posture_movement_states(int software_value,const ns_analyzed_image_time_path * source_path, ns_hmm_solver_reusable_memory & reusable_memory, ns_analyzed_image_time_path * output_path = 0,std::ostream * debug_output=0) const;
 	const ns_emperical_posture_quantification_value_estimator & estimator;
 	static std::string current_software_version() { return "2.5"; }
 	std::string current_software_version_number() const { return current_software_version(); }

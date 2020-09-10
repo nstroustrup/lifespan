@@ -25,8 +25,7 @@ double inline ns_truncate_negatives(const double & d){
 }
 
 
-void ns_hmm_solver::solve(const ns_analyzed_image_time_path & path, const ns_emperical_posture_quantification_value_estimator & estimator,
-	std::vector<double > & tmp_storage_1, std::vector<unsigned long > & tmp_storage_2) {
+void ns_hmm_solver::solve(const ns_analyzed_image_time_path & path, const ns_emperical_posture_quantification_value_estimator & estimator,ns_hmm_solver_reusable_memory & mem) {
 	bool found_start_time(false);
 	unsigned long start_time_i(0);
 	const unsigned long first_stationary_timepoint = path.first_stationary_timepoint();
@@ -48,7 +47,7 @@ void ns_hmm_solver::solve(const ns_analyzed_image_time_path & path, const ns_emp
 		first_stationary_timepoint_index = 0;
 	std::vector<ns_hmm_state_transition_time_path_index > movement_transitions;
 	movement_state_solution = ns_time_path_posture_movement_solution();
-	movement_state_solution.loglikelihood_of_solution = run_viterbi(path, estimator, path_indices, movement_transitions, tmp_storage_1, tmp_storage_2);
+	movement_state_solution.loglikelihood_of_solution = run_viterbi(path, estimator, path_indices, movement_transitions, mem);
 	build_movement_state_solution_from_movement_transitions(first_stationary_timepoint_index,path_indices, movement_transitions);
 }
 
@@ -196,8 +195,14 @@ void ns_forbid_requested_hmm_states(const ns_emperical_posture_quantification_va
 }
 
 double ns_hmm_solver::run_viterbi(const ns_analyzed_image_time_path & path, const ns_emperical_posture_quantification_value_estimator & estimator, const std::vector<unsigned long> &path_indices,
-	std::vector<ns_hmm_state_transition_time_path_index > &movement_transitions, std::vector<double > & probabilitiy_of_path, std::vector<unsigned long > & previous_state) {
+	std::vector<ns_hmm_state_transition_time_path_index >& movement_transitions, ns_hmm_solver_reusable_memory& mem){
+
+	std::vector<double >& probabilitiy_of_path(mem.tmp_storage_1);
+	std::vector<unsigned long >& previous_state(mem.tmp_storage_2);
+	std::vector<unsigned long >& state_entry_time(mem.tmp_storage_3);
+
 	const int number_of_states((int)ns_hmm_unknown_state);
+	const bool use_durations_for_state_transition_probabilities(estimator.state_transitions_are_duration_dependant());
 
 	//this time-independent matrix is multiplied against the time-dependent state transitions
 	//to forbid certain transitions, penalize others, etc.
@@ -214,101 +219,133 @@ double ns_hmm_solver::run_viterbi(const ns_analyzed_image_time_path & path, cons
 	estimator.defined_states(defined_states);
 	const bool allow_weakly = defined_states.find(ns_hmm_moving_weakly) != defined_states.end();
 
-	std::vector<char > path_forbidden;
+std::vector<char > path_forbidden;
 
-	unsigned long first_appearance_id = path.first_stationary_timepoint();
+unsigned long first_appearance_id = path.first_stationary_timepoint();
 
-	std::vector<unsigned long>optimal_path_state(path_indices.size(), 0);
-	double optimal_path_log_probability, cumulative_renormalization_factor(0);
-	//std::cerr << "Start:\n"
-	{
-		unsigned long fbdone = 0, nobs(path_indices.size());
-		unsigned long mstat(number_of_states);
-		unsigned long lrnrm;
-		probabilitiy_of_path.resize(0);
-		probabilitiy_of_path.resize(nobs*mstat, 0);
-		std::vector<double> renormalization_factors(nobs,0);
-		previous_state.resize(0);
-		previous_state.resize(nobs*mstat, 0);
-		path_forbidden.resize(0);
-		path_forbidden.resize(nobs*mstat, 0);
-		
-		std::vector<double> emission_log_probabilities;
-		std::vector<std::vector<double> > state_transition_probabilities, last_measurement_transition_probability;
-		estimator.log_probability_for_each_state(path.element(path_indices[0]).measurements, emission_log_probabilities);
-		path_forbidden[ns_hmm_moving_weakly_post_expansion] = 1; //do not allow animals to start as moving weakly post-expansion.  They can only start weakly /pre-expansion/ if the expansion was not observed!
-		path_forbidden[ns_hmm_contracting_post_expansion] = 1; //do not allow animals to start as contracting post-expansion.  They can only start weakly /pre-expansion/ if the expansion was not observed!
-		if (!allow_weakly) path_forbidden[ns_hmm_moving_weakly] = 1;
-		ns_forbid_requested_hmm_states(estimator, 0, path_forbidden);
+std::vector<unsigned long>optimal_path_state(path_indices.size(), 0);
+double optimal_path_log_probability, cumulative_renormalization_factor(0);
+//std::cerr << "Start:\n"
+{
+	unsigned long fbdone = 0, nobs(path_indices.size());
+	unsigned long mstat(number_of_states);
+	unsigned long lrnrm;
+	probabilitiy_of_path.resize(0);
+	probabilitiy_of_path.resize(nobs * mstat, 0);
+	state_entry_time.resize(0);
+	state_entry_time.resize(nobs * mstat, 0);
+	std::vector<double> renormalization_factors(nobs, 0);
+	previous_state.resize(0);
+	previous_state.resize(nobs * mstat, 0);
+	path_forbidden.resize(0);
+	path_forbidden.resize(nobs * mstat, 0);
 
-		//find the most likely final state of the path
-		long last_valid_measurement;
-		for (last_valid_measurement = nobs - 1; last_valid_measurement >= 0; last_valid_measurement--) {
-			if (!path.element(last_valid_measurement).excluded)
-				break;
+	std::vector<double> emission_log_probabilities;
+	std::vector<std::vector<double> > state_transition_probabilities;
+	estimator.log_probability_for_each_state(path.element(path_indices[first_appearance_id]).measurements, emission_log_probabilities);
+	path_forbidden[ns_hmm_moving_weakly_post_expansion] = 1; //do not allow animals to start as moving weakly post-expansion.  They can only start weakly /pre-expansion/ if the expansion was not observed!
+	path_forbidden[ns_hmm_contracting_post_expansion] = 1; //do not allow animals to start as contracting post-expansion.  They can only start weakly /pre-expansion/ if the expansion was not observed!
+	if (!allow_weakly) path_forbidden[ns_hmm_moving_weakly] = 1;
+	ns_forbid_requested_hmm_states(estimator, 0, path_forbidden);
+
+	//find the last valid measurement in the path.
+	long last_valid_measurement;
+	for (last_valid_measurement = nobs - 1; last_valid_measurement >= 0; last_valid_measurement--) {
+		if (!path.element(last_valid_measurement).excluded)
+			break;
+	}
+	if (last_valid_measurement == 0)
+		throw ns_ex("Found entirely excluded path!");
+	long first_valid_measurement;
+	for (first_valid_measurement = 0; first_valid_measurement < nobs; first_valid_measurement++) {
+		if (!path.element(first_valid_measurement).excluded)
+			break;
+	}
+
+	if (first_appearance_id == 0) //if the animal is present in the first frame, disallow "missing"
+		emission_log_probabilities[ns_hmm_missing] = 0;
+	long i, j, t;
+	double max_p, max_prev_i;
+	for (i = 0; i < mstat; i++) {
+		probabilitiy_of_path[i] = emission_log_probabilities[i];
+		state_entry_time[i] = path.element(first_valid_measurement).absolute_time;
+	}
+
+	for (t = 1; t < nobs; t++) {
+		bool missing_disalowed = t >= path_indices[first_appearance_id];
+		if (path.element(path_indices[t]).excluded) {
+			//skip, staying in the same state
+			for (j = 0; j < mstat; j++) {
+				probabilitiy_of_path[mstat * t + j] = probabilitiy_of_path[mstat * (t - 1) + j];
+				previous_state[t * mstat + j] = previous_state[(t - 1) * mstat + j];
+				path_forbidden[mstat * t + j] = path_forbidden[mstat * (t - 1) + j];
+				state_entry_time[mstat * t + j] = state_entry_time[mstat * (t - 1) + j];
+			}
+			continue;
 		}
-		if (last_valid_measurement == 0)
-			throw ns_ex("Found entirely excluded path!");
+		//emission probabilities
+		estimator.log_probability_for_each_state(path.element(path_indices[t]).measurements, emission_log_probabilities);
 
-		
-		if (first_appearance_id == 0) //if the animal is present in the first frame, disallow "missing"
-			emission_log_probabilities[ns_hmm_missing] = 0;
-		long i, j, t;
-		double max_p, max_prev_i;
-		for (i = 0; i < mstat; i++) probabilitiy_of_path[i] = emission_log_probabilities[i];
+		//static state transition probabilities
+		if (!use_durations_for_state_transition_probabilities)	//if state transitions don't depend on the duration of time in each state, we only need to calculate this once for all state transitions.
+			estimator.state_transition_log_probabilities(0, state_transition_weight_matrix, state_transition_probabilities);
 
-		for (t = 1; t < nobs; t++) {
-			bool missing_disalowed = t >= path_indices[first_appearance_id];
-			if (path.element(t).excluded) {
-				//skip, staying in the same state
-				for (j = 0; j < mstat; j++) {
-					probabilitiy_of_path[mstat*t + j] = probabilitiy_of_path[mstat*(t - 1) + j];
-					previous_state[t*mstat + j] = previous_state[(t - 1)*mstat + j];
-					path_forbidden[mstat*t + j] = path_forbidden[mstat*(t - 1) + j];
-				}
-				continue;
+		//identify situations where no state produces a non-zero probability
+		//skip these points, staying in the same state.
+		bool nonzero_state_probability_found = false;
+		for (unsigned int w = 0; w < emission_log_probabilities.size(); w++)
+			if (std::isfinite(emission_log_probabilities[w]))
+				nonzero_state_probability_found = true;
+		if (!nonzero_state_probability_found) {
+			//	std::cout << "Found impossible measurement: \n";
+			for (j = 0; j < mstat; j++) {
+				probabilitiy_of_path[mstat * t + j] = probabilitiy_of_path[mstat * (t - 1) + j];
+				previous_state[t * mstat + j] = previous_state[(t - 1) * mstat + j];
+				path_forbidden[t * mstat + j] = path_forbidden[(t - 1) * mstat + j];
+				state_entry_time[mstat * t + j] = state_entry_time[mstat * (t - 1) + j];
 			}
-			//emission probabilities
-			estimator.log_probability_for_each_state(path.element(path_indices[t]).measurements, emission_log_probabilities);
+			continue;
+		}
 
-			//state transition probabilities
-			const double duration = (double)path.element(t).absolute_time - (double)path.element(t - 1).absolute_time;
-			estimator.state_transition_log_probabilities(duration, state_transition_weight_matrix, state_transition_probabilities);
-			if (t==last_valid_measurement)
-				estimator.state_transition_log_probabilities(duration, state_transition_weight_matrix, last_measurement_transition_probability);
-			
-			//identify situations where no state produces a non-zero probability
-			//skip these points, staying in the same state.
-			bool nonzero_state_probability_found = false;
-			for (unsigned int w = 0; w < emission_log_probabilities.size(); w++)
-				if (std::isfinite(emission_log_probabilities[w]))
-					nonzero_state_probability_found = true;
-			if (!nonzero_state_probability_found) {
-				//	std::cout << "Found impossible measurement: \n";
-				for (j = 0; j < mstat; j++) {
-					probabilitiy_of_path[mstat*t + j] = probabilitiy_of_path[mstat*(t - 1) + j];
-					previous_state[t*mstat + j] = previous_state[(t - 1)*mstat + j];
-					path_forbidden[t*mstat + j] = path_forbidden[(t - 1)*mstat + j];
-				}
-				continue;
-			}
-			
-			double max_pp = -DBL_MAX; //most likely path to reach any state at this time
+		double max_pp = -DBL_MAX; //most likely path to reach any state at this time
 
-			for (j = 0; j < mstat; j++) { 
-				max_p = -DBL_MAX;	//most likely path to reach state j  at this time
-				max_prev_i = 0;
-				bool found_valid = false;
-				for (i = 0; i < mstat; i++) {
+		for (j = 0; j < mstat; j++) {
+			max_p = -DBL_MAX;	//most likely path to reach state j  at this time
+			max_prev_i = 0;
+			bool found_valid = false;
+			for (i = 0; i < mstat; i++) {
+				//calculate the probability of moving from state i (at time t-1) to state j (at time t)
+				double state_transition_p;
+				long duration_to_use;
+				if (use_durations_for_state_transition_probabilities) {
+					//if we want to use empirical transitions (which are time dependent) we need to do that calculation
+					if (i == j)  //self transition; we want to calculate the probability of an animal remaining in the current state for the current interval
+						duration_to_use = path.element(path_indices[t]).absolute_time - path.element(path_indices[t - 1]).absolute_time;
+					else {//transition to a new state! we want to calculate the probability of an animal transitioning to the current state after spending duration_to_use in the previous state.
+						duration_to_use = path.element(path_indices[t]).absolute_time - state_entry_time[mstat * (t - 1) + j];
+						if (path.element(path_indices[t]).absolute_time < state_entry_time[mstat * (t - 1) + j])
+							throw ns_ex("viterbi timing error!");
+							//std::cout << "\n";
+						}
+						state_transition_p = estimator.state_transition_log_probability(duration_to_use, state_transition_weight_matrix,ns_hmm_state_transition((ns_hmm_movement_state)i, (ns_hmm_movement_state)j));
+					}
+					//if we want to only use static (not-empirical) state transition probabilities, we can simply look-up the value from the pre-computed table.
+					else state_transition_p = state_transition_probabilities[i][j];
+
 					//was a bug here, state_transition_matrix[i][j]==0, causing problems all allong?  
-					if (!std::isfinite(state_transition_probabilities[i][j])  || !std::isfinite(emission_log_probabilities[j]) || path_forbidden[mstat*(t - 1) + i])
+					if (!std::isfinite(state_transition_p) || !std::isfinite(emission_log_probabilities[j]) || path_forbidden[mstat * (t - 1) + i])
 						continue;
 					//calculate probability of moving from state i at time t-1 to state j now
-					double cur = probabilitiy_of_path[mstat*(t - 1)+i] + state_transition_probabilities[i][j] + emission_log_probabilities[j];
+					double cur = probabilitiy_of_path[mstat * (t - 1) + i] + emission_log_probabilities[j] + state_transition_p;
+
 					//if this is the last measurement, we also must include
-					//any penalty for /staying in this state/ at thte end of the observation period.
-					if (t == last_valid_measurement)
-						cur += last_measurement_transition_probability[j][ns_hmm_end_of_observation];
+					//any penalty for /staying in this state/ at the end of the observation period.
+					if (t == last_valid_measurement) {
+						if (!use_durations_for_state_transition_probabilities)
+							cur += state_transition_probabilities[j][ns_hmm_end_of_observation];
+						else
+							cur += estimator.state_transition_log_probability(duration_to_use, state_transition_weight_matrix, ns_hmm_state_transition((ns_hmm_movement_state)i, (ns_hmm_movement_state)j));
+					}
 					if (!std::isnan(cur) && std::isfinite(cur) && (!found_valid || cur > max_p)) {
 						max_p = cur;
 						max_prev_i = i;
@@ -317,23 +354,26 @@ double ns_hmm_solver::run_viterbi(const ns_analyzed_image_time_path & path, cons
 				}
 				//don't allow animals to be missing after their first observed start time.
 				//this avoids an error where the algorithm decides worms never appear
-				if (!found_valid ||  missing_disalowed && j == ns_hmm_missing)
-					path_forbidden[mstat*t + j] = 1;
-				ns_forbid_requested_hmm_states(estimator, mstat*t, path_forbidden);
+				if (!found_valid || missing_disalowed && j == ns_hmm_missing)
+					path_forbidden[mstat * t + j] = 1;
+				ns_forbid_requested_hmm_states(estimator, mstat * t, path_forbidden);
 
-				probabilitiy_of_path[mstat*t+j] = max_p;
-				previous_state[t*mstat +j] = max_prev_i;
+				probabilitiy_of_path[mstat * t + j] = max_p;
+				previous_state[t * mstat + j] = max_prev_i;
+				if (max_prev_i == j) //if we stay in the same state, we simply propigate the state entry time forward.
+					state_entry_time[t * mstat + j] = state_entry_time[mstat * (t - 1) + j];
+				else state_entry_time[t * mstat + j] = path.element(path_indices[t]).absolute_time; //if we enter a new state, we have a new entry time.
 
 				if (!std::isnan(max_p) && std::isfinite(max_p) && max_p > max_pp)
 					max_pp = max_p;
 			}
-			if (!allow_weakly) path_forbidden[mstat*t + ns_hmm_moving_weakly] = 1;
+			if (!allow_weakly) path_forbidden[mstat * t + ns_hmm_moving_weakly] = 1;
 
 			const double renom_lim(-1e100);
 			if (max_pp < renom_lim) {
 				renormalization_factors[t] = -max_pp;
 				for (j = 0; j < mstat; j++) {
-					probabilitiy_of_path[mstat*t + j] -= max_pp;
+					probabilitiy_of_path[mstat * t + j] -= max_pp;
 				}
 			}
 
@@ -346,10 +386,10 @@ double ns_hmm_solver::run_viterbi(const ns_analyzed_image_time_path & path, cons
 
 		//find the most likely final state of the path
 		for (j = 0; j < mstat; j++) {
-			if (path_forbidden[mstat* last_valid_measurement + j])
+			if (path_forbidden[mstat * last_valid_measurement + j])
 				continue;
-			if (!found_valid || probabilitiy_of_path[mstat*last_valid_measurement + j] > optimal_path_log_probability) {
-				optimal_path_log_probability = probabilitiy_of_path[mstat* last_valid_measurement + j];
+			if (!found_valid || probabilitiy_of_path[mstat * last_valid_measurement + j] > optimal_path_log_probability) {
+				optimal_path_log_probability = probabilitiy_of_path[mstat * last_valid_measurement + j];
 				cumulative_renormalization_factor = renormalization_factors[last_valid_measurement];
 				*optimal_path_state.rbegin() = j;
 				found_valid = true;
@@ -357,8 +397,8 @@ double ns_hmm_solver::run_viterbi(const ns_analyzed_image_time_path & path, cons
 		}
 
 		//now work backwards and recrete the path that got us there.
-		for (t=last_valid_measurement-1; t >= 1; t--) {
-			if (path.element(t).excluded) {
+		for (t=last_valid_measurement; t >= 1; t--) {
+			if (path.element(path_indices[t]).excluded) {
 				optimal_path_state[t - 1] = optimal_path_state[t];
 				continue;
 			}
@@ -366,7 +406,7 @@ double ns_hmm_solver::run_viterbi(const ns_analyzed_image_time_path & path, cons
 			optimal_path_log_probability += probabilitiy_of_path[mstat*t + optimal_path_state[t]];
 			cumulative_renormalization_factor += renormalization_factors[t];
 		}
-		if (!path.element(0).excluded) {
+		if (!path.element(path_indices[0]).excluded) {
 			optimal_path_log_probability += probabilitiy_of_path[mstat * t + optimal_path_state[0]];
 			cumulative_renormalization_factor += renormalization_factors[0];
 		}
@@ -575,11 +615,66 @@ void ns_hmm_solver::output_state_transition_matrix(const std::string & title, st
 			if (m[i][j] != 0)
 				o << "a_" << i << " -> " << "a_" << j << " [label=\"" << std::fixed << m[i][j] << "\"];\n";
 	}
+	o << "labelloc=\"t\";";
+	o << "label=\"" << title << "\";\n";
 	o << "}";
 }
 
+bool ns_emperical_posture_quantification_value_estimator::state_transitions_are_duration_dependant() const {
+	return state_transition_type != ns_static && state_transition_type != ns_static_mod;
+}
 
-void ns_emperical_posture_quantification_value_estimator::state_transition_log_probabilities(const double& duration_in_seconds, const std::vector < std::vector<double> >& log_weight_matrix, std::vector<std::vector<double>>& log_prob) const{	ns_hmm_duration duration;
+
+double ns_integrate_probs(const double model_log_weight, const ns_hmm_state_transition& t, const std::vector < std::vector<double> >& log_weight_matrix, const double transition_log_prob, const ns_emperical_posture_quantification_value_estimator::ns_hmm_states_transition_types& t_type) {
+	double prob = transition_log_prob;
+		prob += model_log_weight;  //transition probability is the probability of transitioning to that state at the specified time, multipled by the probability of entering that state at any time.  model_log_weight is the latter.
+		if (log_weight_matrix.size() != 0) {
+			if (t_type == ns_emperical_posture_quantification_value_estimator::ns_empirical_without_weights) {
+				if (!std::isfinite(log_weight_matrix[t.first][t.second]))
+					prob += log_weight_matrix[t.first][t.second];
+				else; //with the ns_empirical_without_weights flag we want to weight equally (probability 1) any permitted path. the probabilility of forbidden paths is zero (which means the log(probability) is -inifinity.  
+					  //So we pass on the -infinities and don't do anything else (multiplying by 1 by adding log(1)=0).
+			}
+			else prob += log_weight_matrix[t.first][t.second];
+
+		}
+	return prob;
+}
+
+double ns_emperical_posture_quantification_value_estimator::state_transition_log_probability(const double& duration_in_seconds, const std::vector < std::vector<double> >& log_weight_matrix, const ns_hmm_state_transition& t) const {
+	
+	double log_prob;
+	if (!state_transitions_are_duration_dependant()) {
+		if (log_weight_matrix.size() != 0)
+			return log_weight_matrix[t.first][t.second];
+		else return 0;
+	}
+	ns_hmm_duration duration;
+	duration.measurement = duration_in_seconds;
+	//transitions from state to another are easy, we just calculate them.
+	if (t.first != t.second) {
+		auto q = emission_probability_models->state_transition_models.find(t);
+		if (q == emission_probability_models->state_transition_models.end())
+			return log(0);
+		return ns_integrate_probs(log(q->second->model_weight()), t, log_weight_matrix, log(q->second->point_emission_likelihood(duration)), state_transition_type);
+	}
+	//self transitions are trickier, as we must add up all potential departures and subract from one.
+	double total_exit_probability = 0;
+	for (auto p = emission_probability_models->state_transition_models.begin(); p != emission_probability_models->state_transition_models.end(); p++) {
+		if (p->first.first != t.first || p->first.first == p->first.second)
+			continue;
+		const double partial_exit_probability = ns_integrate_probs(log(p->second->model_weight()), p->first, log_weight_matrix, log(p->second->point_emission_likelihood(duration)), state_transition_type);
+		if (std::isfinite(partial_exit_probability))
+			total_exit_probability += exp(partial_exit_probability);
+	}
+	double external_weight = 1;
+	if (log_weight_matrix.size() != 0 && state_transition_type != ns_emperical_posture_quantification_value_estimator::ns_empirical_without_weights)
+		external_weight = exp(log_weight_matrix[t.first][t.second]);
+	return log(1 - total_exit_probability/ external_weight) ;
+}
+
+void ns_emperical_posture_quantification_value_estimator::state_transition_log_probabilities(const double& duration_in_seconds, const std::vector < std::vector<double> >& log_weight_matrix, std::vector<std::vector<double>>& log_prob) const{
+	ns_hmm_duration duration;
 	duration.measurement = duration_in_seconds;
 	log_prob.resize((int)ns_hmm_unknown_state);
 	const bool using_static_probs(state_transition_type == ns_static || state_transition_type == ns_static_mod);
@@ -599,23 +694,13 @@ void ns_emperical_posture_quantification_value_estimator::state_transition_log_p
 				log_prob[i][j] = log_weight_matrix[i][j];
 		}
 	}
-	if (state_transition_type == ns_static || state_transition_type == ns_static_mod)
+	if (!state_transitions_are_duration_dependant())
 		return;
 
 	for (auto p = emission_probability_models->state_transition_models.begin(); p != emission_probability_models->state_transition_models.end(); p++) {
-
 		if (p->first.first == p->first.second) // Self transitions are the probability of /not/ exiting the current state to any other state...we calculate this later.
 			continue; 
-		//transition probability is the probability of transitioning to that state at the specified time, multipled by the probability of entering that state ever.
-		double external_weight = 0;
-		if (log_weight_matrix.size() != 0)
-			external_weight = log_weight_matrix[(int)p->first.first][(int)p->first.second];
-		double prob = log(p->second->point_emission_likelihood(duration)), 
-			model_weight = 0;
-		if (state_transition_type != ns_empirical_without_weights)
-			model_weight = log(p->second->model_weight());		//this is analogous to the gillespie algorithm.  if an event happens, scale the probability by the fraction of animals that make that transition.
-
-		log_prob[(int)p->first.first][(int)p->first.second] = prob+ model_weight + external_weight;
+		log_prob[(int)p->first.first][(int)p->first.second] = ns_integrate_probs(log(p->second->model_weight()), p->first, log_weight_matrix, log(p->second->point_emission_likelihood(duration)), state_transition_type); 
 	}
 	//now we handle self transition probabilities;
 	for (unsigned int i = 0; i < log_prob.size(); i++) {
@@ -625,13 +710,13 @@ void ns_emperical_posture_quantification_value_estimator::state_transition_log_p
 			if (std::isfinite(log_prob[i][j]))
 				total_exit_prob += exp(log_prob[i][j]);
 		}
-		double external_weight = 0;
-		if (log_weight_matrix.size() != 0)
-			external_weight = log_weight_matrix[(int)i][(int)i];
+		double external_weight = 1;
+		if (log_weight_matrix.size() != 0 && state_transition_type != ns_emperical_posture_quantification_value_estimator::ns_empirical_without_weights)
+			external_weight = exp(log_weight_matrix[(int)i][(int)i]);
 
 		if (total_exit_prob > 1)
 			throw ns_ex("Invalid exit probability");
-		log_prob[i][i] = log(1 - total_exit_prob) + external_weight;
+		log_prob[i][i] = log(1 - total_exit_prob / external_weight);
 	}
 }
 
@@ -849,11 +934,11 @@ std::string ns_time_path_movement_markov_solver::model_software_version_number()
 	return estimator.software_version_when_built;
 }
 
-ns_time_path_posture_movement_solution ns_time_path_movement_markov_solver::estimate_posture_movement_states(int software_version,const ns_analyzed_image_time_path * path, std::vector<double > & tmp_storage_1, std::vector<unsigned long > & tmp_storage_2, ns_analyzed_image_time_path * output_path, std::ostream * debug_output)const{
+ns_time_path_posture_movement_solution ns_time_path_movement_markov_solver::estimate_posture_movement_states(int software_version,const ns_analyzed_image_time_path * path, ns_hmm_solver_reusable_memory& reusable_memory, ns_analyzed_image_time_path * output_path, std::ostream * debug_output)const{
 	if (estimator.software_version_when_built != current_software_version_number())
 		throw ns_ex("The specified HMM model was built with an outdated version, ") << estimator.software_version_when_built << ", whereas this software was compiled as version " << current_software_version_number();
 	ns_hmm_solver solver;
-	solver.solve(*path, estimator, tmp_storage_1, tmp_storage_2);
+	solver.solve(*path, estimator, reusable_memory);
 
 	return solver.movement_state_solution;
 }
@@ -1823,10 +1908,10 @@ void ns_threshold_movement_posture_analyzer_parameters::write(std::ostream & o)c
 unsigned long ns_threshold_and_hmm_posture_analyzer::latest_possible_death_time(const ns_analyzed_image_time_path* path, const unsigned long last_observation_time) const {
 	return  last_observation_time - model->threshold_parameters.permanance_time_required_in_seconds;
 }
-ns_time_path_posture_movement_solution ns_threshold_and_hmm_posture_analyzer::estimate_posture_movement_states(int software_version, const ns_analyzed_image_time_path* path, std::vector<double >& tmp_storage_1, std::vector<unsigned long >& tmp_storage_2, ns_analyzed_image_time_path* output_path, std::ostream* debug_output)const {
+ns_time_path_posture_movement_solution ns_threshold_and_hmm_posture_analyzer::estimate_posture_movement_states(int software_version, const ns_analyzed_image_time_path* path, ns_analyzed_image_time_path_death_time_estimator_reusable_memory & mem, ns_analyzed_image_time_path* output_path, std::ostream* debug_output)const {
 
 	ns_hmm_solver hmm_solver;
-	hmm_solver.solve(*path, model->hmm_posture_estimator, tmp_storage_1, tmp_storage_2);
+	hmm_solver.solve(*path, model->hmm_posture_estimator, mem);
 
 	ns_threshold_movement_posture_analyzer threshold_solver(model->threshold_parameters);
 	ns_time_path_posture_movement_solution threshold_solution = threshold_solver(path, debug_output);

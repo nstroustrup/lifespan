@@ -533,14 +533,16 @@ struct ns_hmm_cross_validation_manager {
 			//ns_emperical_posture_quantification_value_estimator::ns_all_states;
 			for (auto cur_analysis = validation_subject->second.analysis_types_and_results.begin(); cur_analysis != validation_subject->second.analysis_types_and_results.end(); ) {
 				switch (cur_analysis->spec.cross_replicate_estimator_type) {
+				case ns_model_building_specification::ns_standard:
+					state_specification = ns_all_states_permitted; break;
 				case ns_model_building_specification::ns_strict_ordering:
 					state_specification = ns_no_expansion_while_alive; break;
 				case ns_model_building_specification::ns_simultaneous_movement_cessation_and_expansion:
 					state_specification = ns_require_movement_expansion_synchronicity; break;
 				default:
-					state_specification = ns_all_states_permitted; break;
+					throw ns_ex("Unknown cross replicate type!");
 				}
-				switch (cur_analysis->spec.cross_replicate_estimator_type) {
+				switch (cur_analysis->spec.state_transition_type) {
 				case ns_model_building_specification::ns_static:
 					transition_type = ns_emperical_posture_quantification_value_estimator::ns_static; break;
 				case ns_model_building_specification::ns_static_mod:
@@ -550,7 +552,7 @@ struct ns_hmm_cross_validation_manager {
 				case ns_model_building_specification::ns_empirical_without_weights:
 					transition_type = ns_emperical_posture_quantification_value_estimator::ns_empirical_without_weights; break;
 				default:
-					state_specification = ns_all_states_permitted; break;
+					throw ns_ex("Unknown transition type");
 				}
 
 				bool all_replicates_supported_model_building = true;
@@ -848,7 +850,7 @@ void ns_run_hmm_cross_validation(std::string& results_summary, ns_image_server_r
 						for (unsigned int j = 0; j < state_transition_matrix[i].size(); j++)
 							state_transition_matrix[i][j] = exp(state_transition_matrix[i][j]);
 					for (unsigned int i = 0; i < file_suffix.size(); i++)
-						if (file_suffix[i] == '=' || file_suffix[i] == ' ') file_suffix[i] = '_';
+						if (file_suffix[i] == '=' || file_suffix[i] == ' ' || file_suffix[i] == '-') file_suffix[i] = '_';
 					solver.output_state_transition_matrix("g_" + file_suffix, state_transition_matrix, graphvis_file()());
 					graphvis_file.release();
 				}

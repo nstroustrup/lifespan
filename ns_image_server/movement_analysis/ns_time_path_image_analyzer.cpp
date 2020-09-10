@@ -3585,11 +3585,10 @@ ns_movement_state_time_interval_indicies calc_frame_before_first(const ns_moveme
 //There is no problem handling events that continue past the end of the path;
 //we don't use this information for anything and do not output any annotations about it.
 void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_from_movement_quantification(const ns_stationary_path_id & path_id, const ns_analyzed_image_time_path_death_time_estimator * movement_death_time_estimator, ns_movement_analysis_result & result, const unsigned long last_time_point_in_analysis) const {
-	std::vector<double > tmp_storage_1;
-	std::vector<unsigned long > tmp_storage_2;
-	detect_death_times_and_generate_annotations_from_movement_quantification(path_id, movement_death_time_estimator, result, last_time_point_in_analysis,tmp_storage_1, tmp_storage_2);
+	ns_analyzed_image_time_path_death_time_estimator_reusable_memory mem;
+	detect_death_times_and_generate_annotations_from_movement_quantification(path_id, movement_death_time_estimator, result, last_time_point_in_analysis,mem);
 }
-void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_from_movement_quantification(const ns_stationary_path_id & path_id, const ns_analyzed_image_time_path_death_time_estimator * movement_death_time_estimator, ns_movement_analysis_result & analysis_result, const unsigned long last_time_point_in_analysis, std::vector<double > & tmp_storage_1, std::vector<unsigned long > & tmp_storage_2 ) const {
+void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_from_movement_quantification(const ns_stationary_path_id & path_id, const ns_analyzed_image_time_path_death_time_estimator * movement_death_time_estimator, ns_movement_analysis_result & analysis_result, const unsigned long last_time_point_in_analysis, ns_analyzed_image_time_path_death_time_estimator_reusable_memory& mem) const {
 		
 	//if (path_id.group_id == 5)
 	//	cerr << "RA";
@@ -3650,7 +3649,7 @@ void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_fr
 			path_id,true,elements[end_index].inferred_animal_location,elements[end_index].subregion_info, ns_death_time_annotation::ns_explicitly_observed, "low_density"));
 	}
 	
-	analysis_result.machine_movement_state_solution = movement_death_time_estimator->operator()(this,true,tmp_storage_1,tmp_storage_2);
+	analysis_result.machine_movement_state_solution = movement_death_time_estimator->operator()(this,true,mem);
 
 	//Some movement detection algorithms need a significant amount of time after an animal has died
 	//to detect its death.  So, if we are going to censor an animal at the end of the experiment,

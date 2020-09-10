@@ -2143,6 +2143,10 @@ void ns_set_up_hmm_model_specs_to_test(std::vector<ns_model_building_specificati
 		mod.cross_replicate_estimator_type = ns_model_building_specification::ns_simultaneous_movement_cessation_and_expansion;
 		mod.name = "strict_3D_C0_empiric_simultaneous";
 		s.push_back(mod);
+		mod.cross_replicate_estimator_type = ns_model_building_specification::ns_simultaneous_movement_cessation_and_expansion;
+		mod.state_transition_type = ns_model_building_specification::ns_empirical_without_weights;
+		mod.name = "strict_3D_C0_pure_empiric_simultaneous";
+		s.push_back(mod);
 	}
 	/*
 	ns_model_building_specification strict_spec_mod;
@@ -2159,6 +2163,9 @@ void ns_set_up_hmm_model_specs_to_test(std::vector<ns_model_building_specificati
 	strict_empiric_state_spec.state_transition_type = ns_model_building_specification::ns_empirical;
 	strict_empiric_state_spec.name = "strict_4D_empiric";
 	s.push_back(strict_empiric_state_spec);
+	strict_empiric_state_spec.state_transition_type = ns_model_building_specification::ns_empirical_without_weights;
+	strict_empiric_state_spec.name = "strict_4D_pure_empiric";
+	s.push_back(strict_empiric_state_spec);
 	/*
 	ns_model_building_specification strict_empiric_without_weights_state_spec;
 	strict_empiric_without_weights_state_spec.cross_replicate_estimator_type = ns_model_building_specification::ns_strict_ordering;
@@ -2169,11 +2176,14 @@ void ns_set_up_hmm_model_specs_to_test(std::vector<ns_model_building_specificati
 	*/
 	ns_model_building_specification mod;
 	mod.cross_replicate_estimator_type = ns_model_building_specification::ns_strict_ordering;
-	mod.state_transition_type = ns_model_building_specification::ns_empirical;
 	mod.model_features_to_use.push_back("i1");
 	mod.model_features_to_use.push_back("i4");
 	mod.model_features_to_use.push_back("s");
+	mod.state_transition_type = ns_model_building_specification::ns_empirical;
 	mod.name = "strict_3DS_empiric";
+	s.push_back(mod);
+	mod.state_transition_type = ns_model_building_specification::ns_empirical_without_weights;
+	mod.name = "strict_3DS_pure_empiric";
 	s.push_back(mod);
 	
 	/*

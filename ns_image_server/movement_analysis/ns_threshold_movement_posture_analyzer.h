@@ -8,7 +8,7 @@ public:
 	
 	ns_time_path_posture_movement_solution operator()(const ns_analyzed_image_time_path * path, std::ostream * debug_output=0) const;
 	ns_time_path_posture_movement_solution operator() (ns_analyzed_image_time_path * path, const bool fill_in_loglikelihood_timeseries,std::ostream * debug_output=0)const;
-	ns_time_path_posture_movement_solution operator() (const ns_analyzed_image_time_path * path, const bool fill_in_loglikelihood_timeseries, std::vector<double > & tmp_storage_1, std::vector<unsigned long > & tmp_storage_2, std::ostream * debug_output = 0)const {
+	ns_time_path_posture_movement_solution operator() (const ns_analyzed_image_time_path * path, const bool fill_in_loglikelihood_timeseries, ns_analyzed_image_time_path_death_time_estimator_reusable_memory & mem, std::ostream * debug_output = 0)const {
 		return (*this)(path, debug_output);
 	}
 	unsigned long latest_possible_death_time(const ns_analyzed_image_time_path * path,const unsigned long last_observation_time) const;

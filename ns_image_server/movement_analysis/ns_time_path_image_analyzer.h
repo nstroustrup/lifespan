@@ -640,7 +640,7 @@ private:
 	void add_by_hand_annotations(const ns_death_time_annotation_compiler_location & l);
 
 	void detect_death_times_and_generate_annotations_from_movement_quantification(const ns_stationary_path_id & path_id,const ns_analyzed_image_time_path_death_time_estimator * e, ns_movement_analysis_result & set, const unsigned long last_timepoint_in_analysis) const;
-	void detect_death_times_and_generate_annotations_from_movement_quantification(const ns_stationary_path_id & path_id, const ns_analyzed_image_time_path_death_time_estimator * e, ns_movement_analysis_result & set, const unsigned long last_timepoint_in_analysis, std::vector<double > & tmp_storage_1, std::vector<unsigned long > & tmp_storage_2) const;
+	void detect_death_times_and_generate_annotations_from_movement_quantification(const ns_stationary_path_id & path_id, const ns_analyzed_image_time_path_death_time_estimator * e, ns_movement_analysis_result & set, const unsigned long last_timepoint_in_analysis, ns_analyzed_image_time_path_death_time_estimator_reusable_memory& mem) const;
 	//ns_64_bit stationary_histogram[256];
 	//ns_64_bit movement_histogram[256];
 

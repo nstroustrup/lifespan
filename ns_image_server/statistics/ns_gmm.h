@@ -616,7 +616,7 @@ public:
 		//median of exponential distribution is log(2)/sigma
 		//so, lambda  = log(2)/median
 		lambda = log(2) / median;
-		if (!isfinite(lambda))
+		if (!std::isfinite(lambda))
 			throw ns_ex("Infinite lambda!");
 		if (total_number_of_transitions_out_of_starting_state == 0)
 			weight = 1;

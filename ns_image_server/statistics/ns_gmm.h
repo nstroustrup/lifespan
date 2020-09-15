@@ -562,6 +562,8 @@ public:
 	double model_weight() const { return weight; }
 	void build_from_data(const std::vector<const std::vector<typename measurement_accessor_t::data_t>* >& observations, const long total_number_of_transitions_out_of_starting_state) {
 		
+		if (total_number_of_transitions_out_of_starting_state == 0)
+			throw ns_ex("Invalid transition number");
 		unsigned long N(0);
 		for (unsigned int i = 0; i < observations.size(); i++)
 			N += observations[i]->size();
@@ -570,6 +572,7 @@ public:
 		training_data_buffer.resize(N);
 		N = 0;
 		measurement_accessor_t m;
+		double sum(0);
 		for (unsigned long i = 0; i < observations.size(); i++) {
 			for (unsigned int j = 0; j < observations[i]->size(); j++) {
 				bool valid_data_point;
@@ -578,19 +581,20 @@ public:
 					if (!std::isfinite(val))
 						throw ns_ex("Invalid training data: ") << val << ": observations[" << i << "][" << j << "]\n";
 					training_data_buffer[N] = val;
+					sum+=val;
 					N++;
 				}
 			}
 		}
+		double median;
+
 		if (N == 0)
 			throw ns_ex("No duration training data provided!");
-
-		double median;
 		if (N == 1) {
-			median = training_data_buffer[0];
+			median = sum;
 		}
 		else if (N == 2) {
-			median = (training_data_buffer[0] + training_data_buffer[1]) / 2;
+			median = sum / 2;
 		}
 		else {
 			training_data_buffer.resize(N);
@@ -604,10 +608,16 @@ public:
 			}
 		}
 		lock.release();
-
+		if (median == 0) {
+			if (sum == 0)
+				median = 1;
+			else median = sum/N;	//set zero median data to be the mean.
+		}
 		//median of exponential distribution is log(2)/sigma
 		//so, lambda  = log(2)/median
 		lambda = log(2) / median;
+		if (!isfinite(lambda))
+			throw ns_ex("Infinite lambda!");
 		if (total_number_of_transitions_out_of_starting_state == 0)
 			weight = 1;
 		else

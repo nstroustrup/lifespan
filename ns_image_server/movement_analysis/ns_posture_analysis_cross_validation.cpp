@@ -526,7 +526,7 @@ struct ns_hmm_cross_validation_manager {
 		return p->second;
 	}
 
-	void build_hmm_models_for_cross_validation(std::string& output) {
+	void build_hmm_models_for_cross_validation(std::string& output, const int total_number_of_repicates_for_debug_output, int &last_percentage_debug_output, int & replicates_performed) {
 		for (auto validation_subject = validation_runs_sorted_by_validation_type.begin(); validation_subject != validation_runs_sorted_by_validation_type.end();) {
 			ns_hmm_states_permitted state_specification;
 			ns_emperical_posture_quantification_value_estimator::ns_hmm_states_transition_types transition_type;
@@ -567,6 +567,12 @@ struct ns_hmm_cross_validation_manager {
 								cur_analysis->spec.model_description(),
 								validation_subject->second.replicates_to_run[replicate_id].training_set, &gen, state_specification, transition_type, output
 							);
+						replicates_performed++;
+						int cur_percentage = floor(100 * replicates_performed / total_number_of_repicates_for_debug_output);
+						if (floor(cur_percentage/5)*5 > last_percentage_debug_output) {
+							std::cout << cur_percentage << "%...";
+							last_percentage_debug_output = cur_percentage;
+						}
 						if (!success) {
 							cur_analysis->model_building_completed = all_replicates_supported_model_building = false;
 							break;
@@ -587,8 +593,9 @@ struct ns_hmm_cross_validation_manager {
 					cur_analysis = validation_subject->second.analysis_types_and_results.erase(cur_analysis);
 				}
 			}
-			if (validation_subject->second.analysis_types_and_results.empty())
+			if (validation_subject->second.analysis_types_and_results.empty()) {
 				validation_subject = validation_runs_sorted_by_validation_type.erase(validation_subject);
+			}
 			else validation_subject++;
 		}
 	}
@@ -774,7 +781,7 @@ void ns_run_hmm_cross_validation(std::string& results_summary, ns_image_server_r
 		cross_validation_sets[p->first].generate_genotype_cross_validations_to_test(k_fold_validation, p->second);
 	}
 	if (cross_validation_sets.size() == 0) {
-		results_summary += "No HMM models could be built";
+		results_summary += "No HMM models could be built\n";
 		return;
 	}
 	else {
@@ -787,10 +794,15 @@ void ns_run_hmm_cross_validation(std::string& results_summary, ns_image_server_r
 	}
 	std::cout << "\nBuilding HMM Models...\n";
 	unsigned long num_built(0);
-	const unsigned long num_to_build(cross_validation_sets.size());
+	unsigned long num_to_build(0);
+	for (auto p = cross_validation_sets.begin(); p != cross_validation_sets.end(); p++) {
+		for (auto q = p->second.validation_runs_sorted_by_validation_type.begin(); q != p->second.validation_runs_sorted_by_validation_type.end(); q++)
+			num_to_build += q->second.replicates_to_run.size()*q->second.analysis_types_and_results.size();
+	}
+	int tmp1(0), tmp2(0);
 	for (auto p = cross_validation_sets.begin(); p != cross_validation_sets.end(); ) {
 
-		std::cout << ns_to_string_short((100.0 * num_built) / num_to_build, 2) << "%...";
+		//std::cout << ns_to_string_short((100.0 * num_built) / num_to_build, 2) << "%...";
 		num_built++;
 		std::string genotype;
 		if (p->second.validation_runs_sorted_by_validation_type.begin()->second.spec.cross_replicate_type == ns_cross_validation_subject::ns_all_data ||
@@ -801,7 +813,7 @@ void ns_run_hmm_cross_validation(std::string& results_summary, ns_image_server_r
 		if (!p->second.validation_runs_sorted_by_validation_type.begin()->second.spec.subject.empty())
 			genotype += " in " + p->second.validation_runs_sorted_by_validation_type.begin()->second.spec.subject;
 
-		p->second.build_hmm_models_for_cross_validation(model_building_and_testing_info[p->first].result);
+		p->second.build_hmm_models_for_cross_validation(model_building_and_testing_info[p->first].result,num_to_build,tmp1,tmp2);
 		//if none of the validation approaches could be used for building a model, delete this whole cross validation set.
 		if (p->second.validation_runs_sorted_by_validation_type.empty()) {
 			model_building_and_testing_info[p->first].result = " No model could be built for " + genotype + " because the existing annotations were insufficient for cross-validation. \n" + model_building_and_testing_info[p->first].result;
@@ -988,27 +1000,43 @@ void ns_run_hmm_cross_validation(std::string& results_summary, ns_image_server_r
 			for (auto validation_run = p->second.validation_runs_sorted_by_validation_type.begin(); validation_run != p->second.validation_runs_sorted_by_validation_type.end(); ++validation_run) {
 				for (auto analysis_type = validation_run->second.analysis_types_and_results.begin(); analysis_type != validation_run->second.analysis_types_and_results.end(); analysis_type++) {
 					ns_cross_validation_results results = validation_run->second.calculate_error(*analysis_type);
-
-					const bool many_movement_failures(results.movement.mean_event_not_found > (results.movement.mean_N+ results.movement.mean_event_not_found) / 10),
-						many_expansion_failures(results.expansion.mean_event_not_found > (results.expansion.mean_N+ results.expansion.mean_event_not_found )/ 10);
-					double movement_failure_rate = (100.0 * results.movement.mean_event_not_found) / (results.movement.mean_N + results.movement.mean_event_not_found);
-					double expansion_failure_rate = (100.0 * results.expansion.mean_event_not_found) / (results.expansion.mean_N + results.expansion.mean_event_not_found);
+					unsigned int total_movement_tested = (results.movement.mean_N + results.movement.mean_event_not_found),
+						total_expansion_tested = (results.expansion.mean_N + results.expansion.mean_event_not_found);
+					const bool many_movement_failures(results.movement.mean_event_not_found*10 > total_movement_tested),
+						many_expansion_failures(results.expansion.mean_event_not_found*10 > total_expansion_tested);
+					double movement_failure_rate = (100.0 * results.movement.mean_event_not_found) / (total_movement_tested);
+					double expansion_failure_rate = (100.0 * results.expansion.mean_event_not_found) / (total_expansion_tested);
 					std::string& txt(model_building_and_testing_info[p->first].result);
 					txt += "= ";
 					if (analysis_type->results.size() > 1)
 						txt += ns_to_string(analysis_type->results.size()) + "-fold ";
 					txt += validation_run->second.description + " " + analysis_type->spec.name + " =\n";
-					txt += "Each replicate trained on " + ns_to_string_short(results.mean_training_set_N) + "+-" + ns_to_string_short(results.var_training_set_N) + " animals and was tested on " + ns_to_string_short(results.mean_test_set_N) + "+-" + ns_to_string_short(results.var_test_set_N) + " animals.\n";
-					if (results.movement.mean_N + results.movement.mean_event_not_found > 0)
-						txt += "[Movement cessation]:   Average error: " + ns_to_string_short(results.movement.mean_err, 2) + "+-" + ns_to_string_short(results.movement.var_err, 2) + " days across " + ns_to_string((int)results.movement.mean_N) + " animals, with " + ns_to_string((int)results.movement.mean_event_not_found) + "+-" + ns_to_string((int)results.movement.var_event_not_found) + " animals' movement cessation remaining unidentifiable.\n";
-					if (results.expansion.mean_N + results.expansion.mean_event_not_found > 0)
-						txt += "[Death-Associated expansion]: Average error: " + ns_to_string_short(results.expansion.mean_err, 2) + " +-" + ns_to_string_short(results.expansion.var_err, 2) + " days across " + ns_to_string((int)results.expansion.mean_N) + " animals, with " + ns_to_string((int)results.expansion.mean_event_not_found) + "+-" + ns_to_string((int)results.expansion.var_event_not_found) + " animals' expansion times remaining unidentifiable.\n";
+					txt += ns_to_string(analysis_type->results.size()) + " models were fit to independent subsets of the data containing " + ns_to_string_short(results.mean_training_set_N) + "+-" + ns_to_string_short(results.var_training_set_N) + " animals.\n";
+					
+					if (results.movement.mean_N > 0 || total_movement_tested > 0) {
+						txt += "[Movement cessation]:";
+						if (results.movement.mean_N > 0) txt += "Average error : " + ns_to_string_short(results.movement.mean_err, 2) + " + -" + ns_to_string_short(results.movement.var_err, 2) + " days tested on " + ns_to_string((int)results.movement.mean_N) + " animals.";
+						if (total_movement_tested > 0) txt += ns_to_string((int)results.movement.mean_event_not_found) + " + -" + ns_to_string((int)results.movement.var_event_not_found) + " animals' movement cessation could not be identified by the model.\n";
+					}
+					if (total_movement_tested == 0)
+						txt+= "No data corresponding to animals in the test sets could be loaded, so no testing was performed.\n";
+					if (results.movement.mean_N < total_movement_tested)
+						txt += "Some data corresponding to animals in the tests set could be loaded,  so only " + ns_to_string(total_movement_tested) + " animals could be tested.\n";
+					if (results.expansion.mean_N > 0 || total_expansion_tested > 0) {
+						txt += "[Death-associated Expansion]:";
+						if (results.expansion.mean_N > 0) txt += "Average error : " + ns_to_string_short(results.expansion.mean_err, 2) + " + -" + ns_to_string_short(results.expansion.var_err, 2) + " days tested on " + ns_to_string((int)results.expansion.mean_N) + " animals.";
+						if (total_expansion_tested > 0) txt += ns_to_string((int)results.expansion.mean_event_not_found) + " + -" + ns_to_string((int)results.expansion.var_event_not_found) + " animals' expansion time could not be identified by the model.\n";
+					}
+					if (total_expansion_tested == 0)
+						txt += "No data corresponding to animals in the test sets could be loaded, so no testing was performed.\n";
+					if (results.expansion.mean_N < total_expansion_tested)
+						txt += "Some data corresponding to animals in the tests set could be loaded,  so only " + ns_to_string(total_expansion_tested) + " animals could be tested.\n";
 
-					if (many_movement_failures)
+					if (total_movement_tested > 0 && many_movement_failures)
 						txt += "Movement cessation times could not be found for " + ns_to_string_short(movement_failure_rate, 1) + "% of individuals. This is probably not a useful model file.\n";
-					if (many_expansion_failures)
+					if (total_expansion_tested > 0 && many_expansion_failures)
 						txt += "Death-associated expansion times could not be found for " + ns_to_string_short(expansion_failure_rate, 1) + "% of individuals. This is probably not a useful model file.\n";
-					if (!many_movement_failures && !many_expansion_failures && (results.movement.mean_N < 50 || results.expansion.mean_N < 50))
+					if (total_movement_tested > 0 && total_expansion_tested > 0 && !many_movement_failures && !many_expansion_failures && (results.mean_training_set_N < 50))
 						txt += "Warning: These results will not be meaningful until ~50 animals are annotated by hand.\n";
 					txt += "The model file was written to \"" + model_filenames[p->first] + "\"\n";
 					txt += "\n";

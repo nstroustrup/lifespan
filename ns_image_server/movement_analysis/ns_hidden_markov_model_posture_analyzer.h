@@ -16,6 +16,7 @@ struct ns_hmm_movement_analysis_optimizatiom_stats_event_annotation {
 struct ns_hmm_movement_optimization_stats_record_path_element {
 	ns_hmm_movement_state state;
 	double total_log_probability;
+	double state_transition_log_probability;
 	std::vector<double> log_sub_probabilities;
 	std::vector<double> sub_measurements;
 };

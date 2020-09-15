@@ -90,14 +90,17 @@ void ns_hmm_solver::solve(const ns_analyzed_image_time_path & path, const ns_emp
 				movement_states[i] = ns_hmm_missing;
 		}
 		for (unsigned int i = solution.dead.start_index; i <= solution.dead.end_index; i++) {
-			if (!solution.post_expansion_contracting.skipped && i >= solution.post_expansion_contracting.start_index && i <= solution.post_expansion_contracting.end_index)
+			if (!solution.post_expansion_contracting.skipped &&	
+				(i >= solution.post_expansion_contracting.start_index || 
+					!solution.expanding.skipped && i > solution.expanding.end_index) //by hand annotations can leave a gap between expansion and contraction, which is not allowed by the machine.  So we declare those states to to be contraction
+				&& i <= solution.post_expansion_contracting.end_index)
 				movement_states[i] = ns_hmm_contracting_post_expansion;
 			else if (!solution.expanding.skipped && i >= solution.expanding.start_index && i <= solution.expanding.end_index)
 				movement_states[i] = ns_hmm_not_moving_expanding;
 			else if (!solution.expanding.skipped && i < solution.expanding.start_index) {
 				if (estimator.state_defined(ns_hmm_not_moving_alive))
 					movement_states[i] = ns_hmm_not_moving_alive;
-				else  movement_states[i] = ns_hmm_not_moving_dead;
+				else  movement_states[i] = ns_hmm_moving_weakly;	
 			}
 			else movement_states[i] = ns_hmm_not_moving_dead;
 		}
@@ -133,6 +136,7 @@ void ns_hmm_solver::solve(const ns_analyzed_image_time_path & path, const ns_emp
 	unsigned long cur_pi(0);
 	if (generate_path_info) 
 		state_info.path.resize(movement_states.size());
+	unsigned long previous_state_start = path.element(start_i).absolute_time;
 	for (unsigned int i = start_i; i < path.element_count(); i++) {
 		if (path.element(i).excluded || path.element(i).censored) {
 			if (generate_path_info) {
@@ -149,9 +153,18 @@ void ns_hmm_solver::solve(const ns_analyzed_image_time_path & path, const ns_emp
 		estimator.log_probability_for_each_state(path.element(i).measurements, emission_log_probabilities);
 		double state_transition_logp(0);
 		if (i > start_i) {
-			estimator.state_transition_log_probabilities((double)path.element(i).absolute_time - (double)path.element(i - 1).absolute_time,
-				log_transition_weight_probability, log_state_transition_probabilitiy);
-			state_transition_logp = log_state_transition_probabilitiy[previous_state][movement_states[i]];
+			long duration = (double)path.element(i).absolute_time - (double)path.element(i - 1).absolute_time;
+			if (previous_state != movement_states[i]) {
+				duration = (double)path.element(i).absolute_time - previous_state_start;
+				previous_state_start = path.element(i).absolute_time;
+			}
+			state_transition_logp = estimator.state_transition_log_probability(duration,
+				log_transition_weight_probability,ns_hmm_state_transition(previous_state,movement_states[i]));
+			if (!std::isfinite(state_transition_logp)) {
+				std::cout << (int)previous_state << ", " << (int)movement_states[i] << ": non finite transition prob\n";
+				estimator.state_transition_log_probability(duration,
+					log_transition_weight_probability, ns_hmm_state_transition(previous_state, movement_states[i]));
+			}
 		}
 		cur_p = state_transition_logp +emission_log_probabilities[movement_states[i]];
 
@@ -159,6 +172,7 @@ void ns_hmm_solver::solve(const ns_analyzed_image_time_path & path, const ns_emp
 		if (generate_path_info) {
 			state_info.path[i].state = movement_states[i];
 			state_info.path[i].total_log_probability = cur_p;
+			state_info.path[i].state_transition_log_probability = state_transition_logp;
 		}
 	
 		if (generate_path_info)
@@ -251,14 +265,14 @@ double optimal_path_log_probability, cumulative_renormalization_factor(0);
 	//find the last valid measurement in the path.
 	long last_valid_measurement;
 	for (last_valid_measurement = nobs - 1; last_valid_measurement >= 0; last_valid_measurement--) {
-		if (!path.element(last_valid_measurement).excluded)
+		if (!path.element(last_valid_measurement).excluded && !path.element(last_valid_measurement).censored)
 			break;
 	}
 	if (last_valid_measurement == 0)
 		throw ns_ex("Found entirely excluded path!");
 	long first_valid_measurement;
 	for (first_valid_measurement = 0; first_valid_measurement < nobs; first_valid_measurement++) {
-		if (!path.element(first_valid_measurement).excluded)
+		if (!path.element(first_valid_measurement).excluded && !path.element(first_valid_measurement).censored)
 			break;
 	}
 
@@ -273,7 +287,7 @@ double optimal_path_log_probability, cumulative_renormalization_factor(0);
 
 	for (t = 1; t < nobs; t++) {
 		bool missing_disalowed = t >= path_indices[first_appearance_id];
-		if (path.element(path_indices[t]).excluded) {
+		if (path.element(path_indices[t]).excluded || path.element(path_indices[t]).censored) {
 			//skip, staying in the same state
 			for (j = 0; j < mstat; j++) {
 				probabilitiy_of_path[mstat * t + j] = probabilitiy_of_path[mstat * (t - 1) + j];
@@ -398,7 +412,7 @@ double optimal_path_log_probability, cumulative_renormalization_factor(0);
 
 		//now work backwards and recrete the path that got us there.
 		for (t=last_valid_measurement; t >= 1; t--) {
-			if (path.element(path_indices[t]).excluded) {
+			if (path.element(path_indices[t]).excluded || path.element(path_indices[t]).censored) {
 				optimal_path_state[t - 1] = optimal_path_state[t];
 				continue;
 			}
@@ -406,7 +420,7 @@ double optimal_path_log_probability, cumulative_renormalization_factor(0);
 			optimal_path_log_probability += probabilitiy_of_path[mstat*t + optimal_path_state[t]];
 			cumulative_renormalization_factor += renormalization_factors[t];
 		}
-		if (!path.element(path_indices[0]).excluded) {
+		if (!path.element(path_indices[0]).excluded && !path.element(path_indices[0]).censored) {
 			optimal_path_log_probability += probabilitiy_of_path[mstat * t + optimal_path_state[0]];
 			cumulative_renormalization_factor += renormalization_factors[0];
 		}
@@ -1630,6 +1644,8 @@ bool ns_hmm_observation_set::add_observation(const ns_death_time_annotation& pro
 			last_valid_time = path->element(i).absolute_time;
 			//quantify how long an animal remains in each state before transitioning to another.
 			if (by_hand_movement_state != previous_state) {
+				if (path->element(i).absolute_time - previous_state_start == 0)
+					std::cout << "zero duration state observed\n";
 				current_worm_state_durations[ns_hmm_state_transition(previous_state, by_hand_movement_state)] = path->element(i).absolute_time - previous_state_start;
 				previous_state_start = path->element(i).absolute_time;
 				previous_state = by_hand_movement_state;

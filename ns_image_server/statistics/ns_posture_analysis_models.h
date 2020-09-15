@@ -77,7 +77,7 @@ public:
 	void state_transition_log_probabilities(const double& duration_in_seconds, const std::vector < std::vector<double> >& weight_matrix, std::vector < std::vector<double> >& log_prob) const;
 	//the same as state_transition_log_probabilities(), but instead of calculating all state transitions, it calculates only the specified state transition t
 	double state_transition_log_probability(const double& duration_in_seconds, const std::vector < std::vector<double> >& weight_matrix, const ns_hmm_state_transition& t) const;
-	bool ns_emperical_posture_quantification_value_estimator::state_transitions_are_duration_dependant() const;
+	bool state_transitions_are_duration_dependant() const;
 
 	void read(std::istream & i);
 	void write(std::ostream & o)const;

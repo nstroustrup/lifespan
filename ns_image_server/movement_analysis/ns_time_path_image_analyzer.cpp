@@ -688,6 +688,8 @@ void ns_time_path_image_movement_analyzer<allocator_T>::process_raw_images(const
 
 	if (e->current_software_version_number() != e->model_software_version_number()) 
 		throw ns_ex("The specified model was generated using an old model version: \"") << e->model_software_version_number() << "\" but this software uses version \"" << e->current_software_version_number() << "\". You can fix this by using the latest model file version.";
+	
+	measurement_format_version_used = ns_analyzed_image_time_path_element_measurements::measurement_format_version();
 
 	region_info_id = region_id; 
 	obtain_analysis_id_and_save_movement_data(region_id, sql, id_reanalysis_options,ns_do_not_write_data);
@@ -1823,7 +1825,7 @@ bool operator==(const ns_analyzed_image_specification& a, const ns_analyzed_imag
 bool operator!=(const ns_analyzed_image_specification& a, const ns_analyzed_image_specification& b) {
 	return !(a == b);
 }
-
+bool global_supress_storyboard_annotation_bug_warning = false;
 template<class allocator_T>
 bool ns_time_path_image_movement_analyzer<allocator_T>::calculate_optimzation_stats_for_current_hmm_estimator(const std::string * database_name,ns_hmm_movement_analysis_optimizatiom_stats & output_stats, const ns_emperical_posture_quantification_value_estimator * e, const std::set<ns_stationary_path_id> & paths_to_test, bool generate_path_info) {
 	bool found_worm(false);
@@ -1899,7 +1901,10 @@ bool ns_time_path_image_movement_analyzer<allocator_T>::calculate_optimzation_st
 				if (result.by_hand_identified)
 					result.by_hand = by_hand_result;
 				if (result.by_hand_identified && result.by_hand.best_estimate_event_time_for_possible_partially_unbounded_interval() == 0) {
-					std::cerr << "The worm browser generated a spurious storyboard annotation that has been ignored.\n";
+					if (!global_supress_storyboard_annotation_bug_warning) {
+						global_supress_storyboard_annotation_bug_warning = true;
+						std::cerr << "The worm browser generated a spurious storyboard annotation that has been ignored.\n";
+					}
 					//These enter the pipeline in
 					//ns_analyzed_image_time_path::add_by_hand_annotations()
 					result.by_hand_identified = false;
@@ -4661,11 +4666,14 @@ void ns_hmm_movement_analysis_optimizatiom_stats::write_error_data(const std::st
 }
 
 void ns_hmm_movement_analysis_optimizatiom_stats::write_hmm_path_header(std::ostream & o) const {
-	o << "Experiment,Plate Name,Animal Details,Group ID,Path ID,Excluded,Censored,Number of Worms, Time (Days),Analysis Approach,Machine HMM state, By Hand HMM state, Machine likelihood, By hand likelihood, log(p(Machine) / p(by hand)) , Cumulative log(p(Machine) / p(by hand)) ";
+	o << "Experiment,Plate Name,Animal Details,Group ID,Path ID,Excluded,Censored,Number of Worms, Time (Days),Analysis Approach,Machine HMM state, By Hand HMM state, Machine likelihood, By hand likelihood, log(Machine p(total) / By Hand p(total)) , Cumulative log(Machine p(total) / By hand p(total)) ";
 
 	if (animals.size() > 0) {
 		o << ", Machine p(total)";
 		o << ", By hand p(total)";
+		o << ", Machine log(p_tranition(total))";
+		o << ", by Hand log(p_tranition(total))";
+		o << ", Cumulative log(Machine p_transition(total) / By Hand p_transition(total))";
 		for (unsigned int i = 0; i < animals[0].state_info_variable_names.size(); i++) {
 			o << ", Measurement " << animals[0].state_info_variable_names[i];
 			o << ", Machine p(" << animals[0].state_info_variable_names[i] << ")";
@@ -4686,7 +4694,7 @@ void ns_hmm_movement_analysis_optimizatiom_stats::write_hmm_path_data(const std:
 		auto m = db_m->second.find(animals[k].properties.region_info_id);
 		if (m == db_m->second.end())
 			throw ns_ex("Could not find metadata for region ") << animals[k].properties.region_info_id;
-		double cumulative_differential_probability(0);
+		double cumulative_differential_probability(0), cumulative_differential_state_transition_probability(0);
 		std::vector<double> cumulative_sub_probabilities(animals[0].state_info_variable_names.size(), 0);
 		if (animals[k].machine_state_info.path.size() != animals[k].state_info_times.size())
 			throw ns_ex("Invalid path size");
@@ -4706,14 +4714,23 @@ void ns_hmm_movement_analysis_optimizatiom_stats::write_hmm_path_data(const std:
 																							  //We don't allow these state transtiions to set the cumulative probability to -infinity
 				if (animals[k].machine_state_info.path[i].state != ns_hmm_missing)	//missing states don't count in verterbi calculations, so we shouldn't calculate it
 					cumulative_differential_probability += diff_p;
-					o << diff_p << ",";
-					o << cumulative_differential_probability;
+				o << diff_p << ",";
+				o << cumulative_differential_probability;
 			}
 			else {
 				o << ",";
 			}
 			o << "," << animals[k].machine_state_info.path[i].total_log_probability;
 			o << "," << animals[k].by_hand_state_info.path[i].total_log_probability;
+			o << "," << animals[k].machine_state_info.path[i].state_transition_log_probability;
+			if (std::isfinite(animals[k].by_hand_state_info.path[i].state_transition_log_probability)) {
+				o << "," << animals[k].by_hand_state_info.path[i].state_transition_log_probability;
+				cumulative_differential_state_transition_probability += animals[k].machine_state_info.path[i].state_transition_log_probability - animals[k].by_hand_state_info.path[i].state_transition_log_probability;
+				o << "," << cumulative_differential_state_transition_probability;
+			}
+			else {
+				o << ",,";
+			}
 			for (unsigned int pp = 0; pp < animals[0].state_info_variable_names.size(); pp++) {
 				const double diff_p_sub(animals[k].machine_state_info.path[i].log_sub_probabilities[pp] - animals[k].by_hand_state_info.path[i].log_sub_probabilities[pp]);
 				if (animals[k].machine_state_info.path[i].state != ns_hmm_missing)	//missing states don't count in verterbi calculations, so we shouldn't calculate it

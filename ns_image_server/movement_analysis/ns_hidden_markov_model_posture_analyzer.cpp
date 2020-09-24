@@ -160,11 +160,11 @@ void ns_hmm_solver::solve(const ns_analyzed_image_time_path & path, const ns_emp
 			}
 			state_transition_logp = estimator.state_transition_log_probability(duration,
 				log_transition_weight_probability,ns_hmm_state_transition(previous_state,movement_states[i]));
-			if (!std::isfinite(state_transition_logp)) {
-				std::cout << (int)previous_state << ", " << (int)movement_states[i] << ": non finite transition prob\n";
-				estimator.state_transition_log_probability(duration,
-					log_transition_weight_probability, ns_hmm_state_transition(previous_state, movement_states[i]));
-			}
+			//if (!std::isfinite(state_transition_logp)) {
+				//std::cout << (int)previous_state << ", " << (int)movement_states[i] << ": non finite transition prob\n";
+				//estimator.state_transition_log_probability(duration,
+				//	log_transition_weight_probability, ns_hmm_state_transition(previous_state, movement_states[i]));
+			//}
 		}
 		cur_p = state_transition_logp +emission_log_probabilities[movement_states[i]];
 
@@ -1168,7 +1168,7 @@ void ns_hmm_observation_set::write_emissions(std::ostream & out, const std::stri
 			<< p->first.detection_set_id << ","
 			<< p->first.group_id << ","
 			<< p->first.path_id << ",";
-		out << "v,0,all";
+		out << "v,0,all,";
 		p->second.path_variance.write(out, ns_vector_2d(0, 0), false);
 		out << "\n";
 		out << *(p->second.device_name) << ","

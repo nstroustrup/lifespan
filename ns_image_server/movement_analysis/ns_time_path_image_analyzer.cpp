@@ -1850,7 +1850,8 @@ bool ns_time_path_image_movement_analyzer<allocator_T>::calculate_optimzation_st
 			bool by_hand_modified_to_remove_forbidden_states;
 
 			ns_time_path_posture_movement_solution by_hand_posture_movement_solution_with_forbidden_states_removed(groups[g].paths[p].reconstruct_movement_state_solution_from_annotations(true, groups[g].paths[p].movement_analysis_result.first_valid_element_id.period_start_index, groups[g].paths[p].movement_analysis_result.last_valid_element_id.period_end_index, e, groups[g].paths[p].by_hand_annotation_event_times, by_hand_modified_to_remove_forbidden_states));
-
+			if (by_hand_posture_movement_solution_with_forbidden_states_removed.moving.skipped && by_hand_posture_movement_solution_with_forbidden_states_removed.slowing.skipped && by_hand_posture_movement_solution_with_forbidden_states_removed.dead.skipped)
+				throw ns_ex("Problematic by hand annotation found for worm id ") << (g);
 
 			//if (by_hand_posture_movement_solution.moving.skipped) {
 				//cout << "Encountered a by hand annotation in which the animal never slowed: " << g << "\n";
@@ -2571,6 +2572,11 @@ std::string ns_calc_rel_time_by_index(const unsigned long time, const ns_movemen
 		return "";
 	return ns_to_string_short((((long)time)-(long)path.state_entrance_interval_time(i).best_estimate_event_time_for_possible_partially_unbounded_interval())/(60.0*60*24),3);
 }
+std::string ns_calc_rel_exit_time_by_index(const unsigned long time, const ns_movement_state_observation_boundary_interval& i, const ns_analyzed_image_time_path& path) {
+	if (i.skipped)
+		return "";
+	return ns_to_string_short((((long)time) - (long)path.state_exit_interval_time(i).best_estimate_event_time_for_possible_partially_unbounded_interval()) / (60.0 * 60 * 24), 3);
+}
 
 
 std::string ns_normalize_indexed_time(const ns_movement_state_observation_boundary_interval & i, const unsigned long time, const ns_analyzed_image_time_path & path){
@@ -2865,9 +2871,9 @@ void ns_analyzed_image_time_path::write_detailed_movement_quantification_analysi
 		// "Offset from Path Magnitude, Offset within Registered Image Magnitude,"
 		"Registration Offset X, Registration Offset Y, Registration Offset Magnitude,"
 		"Absolute Time, Age Relative Time,"
-		"Machine-Annotated Movement State,By Hand Annotated Movement State,"
-		"Machine Movement Cessation Relative Time, Machine Slow Movement Cessation Relative Time, Machine Fast Movement Cessation Relative Time,Machine Death-Associated Expansion Time,Machine Post-mortem Contraction Time,"
-		"By Hand Movement Cessation Relative Time, By Hand Slow Movement Cessation Relative Time, By Hand Fast Movement Cessation Relative Time,By Hand Death-Associated Expansion Time,By Hand Post-mortem Contraction Time,"
+		"Machine-Annotated Movement State, By Hand Annotated Movement State,By Hand Annotated Annotated Movement State (HMM),"
+		"Machine Movement Cessation Relative Time, Machine Slow Movement Cessation Relative Time, Machine Fast Movement Cessation Relative Time,Machine Death-Associated Expansion Time,Machine Post-mortem Contraction Time, Machine Post-mortem Contraction Stop Time,"
+		"By Hand Movement Cessation Relative Time, By Hand Slow Movement Cessation Relative Time, By Hand Fast Movement Cessation Relative Time,By Hand Death-Associated Expansion Time,By Hand Post-mortem Contraction Time, By Hand Post-mortem Contraction Stop Time,"
 		"Best Guess Movement Cessation Relative Time, Best Guess Slow Movement Cessation Relative Time, Best Guess Fast Movement Cessation Relative Time,Best Guess Death-Associated Expansion Time,Best Guess Post-mortem Contraction Time,"
 		"Event-Aligned time,"
 		"Movement Sum, Movement Score, Denoised Movement Score,";
@@ -3127,18 +3133,21 @@ void ns_analyzed_image_time_path::write_detailed_movement_quantification_analysi
 			<< elements[k].measurements.registration_displacement.mag() << ","
 			<< elements[k].absolute_time << ","
 			<< ns_to_string_short((elements[k].absolute_time - m.time_at_which_animals_had_zero_age)/(60.0*60*24),3) << ","
-			<< ns_movement_state_to_string(explicitly_recognized_movement_state(elements[k].absolute_time)) << ","
-			<< ns_movement_state_to_string(by_hand_movement_state(elements[k].absolute_time)) << ","
+			<< ns_movement_state_to_string(best_guess_movement_state(elements[k].absolute_time)) << ","
+				<< ns_movement_state_to_string(by_hand_movement_state(elements[k].absolute_time)) << ","
+			<< ns_hmm_movement_state_to_string(by_hand_hmm_movement_state(elements[k].absolute_time)) << ","
 			<< ns_calc_rel_time_by_index(elements[k].absolute_time, movement_analysis_result.state_intervals[(int)ns_movement_stationary],*this) << ","
 			<< ns_calc_rel_time_by_index(elements[k].absolute_time, movement_analysis_result.state_intervals[(int)ns_movement_posture],*this) << ","
 			<< ns_calc_rel_time_by_index(elements[k].absolute_time, movement_analysis_result.state_intervals[(int)ns_movement_slow],*this) << ","
 			<< ns_calc_rel_time_by_index(elements[k].absolute_time, movement_analysis_result.state_intervals[(int)ns_movement_death_associated_expansion], *this) << ","
 			<< ns_calc_rel_time_by_index(elements[k].absolute_time, movement_analysis_result.state_intervals[(int)ns_movement_death_associated_post_expansion_contraction], *this) << ","
+			<< ns_calc_rel_exit_time_by_index(elements[k].absolute_time, movement_analysis_result.state_intervals[(int)ns_movement_death_associated_post_expansion_contraction], *this) << ","
 			<< ns_output_interval_difference(elements[k].absolute_time,by_hand_annotation_event_times[(int)ns_movement_cessation]) << ","
 			<< ns_output_interval_difference(elements[k].absolute_time,by_hand_annotation_event_times[(int)ns_translation_cessation]) << ","
 			<< ns_output_interval_difference(elements[k].absolute_time,by_hand_annotation_event_times[(int)ns_fast_movement_cessation]) << ","
 			<< ns_output_interval_difference(elements[k].absolute_time,by_hand_annotation_event_times[(int)ns_death_associated_expansion_start]) << ","
 			<< ns_output_interval_difference(elements[k].absolute_time, by_hand_annotation_event_times[(int)ns_death_associated_post_expansion_contraction_start]) << ","
+				<< ns_output_interval_difference(elements[k].absolute_time, by_hand_annotation_event_times[(int)ns_death_associated_post_expansion_contraction_stop]) << ","
 			<< ns_output_best_guess_interval_difference(elements[k].absolute_time, movement_analysis_result.state_intervals[(int)ns_movement_stationary],	by_hand_annotation_event_times[(int)ns_movement_cessation], *this) << ","
 			<< ns_output_best_guess_interval_difference(elements[k].absolute_time, movement_analysis_result.state_intervals[(int)ns_movement_posture],	by_hand_annotation_event_times[(int)ns_translation_cessation], *this) << ","
 			<< ns_output_best_guess_interval_difference(elements[k].absolute_time, movement_analysis_result.state_intervals[(int)ns_movement_slow], by_hand_annotation_event_times[(int)ns_fast_movement_cessation], *this) << ","
@@ -4350,7 +4359,7 @@ ns_movement_state ns_analyzed_image_time_path::by_hand_movement_state( const uns
 		else
 			return ns_movement_stationary;
 	}
-	if (by_hand_annotation_event_times[(int)ns_translation_cessation].period_end_was_not_observed &&
+	if (by_hand_annotation_event_times[(int)ns_translation_cessation].period_end_was_not_observed ||
 		t >= by_hand_annotation_event_times[(int)ns_translation_cessation].period_end)
 		return ns_movement_posture;
 

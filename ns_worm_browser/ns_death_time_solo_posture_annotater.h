@@ -657,6 +657,7 @@ public:
 	std::string graph_type_string() const {
 		return ns_animal_telemetry::graph_type_string(graph_contents);
 	}
+	void copy_machine_annotations_to_by_hand(double external_rescale_factor);
 	ns_animal_telemetry::ns_graph_contents step_graph_type() {
 		graph_contents = (ns_animal_telemetry::ns_graph_contents)((int)graph_contents + 1);
 		if (graph_contents == ns_animal_telemetry::ns_all) {

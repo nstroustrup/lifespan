@@ -526,7 +526,7 @@ struct ns_hmm_cross_validation_manager {
 		return p->second;
 	}
 
-	void build_hmm_models_for_cross_validation(std::string& output, const int total_number_of_repicates_for_debug_output, int &last_percentage_debug_output, int & replicates_performed) {
+	void build_hmm_models_for_cross_validation(std::string& output, const int total_number_of_repicates_for_debug_output, float &last_percentage_debug_output, int & replicates_performed) {
 		for (auto validation_subject = validation_runs_sorted_by_validation_type.begin(); validation_subject != validation_runs_sorted_by_validation_type.end();) {
 			ns_hmm_states_permitted state_specification;
 			ns_emperical_posture_quantification_value_estimator::ns_hmm_states_transition_types transition_type;
@@ -568,8 +568,8 @@ struct ns_hmm_cross_validation_manager {
 								validation_subject->second.replicates_to_run[replicate_id].training_set, &gen, state_specification, transition_type, output
 							);
 						replicates_performed++;
-						int cur_percentage = floor(100 * replicates_performed / total_number_of_repicates_for_debug_output);
-						if (floor(cur_percentage/5)*5 > last_percentage_debug_output) {
+						float cur_percentage = floor(200 * replicates_performed / total_number_of_repicates_for_debug_output)/2;
+						if (cur_percentage > last_percentage_debug_output+2) {
 							std::cout << cur_percentage << "%...";
 							last_percentage_debug_output = cur_percentage;
 						}
@@ -731,7 +731,7 @@ void ns_run_hmm_cross_validation(std::string& results_summary, ns_image_server_r
 	std::map<std::string, ns_results_info> model_building_and_testing_info;
 	std::map<std::string, std::string> model_filenames;
 	unsigned long estimators_compiled(0);
-	if (0) {
+	if (1) {
 		std::cout << "Writing state emission data to disk...\n";
 		//for each type of plate, build an estimator from the observations collected.
 		for (auto p = models_to_fit.begin(); p != models_to_fit.end(); p++) {
@@ -741,7 +741,7 @@ void ns_run_hmm_cross_validation(std::string& results_summary, ns_image_server_r
 			ns_select_database_for_scope db("", sql);
 			if (!sub.database_name.empty())
 				db.select(sub.database_name);
-			ns_acquire_for_scope<ns_ostream> all_observations(image_server.results_storage.time_path_image_analysis_quantification(sub, std::string("hmm_dur=") + p->first, true, sql).output());
+			ns_acquire_for_scope<ns_ostream> all_observations(image_server.results_storage.time_path_image_analysis_quantification(sub, std::string("hmm_obs=") + p->first, true, sql).output());
 			p->second.observations->write_emissions(all_observations()(), sub.experiment_name);
 			all_observations.release();
 		}
@@ -799,7 +799,8 @@ void ns_run_hmm_cross_validation(std::string& results_summary, ns_image_server_r
 		for (auto q = p->second.validation_runs_sorted_by_validation_type.begin(); q != p->second.validation_runs_sorted_by_validation_type.end(); q++)
 			num_to_build += q->second.replicates_to_run.size()*q->second.analysis_types_and_results.size();
 	}
-	int tmp1(0), tmp2(0);
+	float tmp1(0);
+	int tmp2(0);
 	for (auto p = cross_validation_sets.begin(); p != cross_validation_sets.end(); ) {
 
 		//std::cout << ns_to_string_short((100.0 * num_built) / num_to_build, 2) << "%...";
@@ -1011,12 +1012,12 @@ void ns_run_hmm_cross_validation(std::string& results_summary, ns_image_server_r
 					if (analysis_type->results.size() > 1)
 						txt += ns_to_string(analysis_type->results.size()) + "-fold ";
 					txt += validation_run->second.description + " " + analysis_type->spec.name + " =\n";
-					txt += ns_to_string(analysis_type->results.size()) + " models were fit to independent subsets of the data containing " + ns_to_string_short(results.mean_training_set_N) + "+-" + ns_to_string_short(results.var_training_set_N) + " animals.\n";
+					txt += ns_to_string(analysis_type->results.size()) + " models were fit to independent subsets of the data each containing " + ns_to_string_short(results.mean_training_set_N) + "+-" + ns_to_string_short(results.var_training_set_N) + " animals.\n";
 					
 					if (results.movement.mean_N > 0 || total_movement_tested > 0) {
 						txt += "[Movement cessation]:";
-						if (results.movement.mean_N > 0) txt += "Average error : " + ns_to_string_short(results.movement.mean_err, 2) + " + -" + ns_to_string_short(results.movement.var_err, 2) + " days tested on " + ns_to_string((int)results.movement.mean_N) + " animals.";
-						if (total_movement_tested > 0) txt += ns_to_string((int)results.movement.mean_event_not_found) + " + -" + ns_to_string((int)results.movement.var_event_not_found) + " animals' movement cessation could not be identified by the model.\n";
+						if (results.movement.mean_N > 0) txt += "Average error : " + ns_to_string_short(results.movement.mean_err, 2) + " +- " + ns_to_string_short(results.movement.var_err, 2) + " days tested on " + ns_to_string((int)results.movement.mean_N) + " animals.\n";
+						if (total_movement_tested > 0) txt += ns_to_string((int)results.movement.mean_event_not_found) + " +- " + ns_to_string((int)results.movement.var_event_not_found) + " animals' movement cessation could not be identified by the model.\n";
 					}
 					if (total_movement_tested == 0)
 						txt+= "No data corresponding to animals in the test sets could be loaded, so no testing was performed.\n";
@@ -1024,8 +1025,8 @@ void ns_run_hmm_cross_validation(std::string& results_summary, ns_image_server_r
 						txt += "Some data corresponding to animals in the tests set could be loaded,  so only " + ns_to_string(total_movement_tested) + " animals could be tested.\n";
 					if (results.expansion.mean_N > 0 || total_expansion_tested > 0) {
 						txt += "[Death-associated Expansion]:";
-						if (results.expansion.mean_N > 0) txt += "Average error : " + ns_to_string_short(results.expansion.mean_err, 2) + " + -" + ns_to_string_short(results.expansion.var_err, 2) + " days tested on " + ns_to_string((int)results.expansion.mean_N) + " animals.";
-						if (total_expansion_tested > 0) txt += ns_to_string((int)results.expansion.mean_event_not_found) + " + -" + ns_to_string((int)results.expansion.var_event_not_found) + " animals' expansion time could not be identified by the model.\n";
+						if (results.expansion.mean_N > 0) txt += "Average error : " + ns_to_string_short(results.expansion.mean_err, 2) + " +- " + ns_to_string_short(results.expansion.var_err, 2) + " days tested on " + ns_to_string((int)results.expansion.mean_N) + " animals.\n";
+						if (total_expansion_tested > 0) txt += ns_to_string((int)results.expansion.mean_event_not_found) + " +- " + ns_to_string((int)results.expansion.var_event_not_found) + " animals' expansion time could not be identified by the model.\n";
 					}
 					if (total_expansion_tested == 0)
 						txt += "No data corresponding to animals in the test sets could be loaded, so no testing was performed.\n";
@@ -1069,8 +1070,15 @@ void ns_run_hmm_cross_validation(std::string& results_summary, ns_image_server_r
 				ns_hmm_movement_analysis_optimizatiom_stats::write_error_header(performance_stats_output()(), measurement_names_ordered);
 				for (auto cross_validation_set = p->second.validation_runs_sorted_by_validation_type.begin(); cross_validation_set != p->second.validation_runs_sorted_by_validation_type.end(); ++cross_validation_set) {
 					for (auto analysis_type = cross_validation_set->second.analysis_types_and_results.begin(); analysis_type != cross_validation_set->second.analysis_types_and_results.end(); analysis_type++) {
-						for (auto r = analysis_type->results.begin(); r != analysis_type->results.end(); r++)
-							r->results.write_error_data(analysis_type->spec.name, measurement_names_ordered, performance_stats_output()(), p->first, cross_validation_set->first, r->replicate_spec->replicate_id, metadata_cache);
+						for (auto r = analysis_type->results.begin(); r != analysis_type->results.end(); r++) {
+							try {
+								r->results.write_error_data(analysis_type->spec.name, measurement_names_ordered, performance_stats_output()(), p->first, cross_validation_set->first, r->replicate_spec->replicate_id, metadata_cache);
+							}
+							catch (ns_ex & ex) {
+								std::cout << ex.text() << "\n";
+							}
+
+						}
 					}
 				}
 			}

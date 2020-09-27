@@ -1544,7 +1544,7 @@ void ns_image_server::create_and_configure_sql_database(bool local, const std::s
 			string a;
 			getline(cin,a);
 			cout << "\n";
-			if (a == "y") {
+			if (a.size() > 0 && a[0] == 'y') {
 				cout << "Are you sure?  This will drop your database schema and erase " << database_size_in_mb << " megabytes of data on " << hostname << "\n"
 						"Only proceed if you really understand what you are doing!\n"
 						"To proceed, type y . To cancel and do nothing, type n : ";
@@ -1552,17 +1552,17 @@ void ns_image_server::create_and_configure_sql_database(bool local, const std::s
 					string b;
 					getline(cin,b);
 					cout << "\n";
-					if (b == "y")
+					if (b.size() > 0 && b[0] == 'y')
 						break;
-					if (b == "n" || b == "q" || b == "c")
+					if (b.size() > 0 (b[0] == 'n' || b[0] == 'q' || b[0] == 'c'))
 						throw ns_ex("The request was cancelled by the user.");
-					cout << "Unknown response.  Please type y or n :";
+					cout << "Unknown response: \"" << b << "\".  Please type y or n :";
 				}
 				break;
 			}
-			if (a == "n" || a == "q" || a == "c")
+			if (a.size() > 0 && (a[0] == 'n' || a[0] == 'q' || a[0] == 'c'))
 				throw ns_ex("The request was cancelled by the user.");
-			cout << "Unknown response.  Please type y or n :";
+			cout << "Unknown response: \"" << a << "\".  Please type y or n :";
 		}
 		sql << "DROP SCHEMA " << db;
 		sql.send_query();

@@ -884,7 +884,7 @@ void ns_image_server_dispatcher::on_timer(){
 						}
 					}
 					if (!found) {
-						devices_missing_in_db.emplace(prev_res[i][0]);
+						devices_missing_in_db.emplace(devices[i].name);
 						device_record_problem = true;
 						break;
 					}

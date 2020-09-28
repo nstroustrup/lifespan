@@ -836,6 +836,8 @@ void ns_image_server::request_database_from_db_and_switch_to_it(ns_sql & sql, bo
 };
 
 void ns_image_server::switch_to_default_db() {
+	if (possible_sql_databases.empty())
+		throw ns_ex("ns_image_server::set_sql_database()::No possible databases specified in ini file!");
 	sql_database_choice = possible_sql_databases.begin();
 }
 void ns_image_server::set_sql_database(const std::string & database_name,const bool update_hosts_records_in_db, ns_image_server_sql * sql){
@@ -1478,7 +1480,7 @@ std::string get_hidden_password() {
 	#endif
 }
 
-void ns_image_server::create_and_configure_sql_database(bool local, const std::string & schema_specification_filename) {
+std::string ns_image_server::create_and_configure_sql_database(bool local, const std::string& schema_specification_filename) {
 	if (local) {
 		if (local_buffer_ip.empty()) throw ns_ex("Please specifiy a local buffer ip in the ns_image_server.ini file");
 		if (local_buffer_user.empty()) throw ns_ex("Please specifiy a local buffer username in the ns_image_server.ini file");
@@ -1504,12 +1506,12 @@ void ns_image_server::create_and_configure_sql_database(bool local, const std::s
 		hostname(local ? local_buffer_ip : sql_server_addresses[0]);
 	std::cout << "**Configuring the ";
 	if (local)
-	  std::cout << "local db buffer ";
+		std::cout << "local db buffer ";
 	else std::cout << "central sql database ";
 	std::cout << db << " on server " << hostname << "**\n";
 	std::cout << "To modify schema, please provide a username with administrative privileges on your sql server: ";
 	std::string root_username;
-	getline(cin,root_username);
+	getline(cin, root_username);
 	std::cout << "Please enter the password for this account: ";
 	std::string root_password = get_hidden_password();
 
@@ -1542,15 +1544,15 @@ void ns_image_server::create_and_configure_sql_database(bool local, const std::s
 			"To delete, type y . To cancel and do nothing, type n : ";
 		while (true) {
 			string a;
-			getline(cin,a);
+			getline(cin, a);
 			cout << "\n";
 			if (a.size() > 0 && a[0] == 'y') {
 				cout << "Are you sure?  This will drop your database schema and erase " << database_size_in_mb << " megabytes of data on " << hostname << "\n"
-						"Only proceed if you really understand what you are doing!\n"
-						"To proceed, type y . To cancel and do nothing, type n : ";
+					"Only proceed if you really understand what you are doing!\n"
+					"To proceed, type y . To cancel and do nothing, type n : ";
 				while (true) {
 					string b;
-					getline(cin,b);
+					getline(cin, b);
 					cout << "\n";
 					if (b.size() > 0 && b[0] == 'y')
 						break;
@@ -1572,18 +1574,18 @@ void ns_image_server::create_and_configure_sql_database(bool local, const std::s
 	sql.get_rows(tmp);
 	if (tmp.empty())
 		throw ns_ex("mysql.user table not found!");
-	if (tmp[0][0] == "0"){
+	if (tmp[0][0] == "0") {
 		sql << "CREATE USER '" << username << "'@'%' identified by '" << password << "'";
 		sql.send_query();
 	}
- 	sql << "SELECT EXISTS(SELECT 1 FROM mysql.user WHERE user = '" << username << "' AND host='localhost')";
-        
-        sql.get_rows(tmp);
-        if (tmp.empty())	
-                throw ns_ex("mysql.user table not found!");
-        if (tmp[0][0] == "0"){	
-	  sql << "CREATE USER '" << username << "'@'localhost' identified by '" << password << "'";
-	  sql.send_query();
+	sql << "SELECT EXISTS(SELECT 1 FROM mysql.user WHERE user = '" << username << "' AND host='localhost')";
+
+	sql.get_rows(tmp);
+	if (tmp.empty())
+		throw ns_ex("mysql.user table not found!");
+	if (tmp[0][0] == "0") {
+		sql << "CREATE USER '" << username << "'@'localhost' identified by '" << password << "'";
+		sql.send_query();
 	}
 
 	sql << "CREATE DATABASE " << db;
@@ -1615,7 +1617,7 @@ void ns_image_server::create_and_configure_sql_database(bool local, const std::s
 			std::string ch;
 			bool in_quote = false;
 			if (image_server_db_schema_sql_len == 0)
-			  throw ns_ex("No db schema provided!");
+				throw ns_ex("No db schema provided!");
 			else cout << "Schema len: " << image_server_db_schema_sql_len << "\n";
 			for (unsigned long i = 0; i < image_server_db_schema_sql_len; i++) {
 
@@ -1647,6 +1649,7 @@ void ns_image_server::create_and_configure_sql_database(bool local, const std::s
 	cout << "Done!\n";
 	schema.close();
 	sql.disconnect();
+	return db;
 }
 
 bool ns_open_db_table_file(const ns_sql_result & columns, ns_sql_result & data, const std::string & filename, const std::string & directory, std::ofstream & ff){

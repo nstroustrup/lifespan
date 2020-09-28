@@ -997,17 +997,22 @@ int main(int argc, char ** argv){
 			  string b;
 			  getline(cin,b);
 			  cout << "\n";
-			  if (b == "y")
-			    set_up_central=true;
-			  if (b == "n" || b == "q" || b == "c")
+			  if (b.size() == 0 && b[0] == 'y') {
+				  set_up_central = true;
+				  break;
+			  }
+			  if (b.size() == 0 &&  (b[0] == 'n' || b[0] == 'q' || b[0] == 'c'))
 			    throw ns_ex("The request was cancelled by the user.");
-			  cout << "Unknown response.  Please type y or n :";
+			  cout << "Unknown response: \"" << b << "\".  Please type y or n :";
 			}
-			if (set_up_central)
-			  image_server.create_and_configure_sql_database(false, schema_filename);
+			if (set_up_central) {
+				image_server.create_and_configure_sql_database(false, schema_filename);
+				image_server.switch_to_default_db();
+			}
+			
 			std::cout << "Checking for recent sql schema updates...\n";
 			override_sql_db = "";
-			sql_update_requested = true;
+			sql_update_requested = true; 
 		}
 		if (sql_update_requested) {
 			ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__, __LINE__));

@@ -1554,7 +1554,7 @@ void ns_image_server::create_and_configure_sql_database(bool local, const std::s
 					cout << "\n";
 					if (b.size() > 0 && b[0] == 'y')
 						break;
-					if (b.size() > 0 (b[0] == 'n' || b[0] == 'q' || b[0] == 'c'))
+					if (b.size() > 0 && (b[0] == 'n' || b[0] == 'q' || b[0] == 'c'))
 						throw ns_ex("The request was cancelled by the user.");
 					cout << "Unknown response: \"" << b << "\".  Please type y or n :";
 				}

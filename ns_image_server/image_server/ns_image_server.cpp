@@ -1289,7 +1289,7 @@ bool ns_image_server::upgrade_tables(ns_sql_connection * sql, const bool just_te
 				return true;
 			cout << "Updating model registry\n";
 			*sql << "ALTER TABLE `" << t_suf << "analysis_model_registry` "
-				"ADD COLUMN `details` TEXT NOT NULL DEFAULT '\'\'' AFTER `filename`";
+				"ADD COLUMN `details` TEXT NOT NULL DEFAULT '' AFTER `filename`";
 			sql->send_query();
 			changes_made = true;
 		}

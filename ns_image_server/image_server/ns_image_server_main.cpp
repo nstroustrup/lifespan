@@ -997,11 +997,11 @@ int main(int argc, char ** argv){
 			  string b;
 			  getline(cin,b);
 			  cout << "\n";
-			  if (b.size() == 0 && b[0] == 'y') {
+			  if (b.size() > 0 && b[0] == 'y') {
 				  set_up_central = true;
 				  break;
 			  }
-			  if (b.size() == 0 &&  (b[0] == 'n' || b[0] == 'q' || b[0] == 'c'))
+			  if (b.size() > 0 &&  (b[0] == 'n' || b[0] == 'q' || b[0] == 'c'))
 			    throw ns_ex("The request was cancelled by the user.");
 			  cout << "Unknown response: \"" << b << "\".  Please type y or n :";
 			}

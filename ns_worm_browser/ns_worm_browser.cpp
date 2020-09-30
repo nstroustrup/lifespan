@@ -9060,8 +9060,8 @@ void ns_death_time_solo_posture_annotater::register_click(const ns_vector_2i & i
 	const bool click_in_graph_area(image_position.x >= graph_tl.x && image_position.x < graph_br.x &&
 		image_position.y >= graph_tl.y && image_position.y < graph_br.y);
 
-	const bool click_in_bar_area(image_position.y - worm_image_offset_due_to_telemetry_graph_spacing.y >= hand_bar_group_bottom &&
-		image_position.y - worm_image_offset_due_to_telemetry_graph_spacing.y < hand_bar_group_bottom + hand_bar_height);
+	const bool click_in_bar_area(image_position.y  >= hand_bar_group_bottom &&
+		image_position.y  < hand_bar_group_bottom + hand_bar_height);
 	
 	bool change_made = false;
 	bool click_handled_by_hand_bar_choice(false);

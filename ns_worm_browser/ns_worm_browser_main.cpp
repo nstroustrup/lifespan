@@ -4130,6 +4130,22 @@ void ns_run_startup_routines() {
 		}
 		cerr << "Done.\n";
 
+
+		if (image_server.upgrade_tables(&sql(), true, sql().database(), false)) {
+			ns_choice_dialog c;
+			c.title = "Your SQL database schema needs to be updated.  ";
+			c.option_1 = "Update it now";
+			c.option_2 = "Ignore this for now";
+			ns_run_in_main_thread<ns_choice_dialog> b(&c);
+			switch (c.result) {
+			case 1:
+				image_server.upgrade_tables(&sql(), false, sql().database(), false);
+			case 2:
+				break;
+			default: throw ns_ex("Unknown option!");
+			}
+		}
+
 		//example code that runns a movement analysis job for a specific region
 		if (0) {
 			ns_processing_job job;
@@ -4169,9 +4185,9 @@ void ns_run_startup_routines() {
 		catch (ns_ex& ex) {
 			image_server_const.register_server_event(ex, &sql());
 		}
-		sql.release();
 	}
 
+	sql.release();
 	//ns_worm_browser_output_debug(__LINE__,__FILE__,"Loading worm detection models");
 	if (worm_learner.model_specifications.size() == 0) {
 		cerr << "No model specifications were found in the default model directory.  Worm detection will probably not work.";
@@ -4425,7 +4441,6 @@ int main(int argc, char** argv) {
 			ns_worm_terminal_main_menu_organizer menu_organizer;
 			//remove formatting characters that make pretty menus, so we can search the raw text.
 			menu_organizer.strip_text_decorations();
-			
 			std::string command(argv[1]);
 			if (command == "help") {
 				write_commandline_usage(menu_organizer);
@@ -4433,6 +4448,9 @@ int main(int argc, char** argv) {
 			}
 			ns_browser_command_subject_set subject_set;
 			ns_sql& sql(worm_learner.get_sql_connection());
+			if (image_server.upgrade_tables(&sql, true, sql.database(), false)) {
+				std::cout << "Warning: your mysql database schema needs to be updated.\n";
+			}
 			ns_process_commandline_arguments(argc, argv, subject_set, sql);
 			try {
 				menu_organizer.dispatch_request(subject_set, command);

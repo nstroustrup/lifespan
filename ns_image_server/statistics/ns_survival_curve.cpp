@@ -1036,11 +1036,11 @@ void ns_lifespan_experiment_set::output_JMP_file(const ns_death_time_annotation:
 				out_detailed_JMP_header(time_handling_behavior,o,time_unit_string,"\n");
 				break;
 			case ns_lifespan_experiment_set::ns_simple_with_control_groups:
-				out_simple_JMP_header(time_handling_behavior,ns_include_control_groups,o,time_unit_string,"\n");
+				out_simple_JMP_header(time_handling_behavior,ns_include_control_groups,o,time_unit_string, false, "\n");
 				break;
 			case ns_multiple_events:
 			case ns_lifespan_experiment_set::ns_simple:
-				out_simple_JMP_header(time_handling_behavior,ns_do_not_include_control_groups,o,time_unit_string,"\n");
+				out_simple_JMP_header(time_handling_behavior,ns_do_not_include_control_groups,o,time_unit_string, detail == ns_multiple_events,"\n");
 				break;
 			default: throw ns_ex("Unknown Output Detail Level: ") << (int)detail;
 		}

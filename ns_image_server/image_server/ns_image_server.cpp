@@ -984,6 +984,7 @@ bool ns_image_server::upgrade_tables(ns_sql_connection * sql, const bool just_te
 
 			changes_made = true;
 		}
+
 		*sql << "SELECT COLUMN_TYPE FROM INFORMATION_SCHEMA.COLUMNS "
 			"WHERE table_name = 'sample_region_images' AND COLUMN_NAME = 'id' "
 			"AND TABLE_SCHEMA = '" << schema_name << "'";
@@ -1195,6 +1196,21 @@ bool ns_image_server::upgrade_tables(ns_sql_connection * sql, const bool just_te
 				}
 			}
 		}
+
+
+		*sql << "SELECT COLUMN_TYPE FROM INFORMATION_SCHEMA.COLUMNS "
+			"WHERE table_name = 'annotation_flags' AND COLUMN_NAME = 'exclude' "
+			"AND TABLE_SCHEMA = '" << schema_name << "'";
+		sql->get_rows(res);
+		if (res.size() > 0 && res[0][0].find("tiny") != res[0][0].npos) {
+			if (just_test_if_needed)
+				return true;
+			cout << "Updating flag table...";
+			*sql << "ALTER TABLE annotation_flags CHANGE COLUMN exclude exclude INT NOT NULL DEFAULT '0' AFTER label;";
+			sql->send_query();
+			cout << "\n";
+		}
+
 
 	}
 

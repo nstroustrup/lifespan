@@ -1834,6 +1834,8 @@ void ns_death_time_annotation_compiler::generate_detailed_animal_data_file(const
 				if (d.machine.best_guess_death_annotation != 0)
 					o << d.machine.best_guess_death_annotation->annotation_source_details;
 				o << ",single worm,";
+				if (d.by_hand.best_guess_death_annotation != 0)
+					o << d.by_hand.best_guess_death_annotation->censor_description();
 				o << "\n";
 			}
 		}
@@ -2555,9 +2557,18 @@ void ns_add_normal_death_to_set(const ns_annotation_generation_type & requested_
 
 			if (b.type == ns_movement_cessation &&
 				properties_to_transfer.flag.specified()) {
-				if (properties_to_transfer.flag.label_short == "STILL_ALIVE") {
+				if (properties_to_transfer.flag.event_should_be_censored_at_last_measurement()) {
 					b.time = latest_interval;
 					properties_to_transfer.excluded = ns_death_time_annotation::ns_censored_at_end_of_experiment;
+					b.annotation_source = ns_death_time_annotation::ns_storyboard;
+					b.annotation_source_details = "By-hand annotated as remainig alive at end of observarion period";
+				}
+			}
+			if (b.type == ns_movement_cessation &&
+				properties_to_transfer.flag.specified()) {
+				if (properties_to_transfer.flag.event_should_be_censored_at_death()) {
+					b.time = latest_interval;
+					properties_to_transfer.excluded = ns_death_time_annotation::ns_censored;
 					b.annotation_source = ns_death_time_annotation::ns_storyboard;
 					b.annotation_source_details = "By-hand annotated as remainig alive at end of observarion period";
 				}
@@ -2866,9 +2877,8 @@ void ns_death_time_annotation_flag::get_flags_from_db(ns_image_server_sql * sql)
 		ns_flag_cache_by_short_label::iterator p = cached_flags_by_short_label.find(flag_name);
 		if (p != cached_flags_by_short_label.end())
 			throw ns_ex("Death Time Annotation Flag ") << flag_name << " has been specified twice; first as " << p->second.label_short << " and then as " << res[i][1];
-		ns_death_time_annotation_flag f(ns_death_time_annotation_flag(flag_name,res[i][2],res[i][3] == "1",res[i][4],res[i][6]));
+		ns_death_time_annotation_flag f(ns_death_time_annotation_flag(flag_name,res[i][2], (ns_death_time_annotation_flag::ns_flag_handling)atol(res[i][3].c_str()),res[i][4],res[i][6]));
 		f.cached_hidden = (res[i][5]=="1");
-	//	cached_flags_by_id[flag_id] = f;
 		cached_flags_by_short_label[res[i][1]] = f;
 	}
 	std::vector<ns_death_time_annotation_flag> v;
@@ -2899,7 +2909,7 @@ void ns_death_time_annotation_flag::get_flags_from_db(ns_image_server_sql * sql)
 				continue;	//don't include ns_none
 			//update db with default flags if they aren't present.
 			*sql <<  "INSERT INTO annotation_flags SET label_short='" <<v[i].label_short
-				<< "',label='"<<v[i].cached_label << "',exclude=" << (v[i].cached_excluded?"1":"0") << ",next_flag_name_in_order='" << v[i].next_flag_name_in_order << "'";
+				<< "',label='"<<v[i].cached_label << "',exclude=" << ((int)v[i].cached_handling) << ",next_flag_name_in_order='" << v[i].next_flag_name_in_order << "'";
 			sql->send_query();
 		}
 		else{
@@ -2921,7 +2931,7 @@ const char * ns_death_time_annotation_flag::first_default_flag_short_label(){
 }
 ns_death_time_annotation_flag ns_death_time_annotation_flag::extra_worm_from_multiworm_disambiguation(){
 	return ns_death_time_annotation_flag(first_default_flag_short_label(),
-	"Extra worm from multiple-worm disambiguation",true,"3D_CLOUD_ERR","FFFFCC");
+	"Extra worm from multiple-worm disambiguation",ns_normal,"3D_CLOUD_ERR","FFFFCC");
 }
 void ns_death_time_annotation_flag::generate_default_flags(std::vector<ns_death_time_annotation_flag> & flags){
 	flags.resize(0);
@@ -2930,15 +2940,17 @@ void ns_death_time_annotation_flag::generate_default_flags(std::vector<ns_death_
 	flags.push_back(f);
 	flags.push_back(extra_worm_from_multiworm_disambiguation());
 	flags.push_back(ns_death_time_annotation_flag("3D_CLOUD_ERR",
-		"Point Cloud Analaysis Error",true,"REG_ERR","FFFF80"));
+		"Point Cloud Analaysis Error", ns_excluded,"REG_ERR","FFFF80"));
 	flags.push_back(ns_death_time_annotation_flag("REG_ERR",
-		"Movement Registration Error",true,"2ND_WORM_ERR","FF8080"));
+		"Movement Registration Error", ns_excluded,"2ND_WORM_ERR","FF8080"));
 	flags.push_back(ns_death_time_annotation_flag("2ND_WORM_ERR",
-		"Additional Worm Confuses Analysis",true,"","80FF80"));
+		"Additional Worm Confuses Analysis", ns_excluded,"","80FF80"));
 	flags.push_back(ns_death_time_annotation_flag("STILL_ALIVE",
-		"Worm is still alive at the end of the experiment",false,"VIS_INSPECT","CCCCCC"));
+		"Worm is still alive at the end of the experiment",ns_normal,"VIS_INSPECT","CCCCCC"));
 	flags.push_back(ns_death_time_annotation_flag("VIS_INSPECT",
-		"Flagged for visual inspection", false, "", "FFCC11"));
+		"Flagged for visual inspection", ns_normal, "", "FFCC11"));
+	flags.push_back(ns_death_time_annotation_flag("EXPLOSION",
+		"Flagged for visual inspection", ns_censored_at_death, "", "FFCC11"));
 }
 
 std::string ns_death_time_annotation_flag::label() const{
@@ -2959,7 +2971,7 @@ void ns_death_time_annotation_flag::get_cached_info() const{
 		throw ns_ex("Could not load flag information from db for flag ") << label_short;
 	label_is_cached = true;
 	cached_label = p->second.cached_label;
-	cached_excluded = p->second.cached_excluded;
+	cached_handling = p->second.cached_handling;
 	cached_hidden = p->second.cached_hidden;
 	cached_color = p->second.cached_color;
 	lock.release();
@@ -3114,7 +3126,7 @@ void ns_death_timing_data::draw_movement_diagram(const ns_vector_2i & pos, const
 			}
 
 			c = ns_movement_colors::color(ns_movement_stationary)*scaling;
-			if (movement_cessation.excluded == ns_death_time_annotation::ns_censored_at_end_of_experiment)
+			if (movement_cessation.excluded == ns_death_time_annotation::ns_censored_at_end_of_experiment || movement_cessation.excluded == ns_death_time_annotation::ns_censored)
 				c = ns_movement_colors::color(ns_movement_machine_excluded)*scaling;
 		}
 		//here the color is set by the value of the last specified event

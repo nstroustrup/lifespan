@@ -77,9 +77,10 @@ bool operator==(const ns_death_time_annotation_time_interval& a, const ns_death_
 bool operator!=(const ns_death_time_annotation_time_interval& a, const ns_death_time_annotation_time_interval& b);
 struct ns_death_time_annotation_flag{
 
-	ns_death_time_annotation_flag():label_is_cached(false),cached_hidden(false),cached_excluded(false),cached_color(0,0,0){}
-	ns_death_time_annotation_flag(const std::string & label_short_, const std::string &label_long_="", const bool &  excluded_=false, const std::string & next_flag_name_in_order_="", const std::string & color_="000000"):
-	label_short(label_short_),cached_label(label_long_),cached_excluded(excluded_),label_is_cached(!label_long_.empty() || excluded_),next_flag_name_in_order(next_flag_name_in_order_),cached_hidden(false),cached_color(ns_hex_string_to_color<ns_color_8>(color_)){}
+	ns_death_time_annotation_flag():label_is_cached(false),cached_hidden(false),cached_handling(ns_normal),cached_color(0,0,0){}
+	typedef enum {ns_normal,ns_excluded,ns_censored_at_death,ns_censor_at_last_measurement} ns_flag_handling;
+	ns_death_time_annotation_flag(const std::string & label_short_, const std::string &label_long_="", ns_flag_handling flag_handling = ns_normal, const std::string & next_flag_name_in_order_="", const std::string & color_="000000"):
+	label_short(label_short_),cached_label(label_long_),cached_handling(flag_handling),label_is_cached(!label_long_.empty() || flag_handling != ns_normal),next_flag_name_in_order(next_flag_name_in_order_),cached_hidden(false),cached_color(ns_hex_string_to_color<ns_color_8>(color_)){}
 
 	std::string label_short;
 	std::string label() const;
@@ -87,10 +88,29 @@ struct ns_death_time_annotation_flag{
 
 	bool event_should_be_excluded() const{
 		if (label_is_cached)
-			return cached_excluded;
+			return cached_handling == ns_excluded;
 		get_cached_info();
-		return cached_excluded;
+		return cached_handling == ns_excluded;
 	}
+	bool event_should_be_censored_at_death() const {
+		if (label_is_cached)
+			return cached_handling == ns_censored_at_death;
+		get_cached_info();
+		return cached_handling == ns_censored_at_death;
+	}
+	bool event_should_be_censored_at_last_measurement() const {
+		if (label_is_cached)
+			return cached_handling == ns_censor_at_last_measurement;
+		get_cached_info();
+		return cached_handling == ns_censor_at_last_measurement;
+	}
+	bool normal_death_event() const{
+		if (label_is_cached)
+			return cached_handling == ns_normal;
+		get_cached_info();
+		return cached_handling == ns_normal;
+	}
+	
 	bool specified() const{return !label_short.empty();}
 	#ifndef NS_NO_SQL
 	static void get_flags_from_db(ns_image_server_sql * sql);
@@ -112,7 +132,7 @@ private:
 	static ns_lock flag_lock;
 	mutable bool label_is_cached;
 	mutable std::string cached_label;
-	mutable bool cached_excluded;
+	mutable ns_flag_handling cached_handling;
 	mutable bool cached_hidden;
 	mutable std::string next_flag_name_in_order;
 	mutable ns_color_8 cached_color;
@@ -261,8 +281,9 @@ struct ns_death_time_annotation{
 	inline bool is_censored() const{return is_censored(excluded);}
 	static inline bool is_excluded(const ns_exclusion_type & t) {return (t!=ns_not_excluded && !is_censored(t) || t==ns_excluded_and_censored);}
 	inline bool is_excluded()const {return is_excluded(excluded);}
-
 	std::string censor_description()const {
+		if (!is_excluded() && !is_censored() && !flag.normal_death_event())
+			return flag.label();
 		return censor_description(excluded);
 	}
 	static std::string censor_description(const ns_death_time_annotation::ns_exclusion_type & t);

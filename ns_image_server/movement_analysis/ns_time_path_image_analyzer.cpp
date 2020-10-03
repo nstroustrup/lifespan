@@ -3240,8 +3240,8 @@ void ns_time_path_image_movement_analyzer<allocator_T>::write_posture_analysis_o
 				//we do not test multi-worm clusters because there is an ambiguity in which of the multiple by hand death times should match up to the machine death time
 					continue;
 			if (groups[i].paths[j].censoring_and_flag_details.flag.specified() && ( groups[i].paths[j].censoring_and_flag_details.flag.event_should_be_excluded() || 
-				groups[i].paths[j].censoring_and_flag_details.flag.label_short == "2ND_WORM_ERR" ||
-				groups[i].paths[j].censoring_and_flag_details.flag.label_short == "STILL_ALIVE" ))
+				!groups[i].paths[j].censoring_and_flag_details.flag.normal_death_event() ||
+				groups[i].paths[j].censoring_and_flag_details.flag.label_short == "2ND_WORM_ERR"))
 				continue;
 			groups[i].paths[j].write_posture_analysis_optimization_data(software_version,generate_stationary_path_id(i,j),thresholds,hold_times,m,denoising_parameters_used,o, results,results_2);
 		}

@@ -1,6 +1,7 @@
 <?php
 require_once ('worm_environment.php');
 require_once('ns_experiment.php');
+require_once('ns_processing_job.php');
 $query = "SELECT id, k,v FROM constants ORDER BY k ASC";
 $sql->get_row($query,$all_constants);
 $pos = 0;
@@ -47,7 +48,7 @@ if ($reload){
   die("");
  }
 
-$query = "SELECT label_short,label,exclude,next_flag_name_in_order, hidden, color, id, next_flag_id_in_order FROM annotation_flags";
+$query = "SELECT label_short,label,exclude,next_flag_name_in_order, hidden, color, id, next_flag_id_in_order FROM annotation_flags ORDER BY id ASC";
 $sql->get_row($query,$flags);
 
 $root_flag_index = 0;
@@ -69,22 +70,21 @@ for ($i = 0; $i < sizeof($flags); $i++){
   }
 }
 //var_dump($flags);
+#die($number_of_tails);
 if($number_of_tails != 1 || ns_param_spec($query_string,'fix_flags') && $query_string["fix_flags"] == "1"){
-  #echo("Number of tails: " . $number_of_tails . "<BR>");
-  #die("WHA");
-  for ($i = 0; $i < sizeof($flags); $i++){
-    //  echo $i . " ". $flags[$i][0] . "<BR>";
-    if ($flags[$i][0] == "MULTI_ERR"){
-      $next_index = 0;
+  for ($i = 0; $i < sizeof($flags); $i++){ 
+   if ($flags[$i][0] == "MULTI_ERR"){
       if ($i == 0)
 	$next_index = 1;
+	else 
+	$next_index = 0;
       $next = $flags[$next_index][0];
       $next_id = $flags[$next_index][6];
 
     }
     else if ($i+1 ==sizeof($flags) || $i+2 == sizeof($flags) && $flags[sizeof($flags)-1][0]=="MULTI_ERR"){
       $next='';
-      $next_id = sizeof($flags)+1;
+      $next_id = $flags[sizeof($flags)-1][6]+1;
     }
     else{
       $next_index = $i+1;
@@ -93,16 +93,16 @@ if($number_of_tails != 1 || ns_param_spec($query_string,'fix_flags') && $query_s
       $next = $flags[$next_index][0];
       $next_id = $flags[$next_index][6];
     }
-    $query = "UPDATE annotation_flags SET next_flag_name_in_order='" . $next ."', next_flag_id_in_order ='".$next_id ."' WHERE label_short='".
-      $flags[$i][0] . "'";
-    //  echo $query . "<BR>";
-    // die($query);
+    $query = "UPDATE annotation_flags SET next_flag_name_in_order='" . $next ."', next_flag_id_in_order ='".$next_id ."' WHERE id=".
+      $flags[$i][6];
+    // echo $query . "<BR>";
+     //die($query);
     $sql->send_query($query);
     //echo $query . "<BR>";
   }
   $q = "commit";
   $sql->send_query($q);
- 
+ //die("");
   header("Location: cluster_configuration.php?already_set_tails=1\n\n");
  }
 
@@ -131,9 +131,7 @@ if (ns_param_spec($_POST,'save_label')){
   $hide = $_POST['hide'];
   $color = $_POST['color'];
  $query = "UPDATE annotation_flags SET label ='$label',exclude=";
- if ($exclude=="1")
-    $query .= "1";
-  else $query .= "0";
+ $query .= $exclude;
  $query .= ", hidden=";
  if ($hide=="1")
    $query .= "1";
@@ -319,7 +317,7 @@ for ($i = 0; $i < sizeof($constants); $i++){
 <table align="center" border=0><tr><td>
 <table align="center" border=0 cellspacing=0 cellpadding=1><tr><td bgcolor="#000000">
 <table border=0 bgcolor="#FFFFFF" cellspacing=0 cellpadding=0><tr><td>
-<table cellspacing=0 cellpadding=0 width="100%"><tr <?php echo $table_header_color ?>><td width=200>Short name</td><td width=400>Flag Label</td><td width=8>Color</td><td width=100><center>Exclude Animals<br>With Flag</center></td><td width=100><center>Hide Flag</center></td><td>&nbsp;</td></tr>
+<table cellspacing=0 cellpadding=0 width="100%"><tr <?php echo $table_header_color ?>><td width=200>Short name</td><td width=400>Flag Label</td><td width=8>Color</td><td width=100><center>Annotation Handling</center></td><td width=100><center>Hide Flag</center></td><td>&nbsp;</td></tr>
 </table>
 <?php
 
@@ -335,10 +333,19 @@ for ($i = 0; $i < sizeof($ordered_flags); $i++){
   echo "\n</td><td width=8 bgcolor=\"{$table_colors[$i%2][1]}\">\n";
   output_editable_field('color',$ordered_flags[$i][5],TRUE, 6);
   echo "\n</td><td width=100 bgcolor=\"{$table_colors[$i%2][1]}\">\n";
-  echo "<center><input type=\"checkbox\" name=\"exclude\" value=\"1\"";
-  if ($ordered_flags[$i][2]=="1")
-    echo " checked";
-  echo "></center></td><td width=100 bgcolor=\"{$table_colors[$i%2][0]}\"><center>";
+  echo "<select name=\"exclude\" id=\"exclude\">\n";
+  foreach($ns_flag_handling_labels as $key => $val){
+  	echo "<option value=\"$val\"";
+	if ($ordered_flags[$i][2] == $val)
+	   echo " selected";
+	echo ">$key</option>\n";
+  }
+  echo "</select>";
+//echo "<center><input type=\"checkbox\" name=\"exclude\" value=\"1\"";
+  //if ($ordered_flags[$i][2]=="1")
+    //echo " checked";
+//  echo ">";
+echo "</center></td><td width=100 bgcolor=\"{$table_colors[$i%2][0]}\"><center>";
 echo "<input type=\"checkbox\" name=\"hide\" value=\"1\"";
   if ($ordered_flags[$i][4]=="1")
     echo " checked";

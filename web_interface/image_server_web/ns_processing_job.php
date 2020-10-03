@@ -99,6 +99,13 @@ $ns_denoising_option_labels = array(
 		       "Normalize worm movement scores to individual's 15% oldest median"=>3,
 		       "Normalize worm movement scores among all worms on a scanner"=>4);
 
+$ns_flag_handling_labels = array(
+			"Normal"=>0,
+			"Excluded"=>1,
+			"Censor at Death"=>2,
+			"Censor at last measurement"=>3
+			);
+
 function ns_maintenance_task_order($is_region,$is_sample,$is_experiment){
   $r = array();
   global $ns_maintenance_tasks;

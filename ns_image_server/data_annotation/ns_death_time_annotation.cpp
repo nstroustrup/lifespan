@@ -1834,8 +1834,10 @@ void ns_death_time_annotation_compiler::generate_detailed_animal_data_file(const
 				if (d.machine.best_guess_death_annotation != 0)
 					o << d.machine.best_guess_death_annotation->annotation_source_details;
 				o << ",single worm,";
-				if (d.by_hand.best_guess_death_annotation != 0)
+				if (d.by_hand.best_guess_death_annotation != 0) {
+					if (d.by_hand.best_guess_death_annotation->is_censored())
 					o << d.by_hand.best_guess_death_annotation->censor_description();
+				}
 				o << "\n";
 			}
 		}

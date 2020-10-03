@@ -840,7 +840,8 @@ void ns_lifespan_experiment_set::out_simple_JMP_header(const ns_time_handing_beh
 		// "Age at Death (" << time_units << ") Multiplicative + Additive offset Regression Model Residuals,"
 	o << "Censored,Censored Reason,Event Observation Type,Annotation Source,Technique,Analysis Type";
 	if (multiple_events)
-		o << ",Event Type, Special Flag";
+		o << ",Event Type";
+	o << ", Special Flag";
 	o << terminator;
 }
 

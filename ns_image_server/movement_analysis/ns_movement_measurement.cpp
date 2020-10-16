@@ -761,15 +761,15 @@ void ns_worm_movement_measurement_summary_timepoint_data::out_header(const std::
 			<< name << " Stationary Animal Disapearances, " 
 			<< name << " Number of Missing Animals,"
 			<< name << " Number of Missing Animals (Smoothed),"
-			<< name << " Cumulative Number Permanantly Lost,"
-			<< name << " Cumulative Number Permanantly Lost Before The Experiment Ended,"
+			<< name << " Cumulative Number Permanently Lost,"
+			<< name << " Cumulative Number Permanently Lost Before The Experiment Ended,"
 			<< name << " Max Total Observed Alive,"
 			<< name << " Fraction Cumulative Dead,"
 			<< name << " Fraction Moving Fast,"
 			<< name << " Fraction Moving Slow,"
 			<< name << " Fraction Changing Posture,"
 			<< name << " Fraction Stationary,"
-			<< name << " Fraction Cumulative Permamantly Lost"
+			<< name << " Fraction Cumulative Permanently Lost"
 			<< separator;
 }
 void ns_worm_movement_measurement_summary_timepoint_data::out_data(const unsigned long max_total_observed,std::ostream & o, const char & separator) const{

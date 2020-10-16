@@ -961,7 +961,7 @@ bool ns_image_server::upgrade_tables(ns_sql_connection * sql, const bool just_te
 				"ALTER TABLE `sample_region_image_info` "
 				"CHANGE COLUMN `mask_region_id` `mask_region_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' FIRST,"
 				"CHANGE COLUMN `id` `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT AFTER `details`,"
-				"CHANGE COLUMN `op21_image_id` `op21_image_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `subregion_mask_id`,"
+				"CHANGE COLUMN `op21_image_id` `op21_image_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `op20_image_id`,"
 				"CHANGE COLUMN `op22_image_id` `op22_image_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `op21_image_id`,"
 				"CHANGE COLUMN `time_path_solution_id` `time_path_solution_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `path_movement_images_are_cached`,"
 				"CHANGE COLUMN `op0_video_id` `op0_video_id` BIGINT UNSIGNED NOT NULL DEFAULT '0' AFTER `analysis_scheduling_state`,"
@@ -1210,7 +1210,17 @@ bool ns_image_server::upgrade_tables(ns_sql_connection * sql, const bool just_te
 			sql->send_query();
 			cout << "\n";
 		}
-
+		*sql << "SELECT COLUMN_TYPE FROM INFORMATION_SCHEMA.COLUMNS "
+			"WHERE table_name = 'processing_jobs' AND COLUMN_NAME = 'urgent' "
+			"AND TABLE_SCHEMA = '" << schema_name << "'";
+		sql->get_rows(res);		if (res.size() > 0 && res[0][0].find("tiny") != res[0][0].npos) {
+			if (just_test_if_needed)
+				return true;
+			cout << "Updating flag table...";
+			*sql << "ALTER TABLE `processing_jobs` CHANGE COLUMN urgent urgent INT NOT NULL DEFAULT '0' AFTER image_id;";
+			sql->send_query();
+			cout << "\n";
+		}
 
 	}
 

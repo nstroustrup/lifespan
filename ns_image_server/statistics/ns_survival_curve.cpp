@@ -321,33 +321,19 @@ void ns_survival_data_summary::from_xml(const ns_xml_simple_object & o){
 	if (!metadata.from_xml(o))
 		throw ns_ex("ns_survival_data_summary::from_xml()::Could not load any metadata for the specified data");
 
-	o.assign_if_present("ldc",		long_distance_movement_cessation.count);
-	o.assign_if_present("ldbcc",	long_distance_movement_cessation.by_hand_excluded_count);
-	o.assign_if_present("ldmcc",	long_distance_movement_cessation.machine_excluded_count);
-	o.assign_if_present("ldcs",	long_distance_movement_cessation.censored_count);
-	o.assign_if_present("ldmw",		long_distance_movement_cessation.number_of_events_involving_multiple_worm_disambiguation);
-	o.assign_if_present("ldm",		long_distance_movement_cessation.mean );
-	o.assign_if_present("ldv",		long_distance_movement_cessation.variance);
-	o.assign_if_present("ldp10",	long_distance_movement_cessation.percentile_10th);
-	o.assign_if_present("ldp50",	long_distance_movement_cessation.percentile_50th );
-	o.assign_if_present("ldp90",	long_distance_movement_cessation.percentile_90th);
-	o.assign_if_present("ldmin",	long_distance_movement_cessation.minimum );
-	o.assign_if_present("ldmax",	long_distance_movement_cessation.maximum );
+	o.assign_if_present("ldc", fast_movement_cessation.count);
+	o.assign_if_present("ldbcc", fast_movement_cessation.by_hand_excluded_count);
+	o.assign_if_present("ldmcc", fast_movement_cessation.machine_excluded_count);
+	o.assign_if_present("ldcs", fast_movement_cessation.censored_count);
+	o.assign_if_present("ldmw", fast_movement_cessation.number_of_events_involving_multiple_worm_disambiguation);
+	o.assign_if_present("ldm", fast_movement_cessation.mean );
+	o.assign_if_present("ldv", fast_movement_cessation.variance);
+	o.assign_if_present("ldp10", fast_movement_cessation.percentile_10th);
+	o.assign_if_present("ldp50", fast_movement_cessation.percentile_50th );
+	o.assign_if_present("ldp90", fast_movement_cessation.percentile_90th);
+	o.assign_if_present("ldmin", fast_movement_cessation.minimum );
+	o.assign_if_present("ldmax", fast_movement_cessation.maximum );
 	
-	o.assign_if_present("loc",		local_movement_cessation.count);
-	o.assign_if_present("lobcc",	local_movement_cessation.by_hand_excluded_count);
-	o.assign_if_present("lomcc",	local_movement_cessation.machine_excluded_count);
-	o.assign_if_present("locs",	local_movement_cessation.censored_count);
-	o.assign_if_present("lomw",	local_movement_cessation.number_of_events_involving_multiple_worm_disambiguation);
-	o.assign_if_present("lom",		local_movement_cessation.mean );
-	o.assign_if_present("lov",		local_movement_cessation.variance );
-	o.assign_if_present("lop10",	local_movement_cessation.percentile_10th);
-	o.assign_if_present("lop50",	local_movement_cessation.percentile_50th );
-	o.assign_if_present("lop90",	local_movement_cessation.percentile_90th);
-	o.assign_if_present("lomin",	local_movement_cessation.minimum);
-	o.assign_if_present("lomax",	local_movement_cessation.maximum);
-
-
 	o.assign_if_present("dc",		death.count);
 	o.assign_if_present("dmcc",		death.machine_excluded_count);
 	o.assign_if_present("dbcc",		death.by_hand_excluded_count);
@@ -367,32 +353,18 @@ std::string ns_survival_data_summary::to_xml() const{
 	xml.start_group( xml_tag());
 	xml.add_raw(metadata.to_xml());
 
-	xml.add_tag("ldc",		long_distance_movement_cessation.count);
-	xml.add_tag("ldbcc",	long_distance_movement_cessation.by_hand_excluded_count);
-	xml.add_tag("ldmcc",	long_distance_movement_cessation.machine_excluded_count);
-	xml.add_tag("ldcs",		long_distance_movement_cessation.censored_count);
-	xml.add_tag("ldmw",		long_distance_movement_cessation.number_of_events_involving_multiple_worm_disambiguation);
-	xml.add_tag("ldm",		long_distance_movement_cessation.mean );
-	xml.add_tag("ldv",		long_distance_movement_cessation.variance);
-	xml.add_tag("ldp10",	long_distance_movement_cessation.percentile_10th);
-	xml.add_tag("ldp50",	long_distance_movement_cessation.percentile_50th );
-	xml.add_tag("ldp90",	long_distance_movement_cessation.percentile_90th);
-	xml.add_tag("ldmin",	long_distance_movement_cessation.minimum );
-	xml.add_tag("ldmax",	long_distance_movement_cessation.maximum );
-	
-	xml.add_tag("loc",		local_movement_cessation.count);
-	xml.add_tag("lomcc",	local_movement_cessation.machine_excluded_count);
-	xml.add_tag("lobcc",	local_movement_cessation.by_hand_excluded_count);
-	xml.add_tag("locs",		local_movement_cessation.censored_count);
-	xml.add_tag("lomw",		local_movement_cessation.number_of_events_involving_multiple_worm_disambiguation);
-	xml.add_tag("lom",		local_movement_cessation.mean );
-	xml.add_tag("lov",		local_movement_cessation.variance );
-	xml.add_tag("lop10",	local_movement_cessation.percentile_10th);
-	xml.add_tag("lop50",	local_movement_cessation.percentile_50th );
-	xml.add_tag("lop90",	local_movement_cessation.percentile_90th);
-	xml.add_tag("lomin",	local_movement_cessation.minimum);
-	xml.add_tag("lomax",	local_movement_cessation.maximum);
-
+	xml.add_tag("ldc", fast_movement_cessation.count);
+	xml.add_tag("ldbcc", fast_movement_cessation.by_hand_excluded_count);
+	xml.add_tag("ldmcc", fast_movement_cessation.machine_excluded_count);
+	xml.add_tag("ldcs", fast_movement_cessation.censored_count);
+	xml.add_tag("ldmw", fast_movement_cessation.number_of_events_involving_multiple_worm_disambiguation);
+	xml.add_tag("ldm", fast_movement_cessation.mean );
+	xml.add_tag("ldv", fast_movement_cessation.variance);
+	xml.add_tag("ldp10", fast_movement_cessation.percentile_10th);
+	xml.add_tag("ldp50", fast_movement_cessation.percentile_50th );
+	xml.add_tag("ldp90", fast_movement_cessation.percentile_90th);
+	xml.add_tag("ldmin", fast_movement_cessation.minimum );
+	xml.add_tag("ldmax", fast_movement_cessation.maximum );
 
 	xml.add_tag("dc",		death.count);
 	xml.add_tag("dmcc",		death.machine_excluded_count);
@@ -463,8 +435,7 @@ void ns_survival_data_summary::out_jmp_header(const std::string & label,std::ost
 
 void ns_survival_data_summary::out_jmp_data(std::ostream & o, const std::string & terminator) const{
 	death.out_jmp_data(metadata,o,",");
-	long_distance_movement_cessation.out_jmp_data(metadata,o,",");
-	local_movement_cessation.out_jmp_data(metadata,o,terminator);
+	fast_movement_cessation.out_jmp_data(metadata,o,terminator);
 }
 
 
@@ -499,8 +470,7 @@ const ns_survival_timepoint_event& ns_get_correct_event(const ns_metadata_worm_p
 	switch(type){
 		case ns_metadata_worm_properties::ns_movement_based_death: return e.movement_based_deaths;
 		case ns_metadata_worm_properties::ns_best_guess_death: return e.best_guess_deaths;
-		case ns_metadata_worm_properties::ns_local_movement_cessation: return e.local_movement_cessations;
-		case ns_metadata_worm_properties::ns_long_distance_movement_cessation: return e.long_distance_movement_cessations;
+		case ns_metadata_worm_properties::ns_fast_movement_cessation: return e.fast_movement_cessations;
 		case ns_metadata_worm_properties::ns_death_associated_expansion: return e.death_associated_expansions;
 		case ns_metadata_worm_properties::ns_typeless_censoring_events: return e.typeless_censoring_events;
 		default: throw ns_ex("ns_get_correct_event()::Unknown event spec");
@@ -511,8 +481,7 @@ ns_survival_timepoint_event & ns_get_correct_event(const ns_metadata_worm_proper
 	switch(type){
 			case ns_metadata_worm_properties::ns_movement_based_death: return e.movement_based_deaths;
 			case ns_metadata_worm_properties::ns_best_guess_death: return e.best_guess_deaths;
-			case ns_metadata_worm_properties::ns_local_movement_cessation: return e.local_movement_cessations;
-			case ns_metadata_worm_properties::ns_long_distance_movement_cessation: return e.long_distance_movement_cessations;
+			case ns_metadata_worm_properties::ns_fast_movement_cessation: return e.fast_movement_cessations;
 			case ns_metadata_worm_properties::ns_death_associated_expansion: return e.death_associated_expansions;
 			case ns_metadata_worm_properties::ns_typeless_censoring_events: return e.typeless_censoring_events;
 		default: throw ns_ex("ns_get_correct_event()::Unknown event spec");
@@ -1050,8 +1019,7 @@ void ns_lifespan_experiment_set::output_JMP_file(const ns_death_time_annotation:
 	ns_metadata_worm_properties::ns_survival_event_type event_type[(int)ns_metadata_worm_properties::ns_number_of_event_types] = {
 																ns_metadata_worm_properties::ns_movement_based_death,
 																ns_metadata_worm_properties::ns_best_guess_death,
-																ns_metadata_worm_properties::ns_local_movement_cessation, 
-																ns_metadata_worm_properties::ns_long_distance_movement_cessation,
+																ns_metadata_worm_properties::ns_fast_movement_cessation,
 																ns_metadata_worm_properties::ns_death_associated_expansion,
 																ns_metadata_worm_properties::ns_typeless_censoring_events
 																};
@@ -1081,15 +1049,8 @@ void ns_lifespan_experiment_set::output_JMP_file(const ns_death_time_annotation:
 			}
 		}*/
 		
-		const ns_lifespan_device_normalization_statistics_set & normalization_stats((
-			(event_type[event_t] == ns_metadata_worm_properties::ns_best_guess_death)? normalization_stats_for_death:
-				(
-					((event_type[event_t] == ns_metadata_worm_properties::ns_local_movement_cessation)?
-													normalization_stats_for_translation_cessation:
-													normalization_stats_for_fast_movement_cessation)
-														)
-														)
-														);
+		const ns_lifespan_device_normalization_statistics_set & normalization_stats(
+			(event_type[event_t] == ns_metadata_worm_properties::ns_best_guess_death)? normalization_stats_for_death: normalization_stats_for_fast_movement_cessation);
 		
 		const bool output_regression_parameters(!normalization_stats.devices.empty());
 		const bool output_raw_data_as_normalization_data(normalization_stats.produce_identity);
@@ -1343,7 +1304,7 @@ void ns_lifespan_experiment_set::output_matlab_file(std::ostream & out) const{
 	for (unsigned int i = 0; i < curves.size(); i++){
 		//out << "diestributions{" << i+1 << "} = [";
 		out << "[";
-		float base(curves[i]->risk_timeseries.long_distance_movement_cessation.data.total_number_of_censoring_events);
+		float base(curves[i]->risk_timeseries.fast_movement_cessation.data.total_number_of_censoring_events);
 		if (base == 0) base = 1;
 		for (unsigned int j = 0; j < curves[i]->timepoints.size(); j++){
 			out << curves[i]->risk_timeseries.best_guess_death.data.number_of_events[j]/base << " ";
@@ -1356,25 +1317,6 @@ void ns_lifespan_experiment_set::output_matlab_file(std::ostream & out) const{
 		out << "]; " << line_span << "\n";
 	}
 	out << "];\n";
-
-	out << "local_movement_span_normalized = [";
-	for (unsigned int i = 0; i < curves.size(); i++){
-		//out << "diestributions{" << i+1 << "} = [";
-		out << "[";
-		float base(curves[i]->risk_timeseries.local_movement_cessations.data.total_number_of_deaths);
-		if (base == 0) base = 1;
-		for (unsigned int j = 0; j < curves[i]->timepoints.size(); j++){
-			out << curves[i]->risk_timeseries.local_movement_cessations.data.number_of_events[j]/base << " ";
-			if (j%100==0) out << line_span << "\n";
-		}
-		for (unsigned j = curves[i]->timepoints.size(); j < max_t; j++){
-			out << "NaN ";
-			if (j%100==0) out << line_span << "\n";
-		}
-		out << "]; " << line_span << "\n";
-	}
-	out << "];\n";
-
 		
 	out << "time_at_which_animals_had_zero_age= [";
 	for (unsigned int i = 0; i < curves.size(); i++){
@@ -1458,8 +1400,7 @@ void ns_lifespan_experiment_set::include_only_events_detected_by_machine(){
 		for (unsigned int j = 0; j < curves[i]->timepoints.size(); j++){
 			curves[i]->timepoints[j].movement_based_deaths.remove_purely_non_machine_events();
 			curves[i]->timepoints[j].best_guess_deaths.remove_purely_non_machine_events();
-			curves[i]->timepoints[j].local_movement_cessations.remove_purely_non_machine_events();
-			curves[i]->timepoints[j].long_distance_movement_cessations.remove_purely_non_machine_events();
+			curves[i]->timepoints[j].fast_movement_cessations.remove_purely_non_machine_events();
 			curves[i]->timepoints[j].death_associated_expansions.remove_purely_non_machine_events();
 		}
 	}
@@ -1641,8 +1582,7 @@ void ns_survival_timepoint::add(const ns_survival_timepoint & t){
 	absolute_time = (absolute_time>t.absolute_time)?absolute_time:t.absolute_time;
 	movement_based_deaths.add(t.movement_based_deaths);
 	best_guess_deaths.add(t.best_guess_deaths);
-	local_movement_cessations.add(t.local_movement_cessations);
-	long_distance_movement_cessations.add(t.long_distance_movement_cessations);
+	fast_movement_cessations.add(t.fast_movement_cessations);
 	death_associated_expansions.add(t.death_associated_expansions);
 	typeless_censoring_events.add(t.typeless_censoring_events);
 }
@@ -1698,7 +1638,6 @@ void ns_lifespan_experiment_set::force_common_time_set_to_constant_time_interval
 	new_set.curves_on_constant_time_interval = true;
 	new_set.normalization_stats_for_death = normalization_stats_for_death;
 	new_set.normalization_stats_for_fast_movement_cessation = normalization_stats_for_fast_movement_cessation;
-	new_set.normalization_stats_for_translation_cessation = normalization_stats_for_translation_cessation;
 }
 
 
@@ -1770,8 +1709,7 @@ void ns_survival_data_quantities::add(const ns_survival_data_quantities & s){
 }
 void ns_survival_data_summary::add(const ns_survival_data_summary & s){
 	death.add(s.death);
-	local_movement_cessation.add(s.local_movement_cessation);
-	long_distance_movement_cessation.add(s.long_distance_movement_cessation);
+	fast_movement_cessation.add(s.fast_movement_cessation);
 }
 struct ns_death_stat_key{
 	ns_death_stat_key(const ns_death_stat_key & key){
@@ -1835,8 +1773,7 @@ void ns_survival_data::detetermine_best_guess_death_times() {
 void ns_survival_data::genenerate_survival_statistics(){
 	generate_risk_timeseries();
 	generate_survival_statistics(risk_timeseries.movement_based_death,survival_statistics.movement_based_death);
-	generate_survival_statistics(risk_timeseries.local_movement_cessations,survival_statistics.local_movement_cessations);
-	generate_survival_statistics(risk_timeseries.long_distance_movement_cessation,survival_statistics.long_distance_movement_cessation);
+	generate_survival_statistics(risk_timeseries.fast_movement_cessation,survival_statistics.fast_movement_cessation);
 	generate_survival_statistics(risk_timeseries.death_associated_expansion_start, survival_statistics.death_associated_expansion_start);
 	generate_survival_statistics(risk_timeseries.best_guess_death, survival_statistics.best_guess_death);
 }
@@ -1970,10 +1907,10 @@ const ns_survival_timepoint_event * ns_correct_event(const ns_movement_event & e
 	switch(e){
 			case ns_movement_cessation:
 				return &s.movement_based_deaths;
-			case ns_translation_cessation:
-				return &s.local_movement_cessations;
-			case ns_fast_movement_cessation:
-				return &s.long_distance_movement_cessations;
+			case ns_translation_cessation_depreciated:
+				throw ns_ex("Translation Cessation is depreciated");
+			case ns_fast_movement_cessation2:
+				return &s.fast_movement_cessations;
 			case ns_death_associated_expansion_start:
 				return &s.death_associated_expansions;
 			case ns_additional_worm_entry:
@@ -2190,9 +2127,8 @@ void ns_survival_data::generate_risk_timeseries(const ns_movement_event & event_
 		
 
 void ns_lifespan_experiment_set::compute_device_normalization_regression(const ns_device_temperature_normalization_data & data, const ns_censoring_strategy & s, const ns_tail_strategy & t){
-	compute_device_normalization_regression(ns_translation_cessation, data,normalization_stats_for_translation_cessation,s,t);
 	compute_device_normalization_regression(ns_movement_cessation, data,normalization_stats_for_death,s,t);
-	compute_device_normalization_regression(ns_fast_movement_cessation, data,normalization_stats_for_fast_movement_cessation,s,t);
+	compute_device_normalization_regression(ns_fast_movement_cessation2, data,normalization_stats_for_fast_movement_cessation,s,t);
 }
 
 typedef std::vector<ns_survival_statistics *> ns_survival_statistics_list;
@@ -2270,9 +2206,8 @@ void ns_lifespan_experiment_set::compute_device_normalization_regression(const n
 				break;
 			case ns_additional_worm_entry: statistics_to_use = &curves[i]->survival_statistics.best_guess_death;
 				break;
-			case ns_translation_cessation: statistics_to_use = &curves[i]->survival_statistics.local_movement_cessations;
-				break;
-			case ns_fast_movement_cessation: statistics_to_use = &curves[i]->survival_statistics.long_distance_movement_cessation;
+			case ns_translation_cessation_depreciated: throw ns_ex("Translation cessation depreciated");
+			case ns_fast_movement_cessation2: statistics_to_use = &curves[i]->survival_statistics.fast_movement_cessation;
 				break;
 			default: throw ns_ex("Unknown movement event");
 		}

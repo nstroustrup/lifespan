@@ -2454,8 +2454,7 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 											&&
 											(
 												by_hand_annotations.annotations.regions.begin()->second.locations[i].annotations[j].type == ns_movement_cessation ||
-												by_hand_annotations.annotations.regions.begin()->second.locations[i].annotations[j].type == ns_fast_movement_cessation ||
-												by_hand_annotations.annotations.regions.begin()->second.locations[i].annotations[j].type == ns_translation_cessation
+												by_hand_annotations.annotations.regions.begin()->second.locations[i].annotations[j].type == ns_fast_movement_cessation2
 												)
 											) {
 											found_hand_movement_annotation = true;
@@ -9024,18 +9023,16 @@ void ns_death_time_solo_posture_annotater::copy_machine_annotations_to_by_hand(d
 	cur_hand_data->animals[current_animal_id].death_associated_expansion_stop = cur_machine_timing->animals[0].death_associated_expansion_stop;
 	cur_hand_data->animals[current_animal_id].death_associated_post_expansion_contraction_start = cur_machine_timing->animals[0].death_associated_post_expansion_contraction_start;
 	cur_hand_data->animals[current_animal_id].death_associated_post_expansion_contraction_stop = cur_machine_timing->animals[0].death_associated_post_expansion_contraction_stop;
-	cur_hand_data->animals[current_animal_id].fast_movement_cessation = cur_machine_timing->animals[0].fast_movement_cessation;
+	cur_hand_data->animals[current_animal_id].fast_movement_cessation2 = cur_machine_timing->animals[0].fast_movement_cessation2;
 	cur_hand_data->animals[current_animal_id].movement_cessation = cur_machine_timing->animals[0].movement_cessation;
-	cur_hand_data->animals[current_animal_id].translation_cessation = cur_machine_timing->animals[0].translation_cessation;
 
 
 	cur_hand_data->animals[current_animal_id].death_associated_expansion_start.annotation_source = ns_death_time_annotation::ns_storyboard;
 	cur_hand_data->animals[current_animal_id].death_associated_expansion_stop.annotation_source = ns_death_time_annotation::ns_storyboard;
 	cur_hand_data->animals[current_animal_id].death_associated_post_expansion_contraction_start.annotation_source = ns_death_time_annotation::ns_storyboard;
 	cur_hand_data->animals[current_animal_id].death_associated_post_expansion_contraction_stop.annotation_source = ns_death_time_annotation::ns_storyboard;
-	cur_hand_data->animals[current_animal_id].fast_movement_cessation.annotation_source = ns_death_time_annotation::ns_storyboard;
+	cur_hand_data->animals[current_animal_id].fast_movement_cessation2.annotation_source = ns_death_time_annotation::ns_storyboard;
 	cur_hand_data->animals[current_animal_id].movement_cessation.annotation_source = ns_death_time_annotation::ns_storyboard;
-	cur_hand_data->animals[current_animal_id].translation_cessation.annotation_source = ns_death_time_annotation::ns_storyboard;
 	update_events_to_storyboard(external_rescale_factor, handle);
 	draw_metadata(&timepoints[current_timepoint_id], *current_image.im, handle, external_rescale_factor);
 	request_refresh();

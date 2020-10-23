@@ -59,12 +59,12 @@ public:
 
 	bool specified;
 
-	ns_death_time_annotation fast_movement_cessation; //occurs at the interval before the start of the path
+	ns_death_time_annotation fast_movement_cessation2; //occurs at the interval before the start of the path, or (after annotation) wherever the user specifies if.
 
 	void set_fast_movement_cessation_time(const ns_death_timing_data_step_event_specification& e) {
-		apply_step_specification(fast_movement_cessation, e, ns_additional_worm_entry);
+		apply_step_specification(fast_movement_cessation2, e, ns_additional_worm_entry);
 	}
-	ns_death_time_annotation translation_cessation,
+	ns_death_time_annotation
 		movement_cessation,
 		death_associated_expansion_start,
 		death_associated_expansion_stop,
@@ -75,10 +75,8 @@ public:
 
 
 	void clear_annotations() {
-		fast_movement_cessation.clear_movement_properties();
-		fast_movement_cessation.clear_sticky_properties();
-		translation_cessation.clear_movement_properties();
-		translation_cessation.clear_sticky_properties();
+		fast_movement_cessation2.clear_movement_properties();
+		fast_movement_cessation2.clear_sticky_properties();
 		movement_cessation.clear_movement_properties();
 		movement_cessation.clear_sticky_properties();
 		death_associated_expansion_start.clear_movement_properties();
@@ -91,8 +89,7 @@ public:
 		death_associated_post_expansion_contraction_stop.clear_sticky_properties();
 	}
 	void output_event_times(std::ostream& o) {
-		o << "Fast Movement Cessation: " << fast_movement_cessation << "\n"
-			<< "Translation: " << translation_cessation << "\n"
+		o << "Fast Movement Cessation: " << fast_movement_cessation2 << "\n"
 			<< "Movement Cessation " << movement_cessation << "\n"
 			<< "Death-Associated Expansion Start" << death_associated_expansion_start << "\n"
 			<< "Death-Associated Expansion End" << death_associated_expansion_stop << "\n"
@@ -108,9 +105,7 @@ public:
 	void generate_event_timing_data(std::vector<ns_death_time_annotation>& annotations) {
 
 		if (animal_specific_sticky_properties.animal_id_at_position != 0)
-			annotations.push_back(fast_movement_cessation);
-		if (useful_information_in_annotation(translation_cessation))
-			annotations.push_back(translation_cessation);
+			annotations.push_back(fast_movement_cessation2);
 		if (useful_information_in_annotation(movement_cessation))
 			annotations.push_back(movement_cessation);
 		if (useful_information_in_annotation(death_associated_expansion_stop))
@@ -163,8 +158,7 @@ public:
 			||
 			death_associated_expansion_start.time.period_end == 0 &&
 			(
-				movement_cessation.time.period_end != 0 && movement_cessation.time.period_end < time ||
-				movement_cessation.time.period_end == 0 && translation_cessation.time.period_end != 0 && translation_cessation.time.period_end < time
+				movement_cessation.time.period_end != 0 && movement_cessation.time.period_end < time
 				)
 
 			;
@@ -191,9 +185,9 @@ public:
 		if (movement_cessation.time.period_end != 0 && movement_cessation.time.period_end <= time) {
 			return ns_movement_stationary;
 		}
-		if (translation_cessation.time.period_end != 0 && translation_cessation.time.period_end <= time)
+		if (fast_movement_cessation2.time.period_end != 0 && fast_movement_cessation2.time.period_end <= time)
 			return ns_movement_posture;
-		return ns_movement_slow;
+		return ns_movement_fast;
 	}
 
 	typedef std::pair<ns_color_8, unsigned long> ns_box_style;
@@ -211,14 +205,11 @@ public:
 		animal_specific_sticky_properties.annotation_time = e.annotation_time;
 
 		switch (e.type) {
-		case ns_fast_movement_cessation:
-			fast_movement_cessation = e;
+		case ns_fast_movement_cessation2:
+			fast_movement_cessation2 = e;
 			break;
-		case ns_translation_cessation:
-			if (translation_cessation.time.period_end == 0)
-				translation_cessation = e;
-			else
-				duplication_events++;
+		case ns_translation_cessation_depreciated:
+			std::cerr << "Encountered depreciated translation cessation event.\n";
 			break;
 		case ns_movement_cessation:
 			if (movement_cessation.time.period_end == 0)
@@ -253,7 +244,7 @@ public:
 		case ns_no_movement_event:
 			break;
 		case ns_additional_worm_entry:
-			fast_movement_cessation = e;
+			fast_movement_cessation2 = e;
 			break;
 		default:
 			if (!ignore_unhelpful_annotations)
@@ -278,10 +269,8 @@ public:
 			return death_associated_expansion_stop.time;
 		if (movement_cessation.time.period_end != 0 && movement_cessation.time.period_end < t)
 			return movement_cessation.time;
-		if (translation_cessation.time.period_end != 0 && movement_cessation.time.period_end < t)
-			return translation_cessation.time;
-		if (fast_movement_cessation.time.period_end != 0)
-			return fast_movement_cessation.time;
+		if (fast_movement_cessation2.time.period_end != 0)
+			return fast_movement_cessation2.time;
 		return path_observation_limits.interval_before_first_observation;
 	}
 	void step_death_associated_expansion_explicitness(const ns_death_timing_data_step_event_specification& e) {
@@ -321,42 +310,24 @@ public:
 		//cerr << "V-------------------V\n";
 		//output_event_times(cerr);
 		if (!alternate_key_held) {
-			if (e.event_time.period_end < fast_movement_cessation.time.period_end) {
+			if (e.event_time.period_end < fast_movement_cessation2.time.period_end) {
 				set_fast_movement_cessation_time(e);
 			}
-			if (e.event_time.period_end == fast_movement_cessation.time.period_end) {
+			if (e.event_time.period_end == fast_movement_cessation2.time.period_end) {
 				//	ns_zero_death_interval(death_posture_relaxation_termination.time);
 				//clear all data to indicate the first time point is fast moving
-				if (movement_cessation.time.period_end == fast_movement_cessation.time.period_end) {
+				if (movement_cessation.time.period_end == fast_movement_cessation2.time.period_end) {
 					ns_zero_death_interval(movement_cessation);
-					ns_zero_death_interval(translation_cessation);
-					this->fast_movement_cessation.time = observation_limits.last_obsevation_of_plate;
-					fast_movement_cessation.event_explicitness = ns_death_time_annotation::ns_explicitly_observed;
+					this->fast_movement_cessation2.time = observation_limits.last_obsevation_of_plate;
+					fast_movement_cessation2.event_explicitness = ns_death_time_annotation::ns_explicitly_observed;
 
 				}
 				//indicate the first timepoint is stationary
-				else if (translation_cessation.time.period_end == fast_movement_cessation.time.period_end) {
+				else {
 					apply_step_specification(movement_cessation, e, ns_movement_cessation);
 					movement_cessation.time.period_start_was_not_observed = true;
 					movement_cessation.event_explicitness = ns_death_time_annotation::ns_not_explicit;
-					ns_zero_death_interval(translation_cessation);
 				}
-				else {
-					//indicate the first timepoint is slow moving
-					apply_step_specification(translation_cessation, e, ns_translation_cessation);
-					translation_cessation.time.period_start_was_not_observed = true;
-					translation_cessation.event_explicitness = ns_death_time_annotation::ns_not_explicit;
-				}
-			}
-			else if (movement_cessation.time.period_end == 0 &&
-				//death_posture_relaxation_termination.time.period_end == 0 &&
-				(translation_cessation.time.period_end == 0 || e.event_time.period_end < translation_cessation.time.period_end)) {
-				apply_step_specification(translation_cessation, e, ns_translation_cessation);
-			}
-			else if (e.event_time.period_end == translation_cessation.time.period_end) {
-				ns_zero_death_interval(translation_cessation);
-				ns_zero_death_interval(movement_cessation);
-				//	ns_zero_death_interval(death_posture_relaxation_termination.time);
 			}
 			else if (//death_posture_relaxation_termination.time.period_end == 0 &&
 				(movement_cessation.time.period_end == 0 || e.event_time.period_end < movement_cessation.time.period_end)) {
@@ -508,8 +479,6 @@ public:
 		for (typename timing_data_container::const_iterator p = timing_data.begin(); p != timing_data.end(); ++p) {
 			if (p->specified == false)
 				continue;
-			if (ns_death_timing_data::useful_information_in_annotation(p->translation_cessation))
-				set.add(p->translation_cessation);
 
 			if (ns_death_timing_data::useful_information_in_annotation(p->movement_cessation))
 				set.add(p->movement_cessation);
@@ -609,13 +578,13 @@ public:
 				by_hand_timing_data[i].animals[0];
 
 			//by default specify the beginnnig of the path as the translation cessation time.
-			if (by_hand_timing_data[i].animals[0].translation_cessation.time.period_end == 0)
+			/*if (by_hand_timing_data[i].animals[0].translation_cessation.time.period_end == 0)
 				//			for (int k = 0; k < 2; k++)
 				by_hand_timing_data[i].animals[0].step_event(
 					ns_death_timing_data_step_event_specification(
 						movement_analyzer[i].paths[0].cessation_of_fast_movement_interval(),
 						movement_analyzer[i].paths[0].element(movement_analyzer[i].paths[0].first_stationary_timepoint()), region_id,
-						by_hand_timing_data[i].animals[0].position_data.stationary_path_id, 0), movement_analyzer[i].paths[0].observation_limits(), false);
+						by_hand_timing_data[i].animals[0].position_data.stationary_path_id, 0), movement_analyzer[i].paths[0].observation_limits(), false);*/
 		}
 	}
 };

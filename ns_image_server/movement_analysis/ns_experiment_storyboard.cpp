@@ -799,7 +799,7 @@ bool ns_experiment_storyboard::load_events_from_annotation_compiler(const ns_loa
 					//if a movement cessation isn't present.
 
 				}
-			case ns_translation_cessation:
+			case ns_translation_cessation_depreciated:
 				if (dd.machine.last_slow_movement_annotation != 0) {
 					event_to_place_on_storyboard = *dd.machine.last_slow_movement_annotation;
 					state_to_search = ns_posture_changing_worm_observed;
@@ -808,7 +808,7 @@ bool ns_experiment_storyboard::load_events_from_annotation_compiler(const ns_loa
 					//NOTE The synatx here means that we will try to add a fast moving cessation event
 					//if a movement cessation isn't present.
 				}
-			case ns_fast_movement_cessation:
+			case ns_fast_movement_cessation2:
 				if (dd.machine.last_fast_movement_annotation != 0) {
 			//		if (!dd.machine.slow_moving_state_annotations.empty()) {
 						event_to_place_on_storyboard = *dd.machine.last_fast_movement_annotation;
@@ -901,8 +901,7 @@ bool ns_experiment_storyboard::load_events_from_annotation_compiler(const ns_loa
 				bool found_match(false);
 
 				//find last event
-				if (event_to_place_on_storyboard.type == ns_translation_cessation ||
-					event_to_place_on_storyboard.type == ns_fast_movement_cessation) {
+				if (event_to_place_on_storyboard.type == ns_fast_movement_cessation2) {
 					unsigned long latest_time(0);
 					for (vector<ns_death_time_annotation>::const_iterator p = q->annotations.begin(); p != q->annotations.end(); p++) {
 						if (p->type != state_to_search)
@@ -988,8 +987,7 @@ bool ns_experiment_storyboard::load_events_from_annotation_compiler(const ns_loa
 			}
 			ns_death_time_annotation * annotation_to_use_for_time(&event_to_place_on_storyboard);
 			//we want to put animals who never stop moving all at the end of the storyboard.
-			if (event_to_place_on_storyboard.type == ns_translation_cessation ||
-				event_to_place_on_storyboard.type == ns_fast_movement_cessation)
+			if (event_to_place_on_storyboard.type == ns_fast_movement_cessation2)
 				annotation_to_use_for_time = &event_whose_image_should_be_used;
 
 			annotation_subject->event_annotation.clear_sticky_properties();

@@ -128,8 +128,8 @@ struct ns_dying_animal_description_group{
 				   movement_censored_state_annotations;
 	T *& get_event(const ns_metadata_worm_properties::ns_survival_event_type& death_event_to_use) {
 		switch (death_event_to_use) {
-		case ns_metadata_worm_properties::ns_long_distance_movement_cessation: return last_fast_movement_annotation;
-		case ns_metadata_worm_properties::ns_local_movement_cessation: return last_slow_movement_annotation;
+		case ns_metadata_worm_properties::ns_fast_movement_cessation: return last_fast_movement_annotation;
+		case ns_metadata_worm_properties::ns_local_movement_cessation_depreciated: return last_slow_movement_annotation;
 		case ns_metadata_worm_properties::ns_movement_based_death: return movement_based_death_annotation;
 		case ns_metadata_worm_properties::ns_death_associated_expansion: return death_associated_expansion_start;
 		case ns_metadata_worm_properties::ns_best_guess_death: return best_guess_death_annotation;
@@ -140,8 +140,8 @@ struct ns_dying_animal_description_group{
 	}
 	const T* get_event(const ns_metadata_worm_properties::ns_survival_event_type& death_event_to_use) const {
 		switch (death_event_to_use) {
-		case ns_metadata_worm_properties::ns_long_distance_movement_cessation: return last_fast_movement_annotation;
-		case ns_metadata_worm_properties::ns_local_movement_cessation: return last_slow_movement_annotation;
+		case ns_metadata_worm_properties::ns_fast_movement_cessation: return last_fast_movement_annotation;
+		case ns_metadata_worm_properties::ns_local_movement_cessation_depreciated: return last_slow_movement_annotation;
 		case ns_metadata_worm_properties::ns_movement_based_death: return movement_based_death_annotation;
 		case ns_metadata_worm_properties::ns_death_associated_expansion: return death_associated_expansion_start;
 		case ns_metadata_worm_properties::ns_best_guess_death: return best_guess_death_annotation;

@@ -328,7 +328,7 @@ void ns_movement_visualization_generator::create_area_graph_for_capture_time(con
 	for (unsigned int i = 0; i < number_of_measurements; i++){
 		worm_states_flat[(int)ns_movement_stationary].y[i]	= data.measurements[i].all_measurement_types_total.number_stationary;
 		worm_states_flat[(int)ns_movement_posture].y[i]		= data.measurements[i].all_measurement_types_total.number_changing_posture;
-		worm_states_flat[(int)ns_movement_slow].y[i]		= data.measurements[i].all_measurement_types_total.number_moving_slow;
+		worm_states_flat[(int)ns_movement_slow_depreciated].y[i]		= data.measurements[i].all_measurement_types_total.number_moving_slow;
 		worm_states_flat[(int)ns_movement_fast].y[i]		= data.measurements[i].all_measurement_types_total.number_moving_fast;
 		worm_states_flat[(int)ns_movement_machine_excluded].y[i]	= data.measurements[i].all_measurement_types_excluded_total.total_animals_inferred();
 		worm_states_flat[(int)ns_movement_by_hand_excluded].y[i]		= 0;//data.measurements[i].all_measurement_types_total.number_by_hand_excluded;
@@ -344,7 +344,7 @@ void ns_movement_visualization_generator::create_area_graph_for_capture_time(con
 	std::vector<ns_movement_state> area_order((unsigned int)ns_movement_total,ns_movement_not_calculated);
 	area_order[0]=ns_movement_stationary;
 	area_order[1]=ns_movement_posture;
-	area_order[2]=ns_movement_slow;
+	area_order[2]= ns_movement_slow_depreciated;
 	area_order[3]=ns_movement_fast;
 	area_order[4]=ns_movement_death_associated_expansion;
 	area_order[4] = ns_movement_death_associated_post_expansion_contraction;
@@ -512,7 +512,7 @@ void ns_movement_visualization_generator::create_scatter_proportion_graph_for_ca
 
 		worm_states_percent[(int)ns_movement_stationary].y[i]	= r[i].all_measurement_types_total.number_stationary / total_worms.y[i];
 		worm_states_percent[(int)ns_movement_posture].y[i]		= r[i].all_measurement_types_total.number_changing_posture / total_worms.y[i];
-		worm_states_percent[(int)ns_movement_slow].y[i]			= r[i].all_measurement_types_total.number_moving_slow / total_worms.y[i];
+		worm_states_percent[(int)ns_movement_slow_depreciated].y[i]			= r[i].all_measurement_types_total.number_moving_slow / total_worms.y[i];
 		worm_states_percent[(int)ns_movement_fast].y[i]			= r[i].all_measurement_types_total.number_moving_fast / total_worms.y[i];
 		worm_states_percent[(int)ns_movement_machine_excluded].y[i]			= r[i].all_measurement_types_excluded_total.total_animals_inferred()/ (r[i].all_measurement_types_excluded_total.total_animals_inferred() + total_worms.y[i]);
 		worm_states_percent[(int)ns_movement_by_hand_excluded].y[i]			= 0;//r[i].number_by_hand_excluded/ (r[i].all_measurement_types_excluded_total.number_total + total_worms.y[i]);

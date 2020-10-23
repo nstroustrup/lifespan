@@ -280,9 +280,9 @@ std::string ns_death_time_annotation::source_type_to_string(const ns_annotation_
 std::string ns_movement_event_to_string(const ns_movement_event & t){
 	switch(t){
 		case ns_no_movement_event:			return "none";
-		case ns_translation_cessation:		return "translation cessation";
+		case ns_translation_cessation_depreciated:		return "translation cessation";
 		case ns_movement_cessation:			return "movement cessation";
-		case ns_fast_movement_cessation:			return "fast movement cessation";
+		case ns_fast_movement_cessation2:			return "fast movement cessation";
 		case ns_fast_moving_worm_observed:			return "fast moving worm observed";
 		case ns_movement_censored_worm_observed: return "movement-censored worm observed";
 		case ns_slow_moving_worm_observed: return "slow-moving worm observed";
@@ -304,9 +304,9 @@ std::string ns_movement_event_to_string(const ns_movement_event & t){
 std::string ns_movement_event_to_label(const ns_movement_event & t){
 	switch(t){
 		case ns_no_movement_event: return "none";
-		case ns_translation_cessation: return "local_movement_cessation";
+		case ns_translation_cessation_depreciated: return "local_movement_cessation";
 		case ns_movement_cessation: return "death";
-		case ns_fast_movement_cessation: return "long_distance_movement_cessation";
+		case ns_fast_movement_cessation2: return "long_distance_movement_cessation";
 		case ns_fast_moving_worm_observed: return "fast moving worm observed";
 		case ns_movement_censored_worm_observed: return "movement_censored_worm_observed";
 		case ns_slow_moving_worm_observed: return "slow_moving_worm_observed";
@@ -392,8 +392,8 @@ bool ns_string_is_a_state_not_a_transition(std::string & s){
 
 bool ns_movement_event_is_a_state_transition_event(const ns_movement_event & t){
 	switch(t){
-		case ns_fast_movement_cessation:
-		case ns_translation_cessation:
+		case ns_fast_movement_cessation2:
+		case ns_translation_cessation_depreciated:
 		case ns_movement_cessation:
 		case ns_death_associated_expansion_stop:
 		case ns_death_associated_expansion_start:
@@ -426,7 +426,7 @@ std::string ns_movement_state_to_string(const ns_movement_state & s){
 	switch(s){
 			case ns_movement_stationary: return "Dead";
 			case ns_movement_posture: return "Changing Posture";
-			case ns_movement_slow:  return "Moving Slowly";
+			case ns_movement_slow_depreciated:  return "Moving Slowly";
 			case ns_movement_fast:  return "Moving Quickly";
 			case ns_movement_by_hand_excluded: return "By Hand Excluded";
 			case ns_movement_machine_excluded: return "Machine Excluded";
@@ -443,7 +443,7 @@ std::string ns_movement_state_to_string_short(const ns_movement_state & s) {
 	switch (s) {
 	case ns_movement_stationary: return "Dead";
 	case ns_movement_posture: return "Pos";
-	case ns_movement_slow:  return "Slow";
+	case ns_movement_slow_depreciated:  return "Slow";
 	case ns_movement_fast:  return "Fast";
 	case ns_movement_by_hand_excluded: return "EX H";
 	case ns_movement_machine_excluded: return "EX M";
@@ -460,15 +460,15 @@ ns_movement_state ns_movement_event_state(const ns_movement_event & e){
 	case ns_no_movement_event:
 	case ns_stationary_worm_disappearance:
 				return ns_movement_not_calculated;
-	case ns_translation_cessation:
+	case ns_translation_cessation_depreciated:
 	case ns_posture_changing_worm_observed:
 		return ns_movement_posture;
 	case ns_movement_cessation:
 	case ns_stationary_worm_observed:
 		return ns_movement_stationary;
-	case ns_fast_movement_cessation:
+	case ns_fast_movement_cessation2:
 	case ns_slow_moving_worm_observed:
-		return ns_movement_slow;
+		return ns_movement_slow_depreciated;
 	case ns_fast_moving_worm_observed:
 		return ns_movement_fast;
 	case ns_movement_censored_worm_observed:
@@ -517,12 +517,12 @@ void ns_death_time_annotation_compiler_region::output_visualization_csv(std::ost
 				switch(p->annotations[i].type){
 					case ns_no_movement_event:
 						state = ns_movement_fast; break;
-					case ns_translation_cessation:
+					case ns_translation_cessation_depreciated:
 						state = ns_movement_posture; break;
 					case ns_movement_cessation:
 						state = ns_movement_stationary; break;
-					case ns_fast_movement_cessation:
-						state = ns_movement_slow; break;
+					case ns_fast_movement_cessation2:
+						state = ns_movement_slow_depreciated; break;
 					case ns_fast_moving_worm_observed:
 						state = ns_movement_fast; break;
 					case ns_death_associated_post_expansion_contraction_start:
@@ -1504,11 +1504,11 @@ public:
 			add_to_timepoint(e, p->second.best_guess_deaths, use_by_hand_data);
 		else {
 			switch (e.type) {
-			case ns_fast_movement_cessation:
-				add_to_timepoint(e, p->second.long_distance_movement_cessations, use_by_hand_data);
+			case ns_fast_movement_cessation2:
+				add_to_timepoint(e, p->second.fast_movement_cessations, use_by_hand_data);
 				break;
-			case ns_translation_cessation:
-				add_to_timepoint(e, p->second.local_movement_cessations, use_by_hand_data);
+			case ns_translation_cessation_depreciated:
+				std::cerr << "Translation cessation is depreciated\n";
 				break;
 			case ns_movement_cessation:
 				add_to_timepoint(e, p->second.movement_based_deaths, use_by_hand_data);
@@ -2117,10 +2117,10 @@ class ns_dying_animal_description_generator{
 				if (annotations[i].event_explicitness == ns_death_time_annotation::ns_explicitly_not_observed)
 					continue;
 				switch (annotations[i].type) {
-				case ns_translation_cessation:
+				case ns_translation_cessation_depreciated:
 					group->last_slow_movement_annotation = &annotations[i];
 					break;
-				case ns_fast_movement_cessation:
+				case ns_fast_movement_cessation2:
 					group->last_fast_movement_annotation = &annotations[i];
 					break;
 				case ns_death_associated_expansion_stop:
@@ -2187,12 +2187,12 @@ class ns_dying_animal_description_generator{
 			//ignore animals that don't die!
 			if (reference_machine_animal.machine.best_guess_death_annotation == 0)
 				return;
-			if (reference_machine_animal.machine.last_slow_movement_annotation == 0) {
+			/*if (reference_machine_animal.machine.last_slow_movement_annotation == 0) {
 				if (warn_on_movement_problems && reference_machine_animal.machine.movement_based_death_annotation->annotation_source == ns_death_time_annotation::ns_lifespan_machine) {
 					cerr << "WARNING: An animal was recorded as dead without passing through slow movement, and has been excluded from the output. \n";
 					return;
 				}
-			}
+			}*/
 			if (reference_machine_animal.machine.last_fast_movement_annotation == 0) {
 				if (warn_on_movement_problems && reference_machine_animal.machine.movement_based_death_annotation->annotation_source == ns_death_time_annotation::ns_lifespan_machine) {
 					cerr << "WARNING:  An animal was recorded as dead without passing through fast movement, and has been excluded from the output. \n";
@@ -2365,7 +2365,7 @@ bool ns_multiple_worm_cluster_death_annotation_handler::generate_correct_annotat
 				return true;	//ignore
 			case ns_death_time_annotation::ns_include_directly_observed_deaths_and_infer_the_rest: {
 				//This is the standard option used to process multiple worm clusters that don't have complete by hand annotated death times for each worm.
-				if (event_data.last_slow_movement_annotation == 0) {
+				if (event_data.last_fast_movement_annotation == 0) {
 					cerr << "Found an unusual situation where a multiple worm cluster has no slow down from fast moving time annotationed (perhaps because it existed at the start of observation?)\n";
 
 					death.event_observation_type = ns_death_time_annotation::ns_observed_multiple_worm_death;
@@ -2384,7 +2384,7 @@ bool ns_multiple_worm_cluster_death_annotation_handler::generate_correct_annotat
 					//we don't interval censor clumps with lots of worms, because we probably can't get the death time correct.
 					//so we right censor them.
 					if (death.number_of_worms_at_location_marked_by_hand > 3) {
-						death.time = event_data.last_slow_movement_annotation->time;
+						death.time = event_data.last_fast_movement_annotation->time;
 						if (death.is_excluded())
 							death.excluded = ns_death_time_annotation::ns_excluded_and_censored;
 						else
@@ -2402,8 +2402,8 @@ bool ns_multiple_worm_cluster_death_annotation_handler::generate_correct_annotat
 						if (death.number_of_worms_at_location_marked_by_hand > 1) {
 							//death occurs during the inteval between the animals slowing down to changing posture and
 							//dying
-							output_death.time.period_start = event_data.last_slow_movement_annotation->time.period_start;
-							output_death.time.period_start_was_not_observed = event_data.last_slow_movement_annotation->time.period_start_was_not_observed;
+							output_death.time.period_start = event_data.last_fast_movement_annotation->time.period_start;
+							output_death.time.period_start_was_not_observed = event_data.last_fast_movement_annotation->time.period_start_was_not_observed;
 							output_death.number_of_worms_at_location_marked_by_machine = 0;
 							output_death.number_of_worms_at_location_marked_by_hand = death.number_of_worms_at_location_marked_by_hand - 1;
 							output_death.event_observation_type = ns_death_time_annotation::ns_induced_multiple_worm_death;
@@ -2415,7 +2415,7 @@ bool ns_multiple_worm_cluster_death_annotation_handler::generate_correct_annotat
 			 break;
 
 			case ns_death_time_annotation::ns_right_censor_multiple_worm_clusters: {
-				if (event_data.last_slow_movement_annotation == 0) {
+				if (event_data.last_fast_movement_annotation == 0) {
 					cerr << "Found an unusual situation where a multiple worm cluster has no slow down from fast moving time annotationed (perhaps because it existed at the start of observation?)\n";
 					death.type = ns_moving_worm_disappearance;
 					if (death.is_excluded())
@@ -2424,7 +2424,7 @@ bool ns_multiple_worm_cluster_death_annotation_handler::generate_correct_annotat
 					set.push_back(death);
 				}
 				else {
-					death = *event_data.last_slow_movement_annotation;
+					death = *event_data.last_fast_movement_annotation;
 					properties.transfer_sticky_properties(death);
 					death.type = ns_moving_worm_disappearance;
 					if (death.is_excluded())
@@ -3060,8 +3060,8 @@ void ns_death_timing_data::draw_movement_diagram(const ns_vector_2i & pos, const
 
 		const float dt(size.x / (float)total_time);
 		unsigned long worm_arrival_time;
-		if (!fast_movement_cessation.time.period_end_was_not_observed)
-		  worm_arrival_time = fast_movement_cessation.time.period_end;
+		if (!fast_movement_cessation2.time.period_end_was_not_observed)
+		  worm_arrival_time = fast_movement_cessation2.time.period_end;
 		else{
 		  cerr << "No fast movement cessation time specified.\n";
 		  worm_arrival_time = path_start_time;
@@ -3091,9 +3091,9 @@ void ns_death_timing_data::draw_movement_diagram(const ns_vector_2i & pos, const
 				im[y + pos.y][3 * (x + pos.x) + 2] = c.z*cur_scale;
 			}
 		}
-
+		/*
 		c = ns_movement_colors::color(ns_movement_slow)*scaling;
-		if (translation_cessation.time.period_end != 0 && translation_cessation.time.period_end >= path_start_time) {
+		if (translation_cessation_depreciated.time.period_end != 0 && translation_cessation.time.period_end >= path_start_time) {
 
 			//death_relaxation_start_time = translation_cessation.time.period_end;
 			if (translation_cessation.time.period_end > last_path_frame_time)
@@ -3110,7 +3110,7 @@ void ns_death_timing_data::draw_movement_diagram(const ns_vector_2i & pos, const
 				}
 			}
 			c = ns_movement_colors::color(ns_movement_posture)*scaling;
-		}
+		}*/
 		if (movement_cessation.time.period_end != 0 && movement_cessation.time.period_end >= path_start_time) {
 
 			//death_relaxation_start_time = movement_cessation.time.period_end;

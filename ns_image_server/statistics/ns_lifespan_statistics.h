@@ -99,10 +99,10 @@ private:
 
 				if (q->second.death.mean != 0)
 					data.death = data.death.scale(q->second.death.mean);	
-				if (q->second.local_movement_cessation.mean != 0)
-					data.local_movement_cessation = data.local_movement_cessation.scale(q->second.long_distance_movement_cessation.mean);	
-				if (q->second.long_distance_movement_cessation.mean != 0)
-					data.long_distance_movement_cessation = data.long_distance_movement_cessation.scale(q->second.long_distance_movement_cessation.mean);
+	//			if (q->second.local_movement_cessation.mean != 0)
+	//				data.local_movement_cessation = data.local_movement_cessation.scale(q->second.long_distance_movement_cessation.mean);	
+				if (q->second.fast_movement_cessation.mean != 0)
+					data.fast_movement_cessation = data.fast_movement_cessation.scale(q->second.fast_movement_cessation.mean);
 				out.add_data(data);
 			}
 		}
@@ -119,13 +119,13 @@ private:
 				p->second.death.mean/=p->second.death.count;
 				p->second.death.number_of_events_involving_multiple_worm_disambiguation/=p->second.death.count;
 			}
-			if (p->second.local_movement_cessation.count > 0){
+			/*if (p->second.local_movement_cessation.count > 0){
 				p->second.local_movement_cessation.mean/=p->second.local_movement_cessation.count;
 				p->second.local_movement_cessation.number_of_events_involving_multiple_worm_disambiguation/=p->second.local_movement_cessation.count;
-			}
-			if (p->second.long_distance_movement_cessation.count > 0){
-				p->second.long_distance_movement_cessation.mean/=p->second.long_distance_movement_cessation.count;
-				p->second.long_distance_movement_cessation.number_of_events_involving_multiple_worm_disambiguation/=p->second.long_distance_movement_cessation.count;
+			}*/
+			if (p->second.fast_movement_cessation.count > 0){
+				p->second.fast_movement_cessation.mean/=p->second.fast_movement_cessation.count;
+				p->second.fast_movement_cessation.number_of_events_involving_multiple_worm_disambiguation/=p->second.fast_movement_cessation.count;
 			}
 		}
 	}
@@ -135,20 +135,16 @@ private:
 		if (p == strain_mean_data.end()){
 			p = strain_mean_data.insert(ns_strain_mean_data::value_type(h,ns_survival_data_summary())).first;
 			p->second.death.set_as_zero();
-			p->second.local_movement_cessation.set_as_zero();
-			p->second.long_distance_movement_cessation.set_as_zero();
+			p->second.fast_movement_cessation.set_as_zero();
 		}
 		p->second.death.mean+=s.death.mean;
-		p->second.local_movement_cessation.mean+=s.local_movement_cessation.mean;
-		p->second.long_distance_movement_cessation.mean+=s.long_distance_movement_cessation.mean;
+		p->second.fast_movement_cessation.mean+=s.fast_movement_cessation.mean;
 
 		p->second.death.number_of_events_involving_multiple_worm_disambiguation+=s.death.number_of_events_involving_multiple_worm_disambiguation;
-		p->second.local_movement_cessation.number_of_events_involving_multiple_worm_disambiguation+=s.local_movement_cessation.number_of_events_involving_multiple_worm_disambiguation;
-		p->second.long_distance_movement_cessation.number_of_events_involving_multiple_worm_disambiguation+=s.long_distance_movement_cessation.number_of_events_involving_multiple_worm_disambiguation;
+		p->second.fast_movement_cessation.number_of_events_involving_multiple_worm_disambiguation+=s.fast_movement_cessation.number_of_events_involving_multiple_worm_disambiguation;
 
 		p->second.death.count++;
-		p->second.local_movement_cessation.count++;
-		p->second.long_distance_movement_cessation.count++;
+		p->second.fast_movement_cessation.count++;
 	}
 };
 

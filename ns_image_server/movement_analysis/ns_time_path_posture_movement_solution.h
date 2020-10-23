@@ -11,8 +11,9 @@ struct ns_movement_state_observation_boundaries{
 	unsigned long longest_observation_gap_within_interval;
 };
 struct ns_time_path_posture_movement_solution{
-	ns_movement_state_observation_boundaries moving,
-		slowing,
+	ns_movement_state_observation_boundaries
+		fast,	//animal is moving quickly around the plate
+		posture_changing,  //animal is stationary but changing posture
 		dead,
 		expanding,
 		post_expansion_contracting;

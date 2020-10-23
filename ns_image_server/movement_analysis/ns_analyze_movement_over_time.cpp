@@ -351,7 +351,9 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 	compiler.add(by_hand_region_annotations.annotations);
 	std::vector<ns_ex> censoring_file_io_problems;
 	ns_ex censoring_problem;
-	
+
+	if (log_output) 
+		image_server->register_server_event(ns_image_server_event("Analysis Complete."), &sql);
 	try {
 		//calculate censoring events according to different censoring strategies
 		ns_death_time_annotation::ns_by_hand_annotation_integration_strategy by_hand_annotation_integration_strategy[2] =
@@ -366,38 +368,38 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 			//for (unsigned int censoring_strategy = ns_death_time_annotation::ns_discard_multi_worm_clusters; censoring_strategy < (int)ns_death_time_annotation::ns_number_of_multiworm_censoring_strategies; censoring_strategy++) {
 			ns_death_time_annotation::ns_multiworm_censoring_strategy censoring_strategy = ns_death_time_annotation::ns_include_directly_observed_deaths_and_infer_the_rest;
 
-				if (censoring_strategy == (int)ns_death_time_annotation::ns_by_hand_censoring)
-					continue;
+			if (censoring_strategy == (int)ns_death_time_annotation::ns_by_hand_censoring)
+				continue;
 
-				ns_worm_movement_summary_series summary_series;
+			ns_worm_movement_summary_series summary_series;
 
-				ns_death_time_annotation::ns_missing_worm_return_strategy missing_return_strategy;
+			ns_death_time_annotation::ns_missing_worm_return_strategy missing_return_strategy;
 
-				if (censoring_strategy == ns_death_time_annotation::ns_merge_multiple_worm_clusters_and_missing_and_censor) 
-					missing_return_strategy = ns_death_time_annotation::ns_censoring_assume_uniform_distribution_of_missing_times;
-				else
-					missing_return_strategy = ns_death_time_annotation::ns_censoring_minimize_missing_times;
+			if (censoring_strategy == ns_death_time_annotation::ns_merge_multiple_worm_clusters_and_missing_and_censor)
+				missing_return_strategy = ns_death_time_annotation::ns_censoring_assume_uniform_distribution_of_missing_times;
+			else
+				missing_return_strategy = ns_death_time_annotation::ns_censoring_minimize_missing_times;
 
-				summary_series.from_death_time_annotations(by_hand_annotation_integration_strategy[by_hand_annotation_strategy],
+			summary_series.from_death_time_annotations(by_hand_annotation_integration_strategy[by_hand_annotation_strategy],
+				(ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy,
+				missing_return_strategy,
+				compiler, ns_include_unchanged);
+			summary_series.generate_censoring_annotations(metadata, time_path_image_analyzer.db_analysis_id(), set);
+			try {
+				ns_image_server_results_file movement_timeseries(image_server->results_storage.movement_timeseries_data(
+					by_hand_annotation_integration_strategy[by_hand_annotation_strategy],
 					(ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy,
 					missing_return_strategy,
-					compiler, ns_include_unchanged);
-				summary_series.generate_censoring_annotations(metadata, time_path_image_analyzer.db_analysis_id(),set);
-				try {
-					ns_image_server_results_file movement_timeseries(image_server->results_storage.movement_timeseries_data(
-						by_hand_annotation_integration_strategy[by_hand_annotation_strategy],
-						(ns_death_time_annotation::ns_multiworm_censoring_strategy)censoring_strategy,
-						missing_return_strategy,
-						ns_include_unchanged,
-						results_subject, "single_region", "movement_timeseries", sql));
-					ns_acquire_for_scope<ns_ostream> movement_out(movement_timeseries.output());
-					ns_worm_movement_measurement_summary::out_header(movement_out()());
-					summary_series.to_file(metadata, movement_out()());
-					movement_out.release();
-				}
-				catch (ns_ex & ex) {
-					censoring_file_io_problems.push_back(ex);
-				}
+					ns_include_unchanged,
+					results_subject, "single_region", "movement_timeseries", sql));
+				ns_acquire_for_scope<ns_ostream> movement_out(movement_timeseries.output());
+				ns_worm_movement_measurement_summary::out_header(movement_out()());
+				summary_series.to_file(metadata, movement_out()());
+				movement_out.release();
+			}
+			catch (ns_ex & ex) {
+				censoring_file_io_problems.push_back(ex);
+			}
 			//}
 		}
 	}
@@ -408,9 +410,9 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 	//output worm movement and death time annotations to disk
 
 	ns_image_server_results_file censoring_results(image_server->results_storage.machine_death_times(results_subject, ns_image_server_results_storage::ns_censoring_and_movement_transitions,
-		"time_path_image_analysis", sql,true));
+		"time_path_image_analysis", sql, true));
 	ns_image_server_results_file state_results(image_server->results_storage.machine_death_times(results_subject, ns_image_server_results_storage::ns_worm_position_annotations,
-		"time_path_image_analysis", sql,true));
+		"time_path_image_analysis", sql, true));
 
 	ns_acquire_for_scope<ns_ostream> censoring_out(censoring_results.output());
 	ns_acquire_for_scope<ns_ostream> state_out(state_results.output());
@@ -447,7 +449,7 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 
 	if (!posture_analysis_method_was_used)
 		throw ns_ex("Unknown posture analysis method used");
-		//update db stats
+	//update db stats
 	sql << "UPDATE sample_region_image_info SET "
 		<< "latest_movement_rebuild_timestamp = UNIX_TIMESTAMP(NOW()),"
 		<< "last_timepoint_in_latest_movement_rebuild = " << time_path_image_analyzer.last_timepoint_in_analysis() << ","
@@ -472,112 +474,112 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 //This function
 //1) Recalculates the subregion information based on the latest subregion mask (eg. are worms on the agar lawn or not?
 //2)  Recalculates the movement state data including by hand annotations of worm death times and /importantly/ excluding objects excluded by the worm browser.
-void ns_refine_image_statistics(const ns_64_bit region_id, const bool recalculate_worm_morphology_from_images, std::ostream & out, ns_sql & sql) {
+	void ns_refine_image_statistics(const ns_64_bit region_id, const bool recalculate_worm_morphology_from_images, std::ostream& out, ns_sql& sql) {
 
 
-	ns_time_path_image_movement_analysis_memory_pool<ns_overallocation_resizer> memory_pool;
-	ns_worm_morphology_data_integrator<ns_overallocation_resizer> morphology_data_integrator(memory_pool);
+		ns_time_path_image_movement_analysis_memory_pool<ns_overallocation_resizer> memory_pool;
+		ns_worm_morphology_data_integrator<ns_overallocation_resizer> morphology_data_integrator(memory_pool);
 
-	image_server.add_subtext_to_current_event("Loading metadata...", &sql);
-	morphology_data_integrator.load_data_and_annotations_from_db(region_id, sql);
+		image_server.add_subtext_to_current_event("Loading metadata...", &sql);
+		morphology_data_integrator.load_data_and_annotations_from_db(region_id, sql);
 
-	//update the subregion id label for each detected object
-	{
-		morphology_data_integrator.solution.identify_subregions_labels_from_subregion_mask(region_id, sql);
-		morphology_data_integrator.solution.save_to_db(region_id, sql);
+		//update the subregion id label for each detected object
+		{
+			morphology_data_integrator.solution.identify_subregions_labels_from_subregion_mask(region_id, sql);
+			morphology_data_integrator.solution.save_to_db(region_id, sql);
 
-		ns_image_server_results_subject results_subject;
-		results_subject.region_id = region_id;
+			ns_image_server_results_subject results_subject;
+			results_subject.region_id = region_id;
 
-		ns_acquire_for_scope<ns_ostream> position_3d_file_output(
-			image_server.results_storage.animal_position_timeseries_3d(
-				results_subject, sql, ns_image_server_results_storage::ns_3d_plot
-			).output()
-		);
-		morphology_data_integrator.solution.output_visualization_csv(position_3d_file_output()());
-		position_3d_file_output.release();
+			ns_acquire_for_scope<ns_ostream> position_3d_file_output(
+				image_server.results_storage.animal_position_timeseries_3d(
+					results_subject, sql, ns_image_server_results_storage::ns_3d_plot
+				).output()
+			);
+			morphology_data_integrator.solution.output_visualization_csv(position_3d_file_output()());
+			position_3d_file_output.release();
 
-		image_server.results_storage.write_animal_position_timeseries_3d_launcher(results_subject, ns_image_server_results_storage::ns_3d_plot, sql);
-	}
-	//now move on to processing the morphology data
-	//first we load all image data
-	morphology_data_integrator.match_images_with_solution(sql);
-
-	//now we output image data, recalculating morphology stats if requested
-	if (recalculate_worm_morphology_from_images) {
-		ns_detected_worm_stats::output_csv_header(out);
-		out << ",";
-	}
-	else {
-		out << "Source Region ID,"
-			<< "Capture Time,"
-			<< "Position in Source Image X,"
-			<< "Position in Source Image Y,"
-			<< "Size in Source Image X,"
-			<< "Size in Source Image Y,"
-			<< "Plate subregion id,"
-			<< "Plate subregion nearest neighbor id,"
-			<< "Plate subregion nearest neighbor distance X,"
-			<< "Plate subregion nearest neighbor distance Y,";
-	}
-	morphology_data_integrator.metadata.out_JMP_plate_identity_header_short(out);
-	out << ",time spent included, time_spent_excluded,average_time, overlap with path match,Age (days), Stationary Worm ID, Movement State,explicitly_excluded\n";
-	unsigned int cur_pos = 0;
-	double last_percent = 0;
-
-	image_server.add_subtext_to_current_event("\nCalculating morphometric data...", &sql);
-	for (auto t = morphology_data_integrator.timepoints.begin(); t != morphology_data_integrator.timepoints.end(); t++) {
-		const double percent = floor((20 * cur_pos) / morphology_data_integrator.timepoints.size()) / 20;
-		if (percent >= last_percent + .05) {
-			image_server.add_subtext_to_current_event(ns_to_string((int)(100 * percent)) + "%...", &sql);
-			last_percent = percent;
+			image_server.results_storage.write_animal_position_timeseries_3d_launcher(results_subject, ns_image_server_results_storage::ns_3d_plot, sql);
 		}
-		cur_pos++;
-		if (recalculate_worm_morphology_from_images && !t->empty()) {
-			t->begin()->load_images_for_all_worms_at_current_timepoint(sql);
+		//now move on to processing the morphology data
+		//first we load all image data
+		morphology_data_integrator.match_images_with_solution(sql);
 
+		//now we output image data, recalculating morphology stats if requested
+		if (recalculate_worm_morphology_from_images) {
+			ns_detected_worm_stats::output_csv_header(out);
+			out << ",";
 		}
-		for (auto w = t->begin(); w != t->end(); w++) {
-			if (!w->image_data_identified) {
-				std::cerr << "Match not found\n";
-				continue;
+		else {
+			out << "Source Region ID,"
+				<< "Capture Time,"
+				<< "Position in Source Image X,"
+				<< "Position in Source Image Y,"
+				<< "Size in Source Image X,"
+				<< "Size in Source Image Y,"
+				<< "Plate subregion id,"
+				<< "Plate subregion nearest neighbor id,"
+				<< "Plate subregion nearest neighbor distance X,"
+				<< "Plate subregion nearest neighbor distance Y,";
+		}
+		morphology_data_integrator.metadata.out_JMP_plate_identity_header_short(out);
+		out << ",time spent included, time_spent_excluded,average_time, overlap with path match,Age (days), Stationary Worm ID, Movement State,explicitly_excluded\n";
+		unsigned int cur_pos = 0;
+		double last_percent = 0;
+
+		image_server.add_subtext_to_current_event("\nCalculating morphometric data...", &sql);
+		for (auto t = morphology_data_integrator.timepoints.begin(); t != morphology_data_integrator.timepoints.end(); t++) {
+			const double percent = floor((20 * cur_pos) / morphology_data_integrator.timepoints.size()) / 20;
+			if (percent >= last_percent + .05) {
+				image_server.add_subtext_to_current_event(ns_to_string((int)(100 * percent)) + "%...", &sql);
+				last_percent = percent;
 			}
-			try {
-				const std::string movement_state_string(ns_movement_state_to_string_short(w->movement_state()));
-				if (recalculate_worm_morphology_from_images) {
-					ns_detected_worm_stats worm_stats = w->worm_image_info->generate_stats();
-					ns_object_hand_annotation_data hd; //output nothing here
-					worm_stats.output_csv_data(region_id, w->time, w->solution_element->region_position, w->solution_element->region_size, hd, w->solution_element->subregion_info, out);
+			cur_pos++;
+			if (recalculate_worm_morphology_from_images && !t->empty()) {
+				t->begin()->load_images_for_all_worms_at_current_timepoint(sql);
 
+			}
+			for (auto w = t->begin(); w != t->end(); w++) {
+				if (!w->image_data_identified) {
+					std::cerr << "Match not found\n";
+					continue;
 				}
-				else {
-					out << region_id << "," << w->time << ",";
-					out << w->solution_element->region_position.x << "," << w->solution_element->region_position.y << "," << w->solution_element->region_size.x << "," << w->solution_element->region_size.y << ",";
-					out << w->solution_element->subregion_info.plate_subregion_id << "," << w->solution_element->subregion_info.nearest_neighbor_subregion_id << "," << w->solution_element->subregion_info.nearest_neighbor_subregion_distance.x << "," << w->solution_element->subregion_info.nearest_neighbor_subregion_distance.y;
+				try {
+					const std::string movement_state_string(ns_movement_state_to_string_short(w->movement_state()));
+					if (recalculate_worm_morphology_from_images) {
+						ns_detected_worm_stats worm_stats = w->worm_image_info->generate_stats();
+						ns_object_hand_annotation_data hd; //output nothing here
+						worm_stats.output_csv_data(region_id, w->time, w->solution_element->region_position, w->solution_element->region_size, hd, w->solution_element->subregion_info, out);
 
+					}
+					else {
+						out << region_id << "," << w->time << ",";
+						out << w->solution_element->region_position.x << "," << w->solution_element->region_position.y << "," << w->solution_element->region_size.x << "," << w->solution_element->region_size.y << ",";
+						out << w->solution_element->subregion_info.plate_subregion_id << "," << w->solution_element->subregion_info.nearest_neighbor_subregion_id << "," << w->solution_element->subregion_info.nearest_neighbor_subregion_distance.x << "," << w->solution_element->subregion_info.nearest_neighbor_subregion_distance.y;
+
+					}
+					out << ",";
+					morphology_data_integrator.metadata.out_JMP_plate_identity_data_short(out);
+					out << "," << w->region_area.total_inclusion_time_in_seconds << "," << w->region_area.total_exclusion_time_in_seconds << "," << w->region_area.average_annotation_time_for_region << ",";
+					//			if (areas[j].total_exclusion_time_in_seconds == 0 || areas[j].total_exclusion_time_in_seconds < areas[j].total_inclusion_time_in_seconds)
+					//				out << "no";
+					//			else out << "yes";
+					out << w->region_area.overlap_area_with_match << ",";
+					out << ((w->time - morphology_data_integrator.metadata.time_at_which_animals_had_zero_age) / 60.0 / 60.0 / 24) << ",";
+					out << w->id.group_id << "," << movement_state_string << ",";
+					out << (w->by_hand_annotation().is_excluded() ? "1" : "0");
 				}
-				out << ",";
-				morphology_data_integrator.metadata.out_JMP_plate_identity_data_short(out);
-				out << "," << w->region_area.total_inclusion_time_in_seconds << "," << w->region_area.total_exclusion_time_in_seconds << "," << w->region_area.average_annotation_time_for_region << ",";
-				//			if (areas[j].total_exclusion_time_in_seconds == 0 || areas[j].total_exclusion_time_in_seconds < areas[j].total_inclusion_time_in_seconds)
-				//				out << "no";
-				//			else out << "yes";
-				out << w->region_area.overlap_area_with_match << ",";
-				out << ((w->time - morphology_data_integrator.metadata.time_at_which_animals_had_zero_age) / 60.0 / 60.0 / 24) << ",";
-				out << w->id.group_id << "," << movement_state_string << ",";
-				out << (w->by_hand_annotation().is_excluded() ? "1" : "0");
+				catch (ns_ex & ex) {
+					image_server.add_subtext_to_current_event(ex.text(), &sql);
+				}
+				out << "\n";
 			}
-			catch (ns_ex & ex) {
-				image_server.add_subtext_to_current_event(ex.text(), &sql);
-			}
-			out << "\n";
+			if (recalculate_worm_morphology_from_images && !t->empty())
+				t->begin()->clear_images_for_all_worms_at_current_timepoint();
 		}
-		if (recalculate_worm_morphology_from_images && !t->empty())
-			t->begin()->clear_images_for_all_worms_at_current_timepoint();
-	}
 
-	image_server.add_subtext_to_current_event("Done.\n", &sql);
-}
+		image_server.add_subtext_to_current_event("Done.\n", &sql);
+	}
 
 
 

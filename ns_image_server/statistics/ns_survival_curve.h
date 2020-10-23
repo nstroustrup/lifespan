@@ -108,7 +108,7 @@ struct ns_survival_timepoint_event_count{
 	
 struct ns_metadata_worm_properties{
 	ns_metadata_worm_properties():events(0),properties_override_set(false),control_group(-1), event_period_end_time(0), event_type(ns_number_of_event_types){}
-	typedef enum{ns_long_distance_movement_cessation,ns_local_movement_cessation,ns_movement_based_death,ns_death_associated_expansion, ns_typeless_censoring_events,ns_best_guess_death,ns_number_of_event_types} ns_survival_event_type;
+	typedef enum{ns_fast_movement_cessation,ns_local_movement_cessation_depreciated,ns_movement_based_death,ns_death_associated_expansion, ns_typeless_censoring_events,ns_best_guess_death,ns_number_of_event_types} ns_survival_event_type;
 	long control_group;
 	unsigned long event_period_end_time;
 	ns_survival_event_type event_type;
@@ -119,8 +119,8 @@ struct ns_metadata_worm_properties{
 	
 	inline static std::string  event_type_to_string(const ns_survival_event_type & e){
 			switch(e){
-				case ns_long_distance_movement_cessation: return "Long Distance Movement Cessation";
-				case ns_local_movement_cessation: return "Local Movement Cessation";
+				case ns_fast_movement_cessation: return "Fast Movement Cessation";
+				case ns_local_movement_cessation_depreciated: return "Local Movement Cessation";
 				case ns_movement_based_death:	return "Movement Cessation";
 				case ns_best_guess_death:	return "Best Guess Death Time";
 				case ns_death_associated_expansion:	return "Death-Associated Expansion";
@@ -170,8 +170,7 @@ struct ns_survival_timepoint{
 	
 	unsigned long absolute_time;
 	ns_survival_timepoint_event movement_based_deaths,
-		long_distance_movement_cessations,
-		local_movement_cessations,
+		fast_movement_cessations,
 		death_associated_expansions,
 		best_guess_deaths,	//note that immediately after loading, this structure will contain /both/ death movement based and death_associated death times.  This is then sorted out later.
 		typeless_censoring_events;
@@ -218,8 +217,7 @@ struct ns_survival_data_quantities{
 
 struct ns_survival_data_summary{
 	ns_region_metadata metadata;
-	ns_survival_data_quantities long_distance_movement_cessation,
-								local_movement_cessation,
+	ns_survival_data_quantities fast_movement_cessation,
 								death;
 	std::string to_xml() const;
 	void from_xml(const ns_xml_simple_object & o);
@@ -230,24 +228,20 @@ struct ns_survival_data_summary{
 	static void out_blank_jmp_data(std::ostream & o, const std::string & terminator="\n") ;
 	void add(const ns_survival_data_summary & s);
 	void set_stats_as_zero(){
-		long_distance_movement_cessation.set_as_zero();
-		local_movement_cessation.set_as_zero();
+		fast_movement_cessation.set_as_zero();
 		death.set_as_zero();
 	}
 	ns_survival_data_summary divide_stats_by_count() const{
 		ns_survival_data_summary t(*this);
-		if (t.long_distance_movement_cessation.count!= 0)
-			t.long_distance_movement_cessation = t.long_distance_movement_cessation.scale(1.0/t.long_distance_movement_cessation.count);
-		if (t.local_movement_cessation.count!= 0)
-			t.local_movement_cessation = t.local_movement_cessation.scale(1.0/t.local_movement_cessation.count);
+		if (t.fast_movement_cessation.count!= 0)
+			t.fast_movement_cessation = t.fast_movement_cessation.scale(1.0/t.fast_movement_cessation.count);
 		if (t.death.count!= 0)
 			t.death = t.death.scale(1.0/t.death.count);
 		return t;
 	}
 	ns_survival_data_summary multiply_stats_by_count() const{
 		ns_survival_data_summary t(*this);
-		t.long_distance_movement_cessation = t.long_distance_movement_cessation.scale(t.long_distance_movement_cessation.count);
-		t.local_movement_cessation = t.local_movement_cessation.scale(t.local_movement_cessation.count);
+		t.fast_movement_cessation = t.fast_movement_cessation.scale(t.fast_movement_cessation.count);
 		t.death = t.death.scale(t.death.count);
 		return t;
 	}
@@ -291,8 +285,8 @@ struct ns_survival_statistics{
 };
 struct ns_multi_event_survival_statistics{
 	ns_survival_statistics movement_based_death,
-		long_distance_movement_cessation,
-		local_movement_cessations,
+		fast_movement_cessation,
+		posture_change_cessations,
 		death_associated_expansion_start,
 		best_guess_death;
 };
@@ -325,8 +319,7 @@ struct ns_survival_data_with_censoring{
 };	
 struct ns_multi_event_survival_data_with_censoring{
 	ns_survival_data_with_censoring movement_based_death,
-		long_distance_movement_cessation,
-		local_movement_cessations,
+		fast_movement_cessation,
 		death_associated_expansion_start,
 		best_guess_death;
 };
@@ -355,8 +348,8 @@ public:
 private:
 	void generate_risk_timeseries(){
 		generate_risk_timeseries(ns_movement_cessation,risk_timeseries.movement_based_death);
-		generate_risk_timeseries(ns_translation_cessation,risk_timeseries.local_movement_cessations);
-		generate_risk_timeseries(ns_fast_movement_cessation,risk_timeseries.long_distance_movement_cessation);
+		//generate_risk_timeseries(ns_translation_cessation,risk_timeseries.local_movement_cessations);
+		generate_risk_timeseries(ns_fast_movement_cessation2,risk_timeseries.fast_movement_cessation);
 		generate_risk_timeseries(ns_death_associated_expansion_start, risk_timeseries.death_associated_expansion_start);
 		generate_risk_timeseries(ns_death_associated_expansion_start, risk_timeseries.death_associated_expansion_start);
 		//special case using ns_additional_worm_entry as a special flag to indicate choosing the best guess death time
@@ -555,8 +548,7 @@ class ns_lifespan_experiment_set{
 public:
 	ns_lifespan_experiment_set():curves_on_constant_time_interval(false),
 		normalization_stats_for_death(ns_movement_cessation),
-		normalization_stats_for_translation_cessation(ns_translation_cessation),
-		normalization_stats_for_fast_movement_cessation(ns_fast_movement_cessation){}
+		normalization_stats_for_fast_movement_cessation(ns_fast_movement_cessation2){}
 	void load_from_JMP_file(std::ifstream & in);
 	void load_from_by_hand_lifespan_file(std::ifstream & in);
 
@@ -611,7 +603,6 @@ public:
 	bool set_is_on_common_time() const {return !common_time_.empty();}
 	
 	ns_lifespan_device_normalization_statistics_set normalization_stats_for_death,
-													normalization_stats_for_translation_cessation,
 													normalization_stats_for_fast_movement_cessation;
 	ns_survival_data& curve(const std::size_t& i) { return *curves[i]; }
 	const ns_survival_data& curve(const std::size_t& i) const { return *curves[i]; }

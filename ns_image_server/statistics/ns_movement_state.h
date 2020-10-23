@@ -5,7 +5,7 @@
 typedef enum{ 
 			ns_movement_stationary, 
 			ns_movement_posture, 
-			ns_movement_slow, 
+			ns_movement_slow_depreciated, 
 			ns_movement_fast, 
 			ns_movement_by_hand_excluded,
 			ns_movement_machine_excluded,
@@ -27,9 +27,9 @@ public:
 
 
 typedef enum{ns_no_movement_event,				//nothing happens at the specified time
-			ns_translation_cessation,			//the animal's center of mass stops moving and afterwards only posture changes
+			ns_translation_cessation_depreciated,	//an intermediate category between fast and slow movement
 			ns_movement_cessation,				//the animal stops moving altogether and appears dead.
-			ns_fast_movement_cessation,			//the animal comes to rest within a small bounding box and moves within it.
+			ns_fast_movement_cessation2,			//the animal comes to rest within a small bounding box and moves within it.
 			ns_fast_moving_worm_observed,		//a fast moving animal was seen at the specified time point
 												//used for marking animals still moving at the end of a time period,
 			ns_movement_censored_worm_observed,	//either static noise or non-stationary_object
@@ -56,9 +56,9 @@ bool ns_movement_event_is_a_state_observation(const ns_movement_event & t);
 ns_movement_state ns_movement_event_state(const ns_movement_event & e);
 
 typedef enum {
-	ns_hmm_missing,
-	ns_hmm_moving_vigorously,
-	ns_hmm_moving_weakly,
+	ns_hmm_missing,	//before an animal arrives into a path; it's presumed to be moving around the plate
+	ns_hmm_moving_vigorously,	//moving slowly but only in place
+	ns_hmm_moving_weakly,		//only changing posture
 	ns_hmm_moving_weakly_expanding,
 	ns_hmm_moving_weakly_post_expansion,
 	ns_hmm_not_moving_alive,

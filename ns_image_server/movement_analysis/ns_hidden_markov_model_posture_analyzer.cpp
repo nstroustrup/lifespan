@@ -53,28 +53,28 @@ void ns_hmm_solver::solve(const ns_analyzed_image_time_path & path, const ns_emp
 
  void ns_hmm_solver::probability_of_path_solution(const ns_analyzed_image_time_path & path, const ns_emperical_posture_quantification_value_estimator & estimator, const ns_time_path_posture_movement_solution & solution, ns_hmm_movement_optimization_stats_record_path & state_info, bool generate_path_info) {
 	std::vector < ns_hmm_movement_state > movement_states(path.element_count(), ns_hmm_unknown_state);
-	if (solution.moving.skipped && solution.slowing.skipped && solution.dead.skipped)
+	if (solution.fast.skipped && solution.posture_changing.skipped && solution.dead.skipped)
 		throw ns_ex("ns_hmm_solver::probability_of_path_solution()::Encountered an empty solution");
-	if (!solution.moving.skipped) {
-		for (unsigned int i = 0; i <= solution.moving.start_index; i++)
+	if (!solution.fast.skipped) {
+		for (unsigned int i = 0; i <= solution.fast.start_index; i++)
 			movement_states[i] = ns_hmm_missing;
 		if (estimator.state_defined(ns_hmm_moving_vigorously)) {
-			for (unsigned int i = solution.moving.start_index; i <= solution.moving.end_index; i++)
+			for (unsigned int i = solution.fast.start_index; i <= solution.fast.end_index; i++)
 				movement_states[i] = ns_hmm_moving_vigorously;
 		}
 		else {
-			for (unsigned int i = solution.moving.start_index; i <= solution.moving.end_index; i++) {
+			for (unsigned int i = solution.fast.start_index; i <= solution.fast.end_index; i++) {
 				//std::cout << "weakly from " << solution.moving.start_index << " to " << solution.moving.end_index << "\n";;
 				movement_states[i] = ns_hmm_moving_weakly;
 			}
 		}
 	}
-	if (!solution.slowing.skipped) {
-		if (solution.moving.skipped) {
-			for (unsigned int i = 0; i <= solution.slowing.start_index; i++)
+	if (!solution.posture_changing.skipped) {
+		if (solution.fast.skipped) {
+			for (unsigned int i = 0; i <= solution.posture_changing.start_index; i++)
 				movement_states[i] = ns_hmm_missing;
 		}
-		for (unsigned int i = solution.slowing.start_index; i <= solution.slowing.end_index; i++) {
+		for (unsigned int i = solution.posture_changing.start_index; i <= solution.posture_changing.end_index; i++) {
 			if (!solution.post_expansion_contracting.skipped && i >= solution.post_expansion_contracting.start_index && i <= solution.post_expansion_contracting.end_index)
 				movement_states[i] = ns_hmm_contracting_post_expansion;
 			else if (!solution.expanding.skipped && i >= solution.expanding.start_index && i <= solution.expanding.end_index)
@@ -85,7 +85,7 @@ void ns_hmm_solver::solve(const ns_analyzed_image_time_path & path, const ns_emp
 		}
 	}
 	if (!solution.dead.skipped) {
-		if (solution.moving.skipped && solution.slowing.skipped) {
+		if (solution.fast.skipped && solution.posture_changing.skipped) {
 			for (unsigned int i = 0; i <= solution.dead.start_index; i++)
 				movement_states[i] = ns_hmm_missing;
 		}
@@ -477,7 +477,7 @@ double optimal_path_log_probability, cumulative_renormalization_factor(0);
 void ns_hmm_solver::build_movement_state_solution_from_movement_transitions(const unsigned long first_stationary_path_index,const std::vector<unsigned long> path_indices, const std::vector<ns_hmm_state_transition_time_path_index > & movement_transitions){
 	if (first_stationary_path_index >= path_indices.size())
 		throw ns_ex("ns_hmm_solver::build_movement_state_solution_from_movement_transitions()::Invalid first stationary path index");
-	movement_state_solution.moving.start_index = path_indices[first_stationary_path_index];
+	//movement_state_solution.fast.start_index = path_indices[first_stationary_path_index];
 	ns_movement_state m = ns_movement_fast;
 
 	//set all states skipped by default.
@@ -485,39 +485,50 @@ void ns_hmm_solver::build_movement_state_solution_from_movement_transitions(cons
 	movement_state_solution.dead.skipped = true;
 	movement_state_solution.dead.longest_observation_gap_within_interval = 0;
 	
-	movement_state_solution.expanding = movement_state_solution.post_expansion_contracting = movement_state_solution.post_expansion_contracting = movement_state_solution.slowing = movement_state_solution.dead;
+	movement_state_solution.expanding = movement_state_solution.post_expansion_contracting = movement_state_solution.post_expansion_contracting = movement_state_solution.posture_changing = movement_state_solution.fast = movement_state_solution.dead;
 
 	int expanding_state = 0, contracting_state = 0;
-	movement_state_solution.moving.skipped = false;
-	movement_state_solution.moving.start_index = first_stationary_path_index;
-	movement_state_solution.moving.end_index = *path_indices.rbegin();
+	//default if no other transitions are found
+	movement_state_solution.fast.skipped = false;
+	movement_state_solution.fast.start_index = first_stationary_path_index;
+	movement_state_solution.fast.end_index = *path_indices.rbegin();
 
 
 	//go through each of the state transitions and annotate what has happened in the solution.
 	for (unsigned int i = 0; i < movement_transitions.size(); i++) {
 		//look for movement transitions
 		if (m == ns_movement_fast && (movement_transitions[i].first != ns_hmm_missing && movement_transitions[i].first != ns_hmm_moving_vigorously)) {
-			if (i != 0 && movement_transitions[i-1].first != ns_hmm_missing) { //if we had a period of fast movement, mark it as not being skipped.
-				movement_state_solution.moving.skipped = false;
-				movement_state_solution.moving.end_index = path_indices[movement_transitions[i].second];
+			if (i != 0 && movement_transitions[i-1].first != ns_hmm_missing) { 
+				//if we had a period of fast movement that was explicitly detected, mark it as not being skipped.
+				//though the HMM models need to expliclty model "missing" animals
+				//the rest of the lifespan machine considers animals "fast moving" until they slow down (after all; they are fast moving /somewhere else/
+				//So we declare missing animals as fast moving
+				movement_state_solution.fast.skipped = false;
+				movement_state_solution.fast.start_index = 0;
+				movement_state_solution.fast.end_index = path_indices[movement_transitions[i].second];
 			}
-			else 
-				movement_state_solution.moving.skipped = true;
+			else {
+				//the animal moves straight from being "missing" to changing posture, being dead, or something else.
+				//we still need to mark the animal as fast moving before this point.
+				movement_state_solution.fast.skipped = false;
+				movement_state_solution.fast.start_index = 0;
+				movement_state_solution.fast.end_index = path_indices[movement_transitions[i].second];
+			}
 			
-			m = ns_movement_slow;
-			movement_state_solution.slowing.start_index = path_indices[movement_transitions[i].second];
-			movement_state_solution.slowing.end_index = *path_indices.rbegin();
-			movement_state_solution.slowing.skipped = (movement_state_solution.slowing.start_index == movement_state_solution.slowing.end_index);
+			m = ns_movement_posture;
+			movement_state_solution.posture_changing.start_index = path_indices[movement_transitions[i].second];
+			movement_state_solution.posture_changing.end_index = *path_indices.rbegin();
+			movement_state_solution.posture_changing.skipped = (movement_state_solution.posture_changing.start_index == movement_state_solution.posture_changing.end_index);
 		}
-		if (m == ns_movement_slow && (
+		if (m == ns_movement_posture && (
 			movement_transitions[i].first != ns_hmm_moving_weakly &&
 			movement_transitions[i].first != ns_hmm_moving_weakly_expanding &&
 			movement_transitions[i].first != ns_hmm_moving_weakly_post_expansion)) {
-			if (path_indices[movement_transitions[i].second] != movement_state_solution.slowing.start_index)
-				movement_state_solution.slowing.end_index = path_indices[movement_transitions[i].second];
+			if (path_indices[movement_transitions[i].second] != movement_state_solution.posture_changing.start_index)
+				movement_state_solution.posture_changing.end_index = path_indices[movement_transitions[i].second];
 			else {
-				movement_state_solution.slowing.end_index = movement_state_solution.slowing.start_index = 0;
-				movement_state_solution.slowing.skipped = true;
+				movement_state_solution.posture_changing.end_index = movement_state_solution.posture_changing.start_index = 0;
+				movement_state_solution.posture_changing.skipped = true;
 			}
 			m = ns_movement_stationary;
 				movement_state_solution.dead.start_index = path_indices[movement_transitions[i].second];
@@ -586,10 +597,10 @@ void ns_hmm_solver::build_movement_state_solution_from_movement_transitions(cons
 		}
 	}
 	//zero out for neatness.  These values shouldn't be used, but leaving them set can be confusing during debugging.
-	if (movement_state_solution.moving.skipped)
-		movement_state_solution.moving.start_index = movement_state_solution.moving.end_index = 0;
-	if (movement_state_solution.slowing.skipped)
-		movement_state_solution.slowing.start_index = movement_state_solution.slowing.end_index = 0;
+	if (movement_state_solution.fast.skipped)
+		movement_state_solution.fast.start_index = movement_state_solution.fast.end_index = 0;
+	if (movement_state_solution.posture_changing.skipped)
+		movement_state_solution.posture_changing.start_index = movement_state_solution.posture_changing.end_index = 0;
 	if (movement_state_solution.dead.skipped)
 		movement_state_solution.dead.start_index = movement_state_solution.dead.end_index = 0;
 	if (movement_state_solution.expanding.skipped)
@@ -1934,8 +1945,8 @@ ns_time_path_posture_movement_solution ns_threshold_and_hmm_posture_analyzer::es
 	
 	ns_time_path_posture_movement_solution blended_solution =hmm_solver.movement_state_solution;
 	blended_solution.dead = threshold_solution.dead;
-	blended_solution.moving = threshold_solution.moving;
-	blended_solution.slowing = threshold_solution.slowing;
+	blended_solution.fast = threshold_solution.fast;
+	blended_solution.posture_changing = threshold_solution.posture_changing;
 
 	return blended_solution;
 }

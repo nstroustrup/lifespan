@@ -592,13 +592,13 @@ void ns_update_max_and_min_from_timepoint(ns_worm_movement_measurement_summary_t
 		ns_assign_if_greater(stats.maximum_count_for_movement_state[(int)ns_movement_total],total);
 			
 		ns_assign_if_greater(stats.maximum_count_for_movement_state[(int)ns_movement_fast] , (double)data.number_moving_fast);
-		ns_assign_if_greater(stats.maximum_count_for_movement_state[(int)ns_movement_slow] , (double)data.number_moving_slow);
+		ns_assign_if_greater(stats.maximum_count_for_movement_state[(int)ns_movement_slow_depreciated] , (double)data.number_moving_slow);
 		ns_assign_if_greater(stats.maximum_count_for_movement_state[(int)ns_movement_posture] ,(double)data.number_changing_posture);
 		ns_assign_if_greater(stats.maximum_count_for_movement_state[(int)ns_movement_stationary] , (double)data.number_stationary);
 
 		ns_assign_if_lesser(stats.minimum_count_for_movement_state[(int)ns_movement_total],(double)total);
 		ns_assign_if_lesser(stats.minimum_count_for_movement_state[(int)ns_movement_fast] , (double)data.number_moving_fast);
-		ns_assign_if_lesser(stats.minimum_count_for_movement_state[(int)ns_movement_slow] , (double)data.number_moving_slow);
+		ns_assign_if_lesser(stats.minimum_count_for_movement_state[(int)ns_movement_slow_depreciated] , (double)data.number_moving_slow);
 		ns_assign_if_lesser(stats.minimum_count_for_movement_state[(int)ns_movement_posture] , (double)data.number_changing_posture);
 		ns_assign_if_lesser(stats.minimum_count_for_movement_state[(int)ns_movement_stationary] , (double)data.number_stationary);
 }

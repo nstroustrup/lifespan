@@ -237,7 +237,7 @@ public:
 				map<ns_64_bit, ns_64_bit>::iterator p(region_image_id_sorted_by_time.find(result.locations[i].annotations[j].time.period_end));
 				if (p == region_image_id_sorted_by_time.end()) {
 					result_location_region_image_ids[i][j].image_id = 0;
-					if (result.locations[i].annotations[j].type == ns_movement_cessation || result.locations[i].annotations[j].type == ns_fast_movement_cessation || result.locations[i].annotations[j].type == ns_translation_cessation)
+					if (result.locations[i].annotations[j].type == ns_movement_cessation || result.locations[i].annotations[j].type == ns_fast_movement_cessation2 || result.locations[i].annotations[j].type == ns_translation_cessation_depreciated)
 						cerr << "Could not identify time point for a death or movement cessation event.\n";
 					
 				}

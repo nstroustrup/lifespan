@@ -467,7 +467,7 @@ private:
 		switch (cur_state) {
 		case ns_movement_stationary:return "Dead";
 		case ns_movement_posture: return "Changing Posture";
-		case ns_movement_slow: return "Slow Moving";
+		case ns_movement_slow_depreciated: return "Slow Moving (Depreciated)";
 		case ns_movement_fast: return "Fast Moving";
 		case ns_movement_death_associated_expansion: return "Death-Associated Expansion";
 		case ns_movement_death_associated_post_expansion_contraction: return "Death-Associated post-expansion Contraction";
@@ -536,13 +536,12 @@ private:
 		ns_animal_list_at_position* cur_machine_timing(current_machine_timing_data(handle));
 		//handle out of bound values
 		for (ns_animal_list_at_position::ns_animal_list::iterator p = cur_hand_timing->animals.begin(); p != cur_hand_timing->animals.end(); p++) {
-			ns_crop_time(observation_limit, first_path_obs, last_path_obs, p->fast_movement_cessation.time);
+			ns_crop_time(observation_limit, first_path_obs, last_path_obs, p->fast_movement_cessation2.time);
 			ns_crop_time(observation_limit, first_path_obs, last_path_obs, p->death_associated_expansion_stop.time);
 			ns_crop_time(observation_limit, first_path_obs, last_path_obs, p->death_associated_expansion_start.time);
 			ns_crop_time(observation_limit, first_path_obs, last_path_obs, p->death_associated_post_expansion_contraction_stop.time);
 			ns_crop_time(observation_limit, first_path_obs, last_path_obs, p->death_associated_post_expansion_contraction_start.time);
 			ns_crop_time(observation_limit, first_path_obs, last_path_obs, p->movement_cessation.time);
-			ns_crop_time(observation_limit, first_path_obs, last_path_obs, p->translation_cessation.time);
 		}
 
 		const unsigned long hand_bar_height(cur_hand_timing->animals.size() *
@@ -1038,10 +1037,10 @@ public:
 			properties_for_all_animals.stationary_path_id = worm;
 			bool saved = true;
 			for (unsigned int j = 0; j < handle().data->by_hand_timing_data[worm.group_id].animals.size(); j++) {
-				if (ns_fix_annotation(handle().data->by_hand_timing_data[worm.group_id].animals[j].fast_movement_cessation, *current_worm))
+				if (ns_fix_annotation(handle().data->by_hand_timing_data[worm.group_id].animals[j].fast_movement_cessation2, *current_worm))
 					saved = false;
-				if (ns_fix_annotation(handle().data->by_hand_timing_data[worm.group_id].animals[j].translation_cessation, *current_worm))
-					saved = false;
+				//if (ns_fix_annotation(handle().data->by_hand_timing_data[worm.group_id].animals[j].translation_cessation, *current_worm))
+				//	saved = false;
 				if (ns_fix_annotation(handle().data->by_hand_timing_data[worm.group_id].animals[j].movement_cessation, *current_worm))
 					saved = false;
 				if (ns_fix_annotation(handle().data->by_hand_timing_data[worm.group_id].animals[j].death_associated_expansion_stop, *current_worm))

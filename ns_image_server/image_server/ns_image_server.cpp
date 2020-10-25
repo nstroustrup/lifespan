@@ -45,7 +45,7 @@ alert_handler_lock("ahl"), max_external_thread_id(1), currently_experiencing_a_d
 	ns_worm_detection_constants::init();
 	#endif
 	ns_set_global_debug_output_handler(ns_image_server_global_debug_handler);
-	_software_version_compile = 0;
+	_software_version_compile = 1;
 	image_storage.cache.set_memory_allocation_limit_in_kb(maximum_image_cache_memory_size());
 	system_host_name = ns_get_system_hostname();
 	//by default, run indefinately

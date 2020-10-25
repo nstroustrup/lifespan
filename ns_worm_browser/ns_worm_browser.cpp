@@ -9181,10 +9181,10 @@ void ns_death_time_solo_posture_annotater::register_click(const ns_vector_2i & i
 						properties_for_all_animals.stationary_path_id, new_animal_id)));
 				cur_hand_data->animals.rbegin()->animal_specific_sticky_properties.animal_id_at_position = new_animal_id;
 				//add a "object has stopped fast moving" event at first timepoint of new path
-				cur_hand_data->animals.rbegin()->step_event(
+				/*cur_hand_data->animals.rbegin()->step_event(
 					ns_death_timing_data_step_event_specification(
 						current_time_interval(handle), cur_worm->element(current_element_id()),
-						properties_for_all_animals.region_info_id, properties_for_all_animals.stationary_path_id, new_animal_id), cur_worm->observation_limits(),false);
+						properties_for_all_animals.region_info_id, properties_for_all_animals.stationary_path_id, new_animal_id), cur_worm->observation_limits(),false);*/
 				this->current_animal_id = new_animal_id;
 				unsigned long new_sticky_label = cur_hand_data->animals.size();
 				if (current_annotated_worm_count > new_sticky_label)

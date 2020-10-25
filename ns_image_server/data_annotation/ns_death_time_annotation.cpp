@@ -1508,7 +1508,7 @@ public:
 				add_to_timepoint(e, p->second.fast_movement_cessations, use_by_hand_data);
 				break;
 			case ns_translation_cessation_depreciated:
-				std::cerr << "Translation cessation is depreciated\n";
+				//std::cerr << "Translation cessation is depreciated\n";
 				break;
 			case ns_movement_cessation:
 				add_to_timepoint(e, p->second.movement_based_deaths, use_by_hand_data);
@@ -3109,10 +3109,9 @@ void ns_death_timing_data::draw_movement_diagram(const ns_vector_2i & pos, const
 					im[y + pos.y][3 * (x + pos.x) + 2] = c.z*cur_scale;
 				}
 			}
-			c = ns_movement_colors::color(ns_movement_posture)*scaling;
 		}*/
+		c = ns_movement_colors::color(ns_movement_posture) * scaling;
 		if (movement_cessation.time.period_end != 0 && movement_cessation.time.period_end >= path_start_time) {
-
 			//death_relaxation_start_time = movement_cessation.time.period_end;
 			if (movement_cessation.time.period_end > last_path_frame_time)
 				throw ns_ex("Invalid Movement Cessation Time");

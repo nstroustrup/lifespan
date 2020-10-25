@@ -209,7 +209,7 @@ public:
 			fast_movement_cessation2 = e;
 			break;
 		case ns_translation_cessation_depreciated:
-			std::cerr << "Encountered depreciated translation cessation event.\n";
+			//std::cerr << "Encountered depreciated translation cessation event.\n";
 			break;
 		case ns_movement_cessation:
 			if (movement_cessation.time.period_end == 0)
@@ -313,7 +313,7 @@ public:
 			if (e.event_time.period_end < fast_movement_cessation2.time.period_end) {
 				set_fast_movement_cessation_time(e);
 			}
-			if (e.event_time.period_end == fast_movement_cessation2.time.period_end) {
+			 else if (e.event_time.period_end == fast_movement_cessation2.time.period_end) {
 				//	ns_zero_death_interval(death_posture_relaxation_termination.time);
 				//clear all data to indicate the first time point is fast moving
 				if (movement_cessation.time.period_end == fast_movement_cessation2.time.period_end) {

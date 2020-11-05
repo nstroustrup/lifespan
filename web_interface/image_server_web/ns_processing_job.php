@@ -148,7 +148,7 @@ $ns_maintenance_task_labels = array(0=>'No Task',
 				    4=>'Delete Images',
 				    5=>'Execute File Deletion',
 				    6=>'Analyze Worm Movement',
-				    7=>'Rerun Movement Analysis from Cached Images',
+				    7=>'Rebuild Movement Analysis from Cached Images',
 				    8=>'Re-calculate Death Times from Movement Analysis',
 				    9=>'Re-calculate Censoring',
 				    10=>'Generate Posture Visualization',
@@ -165,7 +165,7 @@ $ns_maintenance_task_labels = array(0=>'No Task',
 				    21=>'Re-Calculate Image Statistics',
 				    22=>'Compile Worm Morphology Statistics',
 				    23=>'Delete Worm Movement Analysis',
-				    24=>'Rebuild Worm Analysis from Cached Solution'
+				    24=>'Rebuild Movement Analysis from Cached Solution'
 			      );
 $NS_LAST_MAINTENANCE_TASK = 24;
 

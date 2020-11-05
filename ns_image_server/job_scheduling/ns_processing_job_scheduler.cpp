@@ -31,7 +31,7 @@ std::string ns_maintenance_task_to_string(const ns_maintenance_task & task){
 		case ns_maintenance_rebuild_movement_from_stored_image_quantification:
 			return "Re-calculate Death Times from Movement Analysis";
 		case ns_maintenance_rebuild_movement_from_stored_images:
-			return "Re-run Movement Analysis From Cached Images";
+			return "Rebuild Movement Analysis From Cached Images";
 		case ns_maintenance_generate_movement_posture_visualization:
 			return "Generate Movement Posture Visualization";
 		case ns_maintenance_recalculate_censoring:

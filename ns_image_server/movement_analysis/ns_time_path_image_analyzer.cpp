@@ -1926,7 +1926,7 @@ void ns_time_path_image_movement_analyzer<allocator_T>::reanalyze_with_different
 		throw ns_ex("Attempting to reanalyze an unloaded image!");
 
 	if (ns_analyzed_image_time_path_element_measurements::measurement_format_version() != measurement_format_version_used) 
-		throw ns_ex("This region's movement analysis was run using an old measurement software version: \"") << measurement_format_version_used << "\".  This is incompatible with the current software: \"" << ns_analyzed_image_time_path_element_measurements::measurement_format_version() << "\". You can fix this by running the job \"Analyze Worm Movement using Cached Solution\" which will preserve all by hand annotations.";
+		throw ns_ex("This region's movement analysis was run using an old measurement software version: \"") << measurement_format_version_used << "\".  This is incompatible with the current software: \"" << ns_analyzed_image_time_path_element_measurements::measurement_format_version() << "\". You can fix this by running the job \"Analyze Worm Movement Analysis using Cached Solution\" which will preserve all by hand annotations.";
 
 	if (e->current_software_version_number() != e->model_software_version_number()){
 	  throw ns_ex("The specified model was generated using an old model version: \"") << e->model_software_version_number()  << "\" but this software uses version \"" << e->current_software_version_number() << "\". You can fix this by using the latest model file version.";
@@ -1972,7 +1972,7 @@ bool ns_time_path_image_movement_analyzer<allocator_T>::load_image_quantificatio
 	load_stored_movement_analysis_results(sql, ns_only_quantification);
 
 	if (ns_analyzed_image_time_path_element_measurements::measurement_format_version() != measurement_format_version_used)
-		throw ns_ex("This region's movement analysis was run using an old measurement software version: \"") << measurement_format_version_used << "\".  This is incompatible with the current software: \"" << ns_analyzed_image_time_path_element_measurements::measurement_format_version() << "\". You can fix this by running the job \"Analyze Worm Movement using Cached Solution\" which will preserve all by hand annotations.";
+		throw ns_ex("This region's movement analysis was run using an old measurement software version: \"") << measurement_format_version_used << "\".  This is incompatible with the current software: \"" << ns_analyzed_image_time_path_element_measurements::measurement_format_version() << "\". You can fix this by running the job \"Analyze Worm Movement Analysis using Cached Solution\" which will preserve all by hand annotations.";
 
 
 
@@ -7945,7 +7945,7 @@ void ns_time_path_image_movement_analyzer<allocator_T>::reanalyze_stored_aligned
 	bool allow_measurement_format_mismatch_ = !(allow_measurement_format_mismatch == "false" || allow_measurement_format_mismatch == "no" || allow_measurement_format_mismatch == "0");
 
 	if (!allow_measurement_format_mismatch_ && ns_analyzed_image_time_path_element_measurements::measurement_format_version() != measurement_format_version_used)
-		throw ns_ex("This region's movement analysis was run using an old measurement software version: \"") << measurement_format_version_used << "\".  This is incompatible with the current software: \"" << ns_analyzed_image_time_path_element_measurements::measurement_format_version() << "\". You can fix this by running the job \"Analyze Worm Movement using Cached Solution\" which will preserve all by hand annotations.";
+		throw ns_ex("This region's movement analysis was run using an old measurement software version: \"") << measurement_format_version_used << "\".  This is incompatible with the current software: \"" << ns_analyzed_image_time_path_element_measurements::measurement_format_version() << "\". You can fix this by running the job \"Analyze Worm Movement Analysis from Cached Solution\" which will preserve all by hand annotations.";
 
 	if (e->current_software_version_number() != e->model_software_version_number()) 
 		throw ns_ex("The specified model was generated using an old model version: \"") << e->model_software_version_number() << "\" but this software uses version \"" << e->current_software_version_number() << "\". You can fix this by using the latest model file version.";

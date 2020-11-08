@@ -550,7 +550,7 @@ public:
 	bool entirely_excluded;
 	ns_image_properties registered_image_properties;
 	//void output_image_movement_summary(std::ostream & o);
-	void write_detailed_movement_quantification_analysis_data(const ns_region_metadata & m, const unsigned long group_id, const unsigned long path_id, std::ostream & o,const bool output_only_elements_with_hand,const bool abbreviated_time_series=false) const;
+	void write_detailed_movement_quantification_analysis_data(const ns_region_metadata & m, const unsigned long group_id, const unsigned long path_id, const ns_death_time_annotation_time_interval & S,std::ostream & o,const bool output_only_elements_with_hand,const bool abbreviated_time_series=false) const;
 	void write_path_classification_diagnostics_data(const ns_region_metadata& m, const unsigned long group_id, const unsigned long path_id, std::ostream& o, const bool output_only_elements_with_hand) const;
 
 	void calculate_movement_quantification_summary(ns_movement_analysis_result& result) const;
@@ -928,6 +928,7 @@ private:
 	ns_time_path_image_movement_analysis_memory_pool<allocator_T> & memory_pool;
 
 	ns_death_time_annotation_time_interval externally_specified_plate_observation_interval;
+	ns_death_time_annotation_time_interval first_observation_made_of_plate() const;
 
 	void calculate_memory_pool_maximum_image_size(const unsigned int start_group,const unsigned int stop_group);
 	ns_simple_local_image_cache image_cache;

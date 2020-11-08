@@ -1926,7 +1926,7 @@ void ns_time_path_image_movement_analyzer<allocator_T>::reanalyze_with_different
 		throw ns_ex("Attempting to reanalyze an unloaded image!");
 
 	if (ns_analyzed_image_time_path_element_measurements::measurement_format_version() != measurement_format_version_used) 
-		throw ns_ex("This region's movement analysis was run using an old measurement software version: \"") << measurement_format_version_used << "\".  This is incompatible with the current software: \"" << ns_analyzed_image_time_path_element_measurements::measurement_format_version() << "\". You can fix this by running the job \"Analyze Worm Movement Analysis using Cached Solution\" which will preserve all by hand annotations.";
+		throw ns_ex("This region's movement analysis was run using an old measurement software version: \"") << measurement_format_version_used << "\".  This is incompatible with the current software: \"" << ns_analyzed_image_time_path_element_measurements::measurement_format_version() << "\". You can fix this by running the job \"Rebuild Worm Movement Analysis using Cached Solution\" which will preserve all by hand annotations.";
 
 	if (e->current_software_version_number() != e->model_software_version_number()){
 	  throw ns_ex("The specified model was generated using an old model version: \"") << e->model_software_version_number()  << "\" but this software uses version \"" << e->current_software_version_number() << "\". You can fix this by using the latest model file version.";
@@ -1972,7 +1972,7 @@ bool ns_time_path_image_movement_analyzer<allocator_T>::load_image_quantificatio
 	load_stored_movement_analysis_results(sql, ns_only_quantification);
 
 	if (ns_analyzed_image_time_path_element_measurements::measurement_format_version() != measurement_format_version_used)
-		throw ns_ex("This region's movement analysis was run using an old measurement software version: \"") << measurement_format_version_used << "\".  This is incompatible with the current software: \"" << ns_analyzed_image_time_path_element_measurements::measurement_format_version() << "\". You can fix this by running the job \"Analyze Worm Movement Analysis using Cached Solution\" which will preserve all by hand annotations.";
+		throw ns_ex("This region's movement analysis was run using an old measurement software version: \"") << measurement_format_version_used << "\".  This is incompatible with the current software: \"" << ns_analyzed_image_time_path_element_measurements::measurement_format_version() << "\". You can fix this by running the job \"Rebuild Worm Movement Analysis using Cached Solution\" which will preserve all by hand annotations.";
 
 
 
@@ -2074,7 +2074,7 @@ bool ns_time_path_image_movement_analyzer<allocator_T>::load_completed_analysis(
 
 	/*if (posture_model_version_used != e->software_version_number()){
 	  cout << posture_model_version_used << "\n";
-	  throw ns_ex("This region's movement analysis was run using threshold posture analysis version \"") << ns_to_string(posture_model_version_used) << "\".  This is incompatible with the movement analysis model you have specified, \"" << e->name << "\" which is v " << e->software_version_number() << "\".  You can fix this by running the job \"Analyze Worm Movement using Cached Images\" which will preserve all by hand annotations.";
+	  throw ns_ex("This region's movement analysis was run using threshold posture analysis version \"") << ns_to_string(posture_model_version_used) << "\".  This is incompatible with the movement analysis model you have specified, \"" << e->name << "\" which is v " << e->software_version_number() << "\".  You can fix this by running the job \"Rebuild Worm Movement Analysis using Cached Images\" which will preserve all by hand annotations.";
 	}*/
 
 
@@ -2872,6 +2872,7 @@ void ns_analyzed_image_time_path::write_detailed_movement_quantification_analysi
 		// "Offset from Path Magnitude, Offset within Registered Image Magnitude,"
 		"Registration Offset X, Registration Offset Y, Registration Offset Magnitude,"
 		"Absolute Time, Age Relative Time,"
+		"First Observation Relative Time,"
 		"Machine-Annotated Movement State, By Hand Annotated Movement State,By Hand Annotated Annotated Movement State (HMM),"
 		"Machine Fast Movement Cessation Relative Time,Machine Movement Cessation Relative Time,Machine Death-Associated Expansion Time,Machine Post-mortem Contraction Time, Machine Post-mortem Contraction Stop Time,"
 		"By Hand Fast Movement Cessation Relative Time,By Hand Movement Cessation Relative Time,By Hand Death-Associated Expansion Time,By Hand Post-mortem Contraction Time, By Hand Post-mortem Contraction Stop Time,"
@@ -3057,7 +3058,7 @@ void ns_analyzed_image_time_path::write_path_classification_diagnostics_data(con
 }
 
 
-void ns_analyzed_image_time_path::write_detailed_movement_quantification_analysis_data(const ns_region_metadata & m, const unsigned long group_id, const unsigned long path_id, std::ostream & o, const bool output_only_elements_with_hand,const bool abbreviated_time_series)const{
+void ns_analyzed_image_time_path::write_detailed_movement_quantification_analysis_data(const ns_region_metadata & m, const unsigned long group_id, const unsigned long path_id, const ns_death_time_annotation_time_interval& first_plate_observation_interval, std::ostream & o, const bool output_only_elements_with_hand,const bool abbreviated_time_series)const{
 	if (output_only_elements_with_hand && by_hand_annotation_event_times[(int)ns_movement_cessation].period_end_was_not_observed)
 		return;
 	//find animal size one day before death
@@ -3114,7 +3115,6 @@ void ns_analyzed_image_time_path::write_detailed_movement_quantification_analysi
 	ns_time_series_event_aligner event_aligner;
 	event_aligner.calculate_alignment_dts(by_hand_annotation_event_times);
 	for (unsigned long k = start_index; k < end_index; k++){
-
 		//if (movement_analysis_result.state_intervals[(int)ns_movement_posture].skipped)
 		//	cerr << "ERR1 ";
 		if (movement_analysis_result.state_intervals[(int)ns_movement_fast].skipped)
@@ -3126,12 +3126,12 @@ void ns_analyzed_image_time_path::write_detailed_movement_quantification_analysi
 			<< ((censoring_and_flag_details.is_excluded() || censoring_and_flag_details.flag.event_should_be_excluded()) ?"1":"0")<< ",";                                               
 		if (censoring_and_flag_details.flag.specified())
 				o << censoring_and_flag_details.flag.label_short;
-			o << ","
-			<< (censoring_and_flag_details.is_censored()?"1":"0") << ","
+		o << ","
+			<< (censoring_and_flag_details.is_censored() ? "1" : "0") << ","
 			<< censoring_and_flag_details.number_of_worms() << ","
 			<< elements[k].number_of_extra_worms_observed_at_position << ","
-			<< elements[k].region_offset_in_source_image().x + elements[k].worm_region_size().x/2 << ","
-			<< elements[k].region_offset_in_source_image().y + elements[k].worm_region_size().y/2 << ","
+			<< elements[k].region_offset_in_source_image().x + elements[k].worm_region_size().x / 2 << ","
+			<< elements[k].region_offset_in_source_image().y + elements[k].worm_region_size().y / 2 << ","
 			// "Offset from Path Magnitude, Offset within Registered Image Magnitude,"
 		// "Registration Offset X, Registration Offset Y, Registration Offset Magnitude,"
 		// "Absolute Time, Age Relative Time,"
@@ -3139,9 +3139,10 @@ void ns_analyzed_image_time_path::write_detailed_movement_quantification_analysi
 			<< elements[k].measurements.registration_displacement.y << ","
 			<< elements[k].measurements.registration_displacement.mag() << ","
 			<< elements[k].absolute_time << ","
-			<< ns_to_string_short((elements[k].absolute_time - m.time_at_which_animals_had_zero_age)/(60.0*60*24),3) << ","
-			<< ns_movement_state_to_string(best_guess_movement_state(elements[k].absolute_time)) << ","
-				<< ns_movement_state_to_string(by_hand_movement_state(elements[k].absolute_time)) << ","
+			<< ns_to_string_short((elements[k].absolute_time - m.time_at_which_animals_had_zero_age) / (60.0 * 60 * 24), 3) << ","
+			<< ns_output_interval_difference(elements[k].absolute_time,first_plate_observation_interval) << ","
+		    << ns_movement_state_to_string(best_guess_movement_state(elements[k].absolute_time)) << ","
+			<< ns_movement_state_to_string(by_hand_movement_state(elements[k].absolute_time)) << ","
 			<< ns_hmm_movement_state_to_string(by_hand_hmm_movement_state(elements[k].absolute_time)) << ","
 			<< ns_calc_rel_time_by_index(elements[k].absolute_time, movement_analysis_result.state_intervals[(int)ns_movement_fast], *this) << ","
 			<< ns_calc_rel_time_by_index(elements[k].absolute_time, movement_analysis_result.state_intervals[(int)ns_movement_stationary],*this) << ","
@@ -3273,7 +3274,8 @@ void ns_time_path_image_movement_analyzer<allocator_T>::write_detailed_movement_
 				continue;
 			if (groups[i].paths[j].movement_analysis_result.state_intervals.size() != ns_movement_number_of_states)
 				throw ns_ex("ns_time_path_image_movement_analyzer::write_movement_quantification_analysis_data()::Event Indicies not loaded properly!");
-			groups[i].paths[j].write_detailed_movement_quantification_analysis_data(m,i,j,o,only_output_elements_with_by_hand_data,abbreviated_time_series);
+			
+			groups[i].paths[j].write_detailed_movement_quantification_analysis_data(m,i,j, first_observation_made_of_plate(),o,only_output_elements_with_by_hand_data,abbreviated_time_series);
 		}
 	}
 }
@@ -7936,7 +7938,16 @@ void ns_time_path_image_movement_analyzer<allocator_T>::output_histogram_telemet
 	hist_file.release();
 	*/
 }
-
+template<class allocator_T>
+ns_death_time_annotation_time_interval ns_time_path_image_movement_analyzer<allocator_T>::first_observation_made_of_plate() const {
+	if (solution == 0 || solution->timepoints.size() == 0)
+		throw ns_ex("No solution data is loaded!");
+	ns_death_time_annotation_time_interval t;
+	t.period_start_was_not_observed = true;
+	t.period_end_was_not_observed = false;
+	t.period_end = solution->timepoints.begin()->time;
+	return t;
+}
 
 template<class allocator_T>
 void ns_time_path_image_movement_analyzer<allocator_T>::reanalyze_stored_aligned_images(const ns_64_bit region_id,const ns_time_path_solution & solution_,const ns_time_series_denoising_parameters & times_series_denoising_parameters,const ns_analyzed_image_time_path_death_time_estimator * e,ns_sql & sql,const bool load_images_after_last_valid_sample,const bool recalculate_flow_images){
@@ -7945,7 +7956,7 @@ void ns_time_path_image_movement_analyzer<allocator_T>::reanalyze_stored_aligned
 	bool allow_measurement_format_mismatch_ = !(allow_measurement_format_mismatch == "false" || allow_measurement_format_mismatch == "no" || allow_measurement_format_mismatch == "0");
 
 	if (!allow_measurement_format_mismatch_ && ns_analyzed_image_time_path_element_measurements::measurement_format_version() != measurement_format_version_used)
-		throw ns_ex("This region's movement analysis was run using an old measurement software version: \"") << measurement_format_version_used << "\".  This is incompatible with the current software: \"" << ns_analyzed_image_time_path_element_measurements::measurement_format_version() << "\". You can fix this by running the job \"Analyze Worm Movement Analysis from Cached Solution\" which will preserve all by hand annotations.";
+		throw ns_ex("This region's movement analysis was run using an old measurement software version: \"") << measurement_format_version_used << "\".  This is incompatible with the current software: \"" << ns_analyzed_image_time_path_element_measurements::measurement_format_version() << "\". You can fix this by running the job \"Rebuild Worm Movement Analysis from Cached Solution\" which will preserve all by hand annotations.";
 
 	if (e->current_software_version_number() != e->model_software_version_number()) 
 		throw ns_ex("The specified model was generated using an old model version: \"") << e->model_software_version_number() << "\" but this software uses version \"" << e->current_software_version_number() << "\". You can fix this by using the latest model file version.";

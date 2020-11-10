@@ -2569,10 +2569,9 @@ void ns_add_normal_death_to_set(const ns_annotation_generation_type & requested_
 			if (b.type == ns_movement_cessation &&
 				properties_to_transfer.flag.specified()) {
 				if (properties_to_transfer.flag.event_should_be_censored_at_death()) {
-					b.time = latest_interval;
 					properties_to_transfer.excluded = ns_death_time_annotation::ns_censored;
 					b.annotation_source = ns_death_time_annotation::ns_storyboard;
-					b.annotation_source_details = "By-hand annotated as remainig alive at end of observarion period";
+					b.annotation_source_details = "By-hand annotated as censored";
 				}
 			}
 			properties_to_transfer.transfer_sticky_properties(b);

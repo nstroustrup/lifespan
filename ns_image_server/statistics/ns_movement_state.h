@@ -46,6 +46,7 @@ typedef enum{ns_no_movement_event,				//nothing happens at the specified time
 			ns_death_associated_post_expansion_contraction_start,
 			ns_death_associated_post_expansion_contraction_stop,
 			ns_death_associated_post_expansion_contraction_observed,
+			ns_first_observation_on_plate,
 			ns_number_of_movement_event_types
 } ns_movement_event;
 

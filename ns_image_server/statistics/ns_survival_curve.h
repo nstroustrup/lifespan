@@ -108,7 +108,7 @@ struct ns_survival_timepoint_event_count{
 	
 struct ns_metadata_worm_properties{
 	ns_metadata_worm_properties():events(0),properties_override_set(false),control_group(-1), event_period_end_time(0), event_type(ns_number_of_event_types){}
-	typedef enum{ns_fast_movement_cessation,ns_local_movement_cessation_depreciated,ns_movement_based_death,ns_death_associated_expansion, ns_typeless_censoring_events,ns_best_guess_death,ns_number_of_event_types} ns_survival_event_type;
+	typedef enum{ns_fast_movement_cessation,ns_local_movement_cessation_depreciated,ns_movement_based_death,ns_death_associated_expansion, ns_typeless_censoring_events,ns_best_guess_death,ns_first_observation_on_plate,ns_number_of_event_types} ns_survival_event_type;
 	long control_group;
 	unsigned long event_period_end_time;
 	ns_survival_event_type event_type;
@@ -119,6 +119,7 @@ struct ns_metadata_worm_properties{
 	
 	inline static std::string  event_type_to_string(const ns_survival_event_type & e){
 			switch(e){
+				case ns_first_observation_on_plate: return "First observation on plate";
 				case ns_fast_movement_cessation: return "Fast Movement Cessation";
 				case ns_local_movement_cessation_depreciated: return "Local Movement Cessation";
 				case ns_movement_based_death:	return "Movement Cessation";

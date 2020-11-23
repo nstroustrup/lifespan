@@ -69,10 +69,11 @@ struct ns_dying_animal_description_group{
 	ns_dying_animal_description_group():movement_based_death_annotation(0), best_guess_death_annotation(0),last_slow_movement_annotation(0),last_fast_movement_annotation(0),
 									death_associated_expansion_start(0), death_associated_expansion_stop(0), 
 									death_associated_post_expansion_contraction_start(0), death_associated_post_expansion_contraction_stop(0),
-									stationary_worm_dissapearance(0){}
+									stationary_worm_dissapearance(0), first_observation_on_plate(0){}
 
 	T	*movement_based_death_annotation,
 		*best_guess_death_annotation,
+		*first_observation_on_plate,
 		*last_slow_movement_annotation,
 		*last_fast_movement_annotation,
 		*death_associated_expansion_start,
@@ -133,6 +134,7 @@ struct ns_dying_animal_description_group{
 		case ns_metadata_worm_properties::ns_movement_based_death: return movement_based_death_annotation;
 		case ns_metadata_worm_properties::ns_death_associated_expansion: return death_associated_expansion_start;
 		case ns_metadata_worm_properties::ns_best_guess_death: return best_guess_death_annotation;
+		case ns_metadata_worm_properties::ns_first_observation_on_plate: return first_observation_on_plate;
 		case ns_metadata_worm_properties::ns_typeless_censoring_events:
 		default:
 			throw ns_ex("ns_dying_animal_description_group()::get_event()::Unsupported event type request!");
@@ -145,6 +147,7 @@ struct ns_dying_animal_description_group{
 		case ns_metadata_worm_properties::ns_movement_based_death: return movement_based_death_annotation;
 		case ns_metadata_worm_properties::ns_death_associated_expansion: return death_associated_expansion_start;
 		case ns_metadata_worm_properties::ns_best_guess_death: return best_guess_death_annotation;
+		case ns_metadata_worm_properties::ns_first_observation_on_plate: return first_observation_on_plate;
 		case ns_metadata_worm_properties::ns_typeless_censoring_events:
 		default:
 			throw ns_ex("ns_dying_animal_description_group()::get_event()::Unsupported event type request!");

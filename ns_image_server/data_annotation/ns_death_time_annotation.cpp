@@ -56,7 +56,7 @@ std::string ns_death_time_annotation::brief_description() const {
 	bool flagged_event(flag.specified());
 	bool multip_worm_event(number_of_worms() > 0);
 
-	bool volt(volatile_duration_of_time_not_fast_moving ||
+	bool volt(!volatile_time_at_first_plate_observation.fully_unbounded() || !volatile_time_at_first_plate_observation.fully_unbounded() ||
 		!volatile_time_at_death_associated_expansion_start.fully_unbounded() || !volatile_time_at_death_associated_expansion_end.fully_unbounded() ||
 		volatile_time_at_death_associated_post_expansion_contraction_end.fully_unbounded() || volatile_time_at_death_associated_post_expansion_contraction_end.fully_unbounded() ||
 		volatile_matches_machine_detected_death);
@@ -297,6 +297,7 @@ std::string ns_movement_event_to_string(const ns_movement_event & t){
 		case ns_death_associated_post_expansion_contraction_stop: return "post-expansion contraction stop";
 		case ns_death_associated_post_expansion_contraction_observed: return "post-expansion contraction observed";
 		case ns_death_associated_expansion_observed: return "death-associated expansion observed";
+		case ns_first_observation_on_plate: return "first observation on plate";
 		default:
 			throw ns_ex("ns_movement_event_to_string()::Unknown event type ") << (int)t;
 	}
@@ -321,6 +322,7 @@ std::string ns_movement_event_to_label(const ns_movement_event & t){
 		case ns_death_associated_post_expansion_contraction_start: return "post_expansion_contraction_start";
 		case ns_death_associated_post_expansion_contraction_stop: return "post_expansion_contraction_stop";
 		case ns_death_associated_post_expansion_contraction_observed: return "post_expansion_contraction_observed";
+		case ns_first_observation_on_plate: return "first_observation_on_plate";
 		default: throw ns_ex("ns_movement_event_to_string()::Unknown event type ") << (int)t;
 	}
 }
@@ -402,6 +404,7 @@ bool ns_movement_event_is_a_state_transition_event(const ns_movement_event & t){
 		case ns_moving_worm_disappearance:
 		case ns_stationary_worm_disappearance:
 		case ns_additional_worm_entry:
+		case ns_first_observation_on_plate:
 			return true;
 
 		case ns_movement_censored_worm_observed:
@@ -2120,6 +2123,9 @@ class ns_dying_animal_description_generator{
 				case ns_translation_cessation_depreciated:
 					group->last_slow_movement_annotation = &annotations[i];
 					break;
+				case ns_first_observation_on_plate:
+					group->first_observation_on_plate = &annotations[i];
+					break;
 				case ns_fast_movement_cessation2:
 					group->last_fast_movement_annotation = &annotations[i];
 					break;
@@ -2305,6 +2311,9 @@ bool ns_multiple_worm_cluster_death_annotation_handler::generate_correct_annotat
 			else
 				event_data.last_slow_movement_annotation = d.by_hand.last_slow_movement_annotation;
 		}
+		event_data.first_observation_on_plate = d.machine.first_observation_on_plate;
+		if (d.machine.first_observation_on_plate == 0)
+			throw ns_ex("No first observation specified for plate.  Please re-run death time detection with the latest software version");
 
 		if (event_data.get_event(death_event_to_use) == 0)
 			continue;
@@ -2319,9 +2328,8 @@ bool ns_multiple_worm_cluster_death_annotation_handler::generate_correct_annotat
 				death_time = event_data.death_associated_expansion_start->time;
 			else death_time = death.time;
 
-			death.volatile_duration_of_time_not_fast_moving =
-				death_time.best_estimate_event_time_for_possible_partially_unbounded_interval() -
-				event_data.last_fast_movement_annotation->time.best_estimate_event_time_for_possible_partially_unbounded_interval();
+			death.volatile_time_at_quick_movement_stop = event_data.last_fast_movement_annotation->time;
+			death.volatile_time_at_first_plate_observation = event_data.first_observation_on_plate->time;
 		}
 		properties.transfer_sticky_properties(death);
 		int machine_worm_count = d.machine.get_event(death_event_to_use) != 0;
@@ -2467,9 +2475,9 @@ typedef enum { ns_generate_machine_annotations, ns_generate_by_hand_annotations,
 //this function takes a single individual's times of death-associated events ( movement cessation, death-time expansion, etc) and 
 //breaks them down in a way that allows them to be aggregated in survival curves.
 void ns_add_normal_death_to_set(const ns_annotation_generation_type & requested_annotation_type, ns_dying_animal_description_base<const ns_death_time_annotation>& animal_events, ns_death_time_annotation properties_to_transfer, const ns_death_time_annotation_time_interval & latest_interval, const ns_death_time_annotation::ns_by_hand_annotation_integration_strategy & by_hand_annotation_integration_strategy, const bool use_by_hand_worm_cluster_annotations,ns_death_time_event_compiler_time_aggregator & aggregator) {
-	//add 1) movement-based death time 2) slow movement cessation, 3) fast movement cessation and 3) death time expansion start 4) death time expansion stop 5) death time contraction start 6) death time contraction stop 7) best guess death time
-	const int number_of_different_events(8);
-	const ns_death_time_annotation* a[number_of_different_events] = { 0,0,0,0,0,0,0,0 };
+	//add 1) movement-based death time 2) slow movement cessation, 3) fast movement cessation and 3) death time expansion start 4) death time expansion stop 5) death time contraction start 6) death time contraction stop 7) best guess death time 8) First observation on plate
+	const int number_of_different_events(9);
+	const ns_death_time_annotation* a[number_of_different_events] = { 0,0,0,0,0,0,0,0,0 };
 
 	bool matches_machine_detected_death(animal_events.machine.movement_based_death_annotation != 0);
 	switch (requested_annotation_type) {
@@ -2483,6 +2491,7 @@ void ns_add_normal_death_to_set(const ns_annotation_generation_type & requested_
 		a[5] = animal_events.machine.death_associated_post_expansion_contraction_start;
 		a[6] = animal_events.machine.death_associated_post_expansion_contraction_stop;
 		a[7] = animal_events.machine.best_guess_death_annotation;
+		a[8] = animal_events.machine.first_observation_on_plate;
 		break;
 	}
 	//add a by hand annotation, if required
@@ -2494,7 +2503,8 @@ void ns_add_normal_death_to_set(const ns_annotation_generation_type & requested_
 		a[4] = animal_events.by_hand.death_associated_expansion_stop;
 		a[5] = animal_events.by_hand.death_associated_post_expansion_contraction_start;
 		a[6] = animal_events.by_hand.death_associated_post_expansion_contraction_stop;
-		a[7] = animal_events.machine.best_guess_death_annotation;
+		a[7] = animal_events.by_hand.best_guess_death_annotation;
+		a[8] = animal_events.machine.first_observation_on_plate;
 		break;
 	}
 	case ns_generate_best_annotation: {
@@ -2530,11 +2540,14 @@ void ns_add_normal_death_to_set(const ns_annotation_generation_type & requested_
 		if (animal_events.by_hand.best_guess_death_annotation != 0)
 			a[7] = animal_events.by_hand.best_guess_death_annotation;
 		else a[7] = animal_events.machine.best_guess_death_annotation;
+
+		a[8] = animal_events.machine.first_observation_on_plate;
 		break;
 	}
 	default: throw ns_ex("Unknown death time generation request!");
 	}
 	for (unsigned int i = 0; i < number_of_different_events; i++) {
+		if (i == 8) continue;	//first observation on plate events arnen't included as their own standalone event.
 		if (a[i] != 0) {
 			ns_death_time_annotation b(*a[i]);
 
@@ -2577,10 +2590,11 @@ void ns_add_normal_death_to_set(const ns_annotation_generation_type & requested_
 			properties_to_transfer.transfer_sticky_properties(b);
 
 			//we use this as debugging info in output file
-			if (a[2] != 0 && a[0] != 0)
-				b.volatile_duration_of_time_not_fast_moving =
-				a[0]->time.best_estimate_event_time_for_possible_partially_unbounded_interval() -
-				a[2]->time.best_estimate_event_time_for_possible_partially_unbounded_interval();
+			if (a[8] != 0)
+				b.volatile_time_at_first_plate_observation = a[8]->time;
+
+			if (a[2] != 0)
+				b.volatile_time_at_quick_movement_stop = a[2]->time;
 
 			//we use this as debugging info in output file
 			if (a[3] != 0 && a[0] != 0) {
@@ -2683,6 +2697,8 @@ void ns_death_time_annotation_compiler_region::generate_survival_curve(ns_surviv
 			//cout << "Discarding a stray by hand annotation.\n";
 				continue;
 		}
+		if (machine_death.machine.first_observation_on_plate == 0)
+			throw ns_ex("A machine annotation was encountered from an older version of the analysis software.  Please re-run \"Recalculate Death times from movement analysis\".");
 		if (machine_reference != 0 && 
 			description_set.descriptions.size() > 1 &&
 			machine_reference->annotation_source == //and only for multiworm clusters that the machine recognized

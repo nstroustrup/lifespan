@@ -589,7 +589,7 @@ void ns_lifespan_experiment_set::out_detailed_JMP_header(const ns_time_handing_b
 		// "Age at Death (" << time_units << ") Multiplicative Regression Model Residuals Start,"
 		// "Age at Death (" << time_units << ") Multiplicative Regression Model Residuals End,";
 	}
-	o << "Duration Not fast moving (" << time_units << "), Censored,Censoring Reason,Censoring Strategy::Missing Worm Return strategy,Excluded,Event Observation Type,Size of Machine-Annotated Worm Cluster,Size of by-hand Annotated Worm Cluster,Event Type,Technique,Analysis Type,loglikelihood,Flags,"
+	o << "Censored,Censoring Reason,Censoring Strategy::Missing Worm Return strategy,Excluded,Event Observation Type,Size of Machine-Annotated Worm Cluster,Size of by-hand Annotated Worm Cluster,Event Type,Technique,Analysis Type,loglikelihood,Flags,"
 	#ifdef NS_OUTPUT_MULTIWORM_STATS
 	"Originated as a Mutliworm Disambiguation Result,"
 	#endif 
@@ -616,7 +616,7 @@ void ns_output_JMP_time_interval(const ns_lifespan_experiment_set::ns_time_handi
 	if (!e.period_end_was_not_observed)
 		o << e.period_end/time_scaling_factor;
 }
-ns_death_time_annotation_time_interval operator-(ns_death_time_annotation_time_interval i,const unsigned long r){
+ns_death_time_annotation_time_interval operator-(ns_death_time_annotation_time_interval i,const ns_64_bit r){
 	i.period_start-=r;
 	i.period_end-=r;
 	return i;
@@ -692,7 +692,7 @@ void ns_lifespan_experiment_set::out_detailed_JMP_event_data(const ns_time_handi
 		ns_output_JMP_time_interval(time_handling_behavior,a.time - metadata.time_at_which_animals_had_zero_age,
 							time_scaling_factor,o);
 		o << ",";
-		o << a.volatile_duration_of_time_not_fast_moving/time_scaling_factor << ",";
+		//o << a.volatile_duration_of_time_not_fast_moving/time_scaling_factor << ",";
 		//event_time/time_scaling_factor << ",";
 	
 		/*if (output_raw_data_as_regression){
@@ -788,10 +788,10 @@ void ns_lifespan_experiment_set::out_simple_JMP_header(const ns_time_handing_beh
 	if (time_handling_behavior == ns_output_single_event_times){
 		o <<
 			"Age at Death (" << time_units << "),"
-			"Age at Final  Movement (" << time_units << "),"
+			"Age at Final Movement (" << time_units << "),"
 			"Age at Death-Associated Expansion (" << time_units << "),"
-			"Duration between Expansion and Final Movement (" << time_units << "),"
-			"Duration Not Fast Moving (" << time_units << "),"
+			"Age at Final Quick Movement (" << time_units << "),"
+			"Age at Final Plate Observation (" << time_units << "),"
 			"Longest Gap in Measurement (" << time_units << "),";
 	}
 	else{
@@ -802,8 +802,10 @@ void ns_lifespan_experiment_set::out_simple_JMP_header(const ns_time_handing_beh
 			"Age at Final Movement(" << time_units << ") End,"
 			"Age at Death-Associated Expansion (" << time_units << ") Start,"
 			"Age at Death-Associated Expansion (" << time_units << ") End,"
-			"Duration between Expansion and Final Movement (" << time_units << ")"
-			"Duration Not Fast Moving (" << time_units << "),"
+			"Age at Final Quick Movement (" << time_units << ") Start"
+			"Age at Final Quick Movement (" << time_units << ") End"
+			"Age at First Observation (" << time_units << ") Start"
+			"Age at First Observation (" << time_units << ") End"
 			"Longest Gap in Measurement (" << time_units << "),";
 	}
 		// "Age at Death (" << time_units << ") Multiplicative + Additive offset Regression Model Residuals,"
@@ -823,9 +825,9 @@ void ns_lifespan_experiment_set::out_simple_JMP_event_data(const ns_time_handing
 	for (unsigned int i = 0; i < prop.events->events.size(); i++){
 		ns_death_time_annotation  a(prop.events->events[i]);
 
-		std::string relaxation_vs_movement_death_times = "";
-		if (!a.volatile_time_at_death_associated_expansion_start.fully_unbounded())
-			relaxation_vs_movement_death_times = ns_to_string((a.volatile_time_at_death_associated_expansion_start.best_estimate_event_time_for_possible_partially_unbounded_interval() - a.time.best_estimate_event_time_for_possible_partially_unbounded_interval())/time_scaling_factor);
+		//std::string relaxation_vs_movement_death_times = "";
+		//if (!a.volatile_time_at_death_associated_expansion_start.fully_unbounded())
+			//relaxation_vs_movement_death_times = ns_to_string((a.volatile_time_at_death_associated_expansion_start.best_estimate_event_time_for_possible_partially_unbounded_interval() - a.time.best_estimate_event_time_for_possible_partially_unbounded_interval())/time_scaling_factor);
 
 		//we indicate right censoring via outputting a blank value for the end time
 		//of the interval during which the animal dies
@@ -930,8 +932,16 @@ void ns_lifespan_experiment_set::out_simple_JMP_event_data(const ns_time_handing
 			}
 		}
 		o << ",";
-		o << relaxation_vs_movement_death_times << ",";
-		o << a.volatile_duration_of_time_not_fast_moving/time_scaling_factor << ",";
+		if (!a.volatile_time_at_quick_movement_stop.fully_unbounded())
+			ns_output_JMP_time_interval(time_handling_behavior, a.volatile_time_at_quick_movement_stop - metadata.time_at_which_animals_had_zero_age, time_scaling_factor, o);
+		//else 
+		//	cerr << "No data provided for fast movement cessation.";
+		o << ",";
+		if (!a.volatile_time_at_first_plate_observation.fully_unbounded())
+			ns_output_JMP_time_interval(time_handling_behavior, a.volatile_time_at_first_plate_observation - metadata.time_at_which_animals_had_zero_age, time_scaling_factor, o);
+		//else
+		//	cerr << "No data provided for fast movement cessation.";
+		o << ",";
 		o << a.longest_gap_without_observation/time_scaling_factor << ",";	
 			
 			

@@ -30,9 +30,9 @@ bool operator ==(const ns_stationary_path_id & a, const ns_stationary_path_id & 
 struct ns_death_time_annotation_time_interval{
 	ns_death_time_annotation_time_interval():
 			period_start_was_not_observed(false),period_end_was_not_observed(false),period_start(0),period_end(0){}
-	ns_death_time_annotation_time_interval(const unsigned long s, const unsigned long f):
-			period_start(s),period_end(f),period_start_was_not_observed(false),period_end_was_not_observed(false){}
-	unsigned long period_start,
+	ns_death_time_annotation_time_interval(const ns_64_bit s, const ns_64_bit f,const bool not_observed=false) :
+		period_start(s), period_end(f), period_start_was_not_observed(not_observed), period_end_was_not_observed(not_observed) {}
+	ns_64_bit period_start,	//64 bit so we can store negative numbers.
 				  period_end;
 	bool period_start_was_not_observed,
 		 period_end_was_not_observed;
@@ -211,12 +211,13 @@ struct ns_death_time_annotation{
 	typedef enum { ns_unknown_explicitness,ns_not_explicit, ns_explicitly_observed, ns_explicitly_not_observed } ns_event_explicitness;
 
 	ns_death_time_annotation():
-		volatile_duration_of_time_not_fast_moving(0),
-		longest_gap_without_observation(0), 
-		volatile_time_at_death_associated_expansion_start(0,0),
-		volatile_time_at_death_associated_expansion_end(0,0),
-		volatile_time_at_death_associated_post_expansion_contraction_start(0, 0),
-		volatile_time_at_death_associated_post_expansion_contraction_end(0, 0),
+		volatile_time_at_first_plate_observation(0,0, true),
+		volatile_time_at_quick_movement_stop(0,0, true),
+		longest_gap_without_observation(0),
+		volatile_time_at_death_associated_expansion_start(0,0, true),
+		volatile_time_at_death_associated_expansion_end(0,0, true),
+		volatile_time_at_death_associated_post_expansion_contraction_start(0, 0, true),
+		volatile_time_at_death_associated_post_expansion_contraction_end(0, 0, true),
 		type(ns_no_movement_event),
 		time(0,0),
 		region_info_id(0),
@@ -251,8 +252,8 @@ struct ns_death_time_annotation{
 		const ns_disambiguation_type & d, const ns_stationary_path_id & s_id, const bool animal_is_part_of_a_complete_trace_, const bool inferred_animal_location_, const ns_plate_subregion_info & subregion_info_, const ns_event_explicitness & explicitness, const std::string & annotation_details_ = "",
 		const double loglikelihood_ = 1, const unsigned long longest_gap_without_observation_ = 0, const ns_multiworm_censoring_strategy & cen_strat = ns_unknown_multiworm_cluster_strategy, const ns_missing_worm_return_strategy & missing_worm_return_strategy_ = ns_not_specified,
 		const ns_event_observation_type & event_observation_type_ = ns_standard, const ns_by_hand_annotation_integration_strategy & by_hand_strategy = ns_only_machine_annotations) :multiworm_censoring_strategy(cen_strat), loglikelihood(loglikelihood_),
-		type(type_), region_id(region_id_), time(time_), position(pos), size(size_), excluded(excluded_), region_info_id(region_info_id_), volatile_duration_of_time_not_fast_moving(0),
-		number_of_worms_at_location_marked_by_hand(event_counts.hand_count), volatile_time_at_death_associated_expansion_start(0, 0), volatile_time_at_death_associated_expansion_end(0, 0),
+		type(type_), region_id(region_id_), time(time_), position(pos), size(size_), excluded(excluded_), region_info_id(region_info_id_), volatile_time_at_first_plate_observation(0,0, true), volatile_time_at_quick_movement_stop(0,0,true),
+		number_of_worms_at_location_marked_by_hand(event_counts.hand_count), volatile_time_at_death_associated_expansion_start(0, 0, true), volatile_time_at_death_associated_expansion_end(0, 0, true),
 		number_of_worms_at_location_marked_by_machine(event_counts.machine_count), volatile_matches_machine_detected_death(false), subregion_info(subregion_info_),
 				annotation_time(annotation_time_),annotation_source(source_type),annotation_source_details(annotation_details_),inferred_animal_location(inferred_animal_location_),
 				disambiguation_type(d),stationary_path_id(s_id),flag(ns_death_time_annotation_flag::none()),event_observation_type(event_observation_type_),
@@ -352,8 +353,10 @@ struct ns_death_time_annotation{
 	ns_vector_2i position;
 	double loglikelihood;
 	bool inferred_animal_location;
-	unsigned long volatile_duration_of_time_not_fast_moving;
-	ns_death_time_annotation_time_interval volatile_time_at_death_associated_expansion_start,
+	
+	ns_death_time_annotation_time_interval volatile_time_at_first_plate_observation, 
+											volatile_time_at_quick_movement_stop,
+											volatile_time_at_death_associated_expansion_start,
 										   volatile_time_at_death_associated_expansion_end,
 											volatile_time_at_death_associated_post_expansion_contraction_start,
 											volatile_time_at_death_associated_post_expansion_contraction_end;

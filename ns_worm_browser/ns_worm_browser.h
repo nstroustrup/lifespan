@@ -670,7 +670,7 @@ public:
 	//data analysis
 	void generate_single_frame_posture_image_pixel_data(const bool single_Region);
 	void compile_experiment_survival_and_movement_data(const ns_browser_command_subject_set & subject, bool use_by_hand_censoring,const ns_region_visualization & vis,const  ns_movement_data_source_type::type & type);
-	void load_current_experiment_movement_results(const ns_death_time_annotation_set::ns_annotation_type_to_load & annotations_to_load, const unsigned long experiment_id);
+	void load_current_experiment_movement_results(const ns_death_time_annotation_set::ns_annotation_type_to_load & annotations_to_load, const unsigned long experiment_id,ns_sql & sql);
 	void output_experiment_movement_graph_wrapper_files(ns_machine_analysis_region_data & r, const std::string & filename);
 	bool movement_data_is_strictly_decreasing(){return movement_data_is_strictly_decreasing_;}
 	void output_device_timing_data(const unsigned long experiment_id,const unsigned long experiment_group_id);

@@ -213,8 +213,10 @@ struct ns_death_time_annotation{
 	ns_death_time_annotation():
 		volatile_time_at_first_plate_observation(0,0, true),
 		volatile_time_at_quick_movement_stop(0,0, true),
+		volatile_time_at_quick_movement_stop_source(ns_unknown),
 		longest_gap_without_observation(0),
 		volatile_time_at_death_associated_expansion_start(0,0, true),
+		volatile_time_at_death_associated_expansion_start_source(ns_unknown),
 		volatile_time_at_death_associated_expansion_end(0,0, true),
 		volatile_time_at_death_associated_post_expansion_contraction_start(0, 0, true),
 		volatile_time_at_death_associated_post_expansion_contraction_end(0, 0, true),
@@ -253,6 +255,7 @@ struct ns_death_time_annotation{
 		const double loglikelihood_ = 1, const unsigned long longest_gap_without_observation_ = 0, const ns_multiworm_censoring_strategy & cen_strat = ns_unknown_multiworm_cluster_strategy, const ns_missing_worm_return_strategy & missing_worm_return_strategy_ = ns_not_specified,
 		const ns_event_observation_type & event_observation_type_ = ns_standard, const ns_by_hand_annotation_integration_strategy & by_hand_strategy = ns_only_machine_annotations) :multiworm_censoring_strategy(cen_strat), loglikelihood(loglikelihood_),
 		type(type_), region_id(region_id_), time(time_), position(pos), size(size_), excluded(excluded_), region_info_id(region_info_id_), volatile_time_at_first_plate_observation(0,0, true), volatile_time_at_quick_movement_stop(0,0,true),
+		volatile_time_at_quick_movement_stop_source(ns_unknown),volatile_time_at_death_associated_expansion_start_source(ns_unknown),
 		number_of_worms_at_location_marked_by_hand(event_counts.hand_count), volatile_time_at_death_associated_expansion_start(0, 0, true), volatile_time_at_death_associated_expansion_end(0, 0, true),
 		number_of_worms_at_location_marked_by_machine(event_counts.machine_count), volatile_matches_machine_detected_death(false), subregion_info(subregion_info_),
 				annotation_time(annotation_time_),annotation_source(source_type),annotation_source_details(annotation_details_),inferred_animal_location(inferred_animal_location_),
@@ -263,7 +266,8 @@ struct ns_death_time_annotation{
 		volatile_time_at_death_associated_expansion_end = volatile_time_at_death_associated_expansion_start;
 		volatile_time_at_death_associated_post_expansion_contraction_end = volatile_time_at_death_associated_post_expansion_contraction_start;
 	}
-	
+
+	static char source_type_to_letter(const ns_annotation_source_type& t);
 	static std::string source_type_to_string(const ns_annotation_source_type & t);
 
 	std::string description() const;
@@ -360,6 +364,9 @@ struct ns_death_time_annotation{
 										   volatile_time_at_death_associated_expansion_end,
 											volatile_time_at_death_associated_post_expansion_contraction_start,
 											volatile_time_at_death_associated_post_expansion_contraction_end;
+
+	ns_annotation_source_type volatile_time_at_quick_movement_stop_source, 
+							volatile_time_at_death_associated_expansion_start_source;
 	bool volatile_matches_machine_detected_death;
 
 	ns_event_explicitness event_explicitness;

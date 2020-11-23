@@ -791,7 +791,7 @@ void ns_lifespan_experiment_set::out_simple_JMP_header(const ns_time_handing_beh
 			"Age at Final Movement (" << time_units << "),"
 			"Age at Death-Associated Expansion (" << time_units << "),"
 			"Age at Final Quick Movement (" << time_units << "),"
-			"Age at Final Plate Observation (" << time_units << "),"
+			"Age at First Plate Observation (" << time_units << "),"
 			"Longest Gap in Measurement (" << time_units << "),";
 	}
 	else{
@@ -804,12 +804,12 @@ void ns_lifespan_experiment_set::out_simple_JMP_header(const ns_time_handing_beh
 			"Age at Death-Associated Expansion (" << time_units << ") End,"
 			"Age at Final Quick Movement (" << time_units << ") Start"
 			"Age at Final Quick Movement (" << time_units << ") End"
-			"Age at First Observation (" << time_units << ") Start"
-			"Age at First Observation (" << time_units << ") End"
+			"Age at First Plate Observation (" << time_units << ") Start"
+			"Age at First Plate Observation (" << time_units << ") End"
 			"Longest Gap in Measurement (" << time_units << "),";
 	}
 		// "Age at Death (" << time_units << ") Multiplicative + Additive offset Regression Model Residuals,"
-	o << "Censored,Censored Reason,Event Observation Type,Annotation Source,Technique,Analysis Type";
+	o << "Censored,Censored Reason,Event Observation Type,Death Annotation Source,Event Sources,Technique,Analysis Type";
 	if (multiple_events)
 		o << ",Event Type";
 	o << ", Special Flag";
@@ -951,6 +951,7 @@ void ns_lifespan_experiment_set::out_simple_JMP_event_data(const ns_time_handing
 		o << "," 
 			<< ns_death_time_annotation::event_observation_label(a.event_observation_type) << ","
 			<< a.source_type_to_string(a.annotation_source) << ","
+			<< a.source_type_to_letter(a.volatile_time_at_quick_movement_stop_source) << a.source_type_to_letter(a.annotation_source) << a.source_type_to_letter(a.volatile_time_at_death_associated_expansion_start_source) << ","
 			<< metadata.technique << ","
 			<< metadata.analysis_type << ",";
 		if (output_mulitple_events)

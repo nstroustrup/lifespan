@@ -266,7 +266,16 @@ void ns_death_time_annotation::from_string(const std::string v){
 	subregion_info.nearest_neighbor_subregion_distance.y = atoi(s[33].c_str());
 	event_explicitness = (ns_event_explicitness)atoi(s[34].c_str());
 }
-
+char ns_death_time_annotation::source_type_to_letter(const ns_annotation_source_type& t) {
+	switch (t) {
+		case ns_unknown: return 'U';
+		case ns_posture_image: return 'P';
+		case ns_region_image:  return 'R';
+		case ns_lifespan_machine: return 'M';
+		case ns_storyboard: return 'S';
+		default: return '?';
+	}
+}
 std::string ns_death_time_annotation::source_type_to_string(const ns_annotation_source_type & t){
 	switch(t){
 		case ns_unknown: return "Unknown";
@@ -1466,10 +1475,11 @@ void ns_death_time_annotation_compiler::specifiy_region_metadata(const ns_64_bit
 
 
 class ns_death_time_event_compiler_time_aggregator{
-	typedef std::map<unsigned long, ns_survival_timepoint> ns_aggregator_timepoint_list;
-	ns_aggregator_timepoint_list timepoints;
 	ns_region_metadata metadata;
 public:
+	typedef std::map<unsigned long, ns_survival_timepoint> ns_aggregator_timepoint_list;
+	ns_aggregator_timepoint_list timepoints;
+
 	typedef enum  { ns_normal_event,ns_best_guess_event } ns_best_guess_flag;
 	ns_death_time_event_compiler_time_aggregator(const ns_region_metadata & metadata_):metadata(metadata_){}
 	void add(const ns_death_time_annotation& e, bool use_by_hand_data, const ns_best_guess_flag  best_guess_flag= ns_normal_event) {
@@ -2321,14 +2331,13 @@ bool ns_multiple_worm_cluster_death_annotation_handler::generate_correct_annotat
 
 		//we use this as debugging info in output file
 		if (event_data.last_fast_movement_annotation != 0) {
-			//use the death-associated expansion time if possible.
-			//if not use the movement cessation time.
-			ns_death_time_annotation_time_interval death_time;
-			if (event_data.death_associated_expansion_start != 0 && !event_data.death_associated_expansion_start->time.fully_unbounded())
-				death_time = event_data.death_associated_expansion_start->time;
-			else death_time = death.time;
+			if (event_data.death_associated_expansion_start != 0 && !event_data.death_associated_expansion_start->time.fully_unbounded()) {
+				death.volatile_time_at_death_associated_expansion_start = event_data.death_associated_expansion_start->time;
+				death.volatile_time_at_death_associated_expansion_start_source = event_data.death_associated_expansion_start->annotation_source;
+			}
 
 			death.volatile_time_at_quick_movement_stop = event_data.last_fast_movement_annotation->time;
+			death.volatile_time_at_quick_movement_stop_source = event_data.last_fast_movement_annotation->annotation_source;
 			death.volatile_time_at_first_plate_observation = event_data.first_observation_on_plate->time;
 		}
 		properties.transfer_sticky_properties(death);
@@ -2593,12 +2602,15 @@ void ns_add_normal_death_to_set(const ns_annotation_generation_type & requested_
 			if (a[8] != 0)
 				b.volatile_time_at_first_plate_observation = a[8]->time;
 
-			if (a[2] != 0)
+			if (a[2] != 0) {
 				b.volatile_time_at_quick_movement_stop = a[2]->time;
+				b.volatile_time_at_quick_movement_stop_source = a[2]->annotation_source;
+			}
 
 			//we use this as debugging info in output file
 			if (a[3] != 0 && a[0] != 0) {
 				b.volatile_time_at_death_associated_expansion_start = a[3]->time;
+				b.volatile_time_at_death_associated_expansion_start_source = a[3]->annotation_source;
 				/*if (a[3]->time == a[0]->time)
 					cerr << ".";
 				else
@@ -2670,7 +2682,6 @@ void ns_add_normal_death_to_set(const ns_annotation_generation_type & requested_
 void ns_death_time_annotation_compiler_region::generate_survival_curve(ns_survival_data & curve, const ns_death_time_annotation::ns_by_hand_annotation_integration_strategy & by_hand_annotation_strategy, const bool use_by_hand_worm_cluster_annotations, const bool warn_on_movement_problems) const {
 
 	const ns_death_time_annotation_time_interval latest_interval(ns_death_time_annotation_compiler_region::latest_interval());
-
 	unsigned long multiple_event_count(0);
 	//Note that multiple strategies to handling multiple worm death times can be applied and included in censoring data files.
 	//One approache to multiple worm clusters is to simply censor all animals that enter them.  
@@ -2685,8 +2696,9 @@ void ns_death_time_annotation_compiler_region::generate_survival_curve(ns_surviv
 		q->generate_dying_animal_description_const(warn_on_movement_problems, description_set);
 		if (description_set.descriptions.empty())
 			throw ns_ex("ns_death_time_annotation_compiler_region::generate_survival_curve::Encountered an empty description set!");
-		ns_dying_animal_description_base<const ns_death_time_annotation> & machine_death(description_set.descriptions[0]);	//the machine annotation will always be in description[0], as additional worms are only identified through by-hand annotation.
-		const ns_death_time_annotation * machine_reference(0);
+		ns_dying_animal_description_base<const ns_death_time_annotation>& machine_death(description_set.descriptions[0]);	//the machine annotation will always be in description[0], as additional worms are only identified through by-hand annotation.
+
+		const ns_death_time_annotation* machine_reference(0);
 		if (machine_death.machine.best_guess_death_annotation != 0)
 			machine_reference = machine_death.machine.best_guess_death_annotation;
 		else if (machine_death.machine.last_slow_movement_annotation != 0)
@@ -2695,10 +2707,20 @@ void ns_death_time_annotation_compiler_region::generate_survival_curve(ns_surviv
 			machine_reference = machine_death.machine.last_fast_movement_annotation;
 		if (machine_reference == 0) {	//discard by hand annotations without machine annotations
 			//cout << "Discarding a stray by hand annotation.\n";
-				continue;
+			continue;
 		}
-		if (machine_death.machine.first_observation_on_plate == 0)
-			throw ns_ex("A machine annotation was encountered from an older version of the analysis software.  Please re-run \"Recalculate Death times from movement analysis\".");
+
+		if (machine_death.machine.first_observation_on_plate == 0) {
+			ns_acquire_for_scope<ns_sql> sql(image_server.new_sql_connection(__FILE__, __LINE__));
+			sql() << "SELECT r.name, s.name, e.name FROM sample_region_image_info as r, capture_samples as s, experiments as e WHERE r.id = " << machine_reference->region_info_id << " AND r.sample_id=s.id AND s.experiment_id = e.id";
+			ns_sql_result res;
+			sql().get_rows(res);
+			std::string plate_name;
+			if (res.empty())
+				plate_name = ns_to_string(machine_reference->region_info_id);
+			else plate_name = res[0][2] + "::" + res[0][1] + "::" + res[0][0];
+			throw ns_ex("Region ") << plate_name << " appears to have been analyzed using an older version of the analysis software.  Please re-run \"Recalculate Death times from movement analysis\".";
+		}
 		if (machine_reference != 0 && 
 			description_set.descriptions.size() > 1 &&
 			machine_reference->annotation_source == //and only for multiworm clusters that the machine recognized
@@ -2754,12 +2776,26 @@ void ns_death_time_annotation_compiler_region::generate_survival_curve(ns_surviv
 			}
 		}
 	}
+	//censoring events don't have associated annotations for volatile time at first plate observation.
+	//so we build a cache from all the other events and use those.
+	std::map<ns_64_bit, ns_death_time_annotation_time_interval> first_plate_observation_cache;
+	for (ns_death_time_event_compiler_time_aggregator::ns_aggregator_timepoint_list::const_iterator p = aggregator.timepoints.begin(); p != aggregator.timepoints.end(); ++p) {
+		for (auto q = p->second.fast_movement_cessations.events.begin(); q != p->second.fast_movement_cessations.events.end(); q++)
+			for (auto r = q->events.begin(); r != q->events.end(); r++)
+				if (!r->volatile_time_at_first_plate_observation.fully_unbounded() && first_plate_observation_cache.find(r->region_info_id) == first_plate_observation_cache.end()) {
+					first_plate_observation_cache[r->region_info_id] = r->volatile_time_at_first_plate_observation;
+				}
+	}
+	
 	for (unsigned int i = 0; i < non_location_events.size(); i++){
 		if (non_location_events[i].by_hand_annotation_integration_strategy != by_hand_annotation_strategy)
 			continue;
 		//std::cerr << "Adding censoring event\n";
 		ns_death_time_annotation b(non_location_events[i]);
 		b.volatile_matches_machine_detected_death = true;
+		auto p = first_plate_observation_cache.find(b.region_info_id);
+		if (p != first_plate_observation_cache.end())
+			b.volatile_time_at_first_plate_observation = p->second;
 		aggregator.add(b,use_by_hand_worm_cluster_annotations);
 	}
 

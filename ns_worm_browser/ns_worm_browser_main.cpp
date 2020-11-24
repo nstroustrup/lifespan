@@ -2267,8 +2267,10 @@ struct ns_storyboard_annotation_region_picker : public ns_asynch_menu_picker {
 				worm_learner.stop_death_time_annotation();
 				worm_learner.data_gui_selector.select_region(region_name);
 				Fl::lock();
+				show_stats_window = true;
 				::update_region_choice_menu();
 				Fl::unlock();
+
 				worm_learner.start_death_time_annotation(ns_worm_learner::ns_annotate_storyboard_region, worm_learner.current_storyboard_flavor);
 				report_changes_made_to_screen();
 				return;

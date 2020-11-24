@@ -4282,9 +4282,10 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(const ns_bro
 	ns_sql& sql(get_sql_connection());
 	for (unsigned int experiment_i = 0; experiment_i < subject.size(); experiment_i++) {
 		try {
-			if (!subject[experiment_i].subject.database_name.empty())
+			if (!subject[experiment_i].subject.database_name.empty()) {
 				sql.select_db(subject[experiment_i].subject.database_name);
-			image_server.set_sql_database(subject[experiment_i].subject.database_name, false, &sql);
+				image_server.set_sql_database(subject[experiment_i].subject.database_name, false, &sql);
+			}
 			if (subject.size() > 1)
 				cerr << "Generating survival/movement data for " << subject[experiment_i].subject.experiment_name << " (" << (experiment_i + 1) << "/" << subject.size() << ")\n";
 			unsigned int experiment_id = subject[experiment_i].subject.experiment_id;

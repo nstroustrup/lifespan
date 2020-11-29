@@ -256,7 +256,7 @@ public:
 	#ifdef NS_GENERATE_IMAGE_STATISTICS
 	void generate_detailed_animal_data_file(const bool output_region_image_data,const ns_capture_sample_region_statistics_set & region_data,std::ostream & o) const;
 	#else
-	void generate_detailed_animal_data_file(const bool output_region_image_data,std::ostream & o) const;
+	void generate_detailed_animal_data_file(const bool output_region_image_data,std::ostream & o,const bool output_header=true) const;
 	#endif
 	void add(const ns_death_time_annotation_set & set,const ns_creation_type = ns_create_all);
 	void add(const ns_death_time_annotation_set & set,const ns_region_metadata & metadata);
@@ -265,7 +265,7 @@ public:
 	void add_path(const ns_64_bit &region_info_id, const ns_stationary_path_id &p, const ns_vector_2i & position, const ns_vector_2i & size, const ns_region_metadata & metadata);
 	
 
-	void generate_validation_information(std::ostream & o) const;
+	void generate_validation_information(std::ostream & o, const bool output_header=true) const;
 
 
 	void specifiy_region_metadata(const ns_64_bit region_id,const ns_region_metadata & metadata);

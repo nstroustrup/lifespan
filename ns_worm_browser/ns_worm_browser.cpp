@@ -4280,7 +4280,33 @@ struct ns_immediately_recalc_censoring_job {
 void ns_worm_learner::compile_experiment_survival_and_movement_data(const ns_browser_command_subject_set& subject, bool use_by_hand_censoring, const ns_region_visualization& vis, const  ns_movement_data_source_type::type& type) {
 	std::vector<ns_ex> errors;
 	ns_sql& sql(get_sql_connection());
+	std::set < ns_64_bit > experiments_specified;
+	for (unsigned int experiment_i = 0; experiment_i < subject.size(); experiment_i++) 
+		experiments_specified.insert(experiments_specified.end(), subject[experiment_i].subject.experiment_id);
+	
+
+	ns_acquire_for_scope<ns_ostream> censoring_diagnostics_by_plate_machine,
+		censoring_diagnostics_by_plate_by_hand;
+
+
+	ns_acquire_for_scope<ns_ostream> survival_jmp_file_detailed_days;
+	ns_acquire_for_scope<ns_ostream> survival_jmp_file_machine_simple_days;
+	ns_acquire_for_scope<ns_ostream> survival_jmp_file_machine_hand_simple_days;
+	ns_acquire_for_scope<ns_ostream> survival_jmp_file_simple_with_control_groups_days;
+	ns_acquire_for_scope<ns_ostream> survival_jmp_file_time_by_hand_interval_simple_days;
+	ns_acquire_for_scope<ns_ostream> survival_jmp_file_time_machine_interval_simple_days;
+	ns_acquire_for_scope<ns_ostream> annotation_diagnostics;
+	ns_acquire_for_scope<ns_ostream> detailed_survival_file;
+
+
+	std::string output_experiment_name = "";
 	for (unsigned int experiment_i = 0; experiment_i < subject.size(); experiment_i++) {
+		if (experiments_specified.size() > 1 && subject[0].output_file.empty()) {
+			throw ns_ex("To analyze multiple experiments, an output name must be specified");
+		}
+		else output_experiment_name = subject[0].output_file;
+
+
 		try {
 			if (!subject[experiment_i].subject.database_name.empty()) {
 				sql.select_db(subject[experiment_i].subject.database_name);
@@ -4416,15 +4442,26 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(const ns_bro
 			sample_graphs.reserve(movement_results.samples.size());
 
 
+
+
 			ns_image_server_results_subject results_subject;
-			results_subject.experiment_id = experiment_id;
-			results_subject.experiment_name = movement_results.experiment_name();
+			bool writing_multiple_experiments_to_single_file = false;
+			if (output_experiment_name.empty()) {
+				if (!subject[experiment_i].subject.database_name.empty())
+					results_subject.database_name = subject[experiment_i].subject.database_name;
+				results_subject.experiment_id = experiment_id;
+				results_subject.experiment_name = movement_results.experiment_name();
+			}
+			else {
+				results_subject.experiment_name = output_experiment_name;
+				writing_multiple_experiments_to_single_file = true;
+			}
+
 			vector<map<ns_death_time_annotation::ns_by_hand_annotation_integration_strategy, ns_acquire_for_scope<ns_ostream> > > movement_data_plate_file_with_incomplete(ns_death_time_annotation::ns_number_of_multiworm_censoring_strategies);
 			vector<map<ns_death_time_annotation::ns_by_hand_annotation_integration_strategy, ns_acquire_for_scope<ns_ostream> > > movement_data_plate_file_without_incomplete(ns_death_time_annotation::ns_number_of_multiworm_censoring_strategies);
 			ns_acquire_for_scope<ns_ostream> movement_data_plate_file_with_alternate_missing_return_strategy_1,
 				movement_data_plate_file_with_alternate_missing_return_strategy_2;
-			ns_acquire_for_scope<ns_ostream> censoring_diagnostics_by_plate_machine,
-				censoring_diagnostics_by_plate_by_hand;
+		
 
 			const ns_death_time_annotation::ns_missing_worm_return_strategy default_missing_return_strategy(ns_death_time_annotation::ns_censoring_minimize_missing_times),
 				alternate_missing_return_strategy_1(ns_death_time_annotation::ns_censoring_assume_uniform_distribution_of_missing_times),
@@ -4461,20 +4498,23 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(const ns_bro
 						}
 					}
 				}
-				censoring_diagnostics_by_plate_machine.attach(image_server.results_storage.movement_timeseries_data(
-					ns_death_time_annotation::ns_only_machine_annotations,
-					ns_death_time_annotation::ns_merge_multiple_worm_clusters_and_missing_and_censor,
-					default_missing_return_strategy,
-					ns_include_unchanged,
-					results_subject, "grouped_by_plate", "censoring_diagnostics", sql).output());
-				censoring_diagnostics_by_plate_by_hand.attach(image_server.results_storage.movement_timeseries_data(
-					ns_death_time_annotation::ns_machine_annotations_if_no_by_hand,
-					ns_death_time_annotation::ns_merge_multiple_worm_clusters_and_missing_and_censor,
-					default_missing_return_strategy,
-					ns_include_unchanged,
-					results_subject, "grouped_by_plate", "censoring_diagnostics", sql).output());
-				ns_worm_movement_summary_series::output_censoring_diagnostic_header(censoring_diagnostics_by_plate_by_hand()());
-				ns_worm_movement_summary_series::output_censoring_diagnostic_header(censoring_diagnostics_by_plate_machine()());
+				if (censoring_diagnostics_by_plate_machine.is_null()) {
+					censoring_diagnostics_by_plate_machine.attach(image_server.results_storage.movement_timeseries_data(
+						ns_death_time_annotation::ns_only_machine_annotations,
+						ns_death_time_annotation::ns_merge_multiple_worm_clusters_and_missing_and_censor,
+						default_missing_return_strategy,
+						ns_include_unchanged,
+						results_subject, "grouped_by_plate", "censoring_diagnostics", sql).output());
+					censoring_diagnostics_by_plate_by_hand.attach(image_server.results_storage.movement_timeseries_data(
+						ns_death_time_annotation::ns_machine_annotations_if_no_by_hand,
+						ns_death_time_annotation::ns_merge_multiple_worm_clusters_and_missing_and_censor,
+						default_missing_return_strategy,
+						ns_include_unchanged,
+						results_subject, "grouped_by_plate", "censoring_diagnostics", sql).output());
+
+					ns_worm_movement_summary_series::output_censoring_diagnostic_header(censoring_diagnostics_by_plate_by_hand()());
+					ns_worm_movement_summary_series::output_censoring_diagnostic_header(censoring_diagnostics_by_plate_machine()());
+				}
 				if (output_alternative_censoring_timings) {
 					movement_data_plate_file_with_alternate_missing_return_strategy_1.attach(image_server.results_storage.movement_timeseries_data(
 						ns_death_time_annotation::ns_machine_annotations_if_no_by_hand,
@@ -4631,23 +4671,29 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(const ns_bro
 
 			if (vis == ns_survival_curve) {
 				//STEP 4 in generating death times: open a bunch of output files
+				bool output_header = false;
+				if (survival_jmp_file_detailed_days.is_null()) {
+					output_header = true;
+					survival_jmp_file_detailed_days.attach(image_server.results_storage.survival_data(results_subject, "survival_with_alternate_censoring_schemes", "machine_jmp_days", "csv", sql).output());
 
-				ns_acquire_for_scope<ns_ostream> survival_jmp_file_detailed_days(image_server.results_storage.survival_data(results_subject, "survival_with_alternate_censoring_schemes", "machine_jmp_days", "csv", sql).output());
+					survival_jmp_file_machine_simple_days.attach(image_server.results_storage.survival_data(results_subject, "survival_simple", "machine_jmp_days", "csv", sql).output());
+					survival_jmp_file_machine_hand_simple_days.attach(image_server.results_storage.survival_data(results_subject, "survival_simple", "machine_hand_jmp_days", "csv", sql).output());
 
-				ns_acquire_for_scope<ns_ostream> survival_jmp_file_machine_simple_days(image_server.results_storage.survival_data(results_subject, "survival_simple", "machine_jmp_days", "csv", sql).output());
-				ns_acquire_for_scope<ns_ostream> survival_jmp_file_machine_hand_simple_days(image_server.results_storage.survival_data(results_subject, "survival_simple", "machine_hand_jmp_days", "csv", sql).output());
 
-				ns_acquire_for_scope<ns_ostream> survival_jmp_file_simple_with_control_groups_days(image_server.results_storage.survival_data(results_subject, "survival_simple_with_control_groups", "machine_jmp_days", "csv", sql).output());
+					survival_jmp_file_simple_with_control_groups_days.attach(image_server.results_storage.survival_data(results_subject, "survival_simple_with_control_groups", "machine_jmp_days", "csv", sql).output());
 
-				ns_acquire_for_scope<ns_ostream> survival_jmp_file_time_by_hand_interval_simple_days(image_server.results_storage.survival_data(results_subject, "survival_interval", "machine_jmp_time_interval_days", "csv", sql).output());
+					survival_jmp_file_time_by_hand_interval_simple_days.attach(image_server.results_storage.survival_data(results_subject, "survival_interval", "machine_jmp_time_interval_days", "csv", sql).output());
 
-				ns_acquire_for_scope<ns_ostream> survival_jmp_file_time_machine_interval_simple_days(image_server.results_storage.survival_data(results_subject, "survival_interval", "machine_hand_jmp_time_interval_days", "csv", sql).output());
+					survival_jmp_file_time_machine_interval_simple_days.attach(image_server.results_storage.survival_data(results_subject, "survival_interval", "machine_hand_jmp_time_interval_days", "csv", sql).output());
 
-				ns_acquire_for_scope<ns_ostream> annotation_diagnostics(image_server.results_storage.survival_data(results_subject, "survival_simple", "annotation_diagnostics", "csv", sql).output());
+					annotation_diagnostics.attach(image_server.results_storage.survival_data(results_subject, "survival_simple", "annotation_diagnostics", "csv", sql).output());
 
-				survival_curve_compiler.generate_validation_information(annotation_diagnostics()());
-				annotation_diagnostics.release();
+					detailed_survival_file.attach(image_server.results_storage.animal_event_data(results_subject, "detailed_animal_data", sql).output());
 
+				}
+
+
+				survival_curve_compiler.generate_validation_information(annotation_diagnostics()(),output_header);
 
 				//STEP 5 in generating death times: compile all the accumulated by hand and machine data
 				ns_lifespan_experiment_set machine_set, machine_hand_set;
@@ -4669,28 +4715,25 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(const ns_bro
 
 				cerr << "Writing Files...\n";
 				//STEP 5 in generating death times: write everything out to disk
-
-				machine_set.output_JMP_file(ns_death_time_annotation::ns_only_machine_annotations, ns_lifespan_experiment_set::ns_output_single_event_times, ns_lifespan_experiment_set::ns_days, survival_jmp_file_machine_simple_days()(), ns_lifespan_experiment_set::ns_simple);
-				survival_jmp_file_machine_simple_days.release();
-				machine_hand_set.output_JMP_file(ns_death_time_annotation::ns_machine_annotations_if_no_by_hand, ns_lifespan_experiment_set::ns_output_single_event_times, ns_lifespan_experiment_set::ns_days, survival_jmp_file_machine_hand_simple_days()(), ns_lifespan_experiment_set::ns_simple);
-				survival_jmp_file_machine_hand_simple_days.release();
-				machine_set.output_JMP_file(ns_death_time_annotation::ns_machine_annotations_if_no_by_hand, ns_lifespan_experiment_set::ns_output_single_event_times, ns_lifespan_experiment_set::ns_days, survival_jmp_file_simple_with_control_groups_days()(), ns_lifespan_experiment_set::ns_simple_with_control_groups);
-				survival_jmp_file_simple_with_control_groups_days.release();
-				machine_set.output_JMP_file(ns_death_time_annotation::ns_machine_annotations_if_no_by_hand, ns_lifespan_experiment_set::ns_output_single_event_times, ns_lifespan_experiment_set::ns_days, survival_jmp_file_detailed_days()(), ns_lifespan_experiment_set::ns_detailed_compact);
-				survival_jmp_file_detailed_days.release();
-
-
-				machine_set.output_JMP_file(ns_death_time_annotation::ns_only_machine_annotations, ns_lifespan_experiment_set::ns_output_event_intervals, ns_lifespan_experiment_set::ns_days, survival_jmp_file_time_machine_interval_simple_days()(), ns_lifespan_experiment_set::ns_simple);
-				survival_jmp_file_time_machine_interval_simple_days.release();
-				machine_set.output_JMP_file(ns_death_time_annotation::ns_machine_annotations_if_no_by_hand, ns_lifespan_experiment_set::ns_output_event_intervals, ns_lifespan_experiment_set::ns_days, survival_jmp_file_time_by_hand_interval_simple_days()(), ns_lifespan_experiment_set::ns_simple);
-				survival_jmp_file_time_by_hand_interval_simple_days.release();
+				machine_set.output_JMP_file(ns_death_time_annotation::ns_only_machine_annotations, ns_lifespan_experiment_set::ns_output_single_event_times, ns_lifespan_experiment_set::ns_days, survival_jmp_file_machine_simple_days()(), ns_lifespan_experiment_set::ns_simple, output_header);
+				
+				machine_hand_set.output_JMP_file(ns_death_time_annotation::ns_machine_annotations_if_no_by_hand, ns_lifespan_experiment_set::ns_output_single_event_times, ns_lifespan_experiment_set::ns_days, survival_jmp_file_machine_hand_simple_days()(), ns_lifespan_experiment_set::ns_simple, output_header);
+				
+				machine_set.output_JMP_file(ns_death_time_annotation::ns_machine_annotations_if_no_by_hand, ns_lifespan_experiment_set::ns_output_single_event_times, ns_lifespan_experiment_set::ns_days, survival_jmp_file_simple_with_control_groups_days()(), ns_lifespan_experiment_set::ns_simple_with_control_groups, output_header);
+				
+				machine_set.output_JMP_file(ns_death_time_annotation::ns_machine_annotations_if_no_by_hand, ns_lifespan_experiment_set::ns_output_single_event_times, ns_lifespan_experiment_set::ns_days, survival_jmp_file_detailed_days()(), ns_lifespan_experiment_set::ns_detailed_compact, output_header);
+				
+				machine_set.output_JMP_file(ns_death_time_annotation::ns_only_machine_annotations, ns_lifespan_experiment_set::ns_output_event_intervals, ns_lifespan_experiment_set::ns_days, survival_jmp_file_time_machine_interval_simple_days()(), ns_lifespan_experiment_set::ns_simple, output_header);
+			
+				machine_set.output_JMP_file(ns_death_time_annotation::ns_machine_annotations_if_no_by_hand, ns_lifespan_experiment_set::ns_output_event_intervals, ns_lifespan_experiment_set::ns_days, survival_jmp_file_time_by_hand_interval_simple_days()(), ns_lifespan_experiment_set::ns_simple, output_header);
+				
 
 				cerr << "Writing Detailed Animal Files\n";
 				//generate detailed animal data
 				bool include_region_image_info(false);
 
-				ns_image_server_results_subject results_subject;
-				results_subject.experiment_id = experiment_id;
+				//ns_image_server_results_subject results_subject;
+				//results_subject.experiment_id = experiment_id;
 				/*
 				ns_capture_sample_statistics_set s_set;
 				if (include_region_image_info)
@@ -4702,11 +4745,21 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(const ns_bro
 					r_set.set_sample_data(s_set);
 				}
 			*/
-				ns_acquire_for_scope<ns_ostream> animal_data_file(image_server.results_storage.animal_event_data(results_subject, "detailed_animal_data", sql).output());
-				survival_curve_compiler.generate_detailed_animal_data_file(include_region_image_info, animal_data_file()());
-				animal_data_file.release();
+				survival_curve_compiler.generate_detailed_animal_data_file(include_region_image_info, detailed_survival_file()(),output_header);
 
 				cerr << "Done\n";
+
+				if (! writing_multiple_experiments_to_single_file || experiment_i+1==subject.size()) {
+
+					detailed_survival_file.release();
+					annotation_diagnostics.release();
+					survival_jmp_file_machine_simple_days.release();
+					survival_jmp_file_machine_hand_simple_days.release();
+					survival_jmp_file_simple_with_control_groups_days.release();
+					survival_jmp_file_detailed_days.release();
+					survival_jmp_file_time_machine_interval_simple_days.release();
+					survival_jmp_file_time_by_hand_interval_simple_days.release();
+				}
 			}
 
 

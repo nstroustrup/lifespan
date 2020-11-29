@@ -1754,22 +1754,23 @@ void ns_death_time_annotation_compiler::generate_detailed_animal_data_file(const
 }
 #else
 
-void ns_death_time_annotation_compiler::generate_detailed_animal_data_file(const bool output_region_image_data,std::ostream & o) const{
-
-	//ns_capture_sample_region_statistics_set::out_header(o);
-	ns_region_metadata::out_JMP_plate_identity_header(o);
-	o << ",Event Frequency,Censored,Excluded,Special Flag, Size of by-hand annotated cluster,";
-	o << "Machine Fast Movement Cessation Age (Days),Machine Slow Movement Cessation Age (Days),"
-		"Machine Movement Cessation Age (Days),Machine Death-Associated Expansion Age (days), Machine Death Age (days),"
-		"Machine Slow Movement Duration (Days), Machine Posture Changing Duration (Days), Machine Not Fast Moving Duration (Days),"
-		"By Hand Fast Movement Cessation Age (Days),By Hand Slow Movement Cessation Age (Days),"
-		"By Hand Movement Cessation Age (Days),By Hand Death-Associated Expansion Age (days), By Hand Death Age (days),"
-		"By Hand Slow Movement Duration (Days),By Hand Posture Changing Duration (Days),By Hand Not Fast Moving Duration (Days), "
-		"Fast Movement Cessation Position X,Fast Movement Cessation Position Y,"
-		"Slow Movement Cessation Position X,Slow Movement Cessation Position y,"
-		"Death Position X,Death Position y,Posture Analysis Log-Likelihood,Worm Group ID, Worm Path ID,"
-		"Fast Movement Cessation Detection Details, Slow Movement Cessation Detection Details, Death Detection Movement Details, Worm cluster type, Censored Reason"
-		"\n";
+void ns_death_time_annotation_compiler::generate_detailed_animal_data_file(const bool output_region_image_data, std::ostream& o, const bool output_header) const {
+	if (output_header) {
+		//ns_capture_sample_region_statistics_set::out_header(o);
+		ns_region_metadata::out_JMP_plate_identity_header(o);
+		o << ",Event Frequency,Censored,Excluded,Special Flag, Size of by-hand annotated cluster,";
+		o << "Machine Fast Movement Cessation Age (Days),Machine Slow Movement Cessation Age (Days),"
+			"Machine Movement Cessation Age (Days),Machine Death-Associated Expansion Age (days), Machine Death Age (days),"
+			"Machine Slow Movement Duration (Days), Machine Posture Changing Duration (Days), Machine Not Fast Moving Duration (Days),"
+			"By Hand Fast Movement Cessation Age (Days),By Hand Slow Movement Cessation Age (Days),"
+			"By Hand Movement Cessation Age (Days),By Hand Death-Associated Expansion Age (days), By Hand Death Age (days),"
+			"By Hand Slow Movement Duration (Days),By Hand Posture Changing Duration (Days),By Hand Not Fast Moving Duration (Days), "
+			"Fast Movement Cessation Position X,Fast Movement Cessation Position Y,"
+			"Slow Movement Cessation Position X,Slow Movement Cessation Position y,"
+			"Death Position X,Death Position y,Posture Analysis Log-Likelihood,Worm Group ID, Worm Path ID,"
+			"Fast Movement Cessation Detection Details, Slow Movement Cessation Detection Details, Death Detection Movement Details, Worm cluster type, Censored Reason"
+			"\n";
+	}
 	for (ns_region_list::const_iterator p = regions.begin(); p != regions.end(); ++p){
 		//std::map<unsigned long,ns_capture_sample_region_data *>::const_iterator r(region_data.regions_sorted_by_id.end());
 
@@ -2827,11 +2828,13 @@ struct ns_death_diagnostic{
 	}
 };
 
-void ns_death_time_annotation_compiler::generate_validation_information(std::ostream & o) const{
-	ns_region_metadata::out_JMP_plate_identity_header(o);
-	o << ",";
-	ns_death_diagnostic::out_header(o);
-	o << "\n";
+void ns_death_time_annotation_compiler::generate_validation_information(std::ostream & o,const bool output_header) const{
+	if (output_header) {
+		ns_region_metadata::out_JMP_plate_identity_header(o);
+		o << ",";
+		ns_death_diagnostic::out_header(o);
+		o << "\n";
+	}
 	for(ns_region_list::const_iterator p = regions.begin(); p!= regions.end(); ++p){
 		const unsigned long tz = p->second.metadata.time_at_which_animals_had_zero_age;
 		for (ns_death_time_annotation_compiler_region::ns_location_list::const_iterator q = p->second.locations.begin(); q != p->second.locations.end(); q++){

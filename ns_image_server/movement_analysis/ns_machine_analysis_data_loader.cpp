@@ -203,7 +203,7 @@ void ns_machine_analysis_data_loader::load_just_survival(ns_lifespan_experiment_
 		for (ns_death_time_annotation_compiler::ns_region_list::iterator p = compiler.regions.begin(); p != compiler.regions.end(); p++){
 			const unsigned long s(set.size());
 			set.resize(s+1);
-			p->second.generate_survival_curve(set.curve(s),ns_death_time_annotation::ns_machine_annotations_if_no_by_hand,true,false);
+			p->second.generate_survival_curve(set.curve(s),ns_death_time_annotation::ns_machine_annotations_if_no_by_hand,true,false,sql);
 		}
 		samples[i].clear();
 	

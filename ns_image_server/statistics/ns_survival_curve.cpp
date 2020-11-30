@@ -1427,8 +1427,13 @@ struct ns_event_count{
 		number_of_censoring_events;
 };
 
-void ns_lifespan_experiment_set::generate_aggregate_risk_timeseries(const ns_region_metadata & m, bool filter_by_strain, const std::string & specific_device, const ns_64_bit & specific_region_id, ns_survival_data_with_censoring& best_guess_based_survival, ns_survival_data_with_censoring & movement_based_survival, ns_survival_data_with_censoring& death_associated_expansion_survival, std::vector<unsigned long> & timepoints,bool use_external_time) const{
-	std::map<unsigned long, std::vector<ns_survival_timepoint_event> > best_guess_events, movement_death_events, death_associated_expansion_events;
+void ns_lifespan_experiment_set::generate_aggregate_risk_timeseries(const ns_region_metadata & m, bool filter_by_strain, const std::string & specific_device, const ns_64_bit & specific_region_id, 
+	ns_survival_data_with_censoring& best_guess_based_survival, 
+	ns_survival_data_with_censoring & movement_based_survival, 
+	ns_survival_data_with_censoring& death_associated_expansion_survival, 
+	ns_survival_data_with_censoring& fast_movement_cessation_survival,
+	std::vector<unsigned long> & timepoints,bool use_external_time) const{
+	std::map<unsigned long, std::vector<ns_survival_timepoint_event> > best_guess_events, movement_death_events, death_associated_expansion_events, fast_movement_cessation_events;
 	ns_region_metadata mm(m);
 	mm.genotype.clear();
 	
@@ -1441,12 +1446,13 @@ void ns_lifespan_experiment_set::generate_aggregate_risk_timeseries(const ns_reg
 
 		//add all events except for excluded objects
 		for (unsigned long j = 0; j < curves[i]->timepoints.size(); j++){
+			fast_movement_cessation_events[curves[i]->timepoints[j].absolute_time].push_back(curves[i]->timepoints[j].fast_movement_cessations);
 			movement_death_events[curves[i]->timepoints[j].absolute_time].push_back(curves[i]->timepoints[j].movement_based_deaths);
 			best_guess_events[curves[i]->timepoints[j].absolute_time].push_back(curves[i]->timepoints[j].best_guess_deaths);
 			death_associated_expansion_events[curves[i]->timepoints[j].absolute_time].push_back(curves[i]->timepoints[j].death_associated_expansions);
 		}
 	}
-	//we need to put both the deaths and the death associated expansion events on the same time steps.
+	//we need to put both the cessation of fast movement, cessation of any movement, and the death associated expansion events on the same time steps.
 	//so we find the union of all event times
 	std::set<unsigned long> unique_timepoints;
 	for (std::map<unsigned long, std::vector<ns_survival_timepoint_event> >::iterator p = movement_death_events.begin(); p != movement_death_events.end(); p++)
@@ -1454,7 +1460,10 @@ void ns_lifespan_experiment_set::generate_aggregate_risk_timeseries(const ns_reg
 	for (std::map<unsigned long, std::vector<ns_survival_timepoint_event> >::iterator p = best_guess_events.begin(); p != best_guess_events.end(); p++)
 		unique_timepoints.insert(p->first);
 	for (std::map<unsigned long, std::vector<ns_survival_timepoint_event> >::iterator p = death_associated_expansion_events.begin(); p != death_associated_expansion_events.end(); p++)
+		unique_timepoints.insert(p->first); 
+	for (std::map<unsigned long, std::vector<ns_survival_timepoint_event> >::iterator p = fast_movement_cessation_events.begin(); p != fast_movement_cessation_events.end(); p++)
 		unique_timepoints.insert(p->first);
+
 	if (!use_external_time) {
 		aggregate_set.timepoints.resize(unique_timepoints.size());
 		timepoints.resize(unique_timepoints.size());
@@ -1506,7 +1515,15 @@ void ns_lifespan_experiment_set::generate_aggregate_risk_timeseries(const ns_reg
 			aggregate_set.timepoints[pos].death_associated_expansions.add(p->second[j]);
 	}
 	death_associated_expansion_events.clear();
+	for (std::map<unsigned long, std::vector<ns_survival_timepoint_event> >::iterator p = fast_movement_cessation_events.begin(); p != fast_movement_cessation_events.end(); p++) {
+		const unsigned int pos = time_lookup[p->first];
+		aggregate_set.timepoints[pos].absolute_time = p->first;
+		for (unsigned int j = 0; j < p->second.size(); j++)
+			aggregate_set.timepoints[pos].fast_movement_cessations.add(p->second[j]);
+	}
+	fast_movement_cessation_events.clear();
 	aggregate_set.genenerate_survival_statistics();
+	fast_movement_cessation_survival = aggregate_set.risk_timeseries.fast_movement_cessation;
 	movement_based_survival = aggregate_set.risk_timeseries.movement_based_death;
 	best_guess_based_survival = aggregate_set.risk_timeseries.best_guess_death;
 	death_associated_expansion_survival = aggregate_set.risk_timeseries.death_associated_expansion_start;
@@ -1791,9 +1808,7 @@ void ns_survival_data::genenerate_survival_statistics(){
 void ns_survival_data::generate_survival_statistics(const ns_survival_data_with_censoring & survival_data,ns_survival_statistics & stats) const{
 	if (timepoints.size() == 0)
 		return;
-	if (survival_data.data.number_of_animals_at_risk.size() !=
-		survival_data.data_excluding_tails.number_of_animals_at_risk.size() ||
-		survival_data.data.number_of_animals_at_risk.size() != timepoints.size())
+	if (survival_data.data.number_of_animals_at_risk.size() != timepoints.size())
 		throw ns_ex("ns_survival_data::generate_survival_statistics()::Incorrecty built timeseries!");
 	stats.clear();
 
@@ -1813,13 +1828,10 @@ void ns_survival_data::generate_survival_statistics(const ns_survival_data_with_
 
 		stats.mean.weighted_sum_of_death_times += ((unsigned long long)survival_data.data.number_of_events[i])*
 																	relative_time;
-		stats.mean_excluding_tails.weighted_sum_of_death_times += ((unsigned long long)survival_data.data_excluding_tails.number_of_events[i])*
-																	relative_time;
+		
 
 		stats.mean.number_of_deaths+=survival_data.data.number_of_events[i];
 		stats.mean.number_censored+=survival_data.data.number_of_censoring_events[i];
-		stats.mean_excluding_tails.number_of_deaths+=survival_data.data_excluding_tails.number_of_events[i];
-		stats.mean_excluding_tails.number_censored+=survival_data.data_excluding_tails.number_of_censoring_events[i];
 	
 		//from SAS/STAT(R) 9.2 User's Guide, Second Edition
 		//"Product Limit Method"
@@ -1827,10 +1839,6 @@ void ns_survival_data::generate_survival_statistics(const ns_survival_data_with_
 			stats.mean.mean_survival_including_censoring_computed_with_log 
 				=
 			stats.mean.mean_survival_including_censoring 
-				=
-			stats.mean_excluding_tails.mean_survival_including_censoring_computed_with_log 
-				=
-			stats.mean_excluding_tails.mean_survival_including_censoring 
 				= 1.0*timepoints[i].absolute_time-metadata.time_at_which_animals_had_zero_age;
 		}
 		else{
@@ -1840,11 +1848,6 @@ void ns_survival_data::generate_survival_statistics(const ns_survival_data_with_
 				+= exp(survival_data.data.log_probability_of_surviving_up_to_interval[i-1])*duration;
 			stats.mean.mean_survival_including_censoring 
 				+= survival_data.data.probability_of_surviving_up_to_interval[i-1]*duration;
-
-			stats.mean_excluding_tails.mean_survival_including_censoring_computed_with_log 
-				+= exp(survival_data.data_excluding_tails.log_probability_of_surviving_up_to_interval[i-1])*duration;
-			stats.mean_excluding_tails.mean_survival_including_censoring 
-				+= survival_data.data_excluding_tails.probability_of_surviving_up_to_interval[i-1]*duration;
 		}
 	}
 	stats.number_of_plates = 1;
@@ -1962,12 +1965,12 @@ void ns_survival_data::generate_risk_timeseries(const ns_movement_event & event_
 
 		for (unsigned int k = 0; k < e->events.size(); k++){
 			if (!e->events[k].properties.is_excluded() &&
-				!e->events[k].properties.is_censored()){
+				!e->events[k].properties.is_censored()) {
 				if (e->events[k].properties.multiworm_censoring_strategy == ns_death_time_annotation::ns_no_strategy_needed_for_single_worm_object ||
-					e->events[k].properties.multiworm_censoring_strategy == ns_death_time_annotation::default_censoring_strategy()){
-					for (unsigned int m = 0; m < e->events[k].events.size(); m++){
+					e->events[k].properties.multiworm_censoring_strategy == ns_death_time_annotation::default_censoring_strategy()) {
+					for (unsigned int m = 0; m < e->events[k].events.size(); m++) {
 						double event_time(0);
-						if (e->events[k].events[m].time.fully_unbounded()){
+						if (e->events[k].events[m].time.fully_unbounded()) {
 							cerr << "ns_survival_data::generate_risk_timeseries()::Ignoring a fully-unbounded death event\n";
 							continue;
 						}
@@ -1976,22 +1979,17 @@ void ns_survival_data::generate_risk_timeseries(const ns_movement_event & event_
 						else if (e->events[k].events[m].time.period_end_was_not_observed)
 							event_time = e->events[k].events[m].time.period_start;
 						else event_time = e->events[k].events[m].time.best_estimate_event_time_within_interval();
-						const std::vector<ns_survival_timepoint>::const_iterator 
-							timepoint (ns_find_correct_point_for_time(event_time,timepoints));
+						const std::vector<ns_survival_timepoint>::const_iterator
+							timepoint(ns_find_correct_point_for_time(event_time, timepoints));
 						if (timepoint == timepoints.end())
 							throw ns_ex("Could not find timepoint for time") << e->events[k].events[m].time.best_estimate_event_time_within_interval();
-						const ns_64_bit index_id(timepoint-timepoints.begin());
-					//	if (/*risk_timeseries.data.number_of_events[index_id] += e->events[k].events[m].number_of_worms() > 1 &&*/ e->events[k].events[m].stationary_path_id.group_id==23)
-				//			cout << "found";
-						risk_timeseries.data.number_of_events[index_id]+=e->events[k].events[m].number_of_worms();//number_of_worms_in_annotation;
-						total_number_of_deaths+=e->events[k].events[m].number_of_worms();//number_of_worms_in_annotation;
+						const ns_64_bit index_id(timepoint - timepoints.begin());
+
+						risk_timeseries.data.number_of_events[index_id] += e->events[k].events[m].number_of_worms();
+						total_number_of_deaths += e->events[k].events[m].number_of_worms();
 					}
 				}
-			//	else 
-			//		cerr << "s";
 			}
-		//	else 
-		//		cerr << "S";
 			if (e->events[k].is_appropriate_in_default_censoring_scheme()){
 				for (unsigned int m = 0; m < e->events[k].events.size(); m++){
 					if (e->events[k].events[m].time.period_end_was_not_observed){
@@ -2014,98 +2012,24 @@ void ns_survival_data::generate_risk_timeseries(const ns_movement_event & event_
 		}
 	}
 	
-	//we only include the middle 90% of data points in calculating
-	const unsigned long start_n(total_number_of_deaths/20),
-					count_n(total_number_of_deaths-2*start_n);
-
 	risk_timeseries.data.total_number_of_deaths = total_number_of_deaths;
 	risk_timeseries.data.total_number_of_censoring_events = total_number_of_censored;
-	risk_timeseries.data_excluding_tails.total_number_of_deaths = count_n;
-	//risk_timeseries.data_excluding_tails.total_number_of_censoring_events = 0;  //set later
-	//the regression parameters
-	//find the start index
-	unsigned long start_index(0),stop_index(0),
-		number_of_deaths_up_to_start(0),
-		number_of_censoring_up_to_start(0),
-		number_of_deaths_before_end(0),
-		number_of_censoring_events_before_end(0),
-		number_of_deaths_occuring_at_first_timepoint(0),
-		number_of_censoring_occuring_at_first_timepoint(0),
+	
+	unsigned long
 		cumulative_deaths(0),
-		cumulative_censored(0),
-		number_of_censoring_at_last_timepoint(0),
-		number_of_deaths_at_last_timepoint(0);
-
-	risk_timeseries.data_excluding_tails.resize(timepoints.size(),0);
+		cumulative_censored(0);
 
 	for (unsigned int j = 0; j < timepoints.size(); j++){
 		unsigned long event_count(risk_timeseries.data.number_of_events[j]),
 							censor_count(risk_timeseries.data.number_of_censoring_events[j]);
 			
-		//if we're before the start
-		if (cumulative_deaths + event_count <= start_n){
-			number_of_deaths_up_to_start+=event_count;
-			number_of_censoring_up_to_start+=censor_count;
-
-			cumulative_deaths += event_count;
-			cumulative_censored += censor_count;
-			continue;
-		}
-		//if we've just hit the start
-		if (cumulative_deaths <= start_n){
-			start_index = j;
-			number_of_deaths_occuring_at_first_timepoint = cumulative_deaths+event_count-start_n;
-			number_of_deaths_up_to_start = start_n;
-			number_of_censoring_occuring_at_first_timepoint = 0;
-			number_of_censoring_up_to_start+=censor_count; 
-
-			//include deaths up until start_n but
-			//leave the remainder in case we cross the stop here too.
-			event_count = number_of_deaths_occuring_at_first_timepoint;
-			cumulative_deaths=start_n;
-			censor_count = 0;
-		}
-
-		//if we're after the end
-		if (cumulative_deaths + event_count >= start_n+count_n){
-			cumulative_censored+=censor_count;	//even though we may have hit the death count 
-											//at in the previous interval, we could all censored
-											//there.
-			//if we've just hit the end
-			if (cumulative_deaths < start_n+count_n){
-				stop_index = j;
-				number_of_deaths_before_end = start_n+count_n;
-				number_of_censoring_events_before_end = cumulative_censored;
-				
-				number_of_deaths_at_last_timepoint = number_of_deaths_before_end-cumulative_deaths;
-				number_of_censoring_at_last_timepoint = censor_count;
-				cumulative_deaths += number_of_deaths_at_last_timepoint;
-			}
-			//we're done!
-			break;
-		}
 		cumulative_censored+=censor_count;
 		cumulative_deaths+=event_count;
 	}
-	if (risk_timeseries.data_excluding_tails.total_number_of_deaths != cumulative_deaths - number_of_deaths_up_to_start)
-		throw ns_ex("Summing error:") << risk_timeseries.data_excluding_tails.total_number_of_deaths << " expected; " << cumulative_deaths - number_of_deaths_up_to_start << " received.";
-	risk_timeseries.data_excluding_tails.total_number_of_censoring_events = cumulative_censored - number_of_censoring_up_to_start;
 
 
-	//Now we know the at risk population for the entire interval for which we want to calculate the mean
-	//So we start!
-	unsigned long total_at_risk_population_excluding_tails = (risk_timeseries.data_excluding_tails.total_number_of_deaths)
-															 + (risk_timeseries.data_excluding_tails.total_number_of_censoring_events);
 	unsigned long total_at_risk_population_for_all_data =(risk_timeseries.data.total_number_of_deaths)
 															 + (risk_timeseries.data.total_number_of_censoring_events);
-
-
-	//add statistics for first timepoint in excluded-tail set  (as it has slightly different numbers than others)
-	risk_timeseries.data_excluding_tails.number_of_animals_at_risk[start_index] = total_at_risk_population_excluding_tails;
-	risk_timeseries.data_excluding_tails.number_of_censoring_events[start_index] = number_of_censoring_occuring_at_first_timepoint;
-	risk_timeseries.data_excluding_tails.number_of_events[start_index] = number_of_deaths_occuring_at_first_timepoint;
-
-	total_at_risk_population_excluding_tails -= (number_of_deaths_occuring_at_first_timepoint + number_of_censoring_occuring_at_first_timepoint);
 
 	unsigned long cur_n(0);
 	for (unsigned int j = 0; j < timepoints.size(); j++){
@@ -2117,29 +2041,14 @@ void ns_survival_data::generate_risk_timeseries(const ns_movement_event & event_
 		risk_timeseries.data.number_of_animals_at_risk[j] = total_at_risk_population_for_all_data;
 		total_at_risk_population_for_all_data -= (event_count + censoring_count);
 
-		if (j <= start_index || j > stop_index) //we've handled the j == start_index case before the loop
-			continue;
-
-		if (j == stop_index){
-			risk_timeseries.data_excluding_tails.number_of_animals_at_risk[j] = total_at_risk_population_excluding_tails;
-			risk_timeseries.data_excluding_tails.number_of_censoring_events[j] = number_of_censoring_at_last_timepoint;
-			risk_timeseries.data_excluding_tails.number_of_events[j] = number_of_deaths_at_last_timepoint;
-			continue;
-		}
-
-		risk_timeseries.data_excluding_tails.number_of_censoring_events[j] = censoring_count;
-		risk_timeseries.data_excluding_tails.number_of_events[j] = event_count;
-		risk_timeseries.data_excluding_tails.number_of_animals_at_risk[j] = total_at_risk_population_excluding_tails;
-		total_at_risk_population_excluding_tails -= (event_count + censoring_count);
 	}
 	risk_timeseries.data.calculate_risks_and_cumulatives();
-	risk_timeseries.data_excluding_tails.calculate_risks_and_cumulatives();
 }
 		
 
-void ns_lifespan_experiment_set::compute_device_normalization_regression(const ns_device_temperature_normalization_data & data, const ns_censoring_strategy & s, const ns_tail_strategy & t){
-	compute_device_normalization_regression(ns_movement_cessation, data,normalization_stats_for_death,s,t);
-	compute_device_normalization_regression(ns_fast_movement_cessation2, data,normalization_stats_for_fast_movement_cessation,s,t);
+void ns_lifespan_experiment_set::compute_device_normalization_regression(const ns_device_temperature_normalization_data & data, const ns_censoring_strategy & s){
+	compute_device_normalization_regression(ns_movement_cessation, data,normalization_stats_for_death,s);
+	compute_device_normalization_regression(ns_fast_movement_cessation2, data,normalization_stats_for_fast_movement_cessation,s);
 }
 
 typedef std::vector<ns_survival_statistics *> ns_survival_statistics_list;
@@ -2157,13 +2066,10 @@ void ns_aggregate_statistics(const ns_survival_statistics_list & stats, ns_survi
 				  total_population_size_with_tails_excluded(0);
 	for (unsigned int i = 0; i < stats.size(); i++){
 		total_population_size+=stats[i]->mean.number_of_deaths;
-		total_population_size_with_tails_excluded+=stats[i]->mean_excluding_tails.number_of_deaths;
 	}
 	combined.clear();
 	for (unsigned int i = 0; i < stats.size(); i++){
 		ns_weighted_mean_add(stats[i]->mean,stats[i]->mean.number_of_deaths/(double)total_population_size,combined.mean);
-		ns_weighted_mean_add(stats[i]->mean_excluding_tails,
-			stats[i]->mean_excluding_tails.number_of_deaths/(double)total_population_size_with_tails_excluded,combined.mean_excluding_tails);
 	}
 	combined.number_of_plates = stats.size();
 }
@@ -2180,7 +2086,8 @@ public:
 
 
 void ns_lifespan_experiment_set::compute_device_normalization_regression(const ns_movement_event & event_type,  const ns_device_temperature_normalization_data & regression_specification,
-	ns_lifespan_device_normalization_statistics_set & regression_statistics_set, const ns_censoring_strategy & censoring_strategy,const ns_tail_strategy & tail_strategy){
+	ns_lifespan_device_normalization_statistics_set & regression_statistics_set, const ns_censoring_strategy & censoring_strategy){
+	throw ns_ex("DEPRECIATED");
 	regression_statistics_set.produce_identity = regression_specification.identity();
 	//<animal description,death statistics for that strain>
 
@@ -2282,10 +2189,8 @@ void ns_lifespan_experiment_set::compute_device_normalization_regression(const n
 		//calculate the mean of all control plates on the device
 		ns_aggregate_statistics(device_control_stats->second,regression_stats_device->second.device_control_plate_statistics);
 		
-		ns_mean_statistics & device_mean_stats((tail_strategy == ns_exclude_tails)?regression_stats_device->second.device_control_plate_statistics.mean_excluding_tails
-															:regression_stats_device->second.device_control_plate_statistics.mean);
-		ns_mean_statistics & grand_mean_stats((tail_strategy == ns_exclude_tails)?regression_statistics_set.grand_control_mean.mean_excluding_tails
-															:regression_statistics_set.grand_control_mean.mean);
+		ns_mean_statistics & device_mean_stats(regression_stats_device->second.device_control_plate_statistics.mean);
+		ns_mean_statistics & grand_mean_stats(regression_statistics_set.grand_control_mean.mean);
 		const double device_mean((censoring_strategy == ns_include_censoring_data)?device_mean_stats.mean_survival_including_censoring:
 													device_mean_stats.mean_excluding_censoring());
 		const double grand_mean((censoring_strategy == ns_include_censoring_data)?grand_mean_stats.mean_survival_including_censoring:
@@ -2353,10 +2258,8 @@ void ns_lifespan_experiment_set::compute_device_normalization_regression(const n
 			regression_stats_device_strain->second.grand_strain_mean = regression_statistics_set.grand_strain_mean[device_strain->first];
 			regression_stats_device_strain->second.strain_info = strain_metadata[device_strain->first];
 			
-			ns_mean_statistics & device_mean_stats((tail_strategy == ns_exclude_tails)?regression_stats_device_strain->second.device_strain_mean.mean_excluding_tails
-																							:regression_stats_device_strain->second.device_strain_mean.mean);
-			ns_mean_statistics & grand_mean_stats((tail_strategy == ns_exclude_tails)?regression_stats_device_strain->second.grand_strain_mean.mean_excluding_tails
-																						:regression_stats_device_strain->second.grand_strain_mean.mean);
+			ns_mean_statistics & device_mean_stats(regression_stats_device_strain->second.device_strain_mean.mean);
+			ns_mean_statistics & grand_mean_stats(regression_stats_device_strain->second.grand_strain_mean.mean);
 			const double device_mean((censoring_strategy == ns_include_censoring_data)?device_mean_stats.mean_survival_including_censoring:
 													   device_mean_stats.mean_excluding_censoring());
 			regression_stats_device_strain->second.device_strain_mean_used = device_mean;
@@ -2420,70 +2323,3 @@ void ns_lifespan_experiment_set::compute_device_normalization_regression(const n
 		regression_statistics_set.control_group_plate_list[curves[i]->metadata.region_id].plate_id = curves[i]->metadata.region_id;
 	}
 }
-/*
-void ns_survival_data_summary_aggregator::add(const ns_movement_event normalization_type, const ns_survival_data_summary & summary){
-	ns_plate_list::iterator p(plate_list.find(summary.metadata.plate_name()));
-	if (p == plate_list.end())
-		p = plate_list.insert(ns_plate_list::value_type(summary.metadata.plate_name(),ns_plate_normalization_list())).first;
-	ns_plate_normalization_list::iterator q = p->second.find(normalization_type);
-	if (q!= p->second.end())
-		throw ns_ex("Duplicate specificaiton of region ") << summary.metadata.plate_name() << " with normalization " << ns_movement_event_to_label(normalization_type);
-	p->second.insert(ns_plate_normalization_list::value_type(normalization_type,summary));
-}
-
-void ns_survival_data_summary_aggregator::add(const ns_movement_event normalization_type,const ns_lifespan_experiment_set & set){
-	for (unsigned int i = 0; i < set.curves.size(); i++)
-		add(normalization_type,set.curves[i]->produce_summary());
-}
-
-std::vector<ns_movement_event> ns_survival_data_summary_aggregator::events_to_output;
-ns_survival_data_summary_aggregator::ns_survival_data_summary_aggregator(){
-	if (events_to_output.empty()){
-		events_to_output.push_back(ns_no_movement_event);
-		events_to_output.push_back(ns_movement_cessation);
-		events_to_output.push_back(ns_translation_cessation);
-		events_to_output.push_back(ns_fast_movement_cessation);
-	}
-}
-
-void ns_survival_data_summary_aggregator::out_JMP_summary_data_header(std::ostream & o, const std::string & terminator) {
-	for (unsigned int i = 0; i < events_to_output.size(); i++){
-		std::string terminator((i != events_to_output.size()-1)?",":terminator);
-		ns_survival_data_summary::out_jmp_header(std::string("Normalized to ") +ns_movement_event_to_string(events_to_output[i]),o,terminator);
-	}
-}
-
-void ns_survival_data_summary_aggregator::out_JMP_summary_data(const ns_plate_list::const_iterator & region,std::ostream & o)const{
-	for (unsigned int i = 0; i < events_to_output.size(); i++){
-		std::string terminator((i != events_to_output.size()-1)?",":"");
-		ns_plate_normalization_list::const_iterator q(region->second.find(events_to_output[i]));
-		if (q == region->second.end()){
-			ns_survival_data_summary::out_blank_jmp_data(o,terminator);
-		}
-		else{
-			q->second.out_jmp_data(o,terminator);
-		}
-	}
-}
-void ns_survival_data_summary_aggregator::out_JMP_empty_summary_data(std::ostream & o){
-	for (unsigned int i = 0; i < events_to_output.size(); i++){
-		std::string terminator((i != events_to_output.size()-1)?",":"");
-		ns_survival_data_summary::out_blank_jmp_data(o,terminator);
-	}
-}
-void ns_survival_data_summary_aggregator::out_JMP_summary_file(std::ostream & o) const {
-
-	ns_region_metadata::out_JMP_plate_identity_header(o);
-	o<<",";
-	out_JMP_summary_data_header(o,"\n");
-
-	for (ns_plate_list::const_iterator p(plate_list.begin()); p != plate_list.end(); p++){
-		if (events_to_output.size() == 0) continue;
-		p->second.begin()->second.metadata.out_JMP_plate_identity_data(o) ;
-		o<< ",";
-		out_JMP_summary_data(p,o);
-		o << "\n";
-	}
-}
-
-*/

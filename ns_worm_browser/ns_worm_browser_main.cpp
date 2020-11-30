@@ -4172,7 +4172,7 @@ void ns_run_startup_routines() {
 				by_hand_annotations.load_region_annotations(ns_death_time_annotation_set::ns_censoring_and_movement_transitions, region_id, sql());
 				survival_curve_compiler.add(by_hand_annotations.annotations, ns_death_time_annotation_compiler::ns_do_not_create_regions);
 				ns_lifespan_experiment_set survival_curves;
-				survival_curve_compiler.generate_survival_curve_set(survival_curves, ns_death_time_annotation::ns_only_machine_annotations, false, false);
+				survival_curve_compiler.generate_survival_curve_set(survival_curves, ns_death_time_annotation::ns_only_machine_annotations, false, false, sql());
 				cout << survival_curves.size();
 				survival_curves.generate_survival_statistics();
 				std::ofstream tmp("tmp2.csv");

@@ -276,12 +276,10 @@ struct ns_mean_statistics{
 struct ns_survival_statistics{
 	ns_survival_statistics():number_of_plates(0){}
 	ns_mean_statistics mean;
-	ns_mean_statistics mean_excluding_tails;
 	unsigned long number_of_plates;
 	void clear(){
 		number_of_plates = 0;
 		mean.clear();
-		mean_excluding_tails.clear();
 	}
 };
 struct ns_multi_event_survival_statistics{
@@ -311,11 +309,9 @@ struct ns_survival_data_with_censoring_timeseries{
 	void calculate_risks_and_cumulatives();
 };
 struct ns_survival_data_with_censoring{
-	ns_survival_data_with_censoring_timeseries data,
-											   data_excluding_tails;
+	ns_survival_data_with_censoring_timeseries data;
 	void calculate_risks_and_cumulatives(){
 		data.calculate_risks_and_cumulatives();
-		data_excluding_tails.calculate_risks_and_cumulatives();
 	}
 };	
 struct ns_multi_event_survival_data_with_censoring{
@@ -352,7 +348,7 @@ private:
 		//generate_risk_timeseries(ns_translation_cessation,risk_timeseries.local_movement_cessations);
 		generate_risk_timeseries(ns_fast_movement_cessation2,risk_timeseries.fast_movement_cessation);
 		generate_risk_timeseries(ns_death_associated_expansion_start, risk_timeseries.death_associated_expansion_start);
-		generate_risk_timeseries(ns_death_associated_expansion_start, risk_timeseries.death_associated_expansion_start);
+		//generate_risk_timeseries(ns_death_associated_expansion_start, risk_timeseries.death_associated_expansion_start);
 		//special case using ns_additional_worm_entry as a special flag to indicate choosing the best guess death time
 		generate_risk_timeseries(ns_additional_worm_entry, risk_timeseries.best_guess_death);
 	}
@@ -483,8 +479,8 @@ struct ns_lifespan_device_normalization_statistics_set{
 				//1
 				<< strain->second.device_strain_mean.mean.number_of_deaths << ","
 				<< strain->second.device_strain_mean.mean.number_censored << ","
-				<< strain->second.device_strain_mean.mean_excluding_tails.number_of_deaths << ","
-				<< strain->second.device_strain_mean.mean_excluding_tails.number_censored << ",";
+				<<  ","
+				<< ",";
 				//2
 				if (strain->second.device_strain_mean.mean.number_of_deaths == 0)
 					o << ",,,";
@@ -495,14 +491,8 @@ struct ns_lifespan_device_normalization_statistics_set{
 				}
 				//3
 				
-				if (strain->second.device_strain_mean.mean_excluding_tails.number_of_deaths == 0)
-					o << ",,,";
-				else {
-					o
-					<< strain->second.device_strain_mean.mean_excluding_tails.mean_survival_including_censoring/time_scale_factor << ","
-					<< strain->second.device_strain_mean.mean_excluding_tails.mean_survival_including_censoring_computed_with_log/time_scale_factor << ","
-					<< strain->second.device_strain_mean.mean_excluding_tails.mean_excluding_censoring()/time_scale_factor << ",";
-				}
+				o << ",,,";
+				
 				//4
 				o << strain->second.device_strain_mean_used<< "," 
 				<< strain->second.device_death_count_used << ","
@@ -557,7 +547,7 @@ public:
 		
 	typedef enum {ns_seconds,ns_minutes,ns_hours,ns_days} ns_time_units;
 	
-	typedef enum {ns_include_tails,ns_exclude_tails} ns_tail_strategy;
+	typedef enum {ns_include_tails} ns_tail_strategy;
 	typedef enum {ns_include_censoring_data,ns_ignore_censoring_data} ns_censoring_strategy;
 
 	typedef enum {ns_simple,ns_simple_with_control_groups,ns_detailed_compact,ns_detailed_with_censoring_repeats,ns_multiple_events} ns_output_file_type;
@@ -566,7 +556,12 @@ public:
 
 	typedef enum {ns_do_not_include_control_groups,ns_include_control_groups} ns_control_group_behavior;
 
-	void generate_aggregate_risk_timeseries(const ns_region_metadata & m, bool filter_by_strain, const std::string& specific_device, const ns_64_bit& specific_region_id, ns_survival_data_with_censoring& best_guess_survival, ns_survival_data_with_censoring& movement_based_survival, ns_survival_data_with_censoring& death_associated_expansion_survival, std::vector<unsigned long> & t, bool use_external_time) const;
+	void generate_aggregate_risk_timeseries(const ns_region_metadata & m, bool filter_by_strain, const std::string& specific_device, const ns_64_bit& specific_region_id,
+		ns_survival_data_with_censoring& best_guess_survival, 
+		ns_survival_data_with_censoring& movement_based_survival, 
+		ns_survival_data_with_censoring& death_associated_expansion_survival,
+		ns_survival_data_with_censoring& fast_movement_cessation_survival,
+		std::vector<unsigned long> & t, bool use_external_time) const;
 
 	static void out_detailed_JMP_header(const ns_time_handing_behavior & time_handling_behavior, std::ostream & o, const std::string & time_units,const std::string & terminator="\n");
 	static void out_detailed_JMP_event_data(const ns_time_handing_behavior & time_handling_behavior,std::ostream & o, const ns_lifespan_device_normalization_statistics * regression_stats,const ns_region_metadata & metadata,const ns_metadata_worm_properties & prop,const double time_scaling_factor,const std::string & terminator="\n", const bool output_raw_data_as_regression=false,const bool output_full_censoring_detail=false);
@@ -596,7 +591,7 @@ public:
 
 	void force_common_time_set_to_constant_time_interval(const unsigned long interval_time_in_seconds,ns_lifespan_experiment_set & new_set) const;
 	
-	void compute_device_normalization_regression(const ns_device_temperature_normalization_data & data, const ns_censoring_strategy & s, const ns_tail_strategy & t);
+	void compute_device_normalization_regression(const ns_device_temperature_normalization_data & data, const ns_censoring_strategy & s);
 	
 	void group_strains(ns_lifespan_experiment_set & new_set) const;
 
@@ -625,7 +620,7 @@ private:
 
 	std::vector<ns_survival_data*> curves;
 
-	void compute_device_normalization_regression(const ns_movement_event & event_type, const ns_device_temperature_normalization_data & data, ns_lifespan_device_normalization_statistics_set & set, const ns_censoring_strategy & s, const ns_tail_strategy & t);
+	void compute_device_normalization_regression(const ns_movement_event & event_type, const ns_device_temperature_normalization_data & data, ns_lifespan_device_normalization_statistics_set & set, const ns_censoring_strategy & s);
 	bool curves_on_constant_time_interval;
 	std::vector<unsigned long> common_time_;
 	std::vector<unsigned long> &common_time() {if (common_time_.empty()) throw ns_ex("Not on common time!"); return common_time_;}

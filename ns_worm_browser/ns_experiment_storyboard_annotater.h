@@ -482,7 +482,7 @@ public:
 	}
 	void draw_telemetry();
 	void replot_telemetry() {
-		population_telemetry.update_annotations_and_build_survival(all_events_for_telemetry, strain_to_display);
+		population_telemetry.update_annotations_and_build_survival(all_events_for_telemetry, strain_to_display,sql());
 		draw_telemetry();
 	}
 	void rebuild_telemetry_with_by_hand_annotations () {

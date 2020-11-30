@@ -1155,7 +1155,7 @@ void ns_worm_learner::generate_survival_curve_from_hand_annotations(const ns_bro
 		//loader.load_region_annotations(ns_death_time_annotation_set::ns_censoring_and_movement_transitions,13899,sql);
 		loader.load_experiment_annotations(ns_death_time_annotation_set::ns_censoring_and_movement_transitions, subject[i].subject.experiment_id, sql);
 		ns_lifespan_experiment_set set;
-		loader.annotations.generate_survival_curve_set(set, ns_death_time_annotation::ns_only_by_hand_annotations, false, false);
+		loader.annotations.generate_survival_curve_set(set, ns_death_time_annotation::ns_only_by_hand_annotations, false, false,sql);
 
 		//ns_device_temperature_normalization_data regression_data;
 		//regression_data.produce_identity();
@@ -1374,10 +1374,10 @@ struct ns_death_time_annotation_compiler_multiworm_simulation{
 	ns_death_time_annotation_compiler minimums,
 									  means,
 									  maximums;
-	void generate_survival(ns_lifespan_experiment_set_multiworm_simulation & s){
-		minimums.generate_survival_curve_set(s.minimums,ns_death_time_annotation::ns_machine_annotations_if_no_by_hand,false,false);
-		maximums.generate_survival_curve_set(s.maximums,ns_death_time_annotation::ns_machine_annotations_if_no_by_hand,false,false);
-		means.generate_survival_curve_set(s.means,ns_death_time_annotation::ns_machine_annotations_if_no_by_hand,false,false);
+	void generate_survival(ns_lifespan_experiment_set_multiworm_simulation & s,ns_sql & sql){
+		minimums.generate_survival_curve_set(s.minimums,ns_death_time_annotation::ns_machine_annotations_if_no_by_hand,false,false,sql);
+		maximums.generate_survival_curve_set(s.maximums,ns_death_time_annotation::ns_machine_annotations_if_no_by_hand,false,false, sql);
+		means.generate_survival_curve_set(s.means,ns_death_time_annotation::ns_machine_annotations_if_no_by_hand,false,false, sql);
 	}
 	void clear(){
 		maximums.clear();
@@ -1560,10 +1560,10 @@ void ns_worm_learner::simulate_multiple_worm_clumps(const ns_browser_command_sub
 			threes,
 			four_pluses;
 
-		single_worms.generate_survival_curve_set(singles, ns_death_time_annotation::ns_machine_annotations_if_no_by_hand, false, false);
-		two_worms.generate_survival_curve_set(twos, ns_death_time_annotation::ns_machine_annotations_if_no_by_hand, false, false);
-		three_worms.generate_survival_curve_set(threes, ns_death_time_annotation::ns_machine_annotations_if_no_by_hand, false, false);
-		four_plus_worms.generate_survival_curve_set(four_pluses, ns_death_time_annotation::ns_machine_annotations_if_no_by_hand, false, false);
+		single_worms.generate_survival_curve_set(singles, ns_death_time_annotation::ns_machine_annotations_if_no_by_hand, false, false, sql);
+		two_worms.generate_survival_curve_set(twos, ns_death_time_annotation::ns_machine_annotations_if_no_by_hand, false, false, sql);
+		three_worms.generate_survival_curve_set(threes, ns_death_time_annotation::ns_machine_annotations_if_no_by_hand, false, false, sql);
+		four_plus_worms.generate_survival_curve_set(four_pluses, ns_death_time_annotation::ns_machine_annotations_if_no_by_hand, false, false, sql);
 		for (unsigned int i = 0; i < singles.size(); i++) {
 			singles.curve(i).metadata.analysis_type = "1 Worm Clusters";
 			singles.curve(i).metadata.technique = "Measured";
@@ -1613,7 +1613,7 @@ void ns_worm_learner::simulate_multiple_worm_clumps(const ns_browser_command_sub
 					else simulated_single_worms.minimums.add(a, d1.second);
 				}
 
-				simulated_single_worms.generate_survival(simulated_singles);
+				simulated_single_worms.generate_survival(simulated_singles, sql);
 				simulated_singles.specify_analysis_type_and_technique("1 Worm Clusters");
 				simulated_singles.output_JMP_file(ns_lifespan_experiment_set::ns_output_event_intervals, ns_lifespan_experiment_set::ns_days, o()(), ns_lifespan_experiment_set::ns_detailed_compact, false);
 				simulated_single_worms.clear();
@@ -1687,7 +1687,7 @@ void ns_worm_learner::simulate_multiple_worm_clumps(const ns_browser_command_sub
 					*/
 				}
 
-				simulated_double_worms.generate_survival(simulated_doubles);
+				simulated_double_worms.generate_survival(simulated_doubles, sql);
 				simulated_doubles.specify_analysis_type_and_technique("2 Worm Clusters");
 				simulated_doubles.output_JMP_file(ns_lifespan_experiment_set::ns_output_event_intervals, ns_lifespan_experiment_set::ns_days, o()(), ns_lifespan_experiment_set::ns_detailed_compact, false);
 				simulated_double_worms.clear();
@@ -1807,7 +1807,7 @@ void ns_worm_learner::simulate_multiple_worm_clumps(const ns_browser_command_sub
 					simulated_triple_worms.minimums.add(mmin_a, mmin->second);
 					simulated_triple_worms.means.add(mmean_a, d1.second);
 				}
-				simulated_triple_worms.generate_survival(simulated_triples);
+				simulated_triple_worms.generate_survival(simulated_triples, sql);
 				simulated_triples.specify_analysis_type_and_technique("3 Worm Clusters");
 				simulated_triples.output_JMP_file(ns_lifespan_experiment_set::ns_output_event_intervals, ns_lifespan_experiment_set::ns_days, o()(), ns_lifespan_experiment_set::ns_detailed_compact, false);
 				simulated_triple_worms.clear();
@@ -4699,8 +4699,8 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(const ns_bro
 				ns_lifespan_experiment_set machine_set, machine_hand_set;
 				cerr << "\n";
 				cerr << "Generating Survival Curve Set...\n";
-				survival_curve_compiler.generate_survival_curve_set(machine_set, ns_death_time_annotation::ns_only_machine_annotations, false, false);
-				survival_curve_compiler.generate_survival_curve_set(machine_hand_set, ns_death_time_annotation::ns_machine_annotations_if_no_by_hand, false, false);
+				survival_curve_compiler.generate_survival_curve_set(machine_set, ns_death_time_annotation::ns_only_machine_annotations, false, false, sql);
+				survival_curve_compiler.generate_survival_curve_set(machine_hand_set, ns_death_time_annotation::ns_machine_annotations_if_no_by_hand, false, false, sql);
 
 				//don't use death times annotated by hand but missing a corresponding machine-detected event.  
 				//This is done to exclude by hand annotations that correspond to events identified in previous anaysis of the plate but not in the most recent one.

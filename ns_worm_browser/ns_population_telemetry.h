@@ -16,10 +16,12 @@ struct ns_outlier_search_data {
 		alive_but_not_moving_duration;
 	bool by_hand_annotation_exists;
 	bool is_an_outlier;
-	ns_outlier_search_data(const ns_dying_animal_description_base<const ns_death_time_annotation>& source_data) {
+	ns_outlier_search_data(const ns_dying_animal_description_base<const ns_death_time_annotation>& source_data, int number_of_by_hand_specified_worms_at_position) {
 		const ns_death_time_annotation* d =
 			ns_dying_animal_description_group<const ns_death_time_annotation>::calculate_best_guess_death_annotation(source_data.by_hand.movement_based_death_annotation, source_data.by_hand.death_associated_expansion_start);
-		by_hand_annotation_exists = d != 0 && !d->time.fully_unbounded();
+		by_hand_annotation_exists = d != 0 && !d->time.fully_unbounded() ||
+			source_data.by_hand.last_fast_movement_annotation != 0 && !source_data.by_hand.last_fast_movement_annotation->time.fully_unbounded() ||
+			number_of_by_hand_specified_worms_at_position != 1;
 
 		if (source_data.machine.last_fast_movement_annotation == 0 || 
 			source_data.machine.movement_based_death_annotation == 0) {
@@ -139,8 +141,27 @@ public:
 	typedef enum { ns_group_by_device, ns_group_by_strain, ns_aggregate_all, ns_group_by_death_type, ns_survival_grouping_num} ns_survival_grouping;
 	typedef enum { ns_plot_death_times_absolute, ns_plot_death_times_residual,ns_movement_plot_num } ns_movement_plot_type;
 	typedef enum { ns_plot_best_guess, ns_plot_expansion_death, ns_plot_movement_death, ns_plot_fast_movement_death,ns_death_plot_num } ns_death_plot_type;
-	typedef enum { ns_death_vs_observation_duration,ns_plot_death_types, ns_by_hand_machine,ns_regression_type_num } ns_regression_type;
-	
+	typedef enum { ns_death_vs_observation_duration,ns_vigorous_vs_death, ns_movement_vs_expansion, ns_by_hand_machine,ns_regression_type_num } ns_regression_type;
+	typedef enum {ns_plot_all,ns_plot_by_hand,ns_plot_machine,ns_plot_by_hand_num} ns_plot_by_hand_type;
+	static std::string plot_by_hand_label(const ns_plot_by_hand_type& g) {
+		switch (g) {
+		case ns_plot_all:
+			return "Show all";
+		case ns_plot_by_hand:
+			return "Show only by-hand annotated";
+		case ns_plot_machine:
+			return "Show only un-annotated";
+		default: throw ns_ex("Unknown grouping type");
+		}
+	}
+	static ns_plot_by_hand_type ns_plot_by_hand_type_from_label(const std::string& s) {
+		for (unsigned int i = 0; i < (int)ns_survival_grouping_num; i++) {
+			if (s == plot_by_hand_label((ns_plot_by_hand_type)i))
+				return (ns_plot_by_hand_type)i;
+		}
+		throw ns_ex("Unknown grouping type:") << s;
+	}
+
 	static std::string survival_grouping_name(const ns_survival_grouping& g) {
 		switch (g) {
 		case ns_group_by_strain:
@@ -190,8 +211,10 @@ public:
 		}
 	}static std::string regression_type_name(const ns_regression_type& g) {
 		switch (g) {
-		case ns_plot_death_types:
-			return "Death Types";
+		case ns_vigorous_vs_death:
+			return "Vigorous Movement Cessation vs. Death";
+		case ns_movement_vs_expansion:
+			return "Weak Movement Cessation vs. Expansion";
 		case ns_by_hand_machine:
 			return "By hand vs Machine";
 		case ns_death_vs_observation_duration:
@@ -233,6 +256,7 @@ public:
 	//}
 	ns_vector_2i border() const { return ns_vector_2i(10, 10); }
 	ns_survival_grouping survival_grouping;
+	ns_plot_by_hand_type by_hand_plot;
 	ns_death_plot_type death_plot;
 	ns_movement_plot_type movement_plot;
 	ns_regression_type regression_plot;
@@ -575,7 +599,7 @@ public:
 		return res;
 	}
 
-	ns_population_telemetry() :_show(false), plot_death_time_expansion_(true),last_graph_contents(ns_none), movement_plot(ns_plot_death_times_absolute),survival_grouping((ns_survival_grouping)0),unity_line(ns_graph_object::ns_graph_dependant_variable),undefined_x_line(ns_graph_object::ns_graph_dependant_variable),undefined_y_line(ns_graph_object::ns_graph_dependant_variable) {
+	ns_population_telemetry() :_show(false), by_hand_plot(ns_plot_all),plot_death_time_expansion_(true),last_graph_contents(ns_none), movement_plot(ns_plot_death_times_absolute),survival_grouping((ns_survival_grouping)0),unity_line(ns_graph_object::ns_graph_dependant_variable),undefined_x_line(ns_graph_object::ns_graph_dependant_variable),undefined_y_line(ns_graph_object::ns_graph_dependant_variable) {
 		survival_image.init(ns_image_properties(0, 0, 3));
 		movement_vs_posture_image.init(ns_image_properties(0, 0, 3));
 	}
@@ -712,9 +736,9 @@ public:
 			survival_curves.resize(number_of_survival_curve_types);
 			survival_curves[0].name = "Best Estimate";
 			survival_curves[0].color = ns_color_8(0, 0, 0);
-			survival_curves[1].name = "Fast Movement Cessation";
+			survival_curves[1].name = "Vigorous Movement Cessation";
 			survival_curves[1].color = ns_color_8(0, 255, 0);
-			survival_curves[2].name = "Movement Cessation";
+			survival_curves[2].name = "Weak Movement Cessation";
 			survival_curves[2].color = ns_color_8(255, 0, 0);
 			survival_curves[3].name = "Death-Associated Expansion";
 			survival_curves[3].color = ns_color_8(0, 0, 255);
@@ -1000,8 +1024,18 @@ public:
 
 				//each location can have multiple worms in a group.  We plot each individually, keeping track of the annotations that mark the x and y position of each point.
 				for (unsigned int i = 0; i < set.descriptions.size(); i++) {
-					pair_to_plot.outlier_data = ns_outlier_search_data(set.descriptions[i]);
-					if (regression_plot == ns_plot_death_types) {
+					pair_to_plot.outlier_data = ns_outlier_search_data(set.descriptions[i],l->properties.number_of_worms()); 
+					if (regression_plot == ns_vigorous_vs_death) {
+						movement_vs_posture_x_axis_label = "Vigorous Movement Cessation Time (days)";
+						movement_vs_posture_y_axis_label = "Death Time (days)";
+						if (set.descriptions[i].by_hand.best_guess_death_annotation != 0)
+							pair_to_plot.second = set.descriptions[i].by_hand.best_guess_death_annotation;
+						else pair_to_plot.second = set.descriptions[i].machine.best_guess_death_annotation;
+						if (set.descriptions[i].by_hand.last_fast_movement_annotation != 0)
+							pair_to_plot.first = set.descriptions[i].by_hand.last_fast_movement_annotation;
+						else pair_to_plot.first = set.descriptions[i].machine.last_fast_movement_annotation;
+					}
+					if (regression_plot == ns_movement_vs_expansion) {
 						movement_vs_posture_x_axis_label = "Movement Cessation Time (days)";
 						movement_vs_posture_y_axis_label = "Death-Associated Expansion Time (days)";
 						movement_vs_posture_note = "(Only individuals with both types of deaths are shown)";
@@ -1224,13 +1258,20 @@ public:
 					p->second[j].x_raw = (undefined_x_position)*rnd_dist(rng) + metadata.time_at_which_animals_had_zero_age;  //add jitter
 				}
 				std::vector<ns_survival_graph>* graph_to_add(&movement_vs_posture_vals_fully_specified);
-				if (p->second[j].outlier_data.by_hand_annotation_exists)
-					graph_to_add = &movement_vs_posture_vals_by_hand_annotated;
+				if (p->second[j].outlier_data.by_hand_annotation_exists) {
+					if (this->by_hand_plot == ns_plot_machine)
+						graph_to_add = 0;
+					else
+						graph_to_add = &movement_vs_posture_vals_by_hand_annotated;
+				}
+				else if (this->by_hand_plot == ns_plot_by_hand)
+					graph_to_add = 0;
 				else if (!fully_specified)
 					graph_to_add = &movement_vs_posture_vals_not_fully_specified;
 				else if (p->second[j].outlier_data.is_an_outlier)
 					graph_to_add = &movement_vs_posture_vals_outliers;
-
+				if (graph_to_add == 0)
+					continue;
 				if (movement_plot == ns_plot_death_times_residual || regression_plot == ns_death_vs_observation_duration)
 					(*graph_to_add)[p->first].vals.y.push_back(p->second[j].y_raw / 60.0 / 60.0 / 24);
 

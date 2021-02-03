@@ -7948,7 +7948,7 @@ bool ns_worm_learner::start_death_time_annotation(const ns_behavior_mode m, cons
 				if (analysis_handle.is_valid()) {
 					if (analysis_handle().model_specification.posture_analysis_method == ns_posture_analysis_model::ns_threshold)
 						storyboard_annotater.population_telemetry.regression_plot = ns_population_telemetry::ns_death_vs_observation_duration;
-					else storyboard_annotater.population_telemetry.regression_plot = ns_population_telemetry::ns_plot_death_types;
+					else storyboard_annotater.population_telemetry.regression_plot = ns_population_telemetry::ns_movement_vs_expansion;
 					analysis_handle.release();
 				}
 				else storyboard_annotater.population_telemetry.regression_plot = ns_population_telemetry::ns_death_vs_observation_duration;

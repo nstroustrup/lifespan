@@ -791,8 +791,7 @@ void ns_lifespan_experiment_set::out_simple_JMP_header(const ns_time_handing_beh
 			"Age at Final Movement (" << time_units << "),"
 			"Age at Death-Associated Expansion (" << time_units << "),"
 			"Age at Final Quick Movement (" << time_units << "),"
-			"Age at First Plate Observation (" << time_units << "),"
-			"Longest Gap in Measurement (" << time_units << "),";
+			"Age at First Plate Observation (" << time_units << "),";
 	}
 	else{
 		o <<
@@ -802,14 +801,13 @@ void ns_lifespan_experiment_set::out_simple_JMP_header(const ns_time_handing_beh
 			"Age at Final Movement(" << time_units << ") End,"
 			"Age at Death-Associated Expansion (" << time_units << ") Start,"
 			"Age at Death-Associated Expansion (" << time_units << ") End,"
-			"Age at Final Quick Movement (" << time_units << ") Start"
-			"Age at Final Quick Movement (" << time_units << ") End"
-			"Age at First Plate Observation (" << time_units << ") Start"
-			"Age at First Plate Observation (" << time_units << ") End"
-			"Longest Gap in Measurement (" << time_units << "),";
+			"Age at Final Quick Movement (" << time_units << ") Start,"
+			"Age at Final Quick Movement (" << time_units << ") End,"
+			"Age at First Plate Observation (" << time_units << ") Start,"
+			"Age at First Plate Observation (" << time_units << ") End,";
 	}
 		// "Age at Death (" << time_units << ") Multiplicative + Additive offset Regression Model Residuals,"
-	o << "Censored,Censored Reason,Event Observation Type,Death Annotation Source,Event Sources,Technique,Analysis Type";
+	o << "Censored,Censored Reason, Event Observation Type,Death Annotation Source,Event Sources,Technique,Analysis Type";
 	if (multiple_events)
 		o << ",Event Type";
 	o << ", Special Flag";
@@ -942,14 +940,13 @@ void ns_lifespan_experiment_set::out_simple_JMP_event_data(const ns_time_handing
 		//else
 		//	cerr << "No data provided for fast movement cessation.";
 		o << ",";
-		o << a.longest_gap_without_observation/time_scaling_factor << ",";	
+		//o << a.longest_gap_without_observation/time_scaling_factor << ",";	
 			
 			
 		o << (properties.is_censored()?"1":"0") << ",";
 		if (properties.is_censored())
 			o << properties.censor_description();
-		o << "," 
-			<< ns_death_time_annotation::event_observation_label(a.event_observation_type) << ","
+		o << "," << ns_death_time_annotation::event_observation_label(a.event_observation_type) << ","
 			<< a.source_type_to_string(a.annotation_source) << ","
 			<< a.source_type_to_letter(a.volatile_time_at_quick_movement_stop_source) << a.source_type_to_letter(a.annotation_source) << a.source_type_to_letter(a.volatile_time_at_death_associated_expansion_start_source) << ","
 			<< metadata.technique << ","

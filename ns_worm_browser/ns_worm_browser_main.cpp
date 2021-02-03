@@ -1856,6 +1856,34 @@ public:
 
 };
 
+class ns_stats_by_hand_plotting_menu_organizer : public ns_menu_organizer {
+	static void select_spec(const ns_browser_command_subject_set& subject, const std::string& s) {
+		ns_set_menu_bar_activity(false);
+		worm_learner.storyboard_annotater.population_telemetry.by_hand_plot = ns_population_telemetry::ns_plot_by_hand_type_from_label(s);
+		::update_stats_menus();
+		worm_learner.storyboard_annotater.replot_telemetry();
+		report_changes_made_to_screen();
+		ns_set_menu_bar_activity(true);
+	}
+public:
+	ns_stats_by_hand_plotting_menu_organizer() {
+		update_menus();
+	}
+	void update_choice(Fl_Menu_Bar& bar) {
+		bar.menu(NULL);
+		clear();
+		update_menus();
+		build_menus(bar);
+		bar.redraw();
+	}
+	void update_menus() {
+		ns_menu_item_spec spec(true, select_spec, "By Hand Annotations");
+		for (unsigned int i = 0; i < (int)ns_population_telemetry::ns_plot_by_hand_num; i++)
+			spec.options.push_back(ns_menu_item_options(ns_population_telemetry::plot_by_hand_label((ns_population_telemetry::ns_plot_by_hand_type)i)));
+	
+		add(spec);
+	}
+};
 class ns_stats_survival_grouping_menu_organizer : public ns_menu_organizer {
 	static void select_spec(const ns_browser_command_subject_set& subject, const std::string& s) {
 		ns_set_menu_bar_activity(false);
@@ -3050,11 +3078,12 @@ public:
 	ns_stats_survival_grouping_menu_organizer survival_grouping_menu_organizer;
 	ns_movement_graph_plotting_menu_organizer movement_graph_organizer;
 	ns_death_types_plotting_menu_organizer death_type_organizer;
+	ns_stats_by_hand_plotting_menu_organizer by_hand_organizer;
 	ns_stats_region_selector* region_menu_handler;
 	ns_stats_strain_menu_organizer* strain_menu_handler;
 	Fl_Output* info_bar;
 
-	Fl_Menu_Bar* region_menu, * strain_menu, * survival_grouping_menu, * movement_graph_menu, * death_type_menu;
+	Fl_Menu_Bar* region_menu, * strain_menu, * survival_grouping_menu, * movement_graph_menu, * death_type_menu, * by_hand_menu;
 
 	static unsigned long info_bar_height() { return 18; }
 
@@ -3070,10 +3099,11 @@ public:
 		delete survival_grouping_menu;
 		delete movement_graph_menu;
 		delete death_type_menu;
+		delete by_hand_menu;
 
 		delete annotation_group;
 	}
-	enum{survival_groupind_width = 120, movement_graph_organizer_width=120,death_type_width=100};
+	enum{survival_groupind_width = 120, movement_graph_organizer_width=120,death_type_width=100,by_hand_width=120};
 	ns_worm_terminal_stats_window(int W, int H, const char* L = 0) : Fl_Window(W, H, L), have_focus(false) {
 		// OpenGL window
 		begin();
@@ -3092,6 +3122,7 @@ public:
 		movement_graph_menu =	 new Fl_Menu_Bar(menu_d * (ns_stats_annotation_group::all_buttons_width()+ survival_groupind_width), worm_learner.stats_window.gl_image_size.y, menu_d * movement_graph_organizer_width, menu_d * ns_death_event_solo_annotation_group::button_height);
 		death_type_menu =		 new Fl_Menu_Bar(menu_d *( ns_stats_annotation_group::all_buttons_width()+ movement_graph_organizer_width + survival_groupind_width), worm_learner.stats_window.gl_image_size.y, menu_d * death_type_width, menu_d * ns_death_event_solo_annotation_group::button_height);
 
+
 		survival_grouping_menu_organizer.build_menus(*survival_grouping_menu);
 		movement_graph_organizer.build_menus(*movement_graph_menu);
 		death_type_organizer.build_menus(*death_type_menu);
@@ -3107,15 +3138,17 @@ public:
 		
 		strain_menu_handler = new ns_stats_strain_menu_organizer(worm_learner.statistics_data_gui_selector);
 		strain_menu_handler->update_strain_choice(*strain_menu);
-		
-		Fl_Menu_Bar* all_menus[5] = { survival_grouping_menu ,movement_graph_menu,death_type_menu,region_menu,strain_menu };
-		for (unsigned int i = 0; i < 5; i++) {
+		by_hand_menu = new Fl_Menu_Bar(menu_d * (region_button_offset + region_name_bar_width()+ strain_bar_width()), worm_learner.stats_window.gl_image_size.y, menu_d * by_hand_width, menu_d * info_bar_height());
+		by_hand_organizer.build_menus(*by_hand_menu);
+
+		Fl_Menu_Bar* all_menus[6] = { survival_grouping_menu ,movement_graph_menu,death_type_menu,region_menu,strain_menu,by_hand_menu };
+		for (unsigned int i = 0; i < 6; i++) {
 			all_menus[i]->textsize((all_menus[i]->textsize() - 4));
 			all_menus[i]->textfont(FL_HELVETICA);
 		}
 
 
-		const int info_bar_x(menu_d * (ns_stats_annotation_group::all_buttons_width() + region_name_bar_width() + strain_bar_width()));
+		const int info_bar_x(menu_d * (ns_stats_annotation_group::all_buttons_width() + region_name_bar_width() + strain_bar_width()+by_hand_width));
 		info_bar = new Fl_Output(info_bar_x, worm_learner.stats_window.gl_image_size.y, W - info_bar_x, menu_d * info_bar_height());
 		info_bar->value("");
 		//	info_bar->textsize(experiment_name_bar->textsize());
@@ -3137,6 +3170,7 @@ public:
 		survival_grouping_menu_organizer.update_choice(*survival_grouping_menu);
 		movement_graph_organizer.update_choice(*movement_graph_menu);
 		death_type_organizer.update_choice(*death_type_menu);
+		by_hand_organizer.update_choice(*by_hand_menu);
 	}
 
 	static ns_vector_2i image_window_size_difference(const float menu_d) {
@@ -3209,7 +3243,8 @@ public:
 
 		region_menu->resize(region_pos, bar_y, region_name_bar_width() * menu_d, bar_h);
 		strain_menu->resize(region_pos + region_name_bar_width() * menu_d, bar_y, strain_bar_width() * menu_d, bar_h);
-		int info_bar_x(region_pos+( region_name_bar_width() + strain_bar_width()) * menu_d);
+		by_hand_menu->resize(region_pos + (region_name_bar_width()+ strain_bar_width()) * menu_d, bar_y, by_hand_width * menu_d, bar_h);
+		int info_bar_x(region_pos+( region_name_bar_width() + strain_bar_width() + by_hand_width) * menu_d);
 		info_bar->resize(info_bar_x, bar_y, window_size.x-info_bar_x, bar_h);
 		//	lock.release();
 	}

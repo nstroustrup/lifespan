@@ -11,14 +11,25 @@ string run_dmtx_decode(DmtxImage *image){
 
 	//SetOptionDefaults(&options);
 	decode = dmtxDecodeCreate(image,1);
+	if (decode == 0) {
+		std::cerr << "run_dmtx_decode()::dmtxDecodeCreate failed\n";
+		return "";
+	}
 
     DmtxRegion * region(dmtxRegionFindNext(decode, NULL));
-    if(region == NULL)
-		return "";//throw ns_ex("No barcode found");
+	if (region == NULL) {
+		std::cerr << "run_dmtx_decode()::dmtxRegionFindNext failed\n";
+		dmtxDecodeDestroy(&decode);
+		return "";
+	}
 
 	DmtxMessage *message(dmtxDecodeMatrixRegion(decode, region, 1));
-	if (message == 0)
-		return "";//throw ns_ex("Barcode did not encode any information");
+	if (message == 0) {
+		std::cerr << "run_dmtx_decode()::dmtxDecodeMatrixRegion failed\n";
+		dmtxRegionDestroy(&region);
+		dmtxDecodeDestroy(&decode);
+		return "";
+	}
 	string res;
 	for (unsigned int i = 0; message->output[i] != 0; i++)
 		res.push_back(message->output[i]);

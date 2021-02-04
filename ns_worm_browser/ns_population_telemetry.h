@@ -736,9 +736,9 @@ public:
 			survival_curves.resize(number_of_survival_curve_types);
 			survival_curves[0].name = "Best Estimate";
 			survival_curves[0].color = ns_color_8(0, 0, 0);
-			survival_curves[1].name = "Vigorous Movement Cessation";
+			survival_curves[1].name = "Vigorous Movement";
 			survival_curves[1].color = ns_color_8(0, 255, 0);
-			survival_curves[2].name = "Weak Movement Cessation";
+			survival_curves[2].name = "Weak Movement";
 			survival_curves[2].color = ns_color_8(255, 0, 0);
 			survival_curves[3].name = "Death-Associated Expansion";
 			survival_curves[3].color = ns_color_8(0, 0, 255);

@@ -297,7 +297,8 @@ public:
 						throw ns_ex("Invalid training data: ") << val << ": observations[" << i << "][" << j << "]\n";
 					training_data_buffer[number_of_dimensions *N+d] = val;
 				}
-				N++;
+				if (valid_data_point)
+					N++;
 			}
 		}
 		if (N < number_of_gaussians) {
@@ -316,8 +317,15 @@ public:
 			}
 			sum_of_weights += gmm->Prior(i);
 		}
+		if (!estimation_succeeded || abs(sum_of_weights - 1) > 0.01) {
+			ns_ex ex("GMM estimation returned an abnormal result:");
+			for (unsigned int i = 0; i < number_of_gaussians; i++) 
+				ex << "Weight " << i << ": " << (gmm->Prior(i)) << "; ";
+			ex << "Total weight: " << sum_of_weights;
+			throw ex;
+		}
 		if (!estimation_succeeded) {
-			ogzstream debug_out("c:\\server\\gmm_debug.csv.gz");
+			ogzstream debug_out("gmm_debug.csv.gz");
 			debug_out.precision(10);
 			if (!debug_out.fail()) {
 				debug_out << "d 0";
@@ -332,10 +340,10 @@ public:
 				}
 				debug_out.close();
 			}
+			throw ns_ex("GMM Estimation failed.  Debug file written to gmm_debug.csv.gz");
 		}
 
-		if (!estimation_succeeded || abs(sum_of_weights - 1) > 0.01)
-			throw ns_ex("GMM problem");
+		
 	}
 	//the pdf values are proportional to the probability of observing a range of values within a small dt of an observation.
 	//so as long as we are always comparing observations at the same t, we can multiply these together.

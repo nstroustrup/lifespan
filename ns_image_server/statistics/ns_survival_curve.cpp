@@ -876,6 +876,7 @@ void ns_lifespan_experiment_set::out_simple_JMP_event_data(const ns_time_handing
 			}
 			if (!properties.is_censored() && a.time.period_end_was_not_observed){
 				continue;
+				continue;
 			}
 		}
 	//	double event_time(a.time.best_estimate_event_time_within_interval() - metadata.time_at_which_animals_had_zero_age);
@@ -930,7 +931,7 @@ void ns_lifespan_experiment_set::out_simple_JMP_event_data(const ns_time_handing
 			}
 		}
 		o << ",";
-		if (!a.volatile_time_at_quick_movement_stop.fully_unbounded())
+		if (!a.volatile_time_at_quick_movement_stop.fully_unbounded() && (!a.flag.specified() || !a.flag.exclude_vigorous_movement()))
 			ns_output_JMP_time_interval(time_handling_behavior, a.volatile_time_at_quick_movement_stop - metadata.time_at_which_animals_had_zero_age, time_scaling_factor, o);
 		//else 
 		//	cerr << "No data provided for fast movement cessation.";

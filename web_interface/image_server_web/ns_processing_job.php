@@ -103,7 +103,8 @@ $ns_flag_handling_labels = array(
 			"Normal"=>0,
 			"Excluded"=>1,
 			"Censor at Death"=>2,
-			"Censor at last measurement"=>3
+			"Censor at last measurement"=>3,
+			"Exclude Vigorous Movement"=>4
 			);
 
 function ns_maintenance_task_order($is_region,$is_sample,$is_experiment){

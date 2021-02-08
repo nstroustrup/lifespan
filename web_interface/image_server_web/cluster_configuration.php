@@ -51,15 +51,21 @@ if ($reload){
 $query = "SELECT label_short,label,exclude,next_flag_name_in_order, hidden, color, id, next_flag_id_in_order FROM annotation_flags ORDER BY id ASC";
 $sql->get_row($query,$flags);
 
+#set up column labels for clearer code
+$NEXT_NAME = 3;
+$NAME = 0;
+$NEXT_ID = 7;
+$ID = 6;
+
 $root_flag_index = 0;
 $tail = "";
 $number_of_tails = 0;
 $first_not_root_id = -1;
 $sorted_flags = array();
 for ($i = 0; $i < sizeof($flags); $i++){
-  $references_to_flags[$flags[$i][3]] = array();
-  $sorted_flags[$flags[$i][0]] = $flags[$i];
-  if ($flags[$i][0] == "MULTI_ERR")
+  $references_to_flags[$flags[$i][$NEXT_NAME]] = array();
+  $sorted_flags[$flags[$i][$NAME]] = $flags[$i];
+  if ($flags[$i][$NAME] == "MULTI_ERR")
     $root_flag_index = $i;
   else if ($first_not_root_id == -1)
     $first_not_root_id = $i;
@@ -78,23 +84,23 @@ if($number_of_tails != 1 || ns_param_spec($query_string,'fix_flags') && $query_s
 	$next_index = 1;
 	else 
 	$next_index = 0;
-      $next = $flags[$next_index][0];
-      $next_id = $flags[$next_index][6];
+      $next = $flags[$next_index][$NAME];
+      $next_id = $flags[$next_index][$ID];
 
     }
-    else if ($i+1 ==sizeof($flags) || $i+2 == sizeof($flags) && $flags[sizeof($flags)-1][0]=="MULTI_ERR"){
+    else if ($i+1 ==sizeof($flags) || $i+2 == sizeof($flags) && $flags[sizeof($flags)-1][$NAME]=="MULTI_ERR"){
       $next='';
-      $next_id = $flags[sizeof($flags)-1][6]+1;
+      $next_id = $flags[sizeof($flags)-1][$ID]+1;
     }
     else{
       $next_index = $i+1;
       if ($flags[$next_index][0] == "MULTI_ERR")
 	$next_index++;
-      $next = $flags[$next_index][0];
-      $next_id = $flags[$next_index][6];
+      $next = $flags[$next_index][$NAME];
+      $next_id = $flags[$next_index][$ID];
     }
     $query = "UPDATE annotation_flags SET next_flag_name_in_order='" . $next ."', next_flag_id_in_order ='".$next_id ."' WHERE id=".
-      $flags[$i][6];
+      $flags[$i][$ID];
     // echo $query . "<BR>";
      //die($query);
     $sql->send_query($query);
@@ -107,22 +113,22 @@ if($number_of_tails != 1 || ns_param_spec($query_string,'fix_flags') && $query_s
  }
 
 for ($i = 0; $i < sizeof($flags); $i++){
-  array_push($references_to_flags[$flags[$i][3]],$flags[$i][0]);
+  array_push($references_to_flags[$flags[$i][$NEXT_NAME]],$flags[$i][$NAME]);
  }
 //var_dump($sorted_flags);
 //echo "<BR><BR>";
 
-$last_flag_id = $flags[0][0];
-for (;;){
+//$last_flag_id = $flags[0][0];
+//for (;;){
   // echo "CUR:";
   // var_dump($sorted_flags[$last_flag_id]);
   //   echo "<BR>";
-  if (!isset($sorted_flags[$sorted_flags[$last_flag_id][4]]) || $sorted_flags[$last_flag_id][4] == 0  ){
+ // if (!isset($sorted_flags[$sorted_flags[$last_flag_id][4]]) || $sorted_flags[$last_flag_id][4] == 0  ){
     //  echo "STOPPING";
-	break;
-      }
-      $last_flag_id = $sorted_flags[$last_flag_id][4];
- }
+//	break;
+  //    }
+    //  $last_flag_id = $sorted_flags[$last_flag_id][3];
+ //}
 
 if (ns_param_spec($_POST,'save_label')){
   $label_short = $_POST['label_short'];
@@ -167,67 +173,99 @@ if (ns_param_spec($_POST,'save_label')){
  }
 if (ns_param_spec($_POST,'move_up') || ns_param_spec($_POST,'move_down')){
   $name = $_POST['label_short'];
-
+  $id = -1;
+  for ($i =0; $i < sizeof($flags); $i++){
+      if ($name == $flags[$i][$NAME]){
+      	 $id = $flags[$i][$ID];
+	 break;
+	 }
+  }
+  if ($id == -1)
+     die("Could not find flag $name in DB");
   //handle error  state where this flag is floating.
 
-   if ($name != $flags[$root_flag_index]){/*
+   if ($name != $flags[$root_flag_index]){
+
+/*
     if (!isset($references_to_flags[$name]) || sizeof($references_to_flags[$name]) == 0){
-      $query = "UPDATE annotation_flags SET next_flag_name_in_order = '$name' WHERE label_short = '" . $flags[$root_flag_index][0] . "'";
+      $query = "UPDATE annotation_flags SET next_flag_name_in_order = '$name' WHERE label_short = '" . $flags[$root_flag_index][$NAME] . "'";
       echo $query . "<BR>";
       $query = "UPDATE annotation_flags SET next_flag_name_in_order = '" .
-$flags[$root_flag_index][3] . "' WHERE label_short = '$name'";
+$flags[$root_flag_index][$NEXT_NAME] . "' WHERE label_short = '$name'";
       echo $query . "<BR>";
-      die("");
+      die("Problem!");
       }*/
 
 
 
     if (ns_param_spec($_POST,'move_up')){
-      // die( "MOVING UP<BR>");
+       //die( "MOVING UP<BR>");
       //make grandparents point to current node
-      $earliest_parent = $references_to_flags[$name][0];
+      //var_dump($references_to_flags);
+      //die("");
+      
+      $earliest_parent = $references_to_flags[$name][$NAME];
       for ($i = 0; $i < sizeof($references_to_flags[$name]); $i++){
 	if ($references_to_flags[$name][$i] < $earliest_parent)
 	  $earliest_parent = $references_to_flags[$name][$i];
       }
-      if ($earliest_parent != $flags[$root_flag_index][0]){
+      
+      //die($earliest_parent);
+      if ($earliest_parent != $flags[$root_flag_index][$NAME]){
 
       //make parents point to moving node's child
-      $query = "UPDATE annotation_flags SET next_flag_name_in_order = '" . $sorted_flags[$name][4] . "' WHERE next_flag_name_in_order = '$name'";
-      //echo $query . "<BR>";
+      $query = "UPDATE annotation_flags SET next_flag_name_in_order = '" . $name . "', next_flag_id_in_order = " . $id . " WHERE next_flag_name_in_order = '$earliest_parent'";
+       
+      // echo $query . "<BR>";
+       //die($query);
       $sql->send_query($query);
-	for ($i = 0; $i < sizeof($references_to_flags[$name]); $i++){
-	  $query = "UPDATE annotation_flags SET next_flag_name_in_order='$name' WHERE next_flag_name_in_order='" . $references_to_flags[$name][$i]."'";
-	  //  echo $query . "<BR>";
-	  $sql->send_query($query);
+
+      //update this flag's next labels
+      $query = "UPDATE annotation_flags SET next_flag_name_in_order = '" . $earliest_parent . "', next_flag_id_in_order = " .$sorted_flags[$earliest_parent][$ID] . " WHERE label_short = '$name'";
+      //die($query);      
+     // echo $query . "<BR>";
+      $sql->send_query($query);
+
+      //update previous parent to be new child
+   $query = "UPDATE annotation_flags SET next_flag_name_in_order='" . $sorted_flags[$name][$NEXT_NAME] ."', next_flag_id_in_order = " . $sorted_flags[$name][$NEXT_ID] ." WHERE label_short='" . $earliest_parent."'";
+ //die($query);
+   //   echo $query . "<BR>";
+      $sql->send_query($query);
+
+//	for ($i = 0; $i < sizeof($references_to_flags[$name]); $i++){
+//	  $query = "UPDATE annotation_flags SET next_flag_name_in_order='$name', next_flag_id_in_order = $id WHERE next_flag_name_in_order='" . $references_to_flags[$name][$i]."'";
+//	    echo $query . "<BR>";
+	  //$sql->send_query($query);
 	  //make current node point to new child
-	  $query = "UPDATE annotation_flags SET next_flag_name_in_order = '" . $earliest_parent . "' WHERE label_short = '$name'";
-	  //echo $query . "<BR>";
-	  $sql->send_query($query);
-	}
+//	  $query = "UPDATE annotation_flags SET next_flag_name_in_order = '" . $earliest_parent . "' WHERE label_short = '$name'";
+//	  echo $query . "<BR>";
+	  //$sql->send_query($query);
+//	}
       }
+      //die("");
     }
     else{
       // die("MOVING DOWN<br>");
       //move down
       //echo $id . "<BR>";
       //make sure it's not already at the bottom
-      if (isset($sorted_flags[$sorted_flags[$name][4]])){
+      if ($sorted_flags[$sorted_flags[$name][$NEXT_NAME]]!=""){
 
 	//make parents point to moving node's child
-	$query = "UPDATE annotation_flags SET next_flag_name_in_order = '" . $sorted_flags[$name][4] . "' WHERE next_flag_name_in_order = '$name'";
+	$query = "UPDATE annotation_flags SET next_flag_name_in_order = '" . $sorted_flags[$name][$NEXT_NAME] . "', next_flag_id_in_order= " . $sorted_flags[$name][$NEXT_ID] . " WHERE next_flag_name_in_order = '$name'";
 	//		echo $query . "<BR>";
 	$sql->send_query($query);
 	//mark children's next as current
-	$query = "UPDATE annotation_flags SET next_flag_name_in_order = '$name WHERE label_short = '" . $sorted_flags[$name][4] ."'";
+	$query = "UPDATE annotation_flags SET next_flag_name_in_order = '$name', next_flag_id_in_order=$id WHERE label_short = '" . $sorted_flags[$name][$NEXT_NAME] ."'";
 	//		echo $query . "<BR>";
 	$sql->send_query($query);
 	//mark current's net as children's next
-	$query = "UPDATE annotation_flags SET next_flag_name_in_order = '" . $sorted_flags[$sorted_flags[$name][4]][4] . "' WHERE label_short = '$name'";
+	$query = "UPDATE annotation_flags SET next_flag_name_in_order = '" . $sorted_flags[$sorted_flags[$name][$NEXT_NAME]][$NEXT_NAME] . "', next_flag_id_in_order=" . $sorted_flags[$sorted_flags[$name][$NEXT_NAME]][$NEXT_ID] ." WHERE label_short = '$name'";
 	//	echo $query . "<BR>";
 	$sql->send_query($query);
       }
     }
+
   }
   //die("");
     header("Location:cluster_configuration.php\n\n");
@@ -242,7 +280,7 @@ for ($i = $flags[$root_flag_index][0];  isset($sorted_flags[$i]); $i = $sorted_f
     $str .= "<BR>";
     echo $str;
     var_dump($flags);
-    die("<BR>A loop was detected in the flag ordering: $j");
+    die("<BR>A loop was detected in the flag ordering: $j.   <a href=\"cluster_configuration.php?fix_flags=1\">[Click Here to Reset Flag order]</a>");
   }
   $str .= $sorted_flags[$i][0] . "<BR>";
   array_push($ordered_flags,$sorted_flags[$i]);
@@ -354,7 +392,7 @@ echo "<input type=\"checkbox\" name=\"hide\" value=\"1\"";
   echo "<input type=\"hidden\" name=\"label_short\" value=\"{$ordered_flags[$i][0]}\">";
   echo "<input name=\"save_label\" type=\"submit\" value=\"save\">\n";
   echo "<input name=\"move_up\" type=\"submit\" value=\"move up\">\n";
-  echo "<input name=\"move_down\" type=\"submit\" value=\"move down\">\n";
+  //echo "<input name=\"move_down\" type=\"submit\" value=\"move down\">\n";
   echo "\n</td></tr>";
   echo "\n</table>\n</form>\n</td></tr>";
  }

@@ -878,7 +878,7 @@ void ns_time_path_solution::check_for_duplicate_events(){
 
 
 long ns_time_path_solution::default_length_of_fast_moving_prefix(){
-	return 16;
+	return 32;
 }
 class ns_link_time_reverse_sorter{
 public:

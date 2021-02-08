@@ -21,7 +21,7 @@ struct ns_outlier_search_data {
 			ns_dying_animal_description_group<const ns_death_time_annotation>::calculate_best_guess_death_annotation(source_data.by_hand.movement_based_death_annotation, source_data.by_hand.death_associated_expansion_start);
 		by_hand_annotation_exists = d != 0 && !d->time.fully_unbounded() ||
 			source_data.by_hand.last_fast_movement_annotation != 0 && !source_data.by_hand.last_fast_movement_annotation->time.fully_unbounded() ||
-			number_of_by_hand_specified_worms_at_position != 1;
+			number_of_by_hand_specified_worms_at_position != 1 || d != 0 && d->flag.specified();
 
 		if (source_data.machine.last_fast_movement_annotation == 0 || 
 			source_data.machine.movement_based_death_annotation == 0) {

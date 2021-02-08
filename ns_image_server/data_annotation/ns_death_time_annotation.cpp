@@ -2138,6 +2138,8 @@ class ns_dying_animal_description_generator{
 					group->first_observation_on_plate = &annotations[i];
 					break;
 				case ns_fast_movement_cessation2:
+					//if (annotations[i].annotation_source != ns_death_time_annotation::ns_unknown)
+					//	cout << "By Hand";
 					group->last_fast_movement_annotation = &annotations[i];
 					break;
 				case ns_death_associated_expansion_stop:
@@ -2998,9 +3000,11 @@ void ns_death_time_annotation_flag::generate_default_flags(std::vector<ns_death_
 	flags.push_back(ns_death_time_annotation_flag("STILL_ALIVE",
 		"Worm is still alive at the end of the experiment",ns_normal,"VIS_INSPECT","CCCCCC"));
 	flags.push_back(ns_death_time_annotation_flag("VIS_INSPECT",
-		"Flagged for visual inspection", ns_normal, "", "FFCC11"));
+		"Flagged for visual inspection", ns_normal, "EXPLOSION", "FFCC11"));
 	flags.push_back(ns_death_time_annotation_flag("EXPLOSION",
-		"Flagged for visual inspection", ns_censored_at_death, "", "FFCC11"));
+		"Animal died from extruded gonad", ns_censored_at_death, "VIG_MISSED", "f56f42"));
+	flags.push_back(ns_death_time_annotation_flag("VIG_MISSED",
+		"End of Vigorous Movement Period Missed", ns_exclude_vigorous, "", "9842f5"));
 }
 
 std::string ns_death_time_annotation_flag::label() const{

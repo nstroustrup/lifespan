@@ -131,7 +131,7 @@ for ($i = 0; $i < sizeof($flags); $i++){
  //}
 
 if (ns_param_spec($_POST,'save_label')){
-  $label_short = $_POST['label_short'];
+  $label_short = strtoupper($_POST['label_short']);
   $label = $_POST['label'];
   $exclude = $_POST['exclude'];
   $hide = $_POST['hide'];
@@ -362,7 +362,7 @@ for ($i = 0; $i < sizeof($constants); $i++){
 for ($i = 0; $i < sizeof($ordered_flags); $i++){
   echo "<tr><td>";
 
-  echo '<form action="cluster_configuration.php" method="post">';
+  echo '<form action="cluster_configuration.php#flags" method="post">';
   echo "\n<table cellspacing=0 cellpadding=0 width=\"100%\">\n";
   echo "<tr><td bgcolor=\"{$table_colors[$i%2][0]}\" width=200>\n";
   output_editable_field('label_short',$ordered_flags[$i][0],FALSE, 55);

@@ -1041,7 +1041,10 @@ public:
 						movement_vs_posture_note = "(Only individuals with both types of deaths are shown)";
 						if (set.descriptions[i].by_hand.death_associated_expansion_start != 0)
 							pair_to_plot.second = set.descriptions[i].by_hand.death_associated_expansion_start;
-						else pair_to_plot.second = set.descriptions[i].machine.death_associated_expansion_start;
+						else {
+							pair_to_plot.second = set.descriptions[i].machine.death_associated_expansion_start;
+
+						}
 						if (set.descriptions[i].by_hand.movement_based_death_annotation != 0)
 							pair_to_plot.first = set.descriptions[i].by_hand.movement_based_death_annotation;
 						else pair_to_plot.first = set.descriptions[i].machine.movement_based_death_annotation;

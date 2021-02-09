@@ -75,12 +75,18 @@ struct ns_death_time_annotation_time_interval{
 
 bool operator==(const ns_death_time_annotation_time_interval& a, const ns_death_time_annotation_time_interval& b);
 bool operator!=(const ns_death_time_annotation_time_interval& a, const ns_death_time_annotation_time_interval& b);
+
+std::string& ns_to_upper(std::string& s);
 struct ns_death_time_annotation_flag{
 
 	ns_death_time_annotation_flag():label_is_cached(false),cached_hidden(false),cached_handling(ns_normal),cached_color(0,0,0){}
 	typedef enum {ns_normal,ns_excluded,ns_censored_at_death,ns_exclude_vigorous,ns_censor_at_last_measurement} ns_flag_handling;
 	ns_death_time_annotation_flag(const std::string & label_short_, const std::string &label_long_="", ns_flag_handling flag_handling = ns_normal, const std::string & next_flag_name_in_order_="", const std::string & color_="000000"):
-	label_short(label_short_),cached_label(label_long_),cached_handling(flag_handling),label_is_cached(!label_long_.empty() || flag_handling != ns_normal),next_flag_name_in_order(next_flag_name_in_order_),cached_hidden(false),cached_color(ns_hex_string_to_color<ns_color_8>(color_)){}
+	cached_label(label_long_),cached_handling(flag_handling),label_is_cached(!label_long_.empty() || flag_handling != ns_normal),next_flag_name_in_order(next_flag_name_in_order_),cached_hidden(false),cached_color(ns_hex_string_to_color<ns_color_8>(color_))
+	{
+		label_short = label_short_; 
+		ns_to_upper(label_short);	//case insensitive.
+	}
 
 	std::string label_short;
 	std::string label() const;

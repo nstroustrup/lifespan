@@ -7947,11 +7947,11 @@ bool ns_worm_learner::start_death_time_annotation(const ns_behavior_mode m, cons
 				}
 				if (analysis_handle.is_valid()) {
 					if (analysis_handle().model_specification.posture_analysis_method == ns_posture_analysis_model::ns_threshold)
-						storyboard_annotater.population_telemetry.regression_plot = ns_population_telemetry::ns_death_vs_observation_duration;
-					else storyboard_annotater.population_telemetry.regression_plot = ns_population_telemetry::ns_movement_vs_expansion;
+						storyboard_annotater.population_telemetry.regression_plot = ns_population_telemetry::ns_vigorous_vs_death;
+					else storyboard_annotater.population_telemetry.regression_plot = ns_population_telemetry::ns_vigorous_vs_death;
 					analysis_handle.release();
 				}
-				else storyboard_annotater.population_telemetry.regression_plot = ns_population_telemetry::ns_death_vs_observation_duration;
+				else storyboard_annotater.population_telemetry.regression_plot = ns_population_telemetry::ns_vigorous_vs_death;
 
 
 				storyboard_annotater.rebuild_telemetry_with_by_hand_annotations();
@@ -9321,6 +9321,7 @@ void ns_experiment_storyboard_annotater::load_random_worm() {
 
 }
 
+void ns_set_menu_bar_activity(bool a);
 void ns_worm_learner::load_specific_worm(const ns_64_bit& region_id, const unsigned long& group_id, double external_rescale_factor) {
 	if (region_id == 0)
 		throw ns_ex("Requested a non-specified region id");
@@ -9330,18 +9331,17 @@ void ns_worm_learner::load_specific_worm(const ns_64_bit& region_id, const unsig
 	ns_acquire_lock_for_scope storyboard_lock(worm_learner.storyboard_lock, __FILE__, __LINE__);
 	bool found_worm = worm_learner.storyboard_annotater.find_worm_by_id(region_id,group_id,path_id, division_id, time);
 	storyboard_lock.release();
-	if (!found_worm)
+	if (!found_worm) {
 		cout << "Could not find worm.\n";
-	else {
-		if (division_id != 0) {
-			worm_learner.storyboard_annotater.jump_to_position(division_id, ns_output_error, external_rescale_factor);
-			worm_learner.storyboard_annotater.display_current_frame();
-		}
-		ns_launch_worm_window_for_worm(region_id, path_id,time);
-	
+		ns_set_menu_bar_activity(true);
+		return;
 	}
+	if (division_id != 0) {
+		worm_learner.storyboard_annotater.jump_to_position(division_id, ns_output_error, external_rescale_factor);
+		worm_learner.storyboard_annotater.display_current_frame();
+	}
+	ns_launch_worm_window_for_worm(region_id, path_id,time);
 }
-void ns_set_menu_bar_activity(bool a);
 void ns_experiment_storyboard_annotater::register_statistics_click(const ns_vector_2i& image_position, const ns_click_request& action, double external_rescale_factor) {
 	ns_population_telemetry::ns_graph_contents contents;
 	ns_vector_2d graph_pos = this->population_telemetry.get_graph_value_from_click_position_(image_position.x, image_position.y, contents);

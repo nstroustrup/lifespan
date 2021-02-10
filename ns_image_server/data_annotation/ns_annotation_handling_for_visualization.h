@@ -47,7 +47,7 @@ public:
 
 	ns_death_timing_data(const ns_movement_visualization_summary_entry& p, unsigned long region_id, const unsigned long worm_id_in_path_) :position_data(p),
 		region_info_id(0),
-		source_region_id(region_id), specified(false), tentative_death_associated_expansion_start_spec(false), tentative_death_associated_post_expansion_contraction_start_spec(false) {
+		source_region_id(region_id), specified(false), fast_movement_set_by_hand(false),tentative_death_associated_expansion_start_spec(false), tentative_death_associated_post_expansion_contraction_start_spec(false) {
 		animal_specific_sticky_properties.animal_id_at_position = worm_id_in_path_;
 	}
 
@@ -60,9 +60,10 @@ public:
 	bool specified;
 
 	ns_death_time_annotation fast_movement_cessation2; //occurs at the interval before the start of the path, or (after annotation) wherever the user specifies if.
-
-	void set_fast_movement_cessation_time(const ns_death_timing_data_step_event_specification& e) {
+	bool fast_movement_set_by_hand;
+	void set_fast_movement_cessation_time(const ns_death_timing_data_step_event_specification& e, const bool & by_hand) {
 		apply_step_specification(fast_movement_cessation2, e, ns_additional_worm_entry);
+		fast_movement_set_by_hand = by_hand;
 	}
 	ns_death_time_annotation
 		movement_cessation,
@@ -77,6 +78,7 @@ public:
 	void clear_annotations() {
 		fast_movement_cessation2.clear_movement_properties();
 		fast_movement_cessation2.clear_sticky_properties();
+		fast_movement_set_by_hand = false;
 		movement_cessation.clear_movement_properties();
 		movement_cessation.clear_sticky_properties();
 		death_associated_expansion_start.clear_movement_properties();
@@ -104,7 +106,8 @@ public:
 	}
 	void generate_event_timing_data(std::vector<ns_death_time_annotation>& annotations) {
 
-		if (animal_specific_sticky_properties.animal_id_at_position != 0)
+		//if (animal_specific_sticky_properties.animal_id_at_position != 0)
+		if (fast_movement_set_by_hand)
 			annotations.push_back(fast_movement_cessation2);
 		if (useful_information_in_annotation(movement_cessation))
 			annotations.push_back(movement_cessation);
@@ -207,6 +210,8 @@ public:
 		switch (e.type) {
 		case ns_fast_movement_cessation2:
 			fast_movement_cessation2 = e;
+			if (e.annotation_source == ns_death_time_annotation::ns_storyboard)
+				fast_movement_set_by_hand = true;
 			break;
 		case ns_translation_cessation_depreciated:
 			//std::cerr << "Encountered depreciated translation cessation event.\n";
@@ -245,6 +250,8 @@ public:
 			break;
 		case ns_additional_worm_entry:
 			fast_movement_cessation2 = e;
+			if (e.annotation_source == ns_death_time_annotation::ns_storyboard)
+				fast_movement_set_by_hand = true;
 			break;
 		default:
 			if (!ignore_unhelpful_annotations)
@@ -311,15 +318,16 @@ public:
 		//output_event_times(cerr);
 		if (!alternate_key_held) {
 			if (e.event_time.period_end < fast_movement_cessation2.time.period_end) {
-				set_fast_movement_cessation_time(e);
+				set_fast_movement_cessation_time(e,true);
 			}
 			 else if (e.event_time.period_end == fast_movement_cessation2.time.period_end) {
 				//	ns_zero_death_interval(death_posture_relaxation_termination.time);
 				//clear all data to indicate the first time point is fast moving
 				if (movement_cessation.time.period_end == fast_movement_cessation2.time.period_end) {
 					ns_zero_death_interval(movement_cessation);
-					this->fast_movement_cessation2.time = observation_limits.last_obsevation_of_plate;
+					fast_movement_cessation2.time = observation_limits.last_obsevation_of_plate;
 					fast_movement_cessation2.event_explicitness = ns_death_time_annotation::ns_explicitly_observed;
+					fast_movement_set_by_hand = true;
 
 				}
 				//indicate the first timepoint is stationary
@@ -556,14 +564,14 @@ public:
 				ns_death_timing_data_step_event_specification(
 					movement_analyzer[i].paths[0].cessation_of_fast_movement_interval(),
 					movement_analyzer[i].paths[0].element(movement_analyzer[i].paths[0].first_stationary_timepoint()),
-					region_id, path_id, 0));
+					region_id, path_id, 0),false);
 			by_hand_timing_data[i].animals[0].animal_specific_sticky_properties.animal_id_at_position = 0;
 			machine_timing_data[i].animals.resize(1);
 			machine_timing_data[i].animals[0].set_fast_movement_cessation_time(
 				ns_death_timing_data_step_event_specification(
 					movement_analyzer[i].paths[0].cessation_of_fast_movement_interval(),
 					movement_analyzer[i].paths[0].element(movement_analyzer[i].paths[0].first_stationary_timepoint()),
-					region_id, path_id, 0));
+					region_id, path_id, 0),false);
 			machine_timing_data[i].animals[0].animal_specific_sticky_properties.animal_id_at_position = 0;
 			by_hand_timing_data[i].animals[0].position_data.stationary_path_id = path_id;
 			by_hand_timing_data[i].animals[0].position_data.path_in_source_image.position = movement_analyzer[i].paths[0].path_region_position;

@@ -76,7 +76,7 @@ struct ns_death_time_annotation_time_interval{
 bool operator==(const ns_death_time_annotation_time_interval& a, const ns_death_time_annotation_time_interval& b);
 bool operator!=(const ns_death_time_annotation_time_interval& a, const ns_death_time_annotation_time_interval& b);
 
-std::string& ns_to_upper(std::string& s);
+void ns_to_upper(std::string& s);
 struct ns_death_time_annotation_flag{
 
 	ns_death_time_annotation_flag():label_is_cached(false),cached_hidden(false),cached_handling(ns_normal),cached_color(0,0,0){}

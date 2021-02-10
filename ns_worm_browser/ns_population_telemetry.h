@@ -16,12 +16,12 @@ struct ns_outlier_search_data {
 		alive_but_not_moving_duration;
 	bool by_hand_annotation_exists;
 	bool is_an_outlier;
-	ns_outlier_search_data(const ns_dying_animal_description_base<const ns_death_time_annotation>& source_data, int number_of_by_hand_specified_worms_at_position) {
+	ns_outlier_search_data(const ns_dying_animal_description_base<const ns_death_time_annotation>& source_data, const ns_death_time_annotation & properties) {
 		const ns_death_time_annotation* d =
 			ns_dying_animal_description_group<const ns_death_time_annotation>::calculate_best_guess_death_annotation(source_data.by_hand.movement_based_death_annotation, source_data.by_hand.death_associated_expansion_start);
 		by_hand_annotation_exists = d != 0 && !d->time.fully_unbounded() ||
 			source_data.by_hand.last_fast_movement_annotation != 0 && !source_data.by_hand.last_fast_movement_annotation->time.fully_unbounded() ||
-			number_of_by_hand_specified_worms_at_position != 1 || d != 0 && d->flag.specified();
+			properties.number_of_worms() != 1 || properties.flag.specified();
 
 		if (source_data.machine.last_fast_movement_annotation == 0 || 
 			source_data.machine.movement_based_death_annotation == 0) {
@@ -1024,16 +1024,18 @@ public:
 
 				//each location can have multiple worms in a group.  We plot each individually, keeping track of the annotations that mark the x and y position of each point.
 				for (unsigned int i = 0; i < set.descriptions.size(); i++) {
-					pair_to_plot.outlier_data = ns_outlier_search_data(set.descriptions[i],l->properties.number_of_worms()); 
+					pair_to_plot.outlier_data = ns_outlier_search_data(set.descriptions[i],l->properties); 
 					if (regression_plot == ns_vigorous_vs_death) {
 						movement_vs_posture_x_axis_label = "Vigorous Movement Cessation Time (days)";
 						movement_vs_posture_y_axis_label = "Death Time (days)";
 						if (set.descriptions[i].by_hand.best_guess_death_annotation != 0)
 							pair_to_plot.second = set.descriptions[i].by_hand.best_guess_death_annotation;
-						else pair_to_plot.second = set.descriptions[i].machine.best_guess_death_annotation;
+						else
+							pair_to_plot.second = set.descriptions[i].machine.best_guess_death_annotation;
 						if (set.descriptions[i].by_hand.last_fast_movement_annotation != 0)
 							pair_to_plot.first = set.descriptions[i].by_hand.last_fast_movement_annotation;
-						else pair_to_plot.first = set.descriptions[i].machine.last_fast_movement_annotation;
+						else
+							pair_to_plot.first = set.descriptions[i].machine.last_fast_movement_annotation;
 					}
 					if (regression_plot == ns_movement_vs_expansion) {
 						movement_vs_posture_x_axis_label = "Movement Cessation Time (days)";

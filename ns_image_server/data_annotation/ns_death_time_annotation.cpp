@@ -7,10 +7,9 @@ using namespace std;
 #include <cfloat> 
 
 
-std::string& ns_to_upper(std::string& s) {
+void ns_to_upper(std::string& s) {
 	for (unsigned int i = 0; i < s.size(); i++)
 		s[i] = toupper(s[i]);
-	return s;
 }
 
 std::string ns_death_time_annotation_set::annotation_types_to_string(const ns_annotation_type_to_load & t){
@@ -845,7 +844,8 @@ void ns_death_time_annotation_set::read_column_format(const  ns_annotation_type_
 			}
 			getline(i,val,',');
 			if (i.fail()) throw ns_ex("ns_death_time_annotation_set::read_column_format()::Unexpected EOF 19");
-			e.flag.label_short = ns_to_upper(val);
+			e.flag.label_short = val;
+			ns_to_upper(e.flag.label_short);
 			//e.flag.label_short = val;
 			//if (e.flag.label_short.size() > 0)
 			//	e.flag.id =
@@ -2937,7 +2937,7 @@ void ns_death_time_annotation_flag::get_flags_from_db(ns_image_server_sql * sql)
 		ns_flag_cache_by_short_label::iterator p = cached_flags_by_short_label.find(flag_name);
 		if (p != cached_flags_by_short_label.end())
 			throw ns_ex("Death Time Annotation Flag ") << flag_name << " has been specified twice; first as " << p->second.label_short << " and then as " << res[i][1];
-		ns_death_time_annotation_flag f(ns_death_time_annotation_flag((flag_name,res[i][2], (ns_death_time_annotation_flag::ns_flag_handling)atol(res[i][3].c_str()),res[i][4],res[i][6])));
+		ns_death_time_annotation_flag f(ns_death_time_annotation_flag(flag_name,res[i][2], (ns_death_time_annotation_flag::ns_flag_handling)atol(res[i][3].c_str()),res[i][4],res[i][6]));
 		f.cached_hidden = (res[i][5]=="1");
 		cached_flags_by_short_label[res[i][1]] = f;
 	}

@@ -9203,7 +9203,7 @@ void ns_death_time_solo_posture_annotater::register_click(const ns_vector_2i & i
 				cur_hand_data->animals[current_animal_id].step_event(
 					ns_death_timing_data_step_event_specification(
 						current_time_interval(handle), cur_worm->element(current_element_id()),
-						properties_for_all_animals.region_info_id, properties_for_all_animals.stationary_path_id, current_animal_id), cur_worm->observation_limits(), action == ns_cycle_state_alt_key_held);
+						properties_for_all_animals.region_info_id, properties_for_all_animals.stationary_path_id, current_animal_id), cur_worm->observation_limits(),current_animal_id!=0, action == ns_cycle_state_alt_key_held);
 			}
 			change_made = true;
 		}
@@ -9229,7 +9229,7 @@ void ns_death_time_solo_posture_annotater::register_click(const ns_vector_2i & i
 						current_time_interval(handle),
 						cur_worm->element(current_element_id()),
 						properties_for_all_animals.region_info_id,
-						properties_for_all_animals.stationary_path_id, new_animal_id)),true);
+						properties_for_all_animals.stationary_path_id, new_animal_id)),ns_additional_worm_entry,true);
 				cur_hand_data->animals.rbegin()->animal_specific_sticky_properties.animal_id_at_position = new_animal_id;
 				//add a "object has stopped fast moving" event at first timepoint of new path
 				/*cur_hand_data->animals.rbegin()->step_event(

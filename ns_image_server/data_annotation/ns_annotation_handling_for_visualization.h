@@ -61,8 +61,10 @@ public:
 
 	ns_death_time_annotation fast_movement_cessation2; //occurs at the interval before the start of the path, or (after annotation) wherever the user specifies if.
 	bool fast_movement_set_by_hand;
-	void set_fast_movement_cessation_time(const ns_death_timing_data_step_event_specification& e, const bool & by_hand) {
-		apply_step_specification(fast_movement_cessation2, e, ns_additional_worm_entry);
+	void set_fast_movement_cessation_time(const ns_death_timing_data_step_event_specification& e, const ns_movement_event& event_type, const bool& by_hand) {
+		if (event_type != ns_fast_movement_cessation2 && event_type != ns_additional_worm_entry)
+			throw ns_ex("Fast movement cessation events must either be additional worms or the original worms!");
+		apply_step_specification(fast_movement_cessation2, e, event_type);
 		fast_movement_set_by_hand = by_hand;
 	}
 	ns_death_time_annotation
@@ -313,12 +315,15 @@ public:
 		death_associated_expansion_start.event_explicitness = death_associated_expansion_stop.event_explicitness;
 	}
 	//given the user has selected the specified time path element, update the annotations apropriately
-	void step_event(const ns_death_timing_data_step_event_specification& e, const ns_time_path_limits& observation_limits, bool alternate_key_held) {
+	void step_event(const ns_death_timing_data_step_event_specification& e, const ns_time_path_limits& observation_limits, bool this_is_an_additional_animal,bool alternate_key_held) {
 		//cerr << "V-------------------V\n";
 		//output_event_times(cerr);
 		if (!alternate_key_held) {
 			if (e.event_time.period_end < fast_movement_cessation2.time.period_end) {
-				set_fast_movement_cessation_time(e,true);
+				if (this_is_an_additional_animal)
+					set_fast_movement_cessation_time(e, ns_additional_worm_entry,true);
+				else
+					set_fast_movement_cessation_time(e, ns_fast_movement_cessation2, true);
 			}
 			 else if (e.event_time.period_end == fast_movement_cessation2.time.period_end) {
 				//	ns_zero_death_interval(death_posture_relaxation_termination.time);
@@ -488,6 +493,9 @@ public:
 			if (p->specified == false)
 				continue;
 
+			if (ns_death_timing_data::useful_information_in_annotation(p->fast_movement_cessation2))
+				set.add(p->fast_movement_cessation2);
+
 			if (ns_death_timing_data::useful_information_in_annotation(p->movement_cessation))
 				set.add(p->movement_cessation);
 
@@ -564,14 +572,14 @@ public:
 				ns_death_timing_data_step_event_specification(
 					movement_analyzer[i].paths[0].cessation_of_fast_movement_interval(),
 					movement_analyzer[i].paths[0].element(movement_analyzer[i].paths[0].first_stationary_timepoint()),
-					region_id, path_id, 0),false);
+					region_id, path_id, 0),ns_fast_movement_cessation2,false);
 			by_hand_timing_data[i].animals[0].animal_specific_sticky_properties.animal_id_at_position = 0;
 			machine_timing_data[i].animals.resize(1);
 			machine_timing_data[i].animals[0].set_fast_movement_cessation_time(
 				ns_death_timing_data_step_event_specification(
 					movement_analyzer[i].paths[0].cessation_of_fast_movement_interval(),
 					movement_analyzer[i].paths[0].element(movement_analyzer[i].paths[0].first_stationary_timepoint()),
-					region_id, path_id, 0),false);
+					region_id, path_id, 0), ns_fast_movement_cessation2,false);
 			machine_timing_data[i].animals[0].animal_specific_sticky_properties.animal_id_at_position = 0;
 			by_hand_timing_data[i].animals[0].position_data.stationary_path_id = path_id;
 			by_hand_timing_data[i].animals[0].position_data.path_in_source_image.position = movement_analyzer[i].paths[0].path_region_position;

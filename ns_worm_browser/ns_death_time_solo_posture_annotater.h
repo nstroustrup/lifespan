@@ -583,7 +583,7 @@ private:
 			cur_hand_timing->animals[0].set_fast_movement_cessation_time(
 				ns_death_timing_data_step_event_specification(cur_worm->cessation_of_fast_movement_interval(),
 					cur_worm->element(cur_worm->first_stationary_timepoint()),
-					properties_for_all_animals.region_info_id, properties_for_all_animals.stationary_path_id, 0),false);
+					properties_for_all_animals.region_info_id, properties_for_all_animals.stationary_path_id, 0),ns_fast_movement_cessation2,false);
 			//	}
 
 		}
@@ -1012,7 +1012,7 @@ public:
 						handle().data->by_hand_timing_data[worm.group_id].animals[i].set_fast_movement_cessation_time(
 							ns_death_timing_data_step_event_specification(current_worm->cessation_of_fast_movement_interval(),
 								current_worm->element(current_worm->first_stationary_timepoint()),
-								properties_for_all_animals.region_info_id, properties_for_all_animals.stationary_path_id, i),false);
+								properties_for_all_animals.region_info_id, properties_for_all_animals.stationary_path_id, i), (i==0)?ns_fast_movement_cessation2:ns_additional_worm_entry,false);
 					}
 
 				}

@@ -3117,8 +3117,8 @@ void ns_analyzed_image_time_path::write_detailed_movement_quantification_analysi
 	for (unsigned long k = start_index; k < end_index; k++){
 		//if (movement_analysis_result.state_intervals[(int)ns_movement_posture].skipped)
 		//	cerr << "ERR1 ";
-		if (movement_analysis_result.state_intervals[(int)ns_movement_fast].skipped)
-			cerr << "ERR2\n";
+		//if (movement_analysis_result.state_intervals[(int)ns_movement_fast].skipped)
+		//	cerr << "ERR2\n";
 
 		m.out_JMP_plate_identity_data_short(o);
 		o << ",";
@@ -9269,7 +9269,7 @@ void ns_analyzed_image_time_path::identify_expansion_time(const unsigned long de
 ns_time_path_posture_movement_solution ns_threshold_movement_posture_analyzer::run(const ns_analyzed_image_time_path * path, std::ostream * debug_output) const{
 
 	
-	bool found_slow_movement_cessation(false),
+	bool //found_slow_movement_cessation(false),
 		found_posture_change_cessation(false),
 		found_death_time_expansion(false);
 
@@ -9302,7 +9302,7 @@ ns_time_path_posture_movement_solution ns_threshold_movement_posture_analyzer::r
 		return sol;*/
 		throw ns_ex("Encountered a path without valid elements!");
 	}
-	long last_time_point_at_which_slow_movement_was_observed(first_valid_event_index),
+	long //last_time_point_at_which_slow_movement_was_observed(first_valid_event_index),
 		last_time_point_at_which_posture_changes_were_observed(first_valid_event_index);
 		//time_point_at_which_death_time_expansion_peaked(first_valid_event_index),
 		//time_point_at_which_death_time_expansion_started(first_valid_event_index),
@@ -9333,13 +9333,13 @@ ns_time_path_posture_movement_solution ns_threshold_movement_posture_analyzer::r
 		//and last stationary cutoffs stick
 		
 		
-		if (r >= parameters.posture_cutoff && !found_slow_movement_cessation)
-			last_time_point_at_which_slow_movement_was_observed = t;
+		//if (r >= parameters.posture_cutoff && !found_slow_movement_cessation)
+		//	last_time_point_at_which_slow_movement_was_observed = t;
 		if (r >=  parameters.stationary_cutoff&& !found_posture_change_cessation)
 			last_time_point_at_which_posture_changes_were_observed = t;
 
-		if (!found_slow_movement_cessation && longest_gap_in_slow < observation_gap)
-			longest_gap_in_slow = observation_gap;
+		//if (!found_slow_movement_cessation && longest_gap_in_slow < observation_gap)
+		//	longest_gap_in_slow = observation_gap;
 		
 		if (!found_posture_change_cessation && longest_gap_in_posture < observation_gap)  //gaps in slow movement count towards gaps in posture change.
 			longest_gap_in_posture = observation_gap;
@@ -9348,7 +9348,7 @@ ns_time_path_posture_movement_solution ns_threshold_movement_posture_analyzer::r
 			longest_gap_in_dead = observation_gap;
 		
 
-		if (!found_slow_movement_cessation &&
+		/*if (!found_slow_movement_cessation &&
 
 			//if the last time the worm was moving slowly enough to count 
 			//as changing posture or remaining stationary is a long time ago
@@ -9362,7 +9362,7 @@ ns_time_path_posture_movement_solution ns_threshold_movement_posture_analyzer::r
 				if (last_time_point_at_which_slow_movement_was_observed == 1 && first_valid_event_index == 0)
 					last_time_point_at_which_slow_movement_was_observed = 0;
 			
-		}
+		}/**/
 
 		if (!found_posture_change_cessation &&
 
@@ -9397,21 +9397,21 @@ ns_time_path_posture_movement_solution ns_threshold_movement_posture_analyzer::r
 	solution.posture_changing.longest_observation_gap_within_interval = longest_gap_in_posture;
 	//solution.changing_posture.longest_observation_gap_within_interval = longest_gap_in_slow; 	//no longer explicity modelled.
 
-	solution.fast.skipped = last_time_point_at_which_slow_movement_was_observed == first_valid_event_index  && (found_slow_movement_cessation || found_posture_change_cessation);
+	solution.fast.skipped = first_valid_event_index == 0; // last_time_point_at_which_slow_movement_was_observed == first_valid_event_index && (found_slow_movement_cessation || found_posture_change_cessation);
 	if (!solution.fast.skipped){
-		solution.fast.start_index = first_valid_event_index ;
-		solution.fast.end_index = last_time_point_at_which_slow_movement_was_observed;
-		if (!found_slow_movement_cessation && !found_posture_change_cessation)
+		//solution.fast.start_index = first_valid_event_index ;
+		solution.fast.end_index = first_valid_event_index;// last_time_point_at_which_slow_movement_was_observed;
+		if (/*!found_slow_movement_cessation &&*/ !found_posture_change_cessation)
 			solution.fast.end_index = last_valid_event_index;
 	//	solution.moving.end_index = 0;
 	}
 
-	solution.posture_changing.skipped = !found_slow_movement_cessation	//if the animal never slowed down to changing posture
-		
-								|| found_posture_change_cessation &&   //or it was skipped over as the animal went straight to death
-								last_time_point_at_which_posture_changes_were_observed == last_time_point_at_which_slow_movement_was_observed;
+	solution.posture_changing.skipped = //!found_slow_movement_cessation ||	//if the animal never slowed down to changing posture
+
+						!found_posture_change_cessation   //or it was skipped over as the animal went straight to death
+								|| first_valid_event_index == last_time_point_at_which_posture_changes_were_observed;
 	if (!solution.posture_changing.skipped){
-		solution.posture_changing.start_index = (!solution.fast.skipped)?(last_time_point_at_which_slow_movement_was_observed):first_valid_event_index;
+		solution.posture_changing.start_index = first_valid_event_index;
 		solution.posture_changing.end_index = last_time_point_at_which_posture_changes_were_observed;
 		if (!found_posture_change_cessation)
 			solution.posture_changing.end_index = last_valid_event_index;

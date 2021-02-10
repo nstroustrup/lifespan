@@ -1236,8 +1236,8 @@ void ns_generate_threshold_parameters(const ns_parameter_set_range& range, std::
 	}
 	else {
 		//new movement scores
-		const double min_thresh(.1);
-		const double max_thresh(2000);
+		const double min_thresh(1);
+		const double max_thresh(1000000);
 		const long number_of_thresholds(40);
 		const double log_dt(((log(max_thresh) - log(min_thresh)) / number_of_thresholds));
 		posture_analysis_thresholds.resize(number_of_thresholds);
@@ -1258,7 +1258,8 @@ void ns_generate_threshold_parameters(const ns_parameter_set_range& range, std::
 
 		posture_analysis_hold_times.reserve(40);
 		posture_analysis_hold_times.push_back(0);
-		for (unsigned int i = 0; i < 15; i++)
+		posture_analysis_hold_times.push_back(1);
+		for (unsigned int i = 1; i < 15; i++)
 			posture_analysis_hold_times.push_back(i * 30 * 60);
 		for (unsigned int i = 0; i < 6; i++)
 			posture_analysis_hold_times.push_back((i) * 2 * 60 * 60);

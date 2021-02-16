@@ -7204,8 +7204,11 @@ void ns_worm_learner::draw_worm_window_image(ns_image_standard & image){
 		try {
 		 
 			death_time_solo_annotater.load_movement_quantification_if_needed(0);
+
+			const unsigned long side_border(ns_death_time_solo_posture_annotater_timepoint::ns_side_border_width * ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor);
 			
-		
+			death_time_solo_annotater.draw_position_overlay(ns_vector_2i(side_border,side_border),ns_vector_2i(image.properties().width,image.properties().height),
+				worm_window.display_rescale_factor, worm_window.gl_buffer);
 		
 			death_time_solo_annotater.draw_telemetry(ns_vector_2i(new_image_size.width, 0),
 				death_time_solo_annotater.telemetry_size(), worm_window.display_rescale_factor,worm_window.gl_buffer);
@@ -9021,6 +9024,58 @@ unsigned long ns_death_time_solo_posture_annotater::last_time_at_current_telemen
 	return current_time + (1.0 / telemetry_zoom_factor)*(path_stop_time - current_time);
 }
 
+void ns_death_time_solo_posture_annotater::draw_position_overlay(const ns_vector_2i& position, const ns_vector_2i& image_size, const float rescale_factor, ns_tiled_gl_image& buffer) {
+	ns_death_time_posture_solo_annotater_data_cache_storage::handle_t handle;
+	try {
+
+		const int ns_screen_resize_factor(ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor);
+
+		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Loading movement data"));
+		data_cache.get_region_movement_data(this->current_region_id, sql(), telemetry.show(), handle);
+		const ns_analyzed_image_time_path* worm = current_worm(handle);
+		const ns_analyzed_image_time_path_element& element = worm->element(this->current_element_id());
+		ns_vector_2d cur_center = element.worm_center_in_registered_image();
+		cout << "center: " << cur_center << "; reg: " << element.registration_offset_v() << "\n";
+
+
+		for (unsigned int t = 0; t < worm->element_count(); t++) {
+			ns_vector_2d pos = worm->element(t).worm_center_in_absolute_coordinates();
+			if (pos.x == -1)
+				continue;
+			pos = pos + element.registration_offset_v();/* element.offset_from_path + -(worm->element(t).offset_from_path);*/
+			buffer(position.x + (pos.x ) * ns_screen_resize_factor, image_size.y - 1 - position.y - (pos.y) * ns_screen_resize_factor)[0] = 255;
+			buffer(position.x + (pos.x) * ns_screen_resize_factor, image_size.y - 1 - position.y - (pos.y) * ns_screen_resize_factor)[1] = 50;
+			buffer(position.x + (pos.x) * ns_screen_resize_factor, image_size.y - 1 - position.y - (pos.y) * ns_screen_resize_factor)[2] = 50;
+		}
+	
+		if (cur_center.x != -1) {
+			for (unsigned int y = 0; y < 5; y++)
+				for (unsigned int x = 0; x < 5; x++) {
+
+					buffer(position.x + (cur_center.x + x) * ns_screen_resize_factor, image_size.y - 1 - position.y - (cur_center.y + y) * ns_screen_resize_factor)[3] = 0;
+					for (unsigned int c = 0; c < 2; c++)
+						buffer(position.x + (cur_center.x + x) * ns_screen_resize_factor, image_size.y - 1 - position.y - (cur_center.y + y) * ns_screen_resize_factor)[c] = 255;
+				}
+		}
+
+
+
+		const long h(element.registered_image_set().image.properties().height),
+			w(element.registered_image_set().image.properties().width);
+		for (unsigned int y = 0; y < h; y++)
+			for (unsigned int x = 0; x < w; x++) {
+				if (element.registered_image_set().get_worm_threshold(y, x)) {
+					//buffer(position.x + x * ns_screen_resize_factor, image_size.y - 1 - position.y - y * ns_screen_resize_factor)[0] = 0;
+					for (unsigned int c = 0; c < 2; c++)
+						buffer(position.x + x * ns_screen_resize_factor, image_size.y - 1 - position.y - y * ns_screen_resize_factor)[c + 1] = 255;
+				}
+			}
+	}
+	catch (ns_ex & ex) {
+		std::cerr << "Could not draw position overlay: " << ex.text();
+	}
+
+}
 void ns_death_time_solo_posture_annotater::draw_telemetry(const ns_vector_2i & position, const ns_vector_2i & graph_size, const float rescale_factor,ns_tiled_gl_image & buffer) {
 	if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Starting to draw telemetry."));
 	if (telemetry_zoom_factor < 1) {

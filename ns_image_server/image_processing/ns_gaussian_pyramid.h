@@ -303,7 +303,7 @@ private:
 		long min_d(image.width < image.height ? image.width : image.height);
 		//if we go resample to images smaller than 16x16 pixels, our gradient calculations
 		//we lose the important features we want to align.
-		num_current_pyramid_levels = log2(min_d) - 4;
+		num_current_pyramid_levels = ceil(log2(min_d)) - 3;
 		
 		if (num_current_pyramid_levels <= 1) {
 			num_current_pyramid_levels = 1;

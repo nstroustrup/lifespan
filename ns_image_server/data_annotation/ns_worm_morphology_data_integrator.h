@@ -174,8 +174,8 @@ public:
 
 			std::vector<ns_region_area> areas(all_worms.size());
 			for (unsigned int j = 0; j < all_worms.size(); j++) {
-				areas[j].pos = all_worms[j]->region_position_in_source_image;
-				areas[j].size = all_worms[j]->region_size;
+				areas[j].pos = all_worms[j]->context_position_in_source_image;
+				areas[j].size = all_worms[j]->context_image_size;
 				areas[j].time = t;
 			}
 			ns_image_server::ns_posture_analysis_model_cache::const_handle_t posture_analysis_model_handle;
@@ -188,7 +188,7 @@ public:
 			analyzer.reanalyze_with_different_movement_estimator(time_series_denoising_parameters, &death_time_estimator());
 
 			ns_object_hand_annotation_data hd;
-			analyzer.match_plat_areas_to_paths(areas);
+			analyzer.match_plate_areas_to_paths(areas);
 			//make path id lookup table
 
 			//look for subregion info using time path solution
@@ -212,8 +212,8 @@ public:
 							min_dist = dist; 
 						if (size_diff < min_size_diff)
 							min_size_diff = size_diff;
-						if (solution.timepoints[t1].elements[pos].region_position == areas[i].pos &&
-							solution.timepoints[t1].elements[pos].region_size == areas[i].size) {
+						if (solution.timepoints[t1].elements[pos].context_image_position == areas[i].pos &&
+							solution.timepoints[t1].elements[pos].context_image_size == areas[i].size) {
 							areas[i].plate_subregion_info = solution.timepoints[t1].elements[pos].subregion_info;
 							areas[i].explicitly_by_hand_excluded = solution.timepoints[t1].elements[pos].volatile_by_hand_annotated_properties.is_excluded();
 							timepoints[t1][pos].region_area = areas[i];

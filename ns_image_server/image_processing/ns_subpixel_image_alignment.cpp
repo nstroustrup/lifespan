@@ -2,6 +2,7 @@
 #ifdef NS_USE_INTEL_IPP
 #include "ns_gaussian_pyramid.h"
 #endif
+#include "ns_image_easy_io.h"
 
 #undef max
 #include <limits>
@@ -67,22 +68,13 @@ public:
 		if (br.x - initial_offset.x > im1.properties().width) br.x = im1.properties().width + initial_offset.x;
 		if (br.y - initial_offset.y > im1.properties().height) br.y = im1.properties().height + initial_offset.y;
 		if (floor(br.x) <= ceil(tl.x) + 2 || floor(br.y) <= ceil(tl.y) + 2) { //the plus 2s reflect the fact we're running a 3 width kernel and ignoring the 1 pixel-wide boundaries
-													//cerr <<	"Invalid shift during gradient registration: (" << initial_offset.x << "," << initial_offset.y << ") {" << tl_ << ";" << br_ << "} [" << im1.properties().width << ", " << im1.properties().height << "]";
-			saturated_offset = true;
+														saturated_offset = true;
 			return initial_offset;
 			//throw ns_ex("Invalid shift during gradient registration: (") << initial_offset.x << "," << initial_offset.y << ") {" << tl_ << ";" << br_ << "} [" << im1.properties().width << ", " << im1.properties().height << "]";
 		}
 		ns_image_properties p(floor(br.y) - ceil(tl.y) - 2, floor(br.x) - ceil(tl.x) - 2, 1);
 
-		//cerr << "{" << tl_ << ";" << br_ << "}->{" << tl << ";" << br << "} (" << initial_offset.x << "," << initial_offset.y << ")"
-		//	"[" << im1.properties().width << ", " << im1.properties().height << "]->[" << p.width << "," << p.height << "]\n";
-
-
-		//calculate gradients;
-
-		//grad_x.resize(p);
-		//grad_y.resize(p);
-		//diff.resize(p);
+		
 
 		//todo: alculation of the image gradient can likely be accelerated using the following intel IPP functions
 		//WarpBilinear
@@ -330,11 +322,9 @@ void ns_stretch_registration::convert_offsets_to_source_positions(const ns_stret
 			continue;
 		int  y0(ceil(pos[i - 1].first)),  //the smallest integer inbetween pos[i-1] and pos[i]
 			y1(floor(pos[i].first));	  //the largest integer inbetween pos[i-1] and pos[i]
-		//std::cerr << "(" << pos[i - 1].first << " " << y0 << "," << y1 << " " << pos[i].first << "):";
 
 		if (y1 >= pos[i].first) {
 			y1--;
-		//	std::cerr << "y1--";
 		}
 		if (y1 < 0 || y0 >= offsets.p.size()) //out of bounds position
 			continue;
@@ -349,12 +339,10 @@ void ns_stretch_registration::convert_offsets_to_source_positions(const ns_stret
 			for (unsigned int y = y0; y <= y1; y++) {
 				//linearly interpolate between the two source positions to find the intermediate source position at which the integer destination position crosses them
 				float dist((y - pos[i - 1].first) / (pos[i].first - pos[i - 1].first));
-			//	std::cerr << pos[i - 1].second << " " << (dist) << " " << pos[i].second << " = " << (1 - dist)*pos[i - 1].second + (dist)*pos[i].second << "\n";
 				mappings.p[y] += (1-dist)*pos[i - 1].second + (dist)*pos[i].second;
 				new_mapping_counts[y]++;
 			}
 		}
-	//	else std::cerr << "&\n";
 	}
 	//calculate average source position at each integral destination position and collect the information needed to fill in unspecified edges
 	float first_specified_val(0), last_specified_val(0);
@@ -480,11 +468,7 @@ ns_vector_2d ns_calc_best_alignment_fast::operator()(const ns_vector_2d & initia
 			//this lets us identify larger shifts.
 			const int num_iterations_this_round((lowest_resolution_level) ? 4 : 1);
 			for (unsigned int j = 0; j < num_iterations_this_round; j++) {
-				/*for (unsigned int y = 0; y < state_pyramid->image_scaled[i].properties().height; y++)
-				for (unsigned int x = 0; x < state_pyramid->image_scaled[i].properties().width; x++)
-				if (std::isnan(state_pyramid->image_scaled[i].val(y, x))) {
-				cerr << "nan!:" << i << " " << j << "(" << x << "," << y << ")\n";
-				}*/
+				
 				ns_vector_2d sh = gradient_shift->calc_gradient_shift(state_pyramid->image_scaled[i],
 					image_pyramid->image_scaled[i],
 					tl / fold, br / fold, reg + shift[i], saturated_offset,0,only_vertical);
@@ -538,23 +522,16 @@ ns_vector_2d ns_calc_best_alignment_fast::operator()(const ns_vector_2d & initia
 				*pyramid_buffer << debug_gold_standard_shift.x << "," << debug_gold_standard_shift.y << "," << (reg - debug_gold_standard_shift / fold).mag() << "\n";
 #endif
 
-				//	cerr << shift[i] << "\n";
 			}
 			lowest_resolution_level = false;
 			reg += shift[i];
-
-			/*gradient_shift->grad_x.pump(grad_x[i], 1024);
-			gradient_shift->grad_y.pump(grad_y[i], 1024);
-			gradient_shift->diff.pump(diff[i], 1024);*/
-
+			
 			debug_number_of_levels_processed++;
 
 
 			if (std::isnan(shift[i].x) || std::isnan(shift[i].y))
 				throw ns_ex("Registration produced a nan!");
-			//	if (i == 0 && reg.x < 10 && reg.y < 10 && (reg - debug_gold_standard_shift / fold).mag() > 40)
-			//	throw ns_ex("Bad registration!");
-
+			
 		}
 		catch (ns_ex & ex) {
 
@@ -645,7 +622,7 @@ ns_vector_2d ns_calc_best_alignment_fast::operator()(const ns_vector_2d & initia
 	if (reg.y > max_alignment.y) { reg.y = max_alignment.y; saturated_offset = true; }
 	return reg;
 }
-ns_vector_2d ns_calc_best_alignment_fast::operator()(const ns_vector_2d & initial_alignment, const ns_vector_2d & max_alignment, ns_alignment_state & state, const ns_image_standard & image, bool & saturated_offset, const ns_vector_2i & subregion_pos, const ns_vector_2i & subregion_size, const bool only_vertical) {
+ns_vector_2d ns_calc_best_alignment_fast::operator()(const ns_vector_2d & initial_alignment, const ns_vector_2d & max_alignment, ns_alignment_state & state, const ns_image_standard & image, bool & saturated_offset, const ns_vector_2i & subregion_pos, const ns_vector_2i & subregion_size, const bool only_vertical,const std::string & dbg) {
 
 	saturated_offset = false;
 	//we want to register only the region where 1) the current frame is defined (e.g not the empty margins of the path aligned image)
@@ -686,7 +663,21 @@ ns_vector_2d ns_calc_best_alignment_fast::operator()(const ns_vector_2d & initia
 
 	state_pyramid->calculate(state.current_round_consensus, min_non_zero_consensus, non_zero_size);
 	image_pyramid->calculate(image, min_non_zero_consensus, non_zero_size);
-
+	/*
+	//output a debug image showing alignment
+	ns_image_standard cmp;
+	ns_image_properties prop(
+		state_pyramid->image_scaled[1].properties().height,
+		state_pyramid->image_scaled[1].properties().width, 3);
+	cmp.init(prop);
+	for (unsigned int y = 0; y < prop.height; y++)
+		for (unsigned int x = 0; x < prop.width; x++) {
+			cmp[y][3*x] = (ns_8_bit)(state_pyramid->image_scaled[1].val(y, x) * 255);
+			cmp[y][3*x+1] = (ns_8_bit)(image_pyramid->image_scaled[1].val(y, x) * 255);
+			cmp[y][3 * x+2] = 0;
+		}
+	ns_save_image( "c:\\server\\creg_" + dbg + ".tif",cmp);
+	*/
 	return (*this)(initial_alignment, max_alignment, state_pyramid, image_pyramid, saturated_offset,only_vertical);
 
 }
@@ -745,8 +736,6 @@ ns_vector_2d ns_calc_best_alignment::operator()(ns_alignment_state & state, cons
 				saturated_offset = true;
 				bottom_saturated = true;
 			}
-			//if (saturated_offset)
-			//cerr << "Saturated Offset!\n";
 
 
 			bool found_new_minimum_this_round(false);

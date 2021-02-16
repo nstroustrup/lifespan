@@ -49,8 +49,6 @@ struct ns_analyzed_image_time_path_element_measurements {
 		spatial_averaged_scaled_movement_sum_cropped_4x,
 		intensity_normalization_scale_factor;
 
-	ns_vector_2d registration_displacement;
-
 	//double mean_intensity_within_foreground() const { return total_intensity_within_foreground / (double)total_foreground_area; }
 	double mean_intensity_within_region() const { return total_intensity_within_region / (double)total_region_area; }
 	double mean_intensity_within_stabilized() const { return total_intensity_within_stabilized / (double)total_stabilized_area; }
@@ -65,8 +63,8 @@ struct ns_analyzed_image_time_path_element_measurements {
 
 	ns_analyzed_image_time_path_element_measurements() { zero(); }
 	static void write_header(std::ostream & out);
-	void write(std::ostream & out, const ns_vector_2d & registration_offset, const bool & saturated_offset) const;
-	void read(std::istream & in, ns_vector_2d & registration_offset, bool & saturated_offset);
+	void write(std::ostream & out, const ns_vector_2d & registration_offset, const ns_vector_2d & intensity_center_of_mass,const bool & saturated_offset) const;
+	void read(std::istream & in, ns_vector_2d & registration_offset, ns_vector_2d& intensity_center_of_mass, bool & saturated_offset);
 };
 
 ns_analyzed_image_time_path_element_measurements operator+(const ns_analyzed_image_time_path_element_measurements & a, const ns_analyzed_image_time_path_element_measurements & b);

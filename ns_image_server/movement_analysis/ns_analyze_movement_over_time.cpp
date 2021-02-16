@@ -208,8 +208,8 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 	const ns_time_series_denoising_parameters time_series_denoising_parameters(ns_time_series_denoising_parameters::load_from_db(job.region_id, sql));
 
 	if (job.maintenance_task == ns_maintenance_rebuild_movement_data || job.maintenance_task == ns_maintenance_rebuild_movement_data_from_stored_solution) {
-		if (specific_worm != -1)
-			throw ns_ex("Cannot focus on a specific worm when all images need to be re-processed.");
+		//if (specific_worm != -1)
+		//////	throw ns_ex("Cannot focus on a specific worm when all images need to be re-processed.");
 		//load in worm images and analyze them for non-translating animals for posture changes
 		if (log_output)
 			image_server->register_server_event(ns_image_server_event("Analyzing images for animal posture changes."), &sql);
@@ -220,7 +220,7 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 					ns_time_path_image_movement_analyzer<ns_overallocation_resizer>::ns_force_creation_of_new_db_record;  //the default behavior is to create a new id and invalidate all previous data.
 				if (job.maintenance_task == ns_maintenance_rebuild_movement_data_from_stored_solution)
 					analysis_options = ns_time_path_image_movement_analyzer<ns_overallocation_resizer>::ns_require_existing_record;
-				time_path_image_analyzer.process_raw_images(job.region_id, time_path_solution, time_series_denoising_parameters, &death_time_estimator(), sql, -1, true,analysis_options);
+				time_path_image_analyzer.process_raw_images(job.region_id, time_path_solution, time_series_denoising_parameters, &death_time_estimator(), sql, specific_worm, true,analysis_options);
 				break;
 			}
 			catch (ns_ex & ex) {
@@ -265,8 +265,7 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 		//load in previously calculated image quantification from disk for re-analysis
 		//This is good, for example, if changes have been made to the movement quantification analyzer
 		//and it needs to be rerun though the actual images
-		if (specific_worm != -1)
-			throw ns_ex("Cannot focus on a specific worm when all images need to be re-analyzed.");
+		
 		if (log_output)
 			image_server->register_server_event(ns_image_server_event("Quantifying stored animal posture images"), &sql);
 		bool reanalyze_optical_flow(false);
@@ -274,11 +273,14 @@ void analyze_worm_movement_across_frames(const ns_processing_job & job, ns_image
 		reanalyze_optical_flow = true;
 #endif
 		time_path_image_analyzer.reanalyze_stored_aligned_images(job.region_id, time_path_solution, time_series_denoising_parameters, &death_time_estimator(), sql, true, reanalyze_optical_flow);
+		if (specific_worm == -1)
+			return;
 		time_path_image_analyzer.obtain_analysis_id_and_save_movement_data(job.region_id, sql,
 			ns_time_path_image_movement_analyzer<ns_overallocation_resizer>::ns_require_existing_record,
 			ns_time_path_image_movement_analyzer<ns_overallocation_resizer>::ns_write_data);
 
 		invalidate_stored_data_depending_on_movement_analysis(job, sql, invalidated_old_data);
+		
 	}
 	else if (job.maintenance_task == ns_maintenance_rebuild_movement_from_stored_image_quantification) {
 		//load in previously calculated image quantification from disk for re-analysis

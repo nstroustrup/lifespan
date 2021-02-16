@@ -1161,7 +1161,7 @@ void ns_hmm_observation_set::write_emissions(std::ostream & out, const std::stri
 				<< "d," 
 				<< p->second[i].emission_time << "," 
 				<< ns_hmm_movement_state_to_string(p->first) << ",";
-			p->second[i].measurement.write(out, ns_vector_2i(0, 0), false);
+			p->second[i].measurement.write(out, ns_vector_2i(0, 0),ns_vector_2i(0,0), false);
 			out << "\n";
 		}
 	}
@@ -1172,7 +1172,7 @@ void ns_hmm_observation_set::write_emissions(std::ostream & out, const std::stri
 			<< p->first.group_id << ","
 			<< p->first.path_id << ",";
 		out << "m,0,all,";
-		p->second.path_mean.write(out, ns_vector_2d(0, 0), false);
+		p->second.path_mean.write(out, ns_vector_2d(0, 0), ns_vector_2i(0, 0), false);
 		out << "\n";
 		out << *(p->second.device_name) << ","
 			<< *(p->second.region_name) << "," 
@@ -1180,7 +1180,7 @@ void ns_hmm_observation_set::write_emissions(std::ostream & out, const std::stri
 			<< p->first.group_id << ","
 			<< p->first.path_id << ",";
 		out << "v,0,all,";
-		p->second.path_variance.write(out, ns_vector_2d(0, 0), false);
+		p->second.path_variance.write(out, ns_vector_2d(0, 0), ns_vector_2i(0, 0), false);
 		out << "\n";
 		out << *(p->second.device_name) << ","
 			<< *(p->second.region_name) << "," 
@@ -1377,9 +1377,9 @@ void ns_hmm_observation_set::read_emissions(std::istream & in){
 			getline(in, tmp2, ',');	//discard hmm movement state column
 
 			if (tmp == "m")
-				stats.path_mean.read(in, tmp_d, tmp_b);
+				stats.path_mean.read(in, tmp_d, tmp_d,tmp_b);
 			else if (tmp == "v")
-				stats.path_variance.read(in, tmp_d, tmp_b);
+				stats.path_variance.read(in, tmp_d, tmp_d, tmp_b);
 			else if (tmp == "a") {
 				getline(in,tmp, '\n');
 				stats.source.from_string(tmp);
@@ -1395,7 +1395,7 @@ void ns_hmm_observation_set::read_emissions(std::istream & in){
 			observations.resize(observations.size() + 1);
 			ns_hmm_emission & e(*observations.rbegin());
 			e.path_id = id;
-			e.measurement.read(in, tmp_d, tmp_b);
+			e.measurement.read(in, tmp_d, tmp_d, tmp_b);
 			e.device_name = &(*device_name);
 			e.region_name = &(*plate_name);
 		}

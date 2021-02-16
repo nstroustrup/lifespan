@@ -615,7 +615,7 @@ private:
 
 		lines[2] = handle().data->metadata.sample_name + "::" + handle().data->metadata.region_name + "::worm #" + ns_to_string(properties_for_all_animals.stationary_path_id.group_id);
 
-		ns_vector_2i p(cur_worm->path_region_position + cur_worm->path_region_size / 2);
+		ns_vector_2i p(cur_worm->path_context_position_in_region_image + cur_worm->path_context_size_in_region_image / 2);
 		lines[2] += " (" + ns_to_string(p.x) + "," + ns_to_string(p.y) + ")";
 
 		lines[3] = "Machine:" + state_label(cur_machine_state) + (machine_death_expanding ? "(Expanding)" : "") + (machine_death_post_expansion_contracting ? "(Contracting)" : "");
@@ -800,6 +800,7 @@ public:
 
 	unsigned long last_time_at_current_telementry_zoom(ns_death_time_posture_solo_annotater_data_cache_storage::handle_t& handle) const;
 	void draw_telemetry(const ns_vector_2i& position, const ns_vector_2i& graph_size, const float rescale_factor, ns_tiled_gl_image & buffer);
+	void draw_position_overlay(const ns_vector_2i& position, const ns_vector_2i& graph_size, const float rescale_factor, ns_tiled_gl_image& buffer);
 	void draw_registration_debug(const ns_vector_2i& position, const ns_vector_2i& buffer_size, ns_8_bit* buffer) {
 		if (current_timepoint_id == 0)
 			return;

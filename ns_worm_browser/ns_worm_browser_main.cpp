@@ -4184,12 +4184,13 @@ void ns_run_startup_routines() {
 		}
 
 		//example code that runns a movement analysis job for a specific region
-		if (0) {
+		if (1) {
 			ns_processing_job job;
-			const unsigned long region_id(56253);
+			const unsigned long region_id(31543);
 			job.region_id = region_id;
-			job.maintenance_task = ns_maintenance_rebuild_movement_from_stored_image_quantification;
-			analyze_worm_movement_across_frames(job, &image_server, sql(), true,50);
+			job.maintenance_task = ns_maintenance_rebuild_movement_data_from_stored_solution;
+			//56
+			analyze_worm_movement_across_frames(job, &image_server, sql(), true);
 			if (0) {
 				ns_image_server_results_subject subject;
 				subject.region_id = region_id;
@@ -4239,9 +4240,7 @@ void ns_run_startup_routines() {
 		ns_worm_browser_output_debug(__LINE__, __FILE__, "Setting current experiment");
 		//image_server.set_sql_database("image_server_archive_2017", false, &worm_learner.get_sql_connection());
 		get_menu_handler()->update_experiment_choice(*get_menu_bar());
-		//worm_learner.data_selector.set_current_experiment(109, worm_learner.get_sql_connection());
-		//get_menu_handler()->show_extra_menus("");
-		//worm_learner.data_selector.set_current_experiment(77, worm_learner.get_sql_connection());
+		worm_learner.data_gui_selector.set_current_experiment(658, worm_learner.get_sql_connection());
 		update_region_choice_menu();
 		update_strain_choice_menu();
 		update_exclusion_choice_menu();
@@ -4560,9 +4559,6 @@ int main(int argc, char** argv) {
 		#endif
 		//win.draw_animation = true;
 		
-		//worm_learner.compare_machine_and_by_hand_annotations();
-
-		//main_window->resizable(win);
 		cout << "Compilation date: " << __DATE__ << "\n";
 		ns_worm_browser_output_debug(__LINE__, __FILE__, "Showing window");
 		main_window->show();

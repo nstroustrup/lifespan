@@ -582,8 +582,7 @@ public:
 					region_id, path_id, 0), ns_fast_movement_cessation2,false);
 			machine_timing_data[i].animals[0].animal_specific_sticky_properties.animal_id_at_position = 0;
 			by_hand_timing_data[i].animals[0].position_data.stationary_path_id = path_id;
-			by_hand_timing_data[i].animals[0].position_data.path_in_source_image.position = movement_analyzer[i].paths[0].path_region_position;
-			by_hand_timing_data[i].animals[0].position_data.path_in_source_image.size = movement_analyzer[i].paths[0].path_region_size;
+
 			by_hand_timing_data[i].animals[0].position_data.worm_in_source_image.position = movement_analyzer[i].paths[0].element(movement_analyzer[i].paths[0].first_stationary_timepoint()).region_offset_in_source_image();
 			by_hand_timing_data[i].animals[0].position_data.worm_in_source_image.size = movement_analyzer[i].paths[0].element(movement_analyzer[i].paths[0].first_stationary_timepoint()).worm_region_size();
 

@@ -6,16 +6,24 @@
 
 #define USE_INTEL_IPP
 
+struct ns_added_element {
+	ns_added_element() {}
+	ns_added_element(const unsigned long& id_, const ns_vector_2i& shift_) :shift(shift_), id(id_) {}
+	ns_added_element(const unsigned long& id_) :shift(0,0), id(id_) {}
+	unsigned long id;
+	ns_vector_2i shift;
+};
 struct ns_alignment_state {
-	ns_alignment_state() :consensus_internal_offset(0, 0),registration_offset_count(0),registration_offset_sum(0,0) {}
+	ns_alignment_state() :registration_offset_count(0),registration_offset_sum(0,0) {}
 	void clear();
 	ns_image_whole<double> consensus;
 	ns_image_whole<ns_16_bit> consensus_count;
 	ns_image_whole<float> current_round_consensus;
 	ns_vector_2d registration_offset_sum;
 	unsigned long registration_offset_count;
-	const ns_vector_2i consensus_internal_offset;
+
 	inline ns_vector_2d registration_offset_average() { return registration_offset_sum / (double)registration_offset_count; }
+	std::deque<ns_added_element> element_occupancy_ids;
 };
 
 #ifdef USE_INTEL_IPP
@@ -30,7 +38,7 @@ public:
 	enum { ns_max_pyramid_size = 30 };
 	ns_calc_best_alignment_fast(const ns_vector_2i & max_offset_, const ns_vector_2i &bottom_offset_, const ns_vector_2i &size_offset_);
 	~ns_calc_best_alignment_fast();
-	ns_vector_2d operator()(const ns_vector_2d & initial_alignment,const ns_vector_2d & max_alignment, ns_alignment_state & state, const ns_image_standard & image, bool & saturated_offset, const ns_vector_2i & subregion_pos, const ns_vector_2i & subregion_size, const bool only_vertical=false);
+	ns_vector_2d operator()(const ns_vector_2d & initial_alignment,const ns_vector_2d & max_alignment, ns_alignment_state & state, const ns_image_standard & image, bool & saturated_offset, const ns_vector_2i & subregion_pos, const ns_vector_2i & subregion_size, const bool only_vertical=false,const std::string & dbg_info="");
 
 	ns_vector_2d operator()(const ns_vector_2d & initial_alignment, const ns_vector_2d & max_alignment, const ns_gaussian_pyramid * state_pyramid, const ns_gaussian_pyramid *image_pyramid, bool & saturated_offset, const bool only_vertical=false);
 	void minimize_memory_use(bool min) { minimize_memory_use_ = min; }

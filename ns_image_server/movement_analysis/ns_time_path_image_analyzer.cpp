@@ -353,6 +353,7 @@ void ns_alignment_state::clear() {
 
 	registration_offset_sum = ns_vector_2d(0, 0);
 	registration_offset_count = 0;
+	cumulative_recentering_shift = ns_vector_2d(0, 0);
 
 	element_occupancy_ids.clear();
 }
@@ -727,7 +728,7 @@ void ns_time_path_image_movement_analyzer<allocator_T>::process_raw_images(const
 		//we can limit memory usage to just one region (and miminize paging and disk thrashing)
 		ns_thread_pool<ns_time_path_image_movement_analyzer_thread_pool_job<allocator_T>,
 			ns_time_path_image_movement_analyzer_thread_pool_persistant_data> thread_pool;
-		thread_pool.set_number_of_threads(1);// image_server_const.maximum_number_of_processing_threads());
+		thread_pool.set_number_of_threads(image_server_const.maximum_number_of_processing_threads());
 		thread_pool.prepare_pool_to_run();
 
 		//xxx debug only
@@ -5842,14 +5843,14 @@ void ns_analyzed_image_time_path::copy_aligned_path_to_registered_image(const ns
 
 		if (elements[i].path_aligned_images == 0)
 			throw ns_ex("Encountered an unloaded path aligned image!");
-
+		/*
 		for (long y = 0; y < prop.height; y++) {
 			for (long x = 0; x < prop.width; x++) {
 				elements[i].registered_images->image[y][x] = elements[i].path_aligned_images->image[y][x];
 				region_threshold[y][x] = 0;
 				worm_threshold[y][x] = 0;
 			}
-		}
+		}*/
 		//we calculate the histogram fothat we'll use later for intensity normalization 
 		//elements[i].registered_image_histogram = ns_histogram<unsigned int, ns_8_bit>();
 
@@ -5861,10 +5862,10 @@ void ns_analyzed_image_time_path::copy_aligned_path_to_registered_image(const ns
 		//to registered_images->image, registered_images->region_threshold, and registered_images->worm_threshold
 		//but for the registered_movement_image we only output the minimal overlap which is
 		// [maximum_alignment_offset()
-		if (0) {
+		if (1) {
 			const ns_vector_2<float> v0(elements[i].registration_offset);
 
-			ns_vector_2i tl(maximum_alignment_offset() + elements[i].offset_in_path_aligned_image);
+			ns_vector_2i tl(elements[i].offset_in_path_aligned_image);
 			ns_vector_2i br(tl + elements[i].worm_context_size());
 			if (br.x > prop.width - maximum_alignment_offset().x)
 				br.x = prop.width - maximum_alignment_offset().x;
@@ -5874,7 +5875,7 @@ void ns_analyzed_image_time_path::copy_aligned_path_to_registered_image(const ns
 			//here we crop 2i
 			//so the registered image rage may be slightly smaller than it could be
 			//as we miss the left or right fraction of a pixel
-			ns_vector_2i tl_registered(maximum_alignment_offset() + ns_vector_2i(v0.x, v0.y) + elements[i].offset_in_path_aligned_image);
+			ns_vector_2i tl_registered(ns_vector_2i(v0.x, v0.y) + tl);
 			ns_vector_2i br_registered(tl_registered + elements[i].worm_context_size());
 			//ns_vector_2i br(ns_vector_2i(elements[0].path_aligned_images->image.properties().width,elements[0].path_aligned_images->image.properties().height)-maximum_alignment_offset());
 
@@ -6008,6 +6009,12 @@ void ns_analyzed_image_time_path::calculate_movement_images(const ns_analyzed_ti
 	long istep(chunk.forward() ? 1 : -1);
 	const long movement_dt(movement_time_kernel_width);
 
+	//during registration, images are recentered in each frame.  Thus, the previous image will be offset by 
+	//a set amount, which we should take into account when calculating the difference
+	///NOTE that if you change movement_dt to something other than one, we need to do the caluclation for valitle-image_centering-offset
+	//differently during image registration.
+	if (movement_dt != 1) throw ns_ex("Cannot compensate for shifts because volatile_image_centering_offset was calculated based on a movement_dt value of 1");
+
 #ifdef NS_CALCULATE_OPTICAL_FLOW
 	if (flow == 0)
 		flow = new ns_optical_flow_processor();
@@ -6087,6 +6094,7 @@ void ns_analyzed_image_time_path::calculate_movement_images(const ns_analyzed_ti
 			movement_dt_scaling= 1;
 
 
+
 		elements[i].histogram_matching_data.overall_scaling = cur_scaling;
 
 		//now we generate the movement image
@@ -6104,44 +6112,55 @@ void ns_analyzed_image_time_path::calculate_movement_images(const ns_analyzed_ti
 				elements[i].registered_images->movement_image_[y][x] = NS_MARGIN_BACKGROUND;
 
 			if (i >= movement_dt && elements[i - movement_dt].registered_images != 0) {
-				//fill in center
-				for (long x = 0 + n; x < registered_image_properties.width - n; x++) {
+				const ns_vector_2i previous_image_offset(elements[i].volatile_image_centering_offset*-1);
+				if (y + previous_image_offset.y >= 0 && y + previous_image_offset.y < registered_image_properties.height - n) {
+					//fill in center
+					
+					for (long x = 0 + n; x < registered_image_properties.width - n; x++) {
+						if (x + previous_image_offset.x < 0 || x + previous_image_offset.x >= registered_image_properties.width) {
+							elements[i].registered_images->movement_image_[y][x] = NS_MARGIN_BACKGROUND;
+							continue;
+						}
+
 
 #ifdef NS_DEBUG_IMAGE_ACCESS
-					if (y >= elements[i].registered_images->image.properties().height ||
-						x >= elements[i].registered_images->image.properties().width)
-						throw ns_ex("Yikes");
+						if (y >= elements[i].registered_images->image.properties().height ||
+							x >= elements[i].registered_images->image.properties().width)
+							throw ns_ex("Yikes");
 #endif
 
-					float d_numerator(0);
-					//we spatially average the movement value to remove random noise
-					for (long dy = -n; dy <= n; dy++) {
-						for (long dx = -n; dx <= n; dx++) {
-							float d(elements[i].registered_images->image[y][x]  
-								- elements[i - movement_dt].registered_images->image[y][x] * movement_dt_scaling);
-							d_numerator += d;
+						float d_numerator(0);
+						//we spatially average the movement value to remove random noise
+						for (long dy = -n; dy <= n; dy++) {
+							for (long dx = -n; dx <= n; dx++) {
+								float d(elements[i].registered_images->image[y][x]
+									- elements[i - movement_dt].registered_images->image[y + previous_image_offset.y][x + previous_image_offset.x] * movement_dt_scaling);
+								d_numerator += d;
+							}
 						}
+
+
+
+						float val = d_numerator /= kernel_area;
+
+						//note that the absolute value of val can never be greater than 255  
+						//so val contains 9 bits of information
+						if (val >= 255)
+							elements[i].registered_images->movement_image_[y][x] = 255;
+						else if (val <= -255)
+							elements[i].registered_images->movement_image_[y][x] = -255;
+						else elements[i].registered_images->movement_image_[y][x] = (short)val;
 					}
-
-
-
-					float val = d_numerator /= kernel_area;
-
-					//note that the absolute value of val can never be greater than 255  
-					//so val contains 9 bits of information
-					if (val >= 255)
-						elements[i].registered_images->movement_image_[y][x] = 255;
-					else if (val <= -255)
-						elements[i].registered_images->movement_image_[y][x] = -255;
-					else elements[i].registered_images->movement_image_[y][x] = (short)val;
-
+				}
+				else {
+					for (long x = 0 + n; x < registered_image_properties.width - n; x++)
+						elements[i].registered_images->movement_image_[y][x] = NS_MARGIN_BACKGROUND;
 
 				}
 			}
 			else {
-				for (long x = 0 + n; x < registered_image_properties.width - n; x++) {
+				for (long x = 0 + n; x < registered_image_properties.width - n; x++) 
 					elements[i].registered_images->movement_image_[y][x] = elements[i].registered_images->image[y][x];
-				}
 			}
 			//fill in right gap
 			for (long x = (registered_image_properties.width - n); x < registered_image_properties.width; x++) {
@@ -6329,7 +6348,7 @@ ns_analyzed_time_image_chunk ns_analyzed_image_time_path::initiate_image_registr
 		const ns_vector_2i br_worm_context_position_in_pa(tl_worm_context_position_in_pa + elements[i].worm_context_size());
 
 		
-			elements[i].registration_offset = align(state.registration_offset_average(),					//our best guess for the alignment is having the center of mass of the new image match the center of the path aligned image.
+			elements[i].registration_offset = align(ns_vector_2i(0,0),					//our best guess for the alignment is having the center of mass of the new image match the center of the path aligned image.
 													maximum_alignment_offset(), 
 													state, 
 													elements[i].path_aligned_images->image, 
@@ -6465,7 +6484,13 @@ void ns_analyzed_image_time_path::calculate_image_registration(const ns_analyzed
 				maximum_alignment_offset(),
 				state, elements[i].path_aligned_images->image,
 				elements[i].saturated_offset, tl_worm_context_position_in_pa, elements[i].worm_context_size(), false, dbg);
-		
+
+		//since the consensus image is recentered after each iteration, the current image
+		//is being registered to a shifted version of the previous frame.
+		//We'll want to "un-shift" this when calculating the registered images, later
+		elements[i].volatile_image_centering_offset = state.cumulative_recentering_shift;
+		state.cumulative_recentering_shift = ns_vector_2d(0, 0);
+
 		elements[i].alignment_times[1] = t.stop();
 	#endif
 		state.registration_offset_sum += (elements[i].registration_offset - elements[i-step*time_kernal].registration_offset);
@@ -6476,30 +6501,27 @@ void ns_analyzed_image_time_path::calculate_image_registration(const ns_analyzed
 
 
 		/*
-		//if (i == 274 || abs(elements[i].registration_offset.x) > 10 || abs(elements[i].registration_offset.y) > 10) {
-			auto p = state.consensus.properties();
-			p.components = 3;
-			ns_image_standard im;
-			im.prepare_to_recieve_image(p);
-			for (unsigned int y = 0; y < im.properties().height; y++)
-				for (unsigned int x = 0; x < im.properties().width; x++) {
-					im[y][3 * x] = state.consensus[y][x] / state.consensus_count[y][x];
-					im[y][3 * x + 1] = elements[i].path_aligned_images->image[y][x];
-					im[y][3 * x + 2] = (y+x) & 2;
-				}
-			
-			for (long y = tl_worm_context_position_in_pa.y; y < br_worm_context_position_in_pa.y; y++) {
-				for (long x = tl_worm_context_position_in_pa.x; x < br_worm_context_position_in_pa.x; x++) {
-					im[y ][3 * x + 2] = elements[i].path_aligned_images->image.sample_f(y - elements[i].registration_offset.y, x - elements[i].registration_offset.x );
-				}
+		auto p = state.consensus.properties();
+		p.components = 3;
+		ns_image_standard im;
+		im.prepare_to_recieve_image(p);
+		for (unsigned int y = 0; y < im.properties().height; y++)
+			for (unsigned int x = 0; x < im.properties().width; x++) {
+				im[y][3 * x] = state.consensus[y][x] / state.consensus_count[y][x];
+				im[y][3 * x + 1] = elements[i].path_aligned_images->image[y][x];
+				im[y][3 * x + 2] = (y+x) & 2;
 			}
-			std::string ap;
-			if (elements[i].inferred_animal_location)
-				ap = "_INF";
-			ns_save_image(std::string("c:\\server\\consensus_") + ns_to_string(i) + ap + ".tif", im);
-			//std::cerr << "WHA!\n";
+			
+		for (long y = tl_worm_context_position_in_pa.y; y < br_worm_context_position_in_pa.y; y++) {
+			for (long x = tl_worm_context_position_in_pa.x; x < br_worm_context_position_in_pa.x; x++) {
+				im[y ][3 * x + 2] = elements[i].path_aligned_images->image.sample_f(y - elements[i].registration_offset.y, x - elements[i].registration_offset.x );
+			}
+		}
+		std::string ap;
+		if (elements[i].inferred_animal_location)
+			ap = "_INF";
+		ns_save_image(std::string("c:\\server\\consensus_") + ns_to_string(i) + ap + ".tif", im);
 			*/
-		//}
 		
 			/*if (i == 273) {
 				cerr << "WHA";
@@ -6507,7 +6529,15 @@ void ns_analyzed_image_time_path::calculate_image_registration(const ns_analyzed
 					align(ns_vector_2i(0, 0), //path aligned images are all centered around their intensity center of mass when loaded into path_aligned_images, and so will the consensus
 						maximum_alignment_offset(), state, elements[i].path_aligned_images->image, elements[i].saturated_offset, tl_worm_context_position_in_pa, elements[i].worm_context_size());
 			}*/
-			
+		if (tl_worm_context_position_in_pa.y - elements[i].registration_offset.y < 0 ||
+			tl_worm_context_position_in_pa.x - elements[i].registration_offset.x < 0 ||
+			br_worm_context_position_in_pa.x - elements[i].registration_offset.x >= prop.width ||
+			br_worm_context_position_in_pa.y - elements[i].registration_offset.y >= prop.height) {
+			ns_ex ex("Registration Overflow on worm ");
+			ex << this->group_id.group_id << ": Reg offset:" << elements[i].registration_offset << "; context bounds: " << tl_worm_context_position_in_pa << " - " << br_worm_context_position_in_pa;
+			std::cerr << ex.text();
+			throw ex;
+		}
 
 			for (long y = tl_worm_context_position_in_pa.y; y < br_worm_context_position_in_pa.y; y++) {
 				for (long x = tl_worm_context_position_in_pa.x; x < br_worm_context_position_in_pa.x; x++) {
@@ -6540,7 +6570,9 @@ void ns_analyzed_image_time_path::calculate_image_registration(const ns_analyzed
 			state.element_occupancy_ids.pop_front();
 		
 		//we want to shift the consensus so that its center of mass is at (0,0)
-		const ns_vector_2i d(ns_vector_2i(prop.width, prop.height)/2 - ns_image_intensity_center(state.consensus, ns_vector_2i(0, 0), ns_vector_2i(prop.width, prop.height)));
+		const ns_vector_2i d( ns_vector_2i(prop.width, prop.height)/2- ns_image_intensity_center(state.consensus, ns_vector_2i(0, 0), ns_vector_2i(prop.width, prop.height)));
+		state.cumulative_recentering_shift += d;
+		//cout << d << "; " << state.cumulative_recentering_shift << "\n";
 		if (d.x != 0 || d.y != 0){
 
 			long start_x(0), stop_x(prop.width+d.x), start_y(0), stop_y(prop.height+d.y), dx(1), dy(1);

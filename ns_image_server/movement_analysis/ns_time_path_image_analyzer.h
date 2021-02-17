@@ -176,7 +176,7 @@ template<class allocator_T> using ns_registered_image_pool = ns_image_pool<ns_re
 class ns_analyzed_image_time_path_element{
 public:
 	ns_analyzed_image_time_path_element():registered_images(0),path_aligned_images(0),
-	inferred_animal_location(false), debug_write_count(0),path_aligned_images_are_loaded_and_released(false), offset_in_path_aligned_image(0,0), intensity_center_of_mass(0,0),element_before_fast_movement_cessation(false),element_was_processed(false), worm_center_in_registered_image_cached(0,0),worm_center_in_registered_image_cached_calculated(false),movement(ns_movement_not_calculated),saturated_offset(false),registration_offset(0,0),number_of_extra_worms_observed_at_position(0),part_of_a_multiple_worm_disambiguation_group(0),excluded(false),censored(false){}
+	inferred_animal_location(false), debug_write_count(0),path_aligned_images_are_loaded_and_released(false), offset_in_path_aligned_image(0,0), volatile_image_centering_offset(0,0),intensity_center_of_mass(0,0),element_before_fast_movement_cessation(false),element_was_processed(false), worm_center_in_registered_image_cached(0,0),worm_center_in_registered_image_cached_calculated(false),movement(ns_movement_not_calculated),saturated_offset(false),registration_offset(0,0),number_of_extra_worms_observed_at_position(0),part_of_a_multiple_worm_disambiguation_group(0),excluded(false),censored(false){}
 	~ns_analyzed_image_time_path_element(){
 		if (path_aligned_images != 0 || registered_images != 0)
 			std::cerr << "ABOUT TO LEAK TIME PATH ELEMENT!";
@@ -270,8 +270,10 @@ private:
 	//i.e how far the worm is moved by the registration algorithm from it's position in the path_aligned images.
 	ns_vector_2d registration_offset,
 		registration_offset_slow;
-
 	ns_vector_2d intensity_center_of_mass;
+
+
+	ns_vector_2i volatile_image_centering_offset;
 
 	//xxx
 	ns_64_bit alignment_times[2];

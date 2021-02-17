@@ -9035,7 +9035,7 @@ void ns_death_time_solo_posture_annotater::draw_position_overlay(const ns_vector
 		const ns_analyzed_image_time_path* worm = current_worm(handle);
 		const ns_analyzed_image_time_path_element& element = worm->element(this->current_element_id());
 		ns_vector_2d cur_center = element.worm_center_in_registered_image();
-		cout << "center: " << cur_center << "; reg: " << element.registration_offset_v() << "\n";
+		//cout << "center: " << cur_center << "; reg: " << element.registration_offset_v() << "\n";
 
 
 		for (unsigned int t = 0; t < worm->element_count(); t++) {

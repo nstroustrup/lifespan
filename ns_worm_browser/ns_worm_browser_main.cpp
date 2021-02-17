@@ -4183,8 +4183,9 @@ void ns_run_startup_routines() {
 			}
 		}
 
-		//example code that runns a movement analysis job for a specific region
-		if (1) {
+		//example code that runns a movement analysis job for a specific region.
+		//Usefull for debugging
+		if (0) {
 			ns_processing_job job;
 			const unsigned long region_id(31543);
 			job.region_id = region_id;

@@ -14,13 +14,14 @@ struct ns_added_element {
 	ns_vector_2i shift;
 };
 struct ns_alignment_state {
-	ns_alignment_state() :registration_offset_count(0),registration_offset_sum(0,0) {}
+	ns_alignment_state() :registration_offset_count(0),registration_offset_sum(0,0), cumulative_recentering_shift(0,0){}
 	void clear();
 	ns_image_whole<double> consensus;
 	ns_image_whole<ns_16_bit> consensus_count;
 	ns_image_whole<float> current_round_consensus;
 	ns_vector_2d registration_offset_sum;
 	unsigned long registration_offset_count;
+	ns_vector_2d cumulative_recentering_shift;
 
 	inline ns_vector_2d registration_offset_average() { return registration_offset_sum / (double)registration_offset_count; }
 	std::deque<ns_added_element> element_occupancy_ids;

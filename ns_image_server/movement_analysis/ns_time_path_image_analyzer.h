@@ -476,10 +476,15 @@ public:
 };
 class ns_analyzed_image_time_path {
 public:
+
+	//Previous versions used ns_absolute, which we retain for compatibility's sake.
+	//All new plots will be aligned according to the center of mass.
+	typedef enum { ns_absolute, ns_image_center_of_mass } ns_context_image_position_in_path_aligned_images;
+
 	ns_analyzed_image_time_path(ns_64_bit unique_process_id_) : volatile_backwards_path_data_written(false), first_stationary_timepoint_(0),
 		entirely_excluded(false), images_preallocated(false), 
 		low_density_path(false), output_reciever(0), flow_output_reciever(0), path_db_id(0), region_info_id(0), movement_image_storage(0), flow_movement_image_storage(0),
-		number_of_images_loaded(0), flow(0), stabilized_worm_region_total(0), unique_process_id(unique_process_id_), movement_image_storage_lock("misl"), asynchronous_loading_lock("all"){
+		number_of_images_loaded(0), flow(0), stabilized_worm_region_total(0), unique_process_id(unique_process_id_), movement_image_storage_lock("misl"), asynchronous_loading_lock("all"), software_registration_version(ns_image_center_of_mass) {
 		by_hand_annotation_event_times.resize((int)ns_number_of_movement_event_types, ns_death_time_annotation_time_interval::unobserved_interval());
 		by_hand_annotation_event_explicitness.resize((int)ns_number_of_movement_event_types, ns_death_time_annotation::ns_unknown_explicitness);
 	}
@@ -516,11 +521,8 @@ public:
 	ns_death_time_annotation_time_interval by_hand_death_associated_expansion_time() const;
 	ns_death_time_annotation_time_interval machine_event_time(const ns_movement_event & e, bool & skipped) const;
 
-	//Previous versions used ns_absolute, which we retain for compatibility's sake.
-	//All new plots will be aligned according to the center of mass.
-	typedef enum { ns_absolute, ns_image_center_of_mass } ns_context_image_position_in_path_aligned_images;
 
-	ns_context_image_position_in_path_aligned_images software_al_version;
+	ns_context_image_position_in_path_aligned_images software_registration_version;
 
 	ns_movement_state by_hand_movement_state(const unsigned long & t) const;
 	ns_hmm_movement_state by_hand_hmm_movement_state(const unsigned long & t) const;
@@ -577,7 +579,8 @@ public:
 
 	//returns the element index of the element that shows the last vigorous movement
 	//as defined by the last time the worm leaves a ring around its death position defined by distance_threshold
-	unsigned long  calculate_denoised_worm_vigorous_movement(const double distance_threshold,const unsigned long death_time = 0) const;
+	//specify either the time of death or the element index of the time of death, or default to the last element in the path
+	unsigned long  calculate_denoised_worm_vigorous_movement(const double distance_threshold,const unsigned long death_time = 0,const long death_index = -1) const;
 
 	//the maximum distance that a worm can be offset from the center of the context image
 	//this is set because the context image is shifted in the pa image so that the context image's intensity center of mass

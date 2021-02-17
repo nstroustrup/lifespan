@@ -965,6 +965,18 @@ ns_time_path_posture_movement_solution ns_time_path_movement_markov_solver::esti
 	ns_hmm_solver solver;
 	solver.solve(*path, estimator, reusable_memory);
 
+	//The HMM model just takes the fast movement as as given by the original ns_time_path_solver start of stationarity.
+	//However, we can do much better than that by considering the worm's movement within the path
+	//which we do here.
+	if (!solver.movement_state_solution.fast.skipped) {
+		unsigned long last_vigorous_movement;
+		if (!solver.movement_state_solution.dead.skipped)
+			last_vigorous_movement = path->calculate_denoised_worm_vigorous_movement(40,0, solver.movement_state_solution.dead.start_index);
+		else last_vigorous_movement = path->calculate_denoised_worm_vigorous_movement(40);
+		solver.movement_state_solution.fast.start_index = 0;
+		solver.movement_state_solution.fast.end_index = last_vigorous_movement;
+	}
+
 	return solver.movement_state_solution;
 }
 

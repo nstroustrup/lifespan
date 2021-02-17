@@ -685,7 +685,7 @@ void ns_analyzed_image_time_path::calculate_stabilized_worm_neighborhood(ns_imag
 }
 
 
-unsigned long ns_analyzed_image_time_path::calculate_denoised_worm_vigorous_movement(const double distance_threshold, const unsigned long death_time) const{
+unsigned long ns_analyzed_image_time_path::calculate_denoised_worm_vigorous_movement(const double distance_threshold, const unsigned long death_time , const long death_index_) const{
 	if (elements.size() == 0)
 		throw ns_ex("ns_analyzed_image_time_path::calculate_denoised_worm_vigorous_movement()::Looking for vigorous movement cessation on an empty path");
 	std::vector<double> x_positions(elements.size(), 0), 
@@ -705,8 +705,8 @@ unsigned long ns_analyzed_image_time_path::calculate_denoised_worm_vigorous_move
 		elements[i].volatile_denoised_absolute_location.y = y_positions[i];
 	}
 	//find the worms' position at the time of death
-	bool found_death_time(death_time==0);
-	long death_index = elements.size() - 1;
+	bool found_death_time(death_time==0 || death_index_ == -1);
+	long death_index = (death_index_ != -1) ? death_index_ : (elements.size() - 1);
 	unsigned long stationary_count = 0;
 	for (long i = elements.size() - 1; i >= 0 && !found_death_time; --i) {
 		if (death_time >= elements[i].absolute_time)
@@ -1639,7 +1639,7 @@ void ns_time_path_movement_result_files::set_from_base_db_record(const ns_image_
 }
 
 void ns_analyzed_image_time_path::set_path_alignment_image_dimensions(ns_image_properties& prop) const {
-	if (software_al_version == ns_analyzed_image_time_path::ns_image_center_of_mass) {
+	if (software_registration_version == ns_analyzed_image_time_path::ns_image_center_of_mass) {
 		prop.width = path_aligned_image_size.x + (long)(2 * ns_analyzed_image_time_path::maximum_alignment_offset().x);
 		prop.height = path_aligned_image_size.y + (long)(2 * ns_analyzed_image_time_path::maximum_alignment_offset().y);
 	}
@@ -1700,7 +1700,7 @@ void ns_time_path_image_movement_analyzer<allocator_T>::load_stored_movement_ana
 	
 		for (unsigned int g = 0; g < groups.size() && !found_any_image_intensity_centering_data; g++) {
 			for (unsigned int p = 0; p < groups[g].paths.size() && !found_any_image_intensity_centering_data; p++) {
-				groups[g].paths[p].software_al_version = found_any_image_intensity_centering_data ? ns_analyzed_image_time_path::ns_image_center_of_mass : ns_analyzed_image_time_path::ns_absolute;
+				groups[g].paths[p].software_registration_version = found_any_image_intensity_centering_data ? ns_analyzed_image_time_path::ns_image_center_of_mass : ns_analyzed_image_time_path::ns_absolute;
 			}
 		}
 		

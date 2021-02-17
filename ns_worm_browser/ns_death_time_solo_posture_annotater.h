@@ -615,7 +615,7 @@ private:
 
 		lines[2] = handle().data->metadata.sample_name + "::" + handle().data->metadata.region_name + "::worm #" + ns_to_string(properties_for_all_animals.stationary_path_id.group_id);
 
-		ns_vector_2i p(cur_worm->path_context_position_in_region_image + cur_worm->path_context_size_in_region_image / 2);
+		ns_vector_2i p(cur_worm->path_context_position_in_source_image + cur_worm->path_context_size_in_source_image / 2);
 		lines[2] += " (" + ns_to_string(p.x) + "," + ns_to_string(p.y) + ")";
 
 		lines[3] = "Machine:" + state_label(cur_machine_state) + (machine_death_expanding ? "(Expanding)" : "") + (machine_death_post_expansion_contracting ? "(Contracting)" : "");
@@ -647,8 +647,10 @@ private:
 	ns_worm_learner* worm_learner;
 
 
+
 public:
 
+	bool draw_position_overlay_to_screen;
 	enum { default_resize_factor = 1, max_buffer_size = 1, max_zoom_factor = 40 };
 	float telemetry_zoom_factor;
 	ns_vector_2i telemetry_size() { return ns_vector_2i(500, 500) * ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor; }
@@ -708,8 +710,8 @@ public:
 	void set_resize_factor(const unsigned long resize_factor_) { resize_factor = resize_factor_; }
 	bool data_needs_saving()const { throw ns_ex("All saving should be done via ns_death_time_posture_annotater!"); }
 	ns_death_time_solo_posture_annotater() :ns_image_series_annotater(default_resize_factor, ns_death_time_posture_annotater_timepoint::ns_bottom_border_height),
-		 graph_contents(ns_animal_telemetry::ns_movement_intensity), worm_image_offset_due_to_telemetry_graph_spacing(0, 0), current_visualization_type(ns_death_time_solo_posture_annotater_timepoint::ns_image),
-		region_loaded(false), telemetry_zoom_factor(1), current_region_id(0) {	}
+		 graph_contents(ns_animal_telemetry::ns_movement_intensity), worm_image_offset_due_to_telemetry_graph_spacing(0, 0), current_visualization_type(ns_death_time_solo_posture_annotater_timepoint::ns_image), draw_position_overlay_to_screen(false),
+		region_loaded(false), telemetry_zoom_factor(1), current_region_id(0), last_vigorous_movement_element_id(-1){	}
 	bool region_loaded;
 	typedef enum { ns_time_aligned_images, ns_death_aligned_images } ns_alignment_type;
 
@@ -761,6 +763,7 @@ public:
 		current_worm_id.path_id = 0;
 		current_timepoint_id = 0;
 		current_animal_id = 0;
+		last_vigorous_movement_element_id = -1;
 	}
 	void clear_data_cache() {
 		data_cache.clear();
@@ -797,7 +800,7 @@ public:
 			current_timepoint_id++;
 		return cur_worm->element(current_timepoint_id).absolute_time;
 	}
-
+	unsigned long last_vigorous_movement_element_id;
 	unsigned long last_time_at_current_telementry_zoom(ns_death_time_posture_solo_annotater_data_cache_storage::handle_t& handle) const;
 	void draw_telemetry(const ns_vector_2i& position, const ns_vector_2i& graph_size, const float rescale_factor, ns_tiled_gl_image & buffer);
 	void draw_position_overlay(const ns_vector_2i& position, const ns_vector_2i& graph_size, const float rescale_factor, ns_tiled_gl_image& buffer);

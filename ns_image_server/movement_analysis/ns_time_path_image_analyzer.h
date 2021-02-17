@@ -176,7 +176,7 @@ template<class allocator_T> using ns_registered_image_pool = ns_image_pool<ns_re
 class ns_analyzed_image_time_path_element{
 public:
 	ns_analyzed_image_time_path_element():registered_images(0),path_aligned_images(0),
-	inferred_animal_location(false), debug_write_count(0),path_aligned_images_are_loaded_and_released(false), offset_in_path_aligned_image(0,0), volatile_image_centering_offset(0,0),intensity_center_of_mass(0,0),element_before_fast_movement_cessation(false),element_was_processed(false), worm_center_in_registered_image_cached(0,0),worm_center_in_registered_image_cached_calculated(false),movement(ns_movement_not_calculated),saturated_offset(false),registration_offset(0,0),number_of_extra_worms_observed_at_position(0),part_of_a_multiple_worm_disambiguation_group(0),excluded(false),censored(false){}
+	inferred_animal_location(false), debug_write_count(0),path_aligned_images_are_loaded_and_released(false), offset_in_path_aligned_image(0,0), volatile_image_centering_offset(0,0), volatile_denoised_absolute_location(0, 0),intensity_center_of_mass(0,0),element_before_fast_movement_cessation(false),element_was_processed(false), worm_center_in_registered_image_cached(0,0),worm_center_in_registered_image_cached_calculated(false),movement(ns_movement_not_calculated),saturated_offset(false),registration_offset(0,0),number_of_extra_worms_observed_at_position(0),part_of_a_multiple_worm_disambiguation_group(0),excluded(false),censored(false){}
 	~ns_analyzed_image_time_path_element(){
 		if (path_aligned_images != 0 || registered_images != 0)
 			std::cerr << "ABOUT TO LEAK TIME PATH ELEMENT!";
@@ -249,6 +249,10 @@ public:
 	}
 	void generate_movement_visualization(ns_image_standard & out) const;
 
+
+	mutable ns_vector_2d volatile_denoised_absolute_location;
+	const ns_vector_2i & get_context_position_in_source_image() const { return context_position_in_source_image; }
+
 private:
 	unsigned long number_of_extra_worms_observed_at_position;
 	bool part_of_a_multiple_worm_disambiguation_group;
@@ -275,11 +279,11 @@ private:
 
 	ns_vector_2i volatile_image_centering_offset;
 
+
 	//xxx
 	ns_64_bit alignment_times[2];
 	ns_vector_2d synthetic_offset;
 
-//	const ns_detected_worm_info * worm_;
 	ns_vector_2i context_position_in_region_vis_image;
 	ns_vector_2i region_position_in_source_image;
 	ns_vector_2i context_position_in_source_image;
@@ -512,6 +516,12 @@ public:
 	ns_death_time_annotation_time_interval by_hand_death_associated_expansion_time() const;
 	ns_death_time_annotation_time_interval machine_event_time(const ns_movement_event & e, bool & skipped) const;
 
+	//Previous versions used ns_absolute, which we retain for compatibility's sake.
+	//All new plots will be aligned according to the center of mass.
+	typedef enum { ns_absolute, ns_image_center_of_mass } ns_context_image_position_in_path_aligned_images;
+
+	ns_context_image_position_in_path_aligned_images software_al_version;
+
 	ns_movement_state by_hand_movement_state(const unsigned long & t) const;
 	ns_hmm_movement_state by_hand_hmm_movement_state(const unsigned long & t) const;
 	void add_death_time_events_to_set(ns_death_time_annotation_set & set) const;
@@ -536,8 +546,8 @@ public:
 	void calculate_expansion_analysis_optimization_data(const unsigned long actual_death_time, const std::vector<double> & thresholds, const std::vector<unsigned long> & hold_times, std::vector< ns_death_time_expansion_info > & expansion_intervals) const;
 
 	ns_vector_2i
-		path_context_position_in_region_image,
-		path_context_size_in_region_image,
+		path_context_position_in_source_image,
+		path_context_size_in_source_image,
 		path_aligned_image_size;
 
 	//void out_histograms(std::ostream & o) const;
@@ -565,6 +575,10 @@ public:
 	//so this offset of *after* that.
 	static ns_vector_2d maximum_alignment_offset(){return ns_vector_2d(60,60);}
 
+	//returns the element index of the element that shows the last vigorous movement
+	//as defined by the last time the worm leaves a ring around its death position defined by distance_threshold
+	unsigned long  calculate_denoised_worm_vigorous_movement(const double distance_threshold,const unsigned long death_time = 0) const;
+
 	//the maximum distance that a worm can be offset from the center of the context image
 	//this is set because the context image is shifted in the pa image so that the context image's intensity center of mass
 	//is in exactly the center
@@ -581,11 +595,7 @@ public:
 	void calculate_movement_quantification_summary(ns_movement_analysis_result& result) const;
 	static ns_vector_2i max_step_alignment_offset();
 
-	void set_path_alignment_image_dimensions(ns_image_properties & prop) const{
-		prop.width = path_aligned_image_size.x + (long)(2*ns_analyzed_image_time_path::maximum_alignment_offset().x);
-		prop.height = path_aligned_image_size.y + (long)(2*ns_analyzed_image_time_path::maximum_alignment_offset().y);
-		prop.components = 1;
-	}
+	void set_path_alignment_image_dimensions(ns_image_properties& prop) const;
 
 	typedef std::vector<ns_analyzed_image_time_path_element> ns_element_list;
 	bool by_hand_data_specified() const;

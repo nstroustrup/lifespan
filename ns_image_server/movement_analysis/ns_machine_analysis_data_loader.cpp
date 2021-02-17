@@ -134,7 +134,7 @@ void ns_machine_analysis_sample_data::load(const ns_death_time_annotation_set::n
 	device_name_ = sample_metadata.device;
 	ns_sql_result reg;
 	sql << "SELECT r.id, r.excluded_from_analysis, r.censored FROM sample_region_image_info as r WHERE r.sample_id = " << sample_id << " AND r.censored=0 ";
-	if (!include_excluded_regions)
+	if (specific_region_id == 0 && !include_excluded_regions)
 			sql << " AND r.excluded_from_analysis=0";
 	if (specific_region_id!=0)
 		sql << " AND r.id = " << specific_region_id;

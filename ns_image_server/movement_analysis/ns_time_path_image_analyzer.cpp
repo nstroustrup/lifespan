@@ -62,7 +62,7 @@ ns_vector_2d ns_analyzed_image_time_path_element::worm_center_in_registered_imag
 		return(ns_vector_2d (-1, -1));
 	worm_center_in_registered_image_cached.x = px / (double)n;
 	worm_center_in_registered_image_cached.y = py / (double)n;
-	worm_center_in_registered_image_cached_calculated = false;
+	worm_center_in_registered_image_cached_calculated = true;
 	return worm_center_in_registered_image_cached;
 }
 ns_vector_2d ns_analyzed_image_time_path_element::worm_center_in_absolute_coordinates() const {
@@ -684,6 +684,49 @@ void ns_analyzed_image_time_path::calculate_stabilized_worm_neighborhood(ns_imag
 	stabilized_worm_region_total = 0;
 }
 
+
+unsigned long ns_analyzed_image_time_path::calculate_denoised_worm_vigorous_movement(const double distance_threshold, const unsigned long death_time) const{
+	if (elements.size() == 0)
+		throw ns_ex("ns_analyzed_image_time_path::calculate_denoised_worm_vigorous_movement()::Looking for vigorous movement cessation on an empty path");
+	std::vector<double> x_positions(elements.size(), 0), 
+					  y_positions(elements.size(), 0);
+	for (unsigned int i = 0; i < elements.size(); i++) {
+		const ns_vector_2d worm_center_in_source_image(elements[i].context_offset_in_source_image() - elements[i].intensity_center_of_mass);
+		const ns_vector_2d e(worm_center_in_source_image - elements[i].registration_offset);
+		x_positions[i] = e.x;
+		y_positions[i] = e.y;
+	}
+
+	ns_median_smoother(x_positions, 2);
+	ns_median_smoother(y_positions, 2);
+
+	for (unsigned int i = 0; i < elements.size(); i++) {
+		elements[i].volatile_denoised_absolute_location.x = x_positions[i];
+		elements[i].volatile_denoised_absolute_location.y = y_positions[i];
+	}
+	//find the worms' position at the time of death
+	bool found_death_time(death_time==0);
+	long death_index = elements.size() - 1;
+	unsigned long stationary_count = 0;
+	for (long i = elements.size() - 1; i >= 0 && !found_death_time; --i) {
+		if (death_time >= elements[i].absolute_time)
+			stationary_count++;
+		else stationary_count = 0;
+		if (stationary_count > 3){
+			death_index = i+3;
+			found_death_time = true;
+		}
+	}
+	if (!found_death_time)
+		throw ns_ex("ns_analyzed_image_time_path::calculate_denoised_worm_vigorous_movement()::Could not find specified death time: ") << death_time;
+
+	const double dd(distance_threshold * distance_threshold);
+	for (long i = death_index-1; i >= 0; --i) {
+		if ((elements[death_index].volatile_denoised_absolute_location - elements[i].volatile_denoised_absolute_location).squared() >= dd)
+			return i;
+	}
+	return 0;
+}
 
 
 template<class allocator_T>
@@ -1595,6 +1638,17 @@ void ns_time_path_movement_result_files::set_from_base_db_record(const ns_image_
 	only_quantification_specified = false;
 }
 
+void ns_analyzed_image_time_path::set_path_alignment_image_dimensions(ns_image_properties& prop) const {
+	if (software_al_version == ns_analyzed_image_time_path::ns_image_center_of_mass) {
+		prop.width = path_aligned_image_size.x + (long)(2 * ns_analyzed_image_time_path::maximum_alignment_offset().x);
+		prop.height = path_aligned_image_size.y + (long)(2 * ns_analyzed_image_time_path::maximum_alignment_offset().y);
+	}
+	else {	//included for backwards compatibility to previous registration code.
+		prop.width = path_context_size_in_source_image.x + (long)(2 * ns_analyzed_image_time_path::maximum_alignment_offset().x);
+		prop.height = path_context_size_in_source_image.y + (long)(2 * ns_analyzed_image_time_path::maximum_alignment_offset().y);
+	}
+	prop.components = 1;
+}
 
 template<class allocator_T>
 void ns_time_path_image_movement_analyzer<allocator_T>::load_stored_movement_analysis_results(ns_sql & sql, const ns_movement_analysis_results_to_load& movement_data_to_load){
@@ -1626,6 +1680,28 @@ void ns_time_path_image_movement_analyzer<allocator_T>::load_stored_movement_ana
 			e_i.release();
 			read_internal_intervals_data(i_i()());
 			i_i.release();
+		}
+		
+		//old version of software did not put any data into the "intensity_center_of_mass" field,
+		//so we can recognize the software version by seeing if these are set
+		bool found_any_image_intensity_centering_data(false);
+		for (unsigned int g = 0; g < groups.size() && !found_any_image_intensity_centering_data; g++) {
+			for (unsigned int p = 0; p < groups[g].paths.size() && !found_any_image_intensity_centering_data; p++) {
+				for (unsigned int i = 0; i < groups[g].paths[p].elements.size(); i++) {
+					if (groups[g].paths[p].elements[i].intensity_center_of_mass.x != 0 ||
+						groups[g].paths[p].elements[i].intensity_center_of_mass.y != 0) {
+						found_any_image_intensity_centering_data = true;
+						break;
+					}
+				}
+			}
+		}
+
+	
+		for (unsigned int g = 0; g < groups.size() && !found_any_image_intensity_centering_data; g++) {
+			for (unsigned int p = 0; p < groups[g].paths.size() && !found_any_image_intensity_centering_data; p++) {
+				groups[g].paths[p].software_al_version = found_any_image_intensity_centering_data ? ns_analyzed_image_time_path::ns_image_center_of_mass : ns_analyzed_image_time_path::ns_absolute;
+			}
 		}
 		
 	}
@@ -4861,7 +4937,7 @@ void ns_time_path_image_movement_analyzer<allocator_T>::add_by_hand_annotations(
 	//load all paths into a compiler to do the merge
 	for (unsigned int i = 0; i < groups.size(); i++){
 		for (unsigned int j = 0; j < groups[i].paths.size(); j++)
-			compiler.add_path(region_info_id, generate_stationary_path_id(i, j),groups[i].paths[j].path_context_position_in_region_image,groups[i].paths[j].path_context_size_in_region_image, ns_region_metadata());
+			compiler.add_path(region_info_id, generate_stationary_path_id(i, j),groups[i].paths[j].path_context_position_in_source_image,groups[i].paths[j].path_context_size_in_source_image, ns_region_metadata());
 	}
 	//do the merge
 	compiler.add(annotations);
@@ -6233,7 +6309,7 @@ void ns_time_path_image_movement_analyzer<allocator_T>::match_plate_areas_to_pat
 
 			for (unsigned int i = 0; i < areas.size(); i++) {
 				const ns_vector_2i overlap_area = ns_rectangle_overlap_area(areas[i].pos, areas[i].pos + areas[i].size,
-					groups[g].paths[p].path_context_position_in_region_image, groups[g].paths[p].path_context_position_in_region_image + groups[g].paths[p].path_context_size_in_region_image);
+					groups[g].paths[p].path_context_position_in_source_image, groups[g].paths[p].path_context_position_in_source_image + groups[g].paths[p].path_context_size_in_source_image);
 				unsigned long oa = overlap_area.x * overlap_area.y;
 				if (oa == 0)
 					continue;
@@ -6789,18 +6865,18 @@ ns_analyzed_image_time_path_group<allocator_T>::ns_analyzed_image_time_path_grou
 				if (pos.x == -1 || pos.y == -1)
 					throw ns_ex("An unspecified context position was found in the time path solution");
 				const ns_vector_2i& size(e.worm_context_size_);
-				if (pos.x - ns_analyzed_image_time_path::maximum_pa_shift_offset() < tl.x)
-					tl.x = pos.x - ns_analyzed_image_time_path::maximum_pa_shift_offset();
-				if (pos.y - ns_analyzed_image_time_path::maximum_pa_shift_offset() < tl.y)
-					tl.y = pos.y - ns_analyzed_image_time_path::maximum_pa_shift_offset();
-				if (pos.x + size.x + ns_analyzed_image_time_path::maximum_pa_shift_offset() > br.x)
-					br.x = pos.x + size.x + ns_analyzed_image_time_path::maximum_pa_shift_offset();
-				if (pos.y + size.y + ns_analyzed_image_time_path::maximum_pa_shift_offset() > br.y)
-					br.y = pos.y + size.y + ns_analyzed_image_time_path::maximum_pa_shift_offset();
+				if (pos.x < tl.x)
+					tl.x = pos.x;
+				if (pos.y < tl.y)
+					tl.y = pos.y;
+				if (pos.x + size.x > br.x)
+					br.x = pos.x + size.x;
+				if (pos.y + size.y> br.y)
+					br.y = pos.y + size.y;
 			}
 			//the absolute coordinates of the path
-			path.path_context_position_in_region_image = tl;
-			path.path_context_size_in_region_image = br - tl;
+			path.path_context_position_in_source_image = tl;
+			path.path_context_size_in_source_image = br - tl;
 		}
 
 		//Now, we calculate the path bounding box in relative coordinates, based on each image being centered around its image intensity center of mass
@@ -6819,10 +6895,6 @@ ns_analyzed_image_time_path_group<allocator_T>::ns_analyzed_image_time_path_grou
 			path.path_aligned_image_size = br;
 		}
 
-
-		/*for (unsigned int j = 0; j < path.elements.size(); j++) 
-				path.elements[j].offset_from_path_in_region_image_ = path.elements[j].context_position_in_source_image - path.path_context_position_in_region_image;*/
-		
 		current_path_id++;
 	}
 }
@@ -8864,8 +8936,8 @@ void ns_time_path_image_movement_analyzer<allocator_T>::generate_movement_postur
 
 			 string::size_type ps(vis_summary.worms.size());
 			 vis_summary.worms.resize(ps + 1);
-			 vis_summary.worms[ps].path_in_source_image.position = path.path_context_position_in_region_image - bc / 2;
-			 vis_summary.worms[ps].path_in_source_image.size = path.path_context_size_in_region_image;
+			 vis_summary.worms[ps].path_in_source_image.position = path.path_context_position_in_source_image - bc / 2;
+			 vis_summary.worms[ps].path_in_source_image.size = path.path_context_size_in_source_image;
 
 			 vis_summary.worms[ps].worm_in_source_image.position = path.elements[i].region_offset_in_source_image() - bc / 2;
 			 vis_summary.worms[ps].worm_in_source_image.size = path.elements[i].worm_region_size();

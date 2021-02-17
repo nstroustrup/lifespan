@@ -6684,8 +6684,13 @@ bool ns_worm_learner::register_worm_window_key_press(int key, const bool shift_k
 		death_time_solo_annotater.copy_machine_annotations_to_by_hand(worm_window.display_rescale_factor);
 		ns_update_worm_information_bar(string("Copying machine annotations to by hand"));
 		return true;
-
 	}
+	else if (key == 'o') {
+		death_time_solo_annotater.draw_position_overlay_to_screen = !death_time_solo_annotater.draw_position_overlay_to_screen;
+		death_time_solo_annotater.display_current_frame();
+		return true;
+	}
+
 	return false;
 }
 
@@ -7206,7 +7211,7 @@ void ns_worm_learner::draw_worm_window_image(ns_image_standard & image){
 			death_time_solo_annotater.load_movement_quantification_if_needed(0);
 
 			const unsigned long side_border(ns_death_time_solo_posture_annotater_timepoint::ns_side_border_width * ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor);
-			
+			if (death_time_solo_annotater.draw_position_overlay_to_screen)
 			death_time_solo_annotater.draw_position_overlay(ns_vector_2i(side_border,side_border),ns_vector_2i(image.properties().width,image.properties().height),
 				worm_window.display_rescale_factor, worm_window.gl_buffer);
 		
@@ -9028,38 +9033,80 @@ void ns_death_time_solo_posture_annotater::draw_position_overlay(const ns_vector
 	ns_death_time_posture_solo_annotater_data_cache_storage::handle_t handle;
 	try {
 
+
 		const int ns_screen_resize_factor(ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor);
 
 		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Loading movement data"));
 		data_cache.get_region_movement_data(this->current_region_id, sql(), telemetry.show(), handle);
 		const ns_analyzed_image_time_path* worm = current_worm(handle);
+
+		double cutoff(40);
+		if (last_vigorous_movement_element_id == -1) {
+			last_vigorous_movement_element_id = worm->calculate_denoised_worm_vigorous_movement(cutoff, -1);
+		}
 		const ns_analyzed_image_time_path_element& element = worm->element(this->current_element_id());
-		ns_vector_2d cur_center = element.worm_center_in_registered_image();
-		//cout << "center: " << cur_center << "; reg: " << element.registration_offset_v() << "\n";
 
-
+		char color[3];
 		for (unsigned int t = 0; t < worm->element_count(); t++) {
-			ns_vector_2d pos = worm->element(t).worm_center_in_absolute_coordinates();
-			if (pos.x == -1)
-				continue;
-			pos = pos + element.registration_offset_v();/* element.offset_from_path + -(worm->element(t).offset_from_path);*/
-			buffer(position.x + (pos.x ) * ns_screen_resize_factor, image_size.y - 1 - position.y - (pos.y) * ns_screen_resize_factor)[0] = 255;
-			buffer(position.x + (pos.x) * ns_screen_resize_factor, image_size.y - 1 - position.y - (pos.y) * ns_screen_resize_factor)[1] = 50;
-			buffer(position.x + (pos.x) * ns_screen_resize_factor, image_size.y - 1 - position.y - (pos.y) * ns_screen_resize_factor)[2] = 50;
+			const ns_vector_2d diff_from_death(worm->element(t).volatile_denoised_absolute_location - worm->element(worm->element_count()-1).volatile_denoised_absolute_location);
+			const ns_vector_2d diff_from_cur(worm->element(t).volatile_denoised_absolute_location - element.volatile_denoised_absolute_location);
+
+			const ns_vector_2i pos(ns_vector_2d(diff_from_cur +element.worm_center_in_registered_image())*ns_screen_resize_factor);
+			if (diff_from_death.mag() >= cutoff) {
+				color[0] = 255;
+				color[1] = 100;
+				color[2] = 100;
+			}
+			else {
+				color[0] = 100;
+				color[1] = 100;
+				color[2] = 255;
+			}
+			if (pos.x == -1 ||
+				pos.x < 1 || pos.x+1 >= image_size.x ||
+				pos.y < 1 || pos.y+1 >= image_size.y)
+				continue; 
+			for (long y = -2; y < 2; y++)
+				for (long x = -2; x < 2; x++)
+					for (unsigned int c = 0; c < 3; c++)
+						buffer(position.x + (pos.x+x) , image_size.y - 1 - position.y - (pos.y+y) )[c] = color[c];
 		}
 	
-		if (cur_center.x != -1) {
-			for (unsigned int y = 0; y < 5; y++)
-				for (unsigned int x = 0; x < 5; x++) {
-
-					buffer(position.x + (cur_center.x + x) * ns_screen_resize_factor, image_size.y - 1 - position.y - (cur_center.y + y) * ns_screen_resize_factor)[3] = 0;
-					for (unsigned int c = 0; c < 2; c++)
-						buffer(position.x + (cur_center.x + x) * ns_screen_resize_factor, image_size.y - 1 - position.y - (cur_center.y + y) * ns_screen_resize_factor)[c] = 255;
-				}
+		if (current_element_id() <= last_vigorous_movement_element_id) {
+			color[0] = 255;
+			color[1] = 100;
+			color[2] = 100;
 		}
+		else {
+			color[0] = 100;
+			color[1] = 100;
+			color[2] = 255;
+		}
+		ns_vector_2d pos = element.worm_center_in_registered_image()*ns_screen_resize_factor;
+		if (pos.x != -1 &&
+			pos.x >= 3 && pos.x + 3 < image_size.x &&
+			pos.y >= 3 && pos.y + 3 < image_size.y) {
 
+			for (long x = -5; x < 5; x++)
+				for (long c = 0; c < 3; c++)
+					buffer(position.x + (pos.x + x) , image_size.y - 1 - position.y - (pos.y -5) )[c] = 0;
+			for (long y = -4; y < 4; y++){
+				for (long c = 0; c < 3; c++)
+					buffer(position.x + (pos.x - 5) , image_size.y - 1 - position.y - (pos.y + y) )[c] = 0;
+				for (long x = -4; x < 4; x++) {
+					for (long c = 0; c < 3; c++)
+						buffer(position.x + (pos.x + x) , image_size.y - 1 - position.y - (pos.y + y) )[c] = color[c];
+				}
+				for (long c = 0; c < 3; c++)
+					buffer(position.x + (pos.x + 5) , image_size.y - 1 - position.y - (pos.y + y) )[c] = 0;
+			}
+			for (long x = -5; x < 5; x++)
+				for (long c = 0; c < 3; c++)
+					buffer(position.x + (pos.x + x) , image_size.y - 1 - position.y - (pos.y +5) )[c] = 0;
 
-
+		}
+	
+		/*
 		const long h(element.registered_image_set().image.properties().height),
 			w(element.registered_image_set().image.properties().width);
 		for (unsigned int y = 0; y < h; y++)
@@ -9070,6 +9117,7 @@ void ns_death_time_solo_posture_annotater::draw_position_overlay(const ns_vector
 						buffer(position.x + x * ns_screen_resize_factor, image_size.y - 1 - position.y - y * ns_screen_resize_factor)[c + 1] = 255;
 				}
 			}
+			*/
 	}
 	catch (ns_ex & ex) {
 		std::cerr << "Could not draw position overlay: " << ex.text();

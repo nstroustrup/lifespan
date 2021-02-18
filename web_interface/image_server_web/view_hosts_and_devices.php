@@ -161,7 +161,7 @@ if (ns_param_spec($_POST,'shut_down')){
  }
 if (ns_param_spec($_POST,'delete_all_hosts')){
 
-  $query = "DELETE FROM hosts WHERE UNIX_TIMESTAMP(NOW())-last_ping > $current_device_cutoff";
+  $query = "DELETE FROM hosts WHERE UNIX_TIMESTAMP(NOW())-cast(last_ping as signed) > $current_device_cutoff";
   $sql->send_query($query);
   $refresh = TRUE;
  }
@@ -196,7 +196,7 @@ if (ns_param_spec($_POST,'add_to_device_inventory')){
 		if (sizeof($res) > 0)
 			echo "Device " . $name . " is already in the device inventory<br>";
 		else{
-			$query = "INSERT INTO device_inventory SET device_name='$name'";
+			$query = "INSERT INTO device_inventory SET device_name='$name', incubator_name='',incubator_location=''";
 			$sql->send_query($query);
 		}
 	}
@@ -268,7 +268,7 @@ die("");
 
 
 $query = "SELECT id, name, ip, last_ping, comments, long_term_storage_enabled, port,software_version_major,software_version_minor,software_version_compile, pause_requested, base_host_name, database_used,available_space_in_volatile_storage_in_mb,time_of_last_successful_long_term_storage_write,system_hostname,additional_host_description,system_parallel_process_id, dispatcher_refresh_interval";
-$query .=",UNIX_TIMESTAMP(NOW()) - last_ping < 2*dispatcher_refresh_interval";
+$query .=",UNIX_TIMESTAMP(NOW()) - cast(last_ping as signed) < 2*dispatcher_refresh_interval";
 $query .=" FROM hosts ORDER BY pause_requested,name";
 $sql->get_row($query,$hosts);
 

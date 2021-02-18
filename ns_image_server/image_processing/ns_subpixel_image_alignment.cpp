@@ -473,16 +473,19 @@ ns_vector_2d ns_calc_best_alignment_fast::operator()(const ns_vector_2d & initia
 					image_pyramid->image_scaled[i],
 					tl / fold, br / fold, reg + shift[i], saturated_offset,0,only_vertical);
 				if (saturated_offset) {
+					std::cerr << "Gradient shift saturated at level " << i << "\n";
 					err = true;
 					break;
 				}
 				//reject too-large shifts;
 				//gradient registration only works well for small
 				//deviations around the set point.
-				if (fabs(sh.x) > 2 ||
-					fabs(sh.y) > 2) {
-					if (lowest_resolution_level)
+				if (fabs(sh.x) > 3 ||
+					fabs(sh.y) > 3) {
+					if (lowest_resolution_level) {
 						saturated_offset = true;
+						std::cerr << "Saturated due to too-large shift at level " << i << "\n";
+					}
 					err = true;
 					break;
 				}

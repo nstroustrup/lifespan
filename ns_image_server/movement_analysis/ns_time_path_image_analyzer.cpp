@@ -4540,33 +4540,67 @@ ns_vector_2i ns_image_intensity_center_from_channel(const ns_image_standard& im,
 	}
 	
 	if (is == 0)
-		return tl;
+		return (br - tl) / 2;
 	return ns_vector_2i(sx / (is), sy / (is));
 }
-ns_vector_2i ns_image_intensity_center(const ns_image_whole<double>& im, const ns_vector_2i& tl, const ns_vector_2i& br) {
+ns_vector_2i ns_image_intensity_center(const ns_image_whole<double>& im, const ns_image_whole<ns_16_bit> & count,const ns_vector_2i& tl, const ns_vector_2i& br) {
 	double sx(0), sy(0), is(0);
 	for (unsigned long y = tl.y; y < br.y; y++) {
 		for (unsigned long x = tl.x; x < br.x; x++) {
-			const double v(im[y][x ]);
+			const double v((count[y][x]!=0)?im[y][x ]/count[y][x] : 0);
 			sx += (x - tl.x) * v;
 			sy += (y - tl.y) * v;
 			is += v;
 		}
 	}
 	if (is == 0)
-		return tl;
+		return (br-tl)/2;
 	return ns_vector_2i(sx / (is), sy / (is));
 }
 
 
 
-ns_vector_2i ns_analyzed_image_time_path_element::context_position_in_path_aligned_image(const ns_image_properties& path_aligned_image_size) const {
+void ns_analyzed_image_time_path_element::context_coordinates_in_path_aligned_image(ns_vector_2i & pa_position, ns_vector_2i & pa_size, ns_vector_2i & context_tl, const ns_image_properties& path_aligned_image_size) const {
 	ns_vector_2i shift(intensity_center_of_mass);
-	if (abs(shift.x) > ns_analyzed_image_time_path::maximum_pa_shift_offset())
-		shift.x = ((shift.x>0)?1:-1)*ns_analyzed_image_time_path::maximum_pa_shift_offset();
-	if (abs(shift.y) > ns_analyzed_image_time_path::maximum_pa_shift_offset())
-		shift.y = ((shift.y > 0) ? 1 : -1)* ns_analyzed_image_time_path::maximum_pa_shift_offset();
-	return ns_vector_2i(path_aligned_image_size.width, path_aligned_image_size.height) / 2 - shift;
+	const ns_vector_2i center(path_aligned_image_size.width/2, path_aligned_image_size.height/2);
+
+	if (abs(shift.x) > ns_analyzed_image_time_path::maximum_pa_shift_offset()+ns_analyzed_image_time_path::maximum_pa_crop()) {
+		std::cerr << "Completely Saturated during centering to intensity center: x=" << shift.x << "\n";
+		pa_position.x = center.x - ns_analyzed_image_time_path::maximum_pa_shift_offset();
+		pa_size.x = worm_context_size_.x - ns_analyzed_image_time_path::maximum_pa_crop();
+		context_tl.x = ns_analyzed_image_time_path::maximum_pa_crop();
+	}
+	else if (abs(shift.x) > ns_analyzed_image_time_path::maximum_pa_shift_offset()) {
+		std::cerr << "Had to crop centering to intensity center: x=" << shift.x << "\n";
+		long overflow = shift.x - ns_analyzed_image_time_path::maximum_pa_shift_offset();
+		pa_position.x = center.x - ns_analyzed_image_time_path::maximum_pa_shift_offset();
+		pa_size.x = worm_context_size_.x - overflow;
+		context_tl.x = overflow;
+	}
+	else {
+		pa_position.x = center.x - shift.x;
+		pa_size.x = worm_context_size_.x;
+		context_tl.x = 0;
+	}
+
+	if (abs(shift.y) > ns_analyzed_image_time_path::maximum_pa_shift_offset() + ns_analyzed_image_time_path::maximum_pa_crop()) {
+		std::cerr << "Completely Saturated during centering to intensity center: y=" << shift.y << "\n";
+		pa_position.y = center.y - ns_analyzed_image_time_path::maximum_pa_shift_offset();
+		pa_size.y = worm_context_size_.y - ns_analyzed_image_time_path::maximum_pa_crop();
+		context_tl.y = ns_analyzed_image_time_path::maximum_pa_crop();
+	}
+	else if (abs(shift.y) > ns_analyzed_image_time_path::maximum_pa_shift_offset()) {
+		std::cerr << "Had to crop centering to intensity center: y=" << shift.y << "\n";
+		long overflow = shift.y - ns_analyzed_image_time_path::maximum_pa_shift_offset();
+		pa_position.y = center.y - ns_analyzed_image_time_path::maximum_pa_shift_offset();
+		pa_size.y = worm_context_size_.y - overflow;
+		context_tl.y = overflow;
+	}
+	else {
+		pa_position.y = center.y - shift.y;
+		pa_size.y = worm_context_size_.y;
+		context_tl.y = 0;
+	}
 }
 //generates path_aligned_images->image from region visualiation
 //note that the region images contain context images (ie. the extra boundary around the region_image)
@@ -4611,8 +4645,6 @@ bool ns_analyzed_image_time_path::populate_images_from_region_visualization(cons
 
 		}
 
-
-
 		try{
 			if (!just_flag_elements_as_loaded && !just_do_a_consistancy_check && !was_previously_loaded) //don't do the check for double initilaizing if we're running a consistancy check 
 				e.initialize_path_aligned_images(path_aligned_image_image_properties,memory_pool_.aligned_image_pool); // These allocations take a lot of time, so we pool them.  This speeds things up on machines with enough RAM to keep it all in memory.
@@ -4636,9 +4668,10 @@ bool ns_analyzed_image_time_path::populate_images_from_region_visualization(cons
 			if (e.path_aligned_images == 0)
 				throw ns_ex("Encountered unloaded image for worm ") << debug_worm_id;
 
-			const ns_vector_2i center = ns_image_intensity_center_from_channel(*im, e.context_offset_in_region_visualization_image(), e.context_offset_in_region_visualization_image()+ e.worm_context_size(), 1);
-			/*ns_image_standard im2;
-			ns_image_properties pp(e.worm_context_size().y, e.worm_context_size().x, 3);
+			const ns_vector_2i center = ns_image_intensity_center_from_channel(*im, e.context_offset_in_region_visualization_image(), e.context_offset_in_region_visualization_image()+ e.worm_context_image_size(), 1);
+			/*
+			ns_image_standard im2;
+			pp(e.worm_context_size().y, e.worm_context_size().x, 3);
 			im2.init(pp);
 			for (unsigned y = 0; y < pp.height; y++)
 				for (unsigned x = 0; x < pp.width; x++) {
@@ -4646,27 +4679,30 @@ bool ns_analyzed_image_time_path::populate_images_from_region_visualization(cons
 					im2[y][3 * x+1] = (*im)[e.context_offset_in_region_visualization_image().y+y][3 * (x + e.context_offset_in_region_visualization_image().x) + 1];
 					im2[y][3 * x + 2] = 255*(ns_vector_2i(x,y) == center);
 				}
-			ns_save_image("c:\\server\\center_dbg_" + ns_to_string(k) + ".tif", im2);/**/
+			ns_save_image("c:\\server\\center_dbg_" + ns_to_string(k) + ".tif", im2);
+			*/
 			if (!just_do_a_consistancy_check && !just_flag_elements_as_loaded) {
 				e.intensity_center_of_mass = center;
 			}
 			//put the center of the center of mass at the center of the pa
-			const ns_vector_2i tl_worm_context_position_in_pa(e.context_position_in_path_aligned_image(path_aligned_image_image_properties));
+			ns_vector_2i tl_worm_context_position_in_pa_, context_pa_size, context_internal_tl;
+			e.context_coordinates_in_path_aligned_image(tl_worm_context_position_in_pa_, context_pa_size, context_internal_tl, path_aligned_image_image_properties);
 			if (!just_do_a_consistancy_check && !just_flag_elements_as_loaded) {
 				//std::cerr << "INIT: " << k << " context size: " << e.worm_context_size() << "; cmass: " << e.intensity_center_of_mass << "pa_pos: " << tl_worm_context_position_in_pa << "\n";
-				e.offset_in_path_aligned_image = tl_worm_context_position_in_pa;
+				e.offset_in_path_aligned_image = tl_worm_context_position_in_pa_;
+				e.size_in_path_aligned_image = context_pa_size;
 			}
 			
-			if (tl_worm_context_position_in_pa.y > e.path_aligned_images->worm_region_threshold.properties().height ||
+			if (tl_worm_context_position_in_pa_.y > e.path_aligned_images->worm_region_threshold.properties().height ||
 				path_aligned_image_image_properties.width > e.path_aligned_images->worm_region_threshold.properties().width ||
-				tl_worm_context_position_in_pa.y > e.path_aligned_images->image.properties().height ||
+				tl_worm_context_position_in_pa_.y > e.path_aligned_images->image.properties().height ||
 				path_aligned_image_image_properties.width > e.path_aligned_images->image.properties().width)
 				throw ns_ex("PA position of context image is greater than PA size for worm ") << debug_worm_id << " : PA size(" << path_aligned_image_image_properties.width << ","
-					<< path_aligned_image_image_properties.height << "); context pos:(" << tl_worm_context_position_in_pa.x << "," << tl_worm_context_position_in_pa.y << ") "
-					<< " for a worm with an image size (" << e.worm_context_size().x << "," << e.worm_context_size().y << ")";
+					<< path_aligned_image_image_properties.height << "); context pos:(" << tl_worm_context_position_in_pa_.x << "," << tl_worm_context_position_in_pa_.y << ") "
+					<< " for a worm with an image size (" << e.size_in_path_aligned_image.x << "," << e.size_in_path_aligned_image.y << ")";
 		
 			if (!just_do_a_consistancy_check && !just_flag_elements_as_loaded ){
-				for (long y = 0; y < tl_worm_context_position_in_pa.y; y++){
+				for (long y = 0; y < tl_worm_context_position_in_pa_.y; y++){
 					for (unsigned long x = 0; x < path_aligned_image_image_properties.width; x++){
 						e.path_aligned_images->image[y][x] = 0;
 						e.path_aligned_images->set_thresholds(y,x,0,0);
@@ -4677,20 +4713,20 @@ bool ns_analyzed_image_time_path::populate_images_from_region_visualization(cons
 
 
 			//fill in center
-			ns_vector_2i br_worm_context_position_in_pa(tl_worm_context_position_in_pa + e.worm_context_size());
+			ns_vector_2i br_worm_context_position_in_pa(tl_worm_context_position_in_pa_ + context_pa_size);
 			if (br_worm_context_position_in_pa.x >= path_aligned_image_image_properties.width || br_worm_context_position_in_pa.y >= path_aligned_image_image_properties.height)
 				throw ns_ex("Context image overflows bounds of PA image for worm ") << debug_worm_id << " : PA size (" << path_aligned_image_image_properties.width << ","
-				<< path_aligned_image_image_properties.height << "); context pos:(" << tl_worm_context_position_in_pa.x << "," << tl_worm_context_position_in_pa.y << ") "
-				<< " for a worm with an image size (" << e.worm_context_size().x << "," << e.worm_context_size().y << ")";
+				<< path_aligned_image_image_properties.height << "); context pos:(" << tl_worm_context_position_in_pa_.x << "," << tl_worm_context_position_in_pa_.y << ") "
+				<< " for a worm with an image size (" << e.size_in_path_aligned_image.x << "," << e.size_in_path_aligned_image.y << ")";
 
 
-			if (e.worm_context_size().x + e.context_offset_in_region_visualization_image().x > im->properties().width ||
-				e.worm_context_size().y + e.context_offset_in_region_visualization_image().y > im->properties().height)
+			if (context_pa_size.x + e.context_offset_in_region_visualization_image().x > im->properties().width ||
+				context_pa_size.y + e.context_offset_in_region_visualization_image().y > im->properties().height)
 				throw ns_ex("Invalid region specification at time ") << time 
 				<< "; worm position in region visualization image is larger than region visualization: The worm position: " 
 				<< e.context_offset_in_region_visualization_image().x << "," << e.context_offset_in_region_visualization_image().x  
 				<< "; the region image: " << im->properties().width << "," << im->properties().height << "; "
-				<< " the worm context size: " << e.worm_context_size().x << "," << e.worm_context_size().y << " Worm id: " << debug_worm_id;
+				<< " the worm context size: " << e.size_in_path_aligned_image.x << "," << e.size_in_path_aligned_image.y << " Worm id: " << debug_worm_id;
 
 			if (load_type != ns_analyzed_image_time_path::ns_lrv_just_images)
 				e.path_aligned_images_are_loaded_and_released = true;
@@ -4698,21 +4734,21 @@ bool ns_analyzed_image_time_path::populate_images_from_region_visualization(cons
 			if (!just_do_a_consistancy_check && !just_flag_elements_as_loaded ){
 				if (was_previously_loaded)
 					throw ns_ex("Attempting to load PA image twice for worm ") << debug_worm_id;
-				for (long y = 0; y < e.worm_context_size().y; y++){		
+				for (long y = 0; y < context_pa_size.y; y++){
 					output_subline(*im,							//source
-					e.context_offset_in_region_visualization_image().x,		//source x offset
-					tl_worm_context_position_in_pa.x,									//dest x offset
-					e.worm_context_size().x,										//width
-					y+e.context_offset_in_region_visualization_image().y,	//source y offset
-					y+tl_worm_context_position_in_pa.y,												//dest y offset
+					e.context_offset_in_region_visualization_image().x+ context_internal_tl.x,		//source x offset
+					tl_worm_context_position_in_pa_.x,									//dest x offset
+					context_pa_size.x,										//width
+					y+e.context_offset_in_region_visualization_image().y+context_internal_tl.y,	//source y offset
+					y+tl_worm_context_position_in_pa_.y,												//dest y offset
 					e.path_aligned_images->image,1);	
 
 					output_subline.output_specific_value(*im,							//source
-					e.context_offset_in_region_visualization_image().x,		//source x offset
-					tl_worm_context_position_in_pa.x,							//dest x offset
-					e.worm_context_size().x,										//width
-					y+e.context_offset_in_region_visualization_image().y,	//source y offset
-					y+tl_worm_context_position_in_pa.y,	
+					e.context_offset_in_region_visualization_image().x+ context_internal_tl.x,		//source x offset
+					tl_worm_context_position_in_pa_.x,							//dest x offset
+						context_pa_size.x,										//width
+					y+e.context_offset_in_region_visualization_image().y + context_internal_tl.y,	//source y offset
+					y+tl_worm_context_position_in_pa_.y,	
 					//dest y offset
 					e.path_aligned_images,2,(ns_8_bit)NS_REGION_VIS_ALL_THRESHOLDED_OBJECTS_VALUE,(ns_8_bit)NS_REGION_VIS_WORM_THRESHOLD_VALUE);										//dest
 
@@ -5942,7 +5978,7 @@ void ns_analyzed_image_time_path::copy_aligned_path_to_registered_image(const ns
 			const ns_vector_2<float> v0(elements[i].registration_offset);
 
 			ns_vector_2i tl(elements[i].offset_in_path_aligned_image);
-			ns_vector_2i br(tl + elements[i].worm_context_size());
+			ns_vector_2i br(tl + elements[i].size_in_path_aligned_image);
 			if (br.x > prop.width - maximum_alignment_offset().x)
 				br.x = prop.width - maximum_alignment_offset().x;
 			if (br.y > prop.width - maximum_alignment_offset().y)
@@ -5952,7 +5988,7 @@ void ns_analyzed_image_time_path::copy_aligned_path_to_registered_image(const ns
 			//so the registered image rage may be slightly smaller than it could be
 			//as we miss the left or right fraction of a pixel
 			ns_vector_2i tl_registered(ns_vector_2i(v0.x, v0.y) + tl);
-			ns_vector_2i br_registered(tl_registered + elements[i].worm_context_size());
+			ns_vector_2i br_registered(tl_registered + elements[i].size_in_path_aligned_image);
 			//ns_vector_2i br(ns_vector_2i(elements[0].path_aligned_images->image.properties().width,elements[0].path_aligned_images->image.properties().height)-maximum_alignment_offset());
 
 			//fill bottom
@@ -6372,9 +6408,10 @@ ns_analyzed_time_image_chunk ns_analyzed_image_time_path::initiate_image_registr
 
 	int step(chunk.forward() ? 1 : -1);
 	if (first_frame) {
-
-		const ns_vector_2i tl_worm_context_position_in_pa(elements[first_index].offset_in_path_aligned_image);
-		const ns_vector_2i br_worm_context_position_in_pa(tl_worm_context_position_in_pa + elements[first_index].worm_context_size());
+		const ns_vector_2i tl_worm_context_position_in_pa_ = elements[first_index].offset_in_path_aligned_image,
+			         context_pa_size = elements[first_index].size_in_path_aligned_image;
+		//elements[first_index].context_coordinates_in_path_aligned_image(tl_worm_context_position_in_pa_, context_pa_size, context_internal_tl, prop);
+		const ns_vector_2i br_worm_context_position_in_pa(tl_worm_context_position_in_pa_ + context_pa_size);
 
 		for (unsigned long y = 0; y < prop.height; y++) {
 			for (unsigned long x = 0; x < prop.width; x++) {
@@ -6382,8 +6419,8 @@ ns_analyzed_time_image_chunk ns_analyzed_image_time_path::initiate_image_registr
 				state.consensus_count[y][x] = 0;
 			}
 		}
-		for (long y = tl_worm_context_position_in_pa.y; y < br_worm_context_position_in_pa.y; y++) {
-			for (long x = tl_worm_context_position_in_pa.x; x < br_worm_context_position_in_pa.x; x++) {
+		for (long y = tl_worm_context_position_in_pa_.y; y < br_worm_context_position_in_pa.y; y++) {
+			for (long x = tl_worm_context_position_in_pa_.x; x < br_worm_context_position_in_pa.x; x++) {
 				state.consensus[y][x] = elements[first_index].path_aligned_images->image[y][x];
 				state.consensus_count[y ][x] = 1;
 			}
@@ -6418,10 +6455,11 @@ ns_analyzed_time_image_chunk ns_analyzed_image_time_path::initiate_image_registr
 		global_path_debug_info.time = elements[i].absolute_time;
 #endif
 		#ifdef NS_USE_FAST_IMAGE_REGISTRATION
-
-
-		const ns_vector_2i tl_worm_context_position_in_pa(elements[i].offset_in_path_aligned_image);
-		const ns_vector_2i br_worm_context_position_in_pa(tl_worm_context_position_in_pa + elements[i].worm_context_size());
+		const ns_vector_2i tl_worm_context_position_in_pa_ = elements[i].offset_in_path_aligned_image,
+			context_pa_size = elements[i].size_in_path_aligned_image;
+		//ns_vector_2i tl_worm_context_position_in_pa_, context_pa_size, context_internal_tl;
+		//elements[first_index].context_coordinates_in_path_aligned_image(tl_worm_context_position_in_pa_, context_pa_size, context_internal_tl, prop);
+		const ns_vector_2i br_worm_context_position_in_pa(tl_worm_context_position_in_pa_ + context_pa_size);
 
 		
 			elements[i].registration_offset = align(ns_vector_2i(0,0),					//our best guess for the alignment is having the center of mass of the new image match the center of the path aligned image.
@@ -6429,8 +6467,8 @@ ns_analyzed_time_image_chunk ns_analyzed_image_time_path::initiate_image_registr
 													state, 
 													elements[i].path_aligned_images->image, 
 													elements[i].saturated_offset,
-													tl_worm_context_position_in_pa,
-													elements[i].worm_context_size());
+													tl_worm_context_position_in_pa_,
+													context_pa_size);
 	#endif
 			
 		#ifdef NS_CALCULATE_SLOW_IMAGE_REGISTRATION
@@ -6441,15 +6479,15 @@ ns_analyzed_time_image_chunk ns_analyzed_image_time_path::initiate_image_registr
 		state.registration_offset_sum += elements[i].registration_offset;
 		state.registration_offset_count++;
 
-		if (tl_worm_context_position_in_pa.y < elements[i].registration_offset.y ||
-			tl_worm_context_position_in_pa.x  < elements[i].registration_offset.x ||
+		if (tl_worm_context_position_in_pa_.y < elements[i].registration_offset.y ||
+			tl_worm_context_position_in_pa_.x  < elements[i].registration_offset.x ||
 			br_worm_context_position_in_pa.y - elements[i].registration_offset.y >= state.consensus.properties().height ||
 			br_worm_context_position_in_pa.x - elements[i].registration_offset.x >= state.consensus.properties().width) {
-		  cerr << "invalid registration: " << elements[i].registration_offset.x << "," << elements[i].registration_offset.y << ";" << tl_worm_context_position_in_pa << ";" << br_worm_context_position_in_pa << "\n";
-		  throw ns_ex("invalid registration: ") << elements[i].registration_offset.x << "," << elements[i].registration_offset.y << ";" << tl_worm_context_position_in_pa << ";" << br_worm_context_position_in_pa;
+		  cerr << "invalid registration: " << elements[i].registration_offset.x << "," << elements[i].registration_offset.y << ";" << tl_worm_context_position_in_pa_ << ";" << br_worm_context_position_in_pa << "\n";
+		  throw ns_ex("invalid registration: ") << elements[i].registration_offset.x << "," << elements[i].registration_offset.y << ";" << tl_worm_context_position_in_pa_ << ";" << br_worm_context_position_in_pa;
 		}
-		for (long y = tl_worm_context_position_in_pa.y; y < br_worm_context_position_in_pa.y; y++){
-			for (long x = tl_worm_context_position_in_pa.x; x < br_worm_context_position_in_pa.x; x++){
+		for (long y = tl_worm_context_position_in_pa_.y; y < br_worm_context_position_in_pa.y; y++){
+			for (long x = tl_worm_context_position_in_pa_.x; x < br_worm_context_position_in_pa.x; x++){
 				state.consensus[y][x] += elements[i].path_aligned_images->image.sample_f(y-elements[i].registration_offset.y,
 																						 x-elements[i].registration_offset.x);
 				state.consensus_count[y][x]++;
@@ -6513,9 +6551,11 @@ void ns_analyzed_image_time_path::calculate_image_registration(const ns_analyzed
 			throw ns_ex("Image for ") << i - step*time_kernal << " isn't loaded. (step - " << step << "\n";
 		}
 
-
-		const ns_vector_2i tl_worm_context_position_in_pa(elements[i].offset_in_path_aligned_image);
-		const ns_vector_2i br_worm_context_position_in_pa(tl_worm_context_position_in_pa + elements[i].worm_context_size());
+		//ns_vector_2i tl_worm_context_position_in_pa_, context_pa_size, context_internal_tl;
+		//elements[i].context_coordinates_in_path_aligned_image(tl_worm_context_position_in_pa_, context_pa_size, context_internal_tl, prop);
+		const ns_vector_2i tl_worm_context_position_in_pa_ = elements[i].offset_in_path_aligned_image,
+							context_pa_size = elements[i].size_in_path_aligned_image;
+		const ns_vector_2i br_worm_context_position_in_pa(tl_worm_context_position_in_pa_ + context_pa_size);
 
 		//debug code that can add synthetic shift to a random amount up and left
 		//so we can then test the registration algorithm's ability to fix it
@@ -6556,24 +6596,28 @@ void ns_analyzed_image_time_path::calculate_image_registration(const ns_analyzed
 	std::string dbg(ns_to_string(i));
 		t.start();
 		elements[i].registration_offset =
-			align(ns_vector_2i(0,0),	//path_aligned_images are loaded with their intensity center of mass at the center, and so is the consensus, so the expected alignment is (0,0)
+			align(state.registration_offset_average(),	//path_aligned_images are loaded with their intensity center of mass at the center, and so is the consensus, so the expected alignment is (0,0)
 				maximum_alignment_offset(),
 				state, elements[i].path_aligned_images->image,
-				elements[i].saturated_offset, tl_worm_context_position_in_pa, elements[i].worm_context_size(), false, dbg);
+				elements[i].saturated_offset, tl_worm_context_position_in_pa_, context_pa_size, false, dbg);
 
-		//since the consensus image is recentered after each iteration, the current image
-		//is being registered to a shifted version of the previous frame.
-		//We'll want to "un-shift" this when calculating the registered images, later
-		elements[i].volatile_image_centering_offset = state.cumulative_recentering_shift;
-		state.cumulative_recentering_shift = ns_vector_2d(0, 0);
 
 		elements[i].alignment_times[1] = t.stop();
 	#endif
 		state.registration_offset_sum += (elements[i].registration_offset - elements[i-step*time_kernal].registration_offset);
 	
-
-		//cerr << i << " reg: " << elements[i].registration_offset << " sz: " << elements[i].worm_context_size() << " " << (elements[i].saturated_offset ? "SATURATED" : "") << " ";
-		//cerr << i << " pa_pos: " << tl_worm_context_position_in_pa << " : " << br_worm_context_position_in_pa << "\n";
+		/*if (state.debug_out == 0)
+			state.debug_out = new ofstream("c:\\server\\debug_out.txt");
+		*state.debug_out << i << " reg: " << elements[i].registration_offset << (elements[i].saturated_offset ? " SAT" : "") << " " << " sz: " << elements[i].worm_context_size() << " CM: " << elements[i].intensity_center_of_mass << " " ;
+		*state.debug_out <<" pa_pos: " << tl_worm_context_position_in_pa << " : " << br_worm_context_position_in_pa << " sh: " << state.cumulative_recentering_shift << "\n";
+		cout << i << " reg: " << elements[i].registration_offset << (elements[i].saturated_offset ? " SAT" : "") << " " << " sz: " << elements[i].worm_context_size() << " CM: " << elements[i].intensity_center_of_mass << " ";
+		cout <<  " pa_pos: " << tl_worm_context_position_in_pa << " : " << br_worm_context_position_in_pa << " sh: " << state.cumulative_recentering_shift << "\n";
+		*/
+		//since the consensus image is recentered after each iteration, the current image
+		//is being registered to a shifted version of the previous frame.
+		//We'll want to "un-shift" this when calculating the registered images, later
+		elements[i].volatile_image_centering_offset = state.cumulative_recentering_shift;
+		state.cumulative_recentering_shift = ns_vector_2d(0, 0);
 
 
 		/*
@@ -6583,21 +6627,21 @@ void ns_analyzed_image_time_path::calculate_image_registration(const ns_analyzed
 		im.prepare_to_recieve_image(p);
 		for (unsigned int y = 0; y < im.properties().height; y++)
 			for (unsigned int x = 0; x < im.properties().width; x++) {
-				im[y][3 * x] = state.consensus[y][x] / state.consensus_count[y][x];
+				im[y][3 * x] = (state.consensus_count[y][x] != 0) ? state.consensus[y][x] / state.consensus_count[y][x] : 0;
 				im[y][3 * x + 1] = elements[i].path_aligned_images->image[y][x];
 				im[y][3 * x + 2] = (y+x) & 2;
 			}
 			
-		for (long y = tl_worm_context_position_in_pa.y; y < br_worm_context_position_in_pa.y; y++) {
-			for (long x = tl_worm_context_position_in_pa.x; x < br_worm_context_position_in_pa.x; x++) {
+		for (long y = tl_worm_context_position_in_pa_.y; y < br_worm_context_position_in_pa.y; y++) {
+			for (long x = tl_worm_context_position_in_pa_.x; x < br_worm_context_position_in_pa.x; x++) {
 				im[y ][3 * x + 2] = elements[i].path_aligned_images->image.sample_f(y - elements[i].registration_offset.y, x - elements[i].registration_offset.x );
 			}
 		}
 		std::string ap;
 		if (elements[i].inferred_animal_location)
 			ap = "_INF";
-		ns_save_image(std::string("c:\\server\\consensus_") + ns_to_string(i) + ap + ".tif", im);
-			*/
+		ns_save_image(std::string("c:\\server\\consensus_") + ns_to_string(i) + ap + ".tif", im);*/
+		
 		
 			/*if (i == 273) {
 				cerr << "WHA";
@@ -6605,18 +6649,18 @@ void ns_analyzed_image_time_path::calculate_image_registration(const ns_analyzed
 					align(ns_vector_2i(0, 0), //path aligned images are all centered around their intensity center of mass when loaded into path_aligned_images, and so will the consensus
 						maximum_alignment_offset(), state, elements[i].path_aligned_images->image, elements[i].saturated_offset, tl_worm_context_position_in_pa, elements[i].worm_context_size());
 			}*/
-		if (tl_worm_context_position_in_pa.y - elements[i].registration_offset.y < 0 ||
-			tl_worm_context_position_in_pa.x - elements[i].registration_offset.x < 0 ||
+		if (tl_worm_context_position_in_pa_.y - elements[i].registration_offset.y < 0 ||
+			tl_worm_context_position_in_pa_.x - elements[i].registration_offset.x < 0 ||
 			br_worm_context_position_in_pa.x - elements[i].registration_offset.x >= prop.width ||
 			br_worm_context_position_in_pa.y - elements[i].registration_offset.y >= prop.height) {
 			ns_ex ex("Registration Overflow on worm ");
-			ex << this->group_id.group_id << ": Reg offset:" << elements[i].registration_offset << "; context bounds: " << tl_worm_context_position_in_pa << " - " << br_worm_context_position_in_pa;
+			ex << this->group_id.group_id << ": Reg offset:" << elements[i].registration_offset << "; context bounds: " << tl_worm_context_position_in_pa_ << " - " << br_worm_context_position_in_pa;
 			std::cerr << ex.text();
 			throw ex;
 		}
 
-			for (long y = tl_worm_context_position_in_pa.y; y < br_worm_context_position_in_pa.y; y++) {
-				for (long x = tl_worm_context_position_in_pa.x; x < br_worm_context_position_in_pa.x; x++) {
+			for (long y = tl_worm_context_position_in_pa_.y; y < br_worm_context_position_in_pa.y; y++) {
+				for (long x = tl_worm_context_position_in_pa_.x; x < br_worm_context_position_in_pa.x; x++) {
 					state.consensus[y][x] += elements[i].path_aligned_images->image.sample_f(y - elements[i].registration_offset.y , x - elements[i].registration_offset.x);
 					state.consensus_count[y][x]++;
 				}
@@ -6627,9 +6671,10 @@ void ns_analyzed_image_time_path::calculate_image_registration(const ns_analyzed
 			const ns_vector_2i& shift2(state.element_occupancy_ids.begin()->shift);
 
 			const auto & e2(elements[element_to_remove]);
-			const ns_vector_2i where_the_earlier_element_was_put(e2.offset_in_path_aligned_image);
+			const ns_vector_2i where_the_earlier_element_was_put = e2.offset_in_path_aligned_image,
+				context_pa_size2 = e2.size_in_path_aligned_image;
 			ns_vector_2i tl2(where_the_earlier_element_was_put + shift2);  //where the earlier element is now 
-			ns_vector_2i br2(tl2 + e2.worm_context_size());
+			ns_vector_2i br2(tl2 + context_pa_size2);
 
 			if (tl2.y < 0) tl2.y = 0;
 			if (tl2.x < 0) tl2.x = 0;
@@ -6646,7 +6691,7 @@ void ns_analyzed_image_time_path::calculate_image_registration(const ns_analyzed
 			state.element_occupancy_ids.pop_front();
 		
 		//we want to shift the consensus so that its center of mass is at (0,0)
-		const ns_vector_2i d( ns_vector_2i(prop.width, prop.height)/2- ns_image_intensity_center(state.consensus, ns_vector_2i(0, 0), ns_vector_2i(prop.width, prop.height)));
+		const ns_vector_2i d( ns_vector_2i(prop.width, prop.height)/2- ns_image_intensity_center(state.consensus,state.consensus_count,ns_vector_2i(0, 0), ns_vector_2i(prop.width, prop.height)));
 		state.cumulative_recentering_shift += d;
 		//cout << d << "; " << state.cumulative_recentering_shift << "\n";
 		if (d.x != 0 || d.y != 0){
@@ -6882,14 +6927,15 @@ ns_analyzed_image_time_path_group<allocator_T>::ns_analyzed_image_time_path_grou
 		//Now, we calculate the path bounding box in relative coordinates, based on each image being centered around its image intensity center of mass
 		//the center of mass is allowed to be offset from the actual image center by ns_analyzed_image_time_path::maximum_pa_shift_offset() in either direction
 		{
-			ns_vector_2i br(path.elements[0].worm_context_size_ + ns_vector_2i(ns_analyzed_image_time_path::maximum_pa_shift_offset(), ns_analyzed_image_time_path::maximum_pa_shift_offset())*2);
-			for (unsigned int j = 1; j < path.elements.size(); j++) {
+			ns_vector_2i br(0,0);
+			for (unsigned int j = 0; j < path.elements.size(); j++) {
 				const ns_analyzed_image_time_path_element& e(path.elements[j]);
-				const ns_vector_2i& size(e.worm_context_size_ + ns_vector_2i(ns_analyzed_image_time_path::maximum_pa_shift_offset(), ns_analyzed_image_time_path::maximum_pa_shift_offset() )*2);
-				if (size.x > br.x)
-					br.x = size.x;
-				if (size.y > br.y)
-					br.y = size.y;
+
+				const ns_vector_2i br2(e.worm_context_size_ + ns_vector_2i(ns_analyzed_image_time_path::maximum_pa_shift_offset(), ns_analyzed_image_time_path::maximum_pa_shift_offset())*2);
+				if (br2.x > br.x)
+					br.x = br2.x; 
+				if (br2.y > br.y)
+					br.y = br2.y;
 			}
 			//the size of the path image required to contain all centered context images
 			path.path_aligned_image_size = br;
@@ -8430,7 +8476,7 @@ void ns_time_path_image_movement_analyzer<allocator_T>::generate_movement_descri
 					groups[i].paths[j].elements[tt].region_offset_in_source_image(),
 					groups[i].paths[j].elements[tt].worm_region_size(),
 					groups[i].paths[j].elements[tt].context_offset_in_source_image(),
-					groups[i].paths[j].elements[tt].worm_context_size(),
+					groups[i].paths[j].elements[tt].worm_context_image_size(),
 
 					ns_stationary_path_id(i, j, 0)
 					));

@@ -176,7 +176,7 @@ template<class allocator_T> using ns_registered_image_pool = ns_image_pool<ns_re
 class ns_analyzed_image_time_path_element{
 public:
 	ns_analyzed_image_time_path_element():registered_images(0),path_aligned_images(0),
-	inferred_animal_location(false), debug_write_count(0),path_aligned_images_are_loaded_and_released(false), offset_in_path_aligned_image(0,0), volatile_image_centering_offset(0,0), volatile_denoised_absolute_location(0, 0),intensity_center_of_mass(0,0),element_before_fast_movement_cessation(false),element_was_processed(false), worm_center_in_registered_image_cached(0,0),worm_center_in_registered_image_cached_calculated(false),movement(ns_movement_not_calculated),saturated_offset(false),registration_offset(0,0),number_of_extra_worms_observed_at_position(0),part_of_a_multiple_worm_disambiguation_group(0),excluded(false),censored(false){}
+	inferred_animal_location(false), debug_write_count(0),path_aligned_images_are_loaded_and_released(false), size_in_path_aligned_image(0,0),offset_in_path_aligned_image(0,0), volatile_image_centering_offset(0,0), volatile_denoised_absolute_location(0, 0),intensity_center_of_mass(0,0),element_before_fast_movement_cessation(false),element_was_processed(false), worm_center_in_registered_image_cached(0,0),worm_center_in_registered_image_cached_calculated(false),movement(ns_movement_not_calculated),saturated_offset(false),registration_offset(0,0),number_of_extra_worms_observed_at_position(0),part_of_a_multiple_worm_disambiguation_group(0),excluded(false),censored(false){}
 	~ns_analyzed_image_time_path_element(){
 		if (path_aligned_images != 0 || registered_images != 0)
 			std::cerr << "ABOUT TO LEAK TIME PATH ELEMENT!";
@@ -191,8 +191,8 @@ public:
 	inline const ns_vector_2i & region_offset_in_source_image() const {return region_position_in_source_image;}
 	inline const ns_vector_2i & context_offset_in_source_image() const {return context_position_in_source_image;}
 	inline const ns_vector_2i & worm_region_size() const {return worm_region_size_;}
-	inline const ns_vector_2i & worm_context_size() const {return worm_context_size_;}
-	ns_vector_2i context_position_in_path_aligned_image(const ns_image_properties& path_aligned_image_size) const;
+	inline const ns_vector_2i & worm_context_image_size() const {return worm_context_size_;}
+	void context_coordinates_in_path_aligned_image(ns_vector_2i& pa_position, ns_vector_2i& pa_size, ns_vector_2i& context_tl, const ns_image_properties& path_aligned_image_size) const;
 	//ns_vector_2i size;
 
 	bool excluded;
@@ -205,7 +205,7 @@ public:
 
 	ns_movement_state movement;
 	bool censored;
-	ns_vector_2i offset_in_path_aligned_image;
+	ns_vector_2i offset_in_path_aligned_image, size_in_path_aligned_image;
 
 	
 	bool inferred_animal_location,
@@ -585,7 +585,8 @@ public:
 	//the maximum distance that a worm can be offset from the center of the context image
 	//this is set because the context image is shifted in the pa image so that the context image's intensity center of mass
 	//is in exactly the center
-	static int maximum_pa_shift_offset() { return 100; }
+	static int maximum_pa_shift_offset() { return 50; }
+	static int maximum_pa_crop() { return 200; }
 	static ns_vector_2d maximum_local_alignment_offset(){return ns_vector_2d(4,4);}
 	enum {intensity_normalization_kernel_half_width=1,movement_detection_kernal_half_width=2,sobel_operator_width=1,alignment_time_kernel_width=5,movement_time_kernel_width=1,save_output_buffer_height=16};
 

@@ -815,7 +815,7 @@ void ns_image_server_dispatcher::on_timer(){
 		}
 
 		bool shutdown_requested = (h[0][1] == "1");
-		const bool hotplug_requested = (h[0][3] == "1");
+		bool hotplug_requested = (h[0][3] == "1");
 		if (h[0][3] == "2"){
 			local_cache_cleanup_request = ns_cleanup_clean;
 		}
@@ -910,8 +910,9 @@ void ns_image_server_dispatcher::on_timer(){
 					image_server.register_server_event(ev,timer_sql_connection);
 
 					//stop infinite looping back and forth by confirming that the current scanner list is updated.
-					if (!devices_missing_in_db.empty() || !devices_missing_locally.empty()) 
-						hotplug_devices(false, false,true);
+					if (!devices_missing_in_db.empty() || !devices_missing_locally.empty()) {
+						hotplug_requested = true;
+					}
 					
 				//	image_server.register_host();
 					image_server.register_devices(false,timer_sql_connection);

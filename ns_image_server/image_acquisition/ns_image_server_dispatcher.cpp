@@ -913,10 +913,6 @@ void ns_image_server_dispatcher::on_timer(){
 					if (!devices_missing_in_db.empty() || !devices_missing_locally.empty()) {
 						hotplug_requested = true;
 					}
-					
-				//	image_server.register_host();
-					image_server.register_devices(false,timer_sql_connection);
-					return;
 				}
 
 				for (unsigned int i = 0; i < prev_res.size(); i++){

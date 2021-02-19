@@ -156,6 +156,10 @@ public:
 		new_chunk.processing_direction = ns_analyzed_time_image_chunk::ns_backward;
 		for (; current_chunk.stop_i >= 0 && path->element(current_chunk.stop_i).path_aligned_image_is_loaded(); current_chunk.stop_i--);
 
+		//limit to a single frame at a time for backwards reads
+		if (current_chunk.start_i > current_chunk.stop_i + 1)
+			current_chunk.stop_i = current_chunk.start_i - 1;
+
 		const unsigned long cur_size(current_chunk.start_i - current_chunk.stop_i);
 		
 		if (current_chunk.start_i > -1 &&
@@ -4571,7 +4575,7 @@ void ns_analyzed_image_time_path_element::context_coordinates_in_path_aligned_im
 		context_tl.x = ns_analyzed_image_time_path::maximum_pa_crop();
 	}
 	else if (abs(shift.x) > ns_analyzed_image_time_path::maximum_pa_shift_offset()) {
-		std::cerr << "Had to crop centering to intensity center: x=" << shift.x << "\n";
+		//std::cerr << "Had to crop centering to intensity center: x=" << shift.x << "\n";
 		long overflow = shift.x - ns_analyzed_image_time_path::maximum_pa_shift_offset();
 		pa_position.x = center.x - ns_analyzed_image_time_path::maximum_pa_shift_offset();
 		pa_size.x = worm_context_size_.x - overflow;
@@ -4590,7 +4594,7 @@ void ns_analyzed_image_time_path_element::context_coordinates_in_path_aligned_im
 		context_tl.y = ns_analyzed_image_time_path::maximum_pa_crop();
 	}
 	else if (abs(shift.y) > ns_analyzed_image_time_path::maximum_pa_shift_offset()) {
-		std::cerr << "Had to crop centering to intensity center: y=" << shift.y << "\n";
+		//std::cerr << "Had to crop centering to intensity center: y=" << shift.y << "\n";
 		long overflow = shift.y - ns_analyzed_image_time_path::maximum_pa_shift_offset();
 		pa_position.y = center.y - ns_analyzed_image_time_path::maximum_pa_shift_offset();
 		pa_size.y = worm_context_size_.y - overflow;
@@ -6931,7 +6935,7 @@ ns_analyzed_image_time_path_group<allocator_T>::ns_analyzed_image_time_path_grou
 			for (unsigned int j = 0; j < path.elements.size(); j++) {
 				const ns_analyzed_image_time_path_element& e(path.elements[j]);
 
-				const ns_vector_2i br2(e.worm_context_size_ + ns_vector_2i(ns_analyzed_image_time_path::maximum_pa_shift_offset(), ns_analyzed_image_time_path::maximum_pa_shift_offset())*2);
+				const ns_vector_2i br2(e.worm_context_size_ + ns_vector_2i(ns_analyzed_image_time_path::maximum_pa_shift_offset()+ ns_analyzed_image_time_path::maximum_alignment_offset().x, ns_analyzed_image_time_path::maximum_pa_shift_offset()+ ns_analyzed_image_time_path::maximum_alignment_offset().y)*2);
 				if (br2.x > br.x)
 					br.x = br2.x; 
 				if (br2.y > br.y)

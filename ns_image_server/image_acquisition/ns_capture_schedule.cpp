@@ -387,12 +387,13 @@ std::string ns_experiment_capture_specification::submit_schedule_to_db(std::vect
 						+ p->first + " at " + ns_format_time_string_for_human(p->second + device_interval_at_stop[p->first]) + "\n";
 				}
 		}
-		sql.send_query("COMMIT");
 
 		//start any remote servers downloading the new records all at once.
 		sql.send_query("UPDATE experiments SET time_stamp = NOW() WHERE time_stamp = 0");
 		sql.send_query("UPDATE capture_samples SET time_stamp = NOW() WHERE time_stamp = 0");
 		sql.send_query("UPDATE capture_schedule SET time_stamp = NOW() WHERE time_stamp = 0");
+
+		sql.send_query("COMMIT");
 
 	}
 	catch(...){

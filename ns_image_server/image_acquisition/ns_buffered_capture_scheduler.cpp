@@ -491,7 +491,7 @@ void ns_buffered_capture_scheduler::commit_local_changes_to_central_server(ns_lo
 	lock.release();
 }
 void ns_buffered_capture_scheduler::update_local_buffer_from_central_server(ns_image_server_device_manager::ns_device_name_list & connected_devices,ns_local_buffer_connection & local_buffer, ns_sql & central_db){
-	
+ 
 	if (connected_devices.size() == 0)
 		return;
 
@@ -547,7 +547,6 @@ void ns_buffered_capture_scheduler::update_local_buffer_from_central_server(ns_i
 				<< " AND sched.time_stamp <= FROM_UNIXTIME(" << update_start_time.remote_time << ") "
 				<< " ORDER BY sched.scheduled_time ASC";
 
-
 	ns_sql_result new_schedule;
 	central_db.get_rows(new_schedule);
 	std::set<ns_64_bit> altered_experiment_ids;
@@ -559,9 +558,9 @@ void ns_buffered_capture_scheduler::update_local_buffer_from_central_server(ns_i
 	//	}
 	}
 	const unsigned long new_timestamp(update_start_time.local_time);
-
+	
 	if (new_schedule.size() != 0){
-		if (new_schedule.size() > 4)
+	  if (new_schedule.size() > 4)
 			image_server.register_server_event(ns_image_server_event("ns_buffered_capture_scheduler::") 
 				<< new_schedule.size() << " new capture schedule entries found.  Updating local buffer...",&central_db);
 		
@@ -581,7 +580,7 @@ void ns_buffered_capture_scheduler::update_local_buffer_from_central_server(ns_i
 			ns_get_all_column_data_from_table("experiments",experiments.column_names,experiment_where_clause,experiment_data,&central_db);
 		
 			if (capture_sample_data.size() > 0)
-				image_server.register_server_event(ns_image_server_event("Caching ") << capture_sample_data.size() << " samples in the local db.",&central_db);
+				image_server.register_server_event(ns_image_server_event("Caching ") << capture_sample_data.size() << " altered samples in the local db.",&central_db);
 			//local_buffer_db.send_query("DELETE FROM buffered_capture_samples");
 			if (capture_samples.time_stamp_column_id == -1)
 					throw ns_ex("Could not find capture sample time stamp column!");
@@ -675,7 +674,7 @@ void ns_buffered_capture_scheduler::update_local_buffer_from_central_server(ns_i
 			" AND time_stamp < FROM_UNIXTIME(" + ns_to_string(update_start_time.remote_time) +") "
 				,capture_sample_data,&central_db);
 		if (capture_sample_data.size() > 0){
-			image_server.register_server_event(ns_image_server_event("Caching ") << capture_sample_data.size() << " samples in the local db...",&central_db);
+			image_server.register_server_event(ns_image_server_event("Caching ") << capture_sample_data.size() << " changed samples in the local db...",&central_db);
 			//local_buffer_db.send_query("DELETE FROM buffered_capture_samples");
 			for (unsigned int i = 0; i < capture_sample_data.size(); i++) {
 				std::string values;
@@ -723,7 +722,8 @@ void ns_buffered_capture_scheduler::update_local_buffer_from_central_server(ns_i
 	store_last_update_time_in_db(time_of_last_update_from_central_db,local_buffer);
 
 	lock.release();
-}
+  }
+ }
 
 
 void ns_buffered_capture_scheduler::store_last_update_time_in_db(const ns_synchronized_time & time,ns_local_buffer_connection & sql){

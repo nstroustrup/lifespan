@@ -2649,7 +2649,7 @@ void ns_image_server::register_devices(const bool verbose, ns_image_server_sql *
 			continue;
 		try {
 			if (p->second.preview_capture_requested) {
-				*sql << "UPDATE devices SET preview_capture_requested = " << device_state_map[device_state[i][0]].preview_capture_requested << " WHERE name='" << connected_devices[i].name << "'";
+				*sql << "UPDATE devices SET preview_requested = " << device_state_map[device_state[i][0]].preview_capture_requested << " WHERE name='" << connected_devices[i].name << "'";
 				sql->send_query();
 			}
 		}

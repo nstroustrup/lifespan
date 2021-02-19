@@ -1835,7 +1835,7 @@ void ns_image_server_dispatcher::run_device_capture_management(){
 		device_management_lock.release();
 		return;
 	}
-	
+	std::cout << ".";
 
 	buffered_capture_scheduler.run_pending_scans(devices,local_buffer_connection());
 

@@ -301,6 +301,7 @@ public:
 private:
 	ns_experiment_region_chooser_sample * cur_sample;
 	ns_experiment_region_chooser_region * cur_region;
+	bool whole_device_requested;
 	ns_region_metadata * cur_strain;
 	unsigned long experiment_id;
 	ns_censor_masking current_censor_masking;
@@ -308,7 +309,7 @@ public:
 	ns_censor_masking censor_masking() const{return current_censor_masking;}
 	void set_censor_masking(const ns_censor_masking & censor_masking ){current_censor_masking = censor_masking;}
 
-	ns_experiment_region_gui_selector():experiment_id(0),cur_sample(0),cur_region(0), cur_strain(0){}
+	ns_experiment_region_gui_selector():experiment_id(0),cur_sample(0),cur_region(0), cur_strain(0), whole_device_requested(false){}
 	void set_current_experiment(const std::string & experiment_name,ns_sql & sql){
 		for (unsigned int i = 0; i < experiment_groups.size(); i++){
 			for (unsigned int j = 0; j < experiment_groups[i].size(); j++){
@@ -354,11 +355,13 @@ public:
 			experiment_id = experiment_id_;
 		}
 	}
+	bool whole_device() const { return whole_device_requested; }
 
 	bool select_default_sample_and_region(){
 		
 		ns_worm_browser_output_debug(__LINE__,__FILE__,"Selecting default sample and region");
 		cur_strain = 0;
+		whole_device_requested = false;
 		//if (!experiment_strains.empty())
 		//	cur_strain = &experiment_strains.begin()->second;
 		//else cur_strain = 0;
@@ -382,6 +385,27 @@ public:
 			cur_region = 0;
 			return;
 		}
+		const std::string whole_region_tag("All regions on ");
+
+		std::string::size_type t(sample_region_name.find(whole_region_tag));
+		if (t != std::string::npos) {
+			const std::string device_name = sample_region_name.substr(t + whole_region_tag.size());
+			
+			for (unsigned int i = 0; i < samples.size(); i++) {
+				if (samples[i].device != device_name)
+					continue;
+				for (unsigned int j = 0; j < samples[i].regions.size(); j++) {
+					if (!samples[i].regions[j].excluded) {
+						cur_sample = &samples[i];
+						cur_region = &samples[i].regions[j];
+						whole_device_requested = true;
+						return;
+					}
+
+				}
+			}
+			throw ns_ex("Could not find any valid regions on device ") << device_name;
+		}
 		string sample_name,region_name;
 		std::string::size_type p(sample_region_name.find("::"));
 		if (p == std::string::npos)
@@ -394,6 +418,7 @@ public:
 					if (samples[i].regions[j].region_name == region_name){
 						cur_sample = &samples[i];
 						cur_region = &samples[i].regions[j];
+						whole_device_requested = false;
 						return;
 					}
 				}
@@ -429,8 +454,8 @@ public:
 	bool region_selected() const{return cur_region!=0;}
 	bool sample_selected() const{return cur_sample!=0;}
 	bool experiment_selected() const{return experiment_id!=0;}
-	const ns_experiment_region_chooser_sample & current_sample(){if (cur_sample==0)throw ns_ex("No sample selected!"); else return *cur_sample;}
-	const ns_experiment_region_chooser_region & current_region(){
+	const ns_experiment_region_chooser_sample & current_sample() const{if (cur_sample==0)throw ns_ex("No sample selected!"); else return *cur_sample;}
+	const ns_experiment_region_chooser_region & current_region() const {
 		if (cur_region==0)
 			throw ns_ex("No region selected!"); 
 		else return *cur_region;

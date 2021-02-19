@@ -298,7 +298,7 @@ private:
 
 	std::map<ns_64_bit, unsigned long> last_measurement_cache; //last measurement made in each region, sorted by region_info_id;
 
-	typedef std::tuple< ns_survival_grouping, ns_death_plot_type, ns_64_bit, std::string> ns_telemetry_cache_index;
+	typedef std::tuple< ns_survival_grouping, ns_death_plot_type, ns_64_bit, std::string,std::string> ns_telemetry_cache_index;
 	typedef std::map<ns_telemetry_cache_index, ns_survival_telemetry_cache> ns_telemetry_cache;
 	ns_telemetry_cache telemetry_cache;
 
@@ -487,6 +487,7 @@ private:
 	ns_vector_2i last_graph_size;
 	float last_rescale_factor;
 	ns_64_bit subject_region;
+	std::string subject_device;
 	ns_region_metadata stats_subset_strain_to_display;
 public:
 	void clear() {
@@ -507,6 +508,7 @@ public:
 		last_stop_time = 0;
 		subject_region = 0;
 		stats_subset_strain_to_display.clear();
+		subject_device = "";
 		//last_measurement_cache.clear();
 	}
 	unsigned long get_graph_time_from_graph_position(const float x) { //x is in relative time
@@ -604,8 +606,9 @@ public:
 		movement_vs_posture_image.init(ns_image_properties(0, 0, 3));
 	}
 
-	void set_subject(const ns_64_bit region_id, const ns_region_metadata& strain) {
+	void set_subject(const ns_64_bit region_id, const std::string & device,const ns_region_metadata& strain) {
 		subject_region = region_id;
+		subject_device = device;
 		stats_subset_strain_to_display = strain;
 
 	}
@@ -623,6 +626,7 @@ public:
 		const bool strain_override_specified = stats_subset_strain_to_display.device_regression_match_description() != "";
 		const bool viewing_a_storyboard_for_a_specific_strain = metadata.device_regression_match_description() != "";
 		const bool subject_region_specified = subject_region != 0;
+		const bool subject_device_specified = !subject_device.empty();
 		const bool single_region_storyboard = compiler.regions.size() == 1;
 
 		const ns_64_bit time_at_zero = metadata.time_at_which_animals_had_zero_age;
@@ -644,15 +648,20 @@ public:
 		if (!storyboard_region_id && subject_region_specified)
 			region_to_view = subject_region;
 
+		std::string specific_device;
+		if (subject_device_specified) {
+			specific_device = subject_device;
+		}
+
 		//the category into which each data from each region is placed. 
 		//indexed by region_id
 		std::map<ns_64_bit, ns_survival_plot_data_grouping> data_categories;
-		const ns_telemetry_cache::key_type aggregate_key(ns_aggregate_all, death_plot, region_to_view, data_to_process.device_regression_match_description());
+		const ns_telemetry_cache::key_type aggregate_key(ns_aggregate_all, death_plot, region_to_view, specific_device, data_to_process.device_regression_match_description());
 		ns_telemetry_cache::iterator p = telemetry_cache.find(aggregate_key);
 		if (p == telemetry_cache.end()) {
 			p = telemetry_cache.insert(ns_telemetry_cache::value_type(aggregate_key, ns_survival_telemetry_cache())).first;
 			p->second.s.resize(1);
-			survival_curve_set.generate_aggregate_risk_timeseries(data_to_process, filter_by_strain, "", region_to_view, p->second.s[0].best_guess_survival, p->second.s[0].movement_survival, p->second.s[0].death_associated_expansion_survival,p->second.s[0].fast_movement_cessation, p->second.s[0].time_axis, false);
+			survival_curve_set.generate_aggregate_risk_timeseries(data_to_process, filter_by_strain, specific_device, region_to_view, p->second.s[0].best_guess_survival, p->second.s[0].movement_survival, p->second.s[0].death_associated_expansion_survival,p->second.s[0].fast_movement_cessation, p->second.s[0].time_axis, false);
 		}
 		time_at_which_animals_were_age_zero = metadata.time_at_which_animals_had_zero_age;
 
@@ -662,12 +671,12 @@ public:
 		if (survival_grouping == ns_aggregate_all || strain_override_specified && survival_grouping == ns_group_by_strain) {
 			//set up survival curve
 			//const bool plot_movement(death_plot == ns_plot_movement_death);
-			const ns_telemetry_cache::key_type key(survival_grouping, death_plot, region_to_view, data_to_process.device_regression_match_description());
+			const ns_telemetry_cache::key_type key(survival_grouping, death_plot, region_to_view, specific_device, data_to_process.device_regression_match_description());
 			ns_telemetry_cache::iterator p = telemetry_cache.find(key);
 			if (p == telemetry_cache.end()) {
 				p = telemetry_cache.insert(ns_telemetry_cache::value_type(key, ns_survival_telemetry_cache())).first;
 				p->second.s.resize(1);
-				survival_curve_set.generate_aggregate_risk_timeseries(data_to_process, filter_by_strain, "", region_to_view, p->second.s[0].best_guess_survival, p->second.s[0].movement_survival, p->second.s[0].death_associated_expansion_survival, p->second.s[0].fast_movement_cessation, p->second.s[0].time_axis, false);
+				survival_curve_set.generate_aggregate_risk_timeseries(data_to_process, filter_by_strain, specific_device, region_to_view, p->second.s[0].best_guess_survival, p->second.s[0].movement_survival, p->second.s[0].death_associated_expansion_survival, p->second.s[0].fast_movement_cessation, p->second.s[0].time_axis, false);
 			}
 			ns_survival_data_with_censoring_timeseries* survival_data;
 			switch (death_plot) {
@@ -713,16 +722,21 @@ public:
 				p->second.s[0].time_axis.resize(max_t_i);
 			}*/
 			//add info for grouping data on the scatter plot
-			for (auto p = compiler.regions.begin(); p != compiler.regions.end(); p++)
+			for (auto p = compiler.regions.begin(); p != compiler.regions.end(); p++) {
+				if (strain_override_specified && stats_subset_strain_to_display.device_regression_match_description() != p->second.metadata.device_regression_match_description()
+					|| subject_region != 0 && p->second.metadata.region_id != subject_region 
+					|| !specific_device.empty() && p->second.metadata.device != specific_device)
+					continue;
 				data_categories[p->first] = ns_survival_plot_data_grouping(p->first, survival_curves[0].name, survival_curves[0].color);
+			}
 		}
 		else if (survival_grouping == ns_group_by_death_type) {
-			const ns_telemetry_cache::key_type key(survival_grouping, death_plot, region_to_view, data_to_process.device_regression_match_description());
+			const ns_telemetry_cache::key_type key(survival_grouping, death_plot, region_to_view, specific_device,data_to_process.device_regression_match_description());
 			ns_telemetry_cache::iterator p = telemetry_cache.find(key);
 			if (p == telemetry_cache.end()) {
 				p = telemetry_cache.insert(ns_telemetry_cache::value_type(key, ns_survival_telemetry_cache())).first;
 				p->second.s.resize(1);
-				survival_curve_set.generate_aggregate_risk_timeseries(data_to_process, filter_by_strain, "", region_to_view, p->second.s[0].best_guess_survival, p->second.s[0].movement_survival, p->second.s[0].death_associated_expansion_survival, p->second.s[0].fast_movement_cessation, p->second.s[0].time_axis, false);
+				survival_curve_set.generate_aggregate_risk_timeseries(data_to_process, filter_by_strain, specific_device, region_to_view, p->second.s[0].best_guess_survival, p->second.s[0].movement_survival, p->second.s[0].death_associated_expansion_survival, p->second.s[0].fast_movement_cessation, p->second.s[0].time_axis, false);
 			}
 			survival_curve_title = "Death Type";
 			movement_vs_posture_title = "All Individuals";
@@ -775,8 +789,13 @@ public:
 				p->second.s[0].time_axis.resize(max_t_i);
 			}*/
 			//add info for grouping data on the scatter plot
-			for (auto p = compiler.regions.begin(); p != compiler.regions.end(); p++)
-				data_categories[p->first] = ns_survival_plot_data_grouping(p->first, group_label, ns_color_8(0,0,0));
+			for (auto p = compiler.regions.begin(); p != compiler.regions.end(); p++) {
+				if (strain_override_specified && stats_subset_strain_to_display.device_regression_match_description() != p->second.metadata.device_regression_match_description()
+					|| subject_region != 0 && p->second.metadata.region_id != subject_region
+					|| !specific_device.empty() && p->second.metadata.device != specific_device)
+					continue;
+				data_categories[p->first] = ns_survival_plot_data_grouping(p->first, group_label, ns_color_8(0, 0, 0));
+			}
 		}
 		else if (survival_grouping == ns_group_by_strain) {
 			survival_curve_title = movement_vs_posture_title = "Animal Type";
@@ -786,16 +805,21 @@ public:
 
 			survival_curves.resize(all_strains.size());
 
-			for (auto p = compiler.regions.begin(); p != compiler.regions.end(); p++)
+			for (auto p = compiler.regions.begin(); p != compiler.regions.end(); p++) {
+				if (strain_override_specified && stats_subset_strain_to_display.device_regression_match_description() != stats_subset_strain_to_display.device_regression_match_description()
+					|| subject_region != 0 && p->second.metadata.region_id != subject_region
+					|| !specific_device.empty() && p->second.metadata.device != specific_device)
+					continue;
 				data_categories[p->first] = ns_survival_plot_data_grouping(p->first, p->second.metadata.device_regression_match_description(), survival_curves[0].color);
-			const ns_telemetry_cache::key_type key(survival_grouping, death_plot, region_to_view, data_to_process.device_regression_match_description());
+			}
+			const ns_telemetry_cache::key_type key(survival_grouping, death_plot, region_to_view, specific_device,data_to_process.device_regression_match_description());
 			ns_telemetry_cache::iterator tel = telemetry_cache.find(key);
 			if (tel == telemetry_cache.end()) {
 				tel = telemetry_cache.insert(ns_telemetry_cache::value_type(key, ns_survival_telemetry_cache())).first;
 				tel->second.s.resize(all_strains.size());
 				unsigned int i = 0;
 				for (auto p = all_strains.begin(); p != all_strains.end(); p++) {
-					survival_curve_set.generate_aggregate_risk_timeseries(p->second.first, true, "", region_to_view, tel->second.s[i].best_guess_survival, tel->second.s[i].movement_survival, tel->second.s[i].death_associated_expansion_survival, tel->second.s[i].fast_movement_cessation, tel->second.s[i].time_axis, false);
+					survival_curve_set.generate_aggregate_risk_timeseries(p->second.first, true, specific_device, region_to_view, tel->second.s[i].best_guess_survival, tel->second.s[i].movement_survival, tel->second.s[i].death_associated_expansion_survival, tel->second.s[i].fast_movement_cessation, tel->second.s[i].time_axis, false);
 					i++;
 				}
 			}
@@ -854,22 +878,34 @@ public:
 				}
 			}*/
 			//add info for grouping data on the scatter plot
-			for (auto p = compiler.regions.begin(); p != compiler.regions.end(); p++)
+			for (auto p = compiler.regions.begin(); p != compiler.regions.end(); p++) {
+				if (strain_override_specified && stats_subset_strain_to_display.device_regression_match_description() != p->second.metadata.device_regression_match_description()
+					|| subject_region != 0 && p->second.metadata.region_id != subject_region
+					|| !specific_device.empty() && p->second.metadata.device != specific_device)
+					continue;
 				data_categories[p->first] = all_strains[p->second.metadata.device_regression_match_description()].second;
+			}
 		}
 		else if (survival_grouping == ns_group_by_device) {
 			survival_curve_title = movement_vs_posture_title = "Device Name";
 			std::map<std::string, ns_survival_plot_data_grouping> all_devices;
-			for (unsigned int i = 0; i < survival_curve_set.size(); i++)
+			for (unsigned int i = 0; i < survival_curve_set.size(); i++) {
+				if (strain_override_specified && stats_subset_strain_to_display.device_regression_match_description() != survival_curve_set.curve(i).metadata.device_regression_match_description()
+					|| subject_region != 0 && survival_curve_set.curve(i).metadata.region_id != subject_region
+					|| !specific_device.empty() && survival_curve_set.curve(i).metadata.device != specific_device)
+					continue;
 				all_devices.emplace(std::pair<std::string, ns_survival_plot_data_grouping>(survival_curve_set.curve(i).metadata.device, ns_survival_plot_data_grouping()));
+			}
 			survival_curves.resize(all_devices.size());
-			const ns_telemetry_cache::key_type key(survival_grouping, death_plot, region_to_view, data_to_process.device_regression_match_description());
+			const ns_telemetry_cache::key_type key(survival_grouping, death_plot,  region_to_view, specific_device, data_to_process.device_regression_match_description());
 			ns_telemetry_cache::iterator tel = telemetry_cache.find(key);
 			if (tel == telemetry_cache.end()) {
 				tel = telemetry_cache.insert(ns_telemetry_cache::value_type(key, ns_survival_telemetry_cache())).first;
 				tel->second.s.resize(all_devices.size());
 				int i = 0;
 				for (auto p = all_devices.begin(); p != all_devices.end(); p++) {
+					if (!specific_device.empty() && p->first != specific_device)
+						continue;
 					survival_curve_set.generate_aggregate_risk_timeseries(data_to_process, filter_by_strain, p->first, region_to_view, tel->second.s[i].best_guess_survival, tel->second.s[i].movement_survival, tel->second.s[i].death_associated_expansion_survival, tel->second.s[i].fast_movement_cessation, tel->second.s[i].time_axis, false);
 					++i;
 				}
@@ -927,8 +963,13 @@ public:
 					survival_curves[i].vals.y.resize(max_t_i);
 			}*/
 			//add info for grouping data on the scatter plot
-			for (auto p = compiler.regions.begin(); p != compiler.regions.end(); p++)
+			for (auto p = compiler.regions.begin(); p != compiler.regions.end(); p++) {
+				if (strain_override_specified && stats_subset_strain_to_display.device_regression_match_description() !=  p->second.metadata.device_regression_match_description()
+					|| subject_region != 0 && p->second.metadata.region_id != subject_region
+					|| !specific_device.empty() && p->second.metadata.device != specific_device)
+					continue;
 				data_categories[p->first] = all_devices[p->second.metadata.device];
+			}
 		}
 
 		//make sure that each survival curve is plotted from time 0 until the last time of death
@@ -1007,8 +1048,11 @@ public:
 		for (ns_death_time_annotation_compiler::ns_region_list::const_iterator r = compiler.regions.begin(); r != compiler.regions.end(); r++) {
 			if (region_to_view != 0 && r->first != region_to_view)
 				continue;
-			if (filter_by_strain && r->second.metadata.device_regression_match_description() != data_to_process.device_regression_match_description())
+			if (filter_by_strain && r->second.metadata.device_regression_match_description() != data_to_process.device_regression_match_description()
+				|| subject_region != 0 && r->second.metadata.region_id != subject_region
+				|| !specific_device.empty() && r->second.metadata.device != specific_device)
 				continue;
+
 			for (ns_death_time_annotation_compiler_region::ns_location_list::const_iterator l = r->second.locations.begin(); l != r->second.locations.end(); l++) {
 
 				ns_multiple_worm_cluster_death_annotation_handler multiple_worm_handler;

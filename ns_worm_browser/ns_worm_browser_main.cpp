@@ -2171,7 +2171,9 @@ public:
 			worm_learner.statistics_data_gui_selector.current_region().region_id;
 		if (worm_learner.statistics_data_gui_selector.strain_selected())
 			strain = worm_learner.statistics_data_gui_selector.current_strain();
-		worm_learner.storyboard_annotater.population_telemetry.set_subject(region_id, strain);
+		if (worm_learner.statistics_data_gui_selector.whole_device()) 
+			worm_learner.storyboard_annotater.population_telemetry.set_subject(0, worm_learner.statistics_data_gui_selector.current_sample().device, strain);
+		else worm_learner.storyboard_annotater.population_telemetry.set_subject(region_id, "",strain);
 		worm_learner.storyboard_annotater.replot_telemetry();
 		//worm_learner.storyboard_annotater.draw_telemetry();
 		ns_set_menu_bar_activity(true);
@@ -2196,7 +2198,7 @@ class ns_worm_terminal_region_menu_organizer : public ns_menu_organizer {
 public:
 	ns_worm_terminal_region_menu_organizer(ns_experiment_region_gui_selector& selector_to_use) :data_selector(selector_to_use){}
 	std::string region_menu_name() { return "File/_Select Current Region"; }
-	void update_region_choice(Fl_Menu_Bar& bar) {
+	void update_region_choice(Fl_Menu_Bar& bar, bool allow_whole_device) {
 		bar.menu(NULL);
 		clear();
 		if (!data_selector.experiment_selected()) {
@@ -2229,10 +2231,16 @@ public:
 		std::string menu_name = "All Regions";
 		if (data_selector.region_selected())
 			menu_name = data_selector.current_region().display_name;
+		if (data_selector.whole_device())
+			menu_name = data_selector.current_sample().device;
 		ns_menu_item_spec spec(true,pick_region, menu_name);
 		string sep;
+		
 
 		for (unsigned int i = 0; i < data_selector.samples.size(); i++) {
+
+			if (allow_whole_device)
+				spec.options.push_back(ns_menu_item_options(data_selector.samples[i].device + "/" + "All regions on " + data_selector.samples[i].device, false));
 
 			if (data_selector.strain_selected()) {
 				map<string, int>::const_iterator p = devices_with_valid_regions.find(data_selector.samples[i].device);
@@ -2260,10 +2268,9 @@ public:
 					continue;
 				}
 			}
-
 			for (unsigned int j = 0; j < data_selector.samples[i].regions.size(); j++) {
 
-				if (data_selector.region_selected() && data_selector.samples[i].regions[j].region_id == data_selector.current_region().region_id)
+				if (data_selector.region_selected() && !data_selector.whole_device() && data_selector.samples[i].regions[j].region_id == data_selector.current_region().region_id)
 					continue;
 				const bool unselected_strain(data_selector.strain_selected() && data_selector.samples[i].regions[j].region_metadata != &data_selector.current_strain());
 				std::string a = "";
@@ -2363,7 +2370,9 @@ public:
 			region_id = worm_learner.statistics_data_gui_selector.current_region().region_id;
 		if (worm_learner.statistics_data_gui_selector.strain_selected())
 			strain = worm_learner.statistics_data_gui_selector.current_strain();
-		worm_learner.storyboard_annotater.population_telemetry.set_subject(region_id, strain);
+		if (worm_learner.statistics_data_gui_selector.whole_device())
+			worm_learner.storyboard_annotater.population_telemetry.set_subject(0, worm_learner.statistics_data_gui_selector.current_sample().device, strain);
+		else worm_learner.storyboard_annotater.population_telemetry.set_subject(region_id, "", strain);
 		worm_learner.storyboard_annotater.replot_telemetry();
 		//worm_learner.storyboard_annotater.draw_telemetry();
 		report_changes_made_to_screen();
@@ -2667,7 +2676,7 @@ public:
 		region_menu->textfont(FL_HELVETICA);
 
 		region_menu_handler = new ns_storyboard_region_selector(worm_learner.data_gui_selector);
-		region_menu_handler->update_region_choice(*region_menu);
+		region_menu_handler->update_region_choice(*region_menu,false);
 
 		strain_menu = new Fl_Menu_Bar(   (int)(d*experiment_bar_width() + menu_d*region_name_bar_width()),												   (int)(H - menu_d*info_bar_height()), (int)(menu_d*strain_bar_width()),    (int)(menu_d*info_bar_height()));
 		exclusion_menu = new Fl_Menu_Bar((int)(d*experiment_bar_width() + menu_d*(region_name_bar_width() + strain_bar_width())),						   (int)(H - menu_d*info_bar_height()), (int)(menu_d*exclusion_bar_width()), (int)(menu_d*info_bar_height()));
@@ -2807,7 +2816,7 @@ public:
 
 	}
 	void update_region_choice_menu(){
-		region_menu_handler->update_region_choice(*region_menu);
+		region_menu_handler->update_region_choice(*region_menu,false);
 		update_information_bar();
 	
 	}
@@ -3131,7 +3140,7 @@ public:
 		region_menu = new Fl_Menu_Bar(menu_d * region_button_offset, worm_learner.stats_window.gl_image_size.y, menu_d * region_name_bar_width(), menu_d * ns_death_event_solo_annotation_group::button_height);
 
 		region_menu_handler = new ns_stats_region_selector(worm_learner.statistics_data_gui_selector);
-		region_menu_handler->update_region_choice(*region_menu);
+		region_menu_handler->update_region_choice(*region_menu,true);
 
 		strain_menu = new Fl_Menu_Bar(menu_d * (region_button_offset + region_name_bar_width()), worm_learner.stats_window.gl_image_size.y, menu_d * strain_bar_width(), menu_d * info_bar_height());
 
@@ -3202,7 +3211,7 @@ public:
 
 
 	void update_region_choice_menu() {
-		region_menu_handler->update_region_choice(*region_menu);
+		region_menu_handler->update_region_choice(*region_menu,true);
 		update_information_bar();
 
 	}
@@ -4187,11 +4196,11 @@ void ns_run_startup_routines() {
 		//Usefull for debugging
 		if (0) {
 			ns_processing_job job;
-			const unsigned long region_id(32946);
+			const unsigned long region_id(53944);
 			job.region_id = region_id;
 			job.maintenance_task = ns_maintenance_rebuild_movement_data_from_stored_solution;
 			//56
-			analyze_worm_movement_across_frames(job, &image_server, sql(), true);
+			analyze_worm_movement_across_frames(job, &image_server, sql(), true,4);
 			if (0) {
 				ns_image_server_results_subject subject;
 				subject.region_id = region_id;
@@ -4242,6 +4251,7 @@ void ns_run_startup_routines() {
 		//image_server.set_sql_database("image_server_archive_2017", false, &worm_learner.get_sql_connection());
 		get_menu_handler()->update_experiment_choice(*get_menu_bar());
 		worm_learner.data_gui_selector.set_current_experiment(658, worm_learner.get_sql_connection());
+		worm_learner.statistics_data_gui_selector.set_current_experiment(658, worm_learner.get_sql_connection());
 		update_region_choice_menu();
 		update_strain_choice_menu();
 		update_exclusion_choice_menu();

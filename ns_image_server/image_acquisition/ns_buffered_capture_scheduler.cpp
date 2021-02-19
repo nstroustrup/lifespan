@@ -722,8 +722,8 @@ void ns_buffered_capture_scheduler::update_local_buffer_from_central_server(ns_i
 	store_last_update_time_in_db(time_of_last_update_from_central_db,local_buffer);
 
 	lock.release();
-  }
- }
+
+}
 
 
 void ns_buffered_capture_scheduler::store_last_update_time_in_db(const ns_synchronized_time & time,ns_local_buffer_connection & sql){

@@ -586,7 +586,6 @@ public:
 	//this is set because the context image is shifted in the pa image so that the context image's intensity center of mass
 	//is in exactly the center
 	static int maximum_pa_shift_offset() { return 50; }
-	static int maximum_pa_crop() { return 200; }
 	static ns_vector_2d maximum_local_alignment_offset(){return ns_vector_2d(4,4);}
 	enum {intensity_normalization_kernel_half_width=1,movement_detection_kernal_half_width=2,sobel_operator_width=1,alignment_time_kernel_width=5,movement_time_kernel_width=1,save_output_buffer_height=16};
 

@@ -383,6 +383,7 @@ public:
 		if (sample_region_name == "All Regions") {
 			cur_sample = 0;
 			cur_region = 0;
+			whole_device_requested = false;
 			return;
 		}
 		const std::string whole_region_tag("All regions on ");

@@ -4200,7 +4200,7 @@ void ns_run_startup_routines() {
 			job.region_id = region_id;
 			job.maintenance_task = ns_maintenance_rebuild_movement_data_from_stored_solution;
 			//56
-			analyze_worm_movement_across_frames(job, &image_server, sql(), true,4);
+			analyze_worm_movement_across_frames(job, &image_server, sql(), true);
 			if (0) {
 				ns_image_server_results_subject subject;
 				subject.region_id = region_id;

@@ -87,9 +87,9 @@ struct ns_analyzed_image_time_path_death_time_estimator_reusable_memory{
 class ns_analyzed_image_time_path_death_time_estimator{
 public:
 	virtual ~ns_analyzed_image_time_path_death_time_estimator() {}; // has derived classes that are passed around cast as the base class: should have virtual destructor.
-	virtual ns_time_path_posture_movement_solution operator() (const ns_analyzed_image_time_path * path, std::ostream * debug_output=0)const=0;
-	virtual ns_time_path_posture_movement_solution operator() (ns_analyzed_image_time_path * path, const bool fill_in_loglikelihood_timeseries,std::ostream * debug_output=0)const=0;
-	virtual ns_time_path_posture_movement_solution operator()(const ns_analyzed_image_time_path * path, const bool fill_in_loglikelihood_timeseries, ns_analyzed_image_time_path_death_time_estimator_reusable_memory & mem, std::ostream * debug_output_ = 0)const = 0;
+	virtual ns_time_path_posture_movement_solution operator() (const ns_analyzed_image_time_path * path, const double vigorous_movement_threshold,std::ostream * debug_output=0)const=0;
+	virtual ns_time_path_posture_movement_solution operator() (ns_analyzed_image_time_path * path, const double vigorous_movement_threshold, const bool fill_in_loglikelihood_timeseries,std::ostream * debug_output=0)const=0;
+	virtual ns_time_path_posture_movement_solution operator()(const ns_analyzed_image_time_path * path, const double vigorous_movement_threshold, const bool fill_in_loglikelihood_timeseries, ns_analyzed_image_time_path_death_time_estimator_reusable_memory & mem, std::ostream * debug_output_ = 0)const = 0;
 	virtual unsigned long latest_possible_death_time(const ns_analyzed_image_time_path * path,const unsigned long last_observation_time) const = 0;
 	//version used to generate the model
 	virtual std::string model_software_version_number() const =0 ;

@@ -85,19 +85,19 @@ public:
 class ns_time_path_movement_markov_solver : public ns_analyzed_image_time_path_death_time_estimator{
 public:
 	ns_time_path_movement_markov_solver(const ns_emperical_posture_quantification_value_estimator & e):estimator(e){}
-	ns_time_path_posture_movement_solution operator()(const ns_analyzed_image_time_path * path, std::ostream * debug_output_ = 0)const {
+	ns_time_path_posture_movement_solution operator()(const ns_analyzed_image_time_path * path, const double vigorous_movement_thresh, std::ostream * debug_output_ = 0)const {
 		ns_hmm_solver_reusable_memory reusable_memory;
-		return estimate_posture_movement_states(2, path, reusable_memory,0,debug_output_);
+		return estimate_posture_movement_states(2, vigorous_movement_thresh,path, reusable_memory,0,debug_output_);
 	}
-	ns_time_path_posture_movement_solution operator()(const ns_analyzed_image_time_path * path, const bool fill_in_loglikelihood_timeseries, ns_hmm_solver_reusable_memory & reusable_memory, std::ostream * debug_output_=0)const{
-		return estimate_posture_movement_states(2,path, reusable_memory,0,debug_output_);
+	ns_time_path_posture_movement_solution operator()(const ns_analyzed_image_time_path * path, const double vigorous_movement_thresh, const bool fill_in_loglikelihood_timeseries, ns_hmm_solver_reusable_memory & reusable_memory, std::ostream * debug_output_=0)const{
+		return estimate_posture_movement_states(2, vigorous_movement_thresh, path, reusable_memory,0,debug_output_);
 	}
-	ns_time_path_posture_movement_solution operator() (ns_analyzed_image_time_path * path, const bool fill_in_loglikelihood_timeseries,std::ostream * debug_output=0)const{
+	ns_time_path_posture_movement_solution operator() (ns_analyzed_image_time_path * path, const double vigorous_movement_thresh, const bool fill_in_loglikelihood_timeseries,std::ostream * debug_output=0)const{
 		ns_hmm_solver_reusable_memory reusable_memory;
-		return estimate_posture_movement_states(2,path, reusable_memory,path,debug_output);
+		return estimate_posture_movement_states(2, vigorous_movement_thresh, path, reusable_memory,path,debug_output);
 	}
 
-	ns_time_path_posture_movement_solution estimate_posture_movement_states(int software_value,const ns_analyzed_image_time_path * source_path, ns_hmm_solver_reusable_memory & reusable_memory, ns_analyzed_image_time_path * output_path = 0,std::ostream * debug_output=0) const;
+	ns_time_path_posture_movement_solution estimate_posture_movement_states(int software_value,const double vigorous_movement_thresh,const ns_analyzed_image_time_path * source_path, ns_hmm_solver_reusable_memory & reusable_memory, ns_analyzed_image_time_path * output_path = 0,std::ostream * debug_output=0) const;
 	const ns_emperical_posture_quantification_value_estimator & estimator;
 	static std::string current_software_version() { return "2.5"; }
 	std::string current_software_version_number() const { return current_software_version(); }

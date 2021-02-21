@@ -677,8 +677,8 @@ private:
 	void add_by_hand_annotations(const ns_death_time_annotation_set & e);
 	void add_by_hand_annotations(const ns_death_time_annotation_compiler_location & l);
 
-	void detect_death_times_and_generate_annotations_from_movement_quantification(const ns_stationary_path_id & path_id,const ns_analyzed_image_time_path_death_time_estimator * e, ns_movement_analysis_result & set, const ns_death_time_annotation_time_interval& first_plate_observation_interval,const unsigned long last_timepoint_in_analysis) const;
-	void detect_death_times_and_generate_annotations_from_movement_quantification(const ns_stationary_path_id & path_id, const ns_analyzed_image_time_path_death_time_estimator * e, ns_movement_analysis_result & set, const ns_death_time_annotation_time_interval& first_plate_observation_interval, const unsigned long last_timepoint_in_analysis, ns_analyzed_image_time_path_death_time_estimator_reusable_memory& mem) const;
+	void detect_death_times_and_generate_annotations_from_movement_quantification(const ns_stationary_path_id & path_id,const double vigorous_movement_threshold,const ns_analyzed_image_time_path_death_time_estimator * e, ns_movement_analysis_result & set, const ns_death_time_annotation_time_interval& first_plate_observation_interval,const unsigned long last_timepoint_in_analysis) const;
+	void detect_death_times_and_generate_annotations_from_movement_quantification(const ns_stationary_path_id & path_id, const double vigorous_movement_threshold, const ns_analyzed_image_time_path_death_time_estimator * e, ns_movement_analysis_result & set, const ns_death_time_annotation_time_interval& first_plate_observation_interval, const unsigned long last_timepoint_in_analysis, ns_analyzed_image_time_path_death_time_estimator_reusable_memory& mem) const;
 	//ns_64_bit stationary_histogram[256];
 	//ns_64_bit movement_histogram[256];
 
@@ -689,7 +689,7 @@ private:
 	void copy_aligned_path_to_registered_image(const ns_analyzed_time_image_chunk & chunk, std::vector < ns_image_standard> & temporary_images, ns_time_path_image_movement_analysis_memory_pool<allocator_T> & memory_pool_);
 
 
-	void analyze_movement(const ns_analyzed_image_time_path_death_time_estimator * movement_death_time_estimator,const ns_stationary_path_id & path_id, const ns_death_time_annotation_time_interval& first_plate_observation_interval, const unsigned long last_timepoint_in_analysis);
+	void analyze_movement(const ns_analyzed_image_time_path_death_time_estimator * movement_death_time_estimator,const ns_stationary_path_id & path_id, const double vigorous_movement_threshold,const ns_death_time_annotation_time_interval& first_plate_observation_interval, const unsigned long last_timepoint_in_analysis);
 
 	ns_image_storage_reciever_handle<ns_8_bit> * output_reciever;
 	ns_image_storage_reciever_handle<float> * flow_output_reciever;
@@ -808,7 +808,7 @@ public:
 	bool load_image_quantification_and_rerun_death_time_detection(const ns_64_bit region_id, const ns_time_path_solution & solution_, const ns_time_series_denoising_parameters &, const ns_analyzed_image_time_path_death_time_estimator * e, ns_sql & sql,unsigned long debug_specific_worm=-1);
 	bool load_completed_analysis(const ns_64_bit region_id, const ns_time_path_solution& solution_,  ns_sql& sql, bool exclude_movement_quantification = false);
 
-	void reanalyze_with_different_movement_estimator(const ns_time_series_denoising_parameters &,const ns_analyzed_image_time_path_death_time_estimator * e);
+	void reanalyze_with_different_movement_estimator(const ns_time_series_denoising_parameters &,const double vigorous_movement_threshold,const ns_analyzed_image_time_path_death_time_estimator * e);
 
 	void write_internal_annotation_data(std::ostream& o) const;
 	void read_internal_annotation_data(std::istream& in);

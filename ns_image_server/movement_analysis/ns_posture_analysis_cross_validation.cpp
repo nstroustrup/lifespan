@@ -85,8 +85,9 @@ public:
 			}
 			//time_path_image_analyzer.add_by_hand_annotations(by_hand_annotations);
 			else {
-				//std::cerr << "re-analyzing with current data\n";
-				time_path_image_analyzer.reanalyze_with_different_movement_estimator(time_series_denoising_parameters, &markov_solver);
+				const std::string vig_thresh_str = image_server_const.get_cluster_constant_value("vigorous_movement_distance_threshold", "50", &sql);
+				const double vigorous_movement_threshold = atof(vig_thresh_str.c_str());
+				time_path_image_analyzer.reanalyze_with_different_movement_estimator(time_series_denoising_parameters,vigorous_movement_threshold, &markov_solver);
 			}
 
 			std::set<ns_stationary_path_id> individuals_to_test;

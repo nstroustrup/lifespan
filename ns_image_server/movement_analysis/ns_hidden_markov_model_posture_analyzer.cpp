@@ -959,7 +959,7 @@ std::string ns_time_path_movement_markov_solver::model_software_version_number()
 	return estimator.software_version_when_built;
 }
 
-ns_time_path_posture_movement_solution ns_time_path_movement_markov_solver::estimate_posture_movement_states(int software_version,const ns_analyzed_image_time_path * path, ns_hmm_solver_reusable_memory& reusable_memory, ns_analyzed_image_time_path * output_path, std::ostream * debug_output)const{
+ns_time_path_posture_movement_solution ns_time_path_movement_markov_solver::estimate_posture_movement_states(int software_version, const double vigorous_distance_thresh,const ns_analyzed_image_time_path * path, ns_hmm_solver_reusable_memory& reusable_memory, ns_analyzed_image_time_path * output_path, std::ostream * debug_output)const{
 	if (estimator.software_version_when_built != current_software_version_number())
 		throw ns_ex("The specified HMM model was built with an outdated version, ") << estimator.software_version_when_built << ", whereas this software was compiled as version " << current_software_version_number();
 	ns_hmm_solver solver;
@@ -971,8 +971,8 @@ ns_time_path_posture_movement_solution ns_time_path_movement_markov_solver::esti
 	if (!solver.movement_state_solution.fast.skipped) {
 		unsigned long last_vigorous_movement;
 		if (!solver.movement_state_solution.dead.skipped)
-			last_vigorous_movement = path->calculate_denoised_worm_vigorous_movement(40,0, solver.movement_state_solution.dead.start_index);
-		else last_vigorous_movement = path->calculate_denoised_worm_vigorous_movement(40);
+			last_vigorous_movement = path->calculate_denoised_worm_vigorous_movement(vigorous_distance_thresh,0, solver.movement_state_solution.dead.start_index);
+		else last_vigorous_movement = path->calculate_denoised_worm_vigorous_movement(vigorous_distance_thresh);
 		solver.movement_state_solution.fast.start_index = 0;
 		solver.movement_state_solution.fast.end_index = last_vigorous_movement;
 	}
@@ -1947,13 +1947,13 @@ void ns_threshold_movement_posture_analyzer_parameters::write(std::ostream & o)c
 unsigned long ns_threshold_and_hmm_posture_analyzer::latest_possible_death_time(const ns_analyzed_image_time_path* path, const unsigned long last_observation_time) const {
 	return  last_observation_time - model->threshold_parameters.permanance_time_required_in_seconds;
 }
-ns_time_path_posture_movement_solution ns_threshold_and_hmm_posture_analyzer::estimate_posture_movement_states(int software_version, const ns_analyzed_image_time_path* path, ns_analyzed_image_time_path_death_time_estimator_reusable_memory & mem, ns_analyzed_image_time_path* output_path, std::ostream* debug_output)const {
+ns_time_path_posture_movement_solution ns_threshold_and_hmm_posture_analyzer::estimate_posture_movement_states(int software_version, const double vigorous_movement_threshold, const ns_analyzed_image_time_path* path,  ns_analyzed_image_time_path_death_time_estimator_reusable_memory & mem, ns_analyzed_image_time_path* output_path, std::ostream* debug_output)const {
 
 	ns_hmm_solver hmm_solver;
 	hmm_solver.solve(*path, model->hmm_posture_estimator, mem);
 
 	ns_threshold_movement_posture_analyzer threshold_solver(model->threshold_parameters);
-	ns_time_path_posture_movement_solution threshold_solution = threshold_solver(path, debug_output);
+	ns_time_path_posture_movement_solution threshold_solution = threshold_solver(path, vigorous_movement_threshold,debug_output);
 	
 	ns_time_path_posture_movement_solution blended_solution =hmm_solver.movement_state_solution;
 	blended_solution.dead = threshold_solution.dead;

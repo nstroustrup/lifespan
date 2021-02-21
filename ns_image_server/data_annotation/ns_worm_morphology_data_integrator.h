@@ -130,6 +130,9 @@ public:
 	}
 	void match_images_with_solution(ns_sql & sql) {
 
+		const std::string vig_thresh_str = image_server_const.get_cluster_constant_value("vigorous_movement_distance_threshold", "50", &sql);
+		const double vigorous_movement_threshold = atof(vig_thresh_str.c_str());
+
 		sql << "SELECT id, worm_detection_results_id,worm_interpolation_results_id, capture_time FROM sample_region_images WHERE region_info_id = " << region_info_id << " AND worm_detection_results_id != 0 ORDER BY capture_time";
 		ns_sql_result res;
 		sql.get_rows(res);
@@ -185,7 +188,7 @@ public:
 			const ns_time_series_denoising_parameters time_series_denoising_parameters(ns_time_series_denoising_parameters::load_from_db(region_info_id, sql));
 			ns_acquire_for_scope<ns_analyzed_image_time_path_death_time_estimator> death_time_estimator(
 				ns_get_death_time_estimator_from_posture_analysis_model(posture_analysis_model_handle().model_specification));
-			analyzer.reanalyze_with_different_movement_estimator(time_series_denoising_parameters, &death_time_estimator());
+			analyzer.reanalyze_with_different_movement_estimator(time_series_denoising_parameters,vigorous_movement_threshold, &death_time_estimator());
 
 			ns_object_hand_annotation_data hd;
 			analyzer.match_plate_areas_to_paths(areas);

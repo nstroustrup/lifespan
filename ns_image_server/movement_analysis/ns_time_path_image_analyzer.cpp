@@ -691,7 +691,7 @@ void ns_analyzed_image_time_path::calculate_stabilized_worm_neighborhood(ns_imag
 
 unsigned long ns_analyzed_image_time_path::calculate_denoised_worm_vigorous_movement(const double distance_threshold, const unsigned long death_time , const long death_index_) const{
 	if (elements.size() == 0)
-		throw ns_ex("ns_analyzed_image_time_path::calculate_denoised_worm_vigorous_movement()::Looking for vigorous movement cessation on an empty path");
+		throw ns_ex("ns_analyzed_image_time_path::calculate_denoioperatorsed_worm_vigorous_movement()::Looking for vigorous movement cessation on an empty path");
 	std::vector<double> x_positions(elements.size(), 0), 
 					  y_positions(elements.size(), 0);
 	for (unsigned int i = 0; i < elements.size(); i++) {
@@ -752,6 +752,11 @@ void ns_time_path_image_movement_analyzer<allocator_T>::process_raw_images(const
 	if (analysis_id == 0)
 		throw ns_ex("Could not obtain analysis id!");
 	try {
+
+
+		const std::string vig_thresh_str = image_server_const.get_cluster_constant_value("vigorous_movement_distance_threshold", "50", &sql);
+		const double vigorous_movement_threshold = atof(vig_thresh_str.c_str());
+
 		//std::ofstream debug_out("c:\\server\\path_alignment_debug.csv");
 		//output_allocation_state_header(debug_out);
 		externally_specified_plate_observation_interval = get_externally_specified_last_measurement(region_id, sql);
@@ -1294,7 +1299,9 @@ void ns_time_path_image_movement_analyzer<allocator_T>::process_raw_images(const
 			ns_throw_pool_errors<allocator_T> throw_errors;
 			throw_errors(thread_pool, sql);
 			thread_pool.shutdown();
-
+			
+			const std::string vig_thresh_str = image_server_const.get_cluster_constant_value("vigorous_movement_distance_threshold", "50", &sql);
+			const double vigorous_movement_threshold = atof(vig_thresh_str.c_str());
 			//OK! Now we have /everything/ finished with the images.
 			//calculate some final stats and then we're done.
 			normalize_movement_scores_over_all_paths(e->model_software_version_number(), times_series_denoising_parameters, sql);
@@ -1306,7 +1313,7 @@ void ns_time_path_image_movement_analyzer<allocator_T>::process_raw_images(const
 					if (ns_skip_low_density_paths && groups[i].paths[j].is_low_density_path())
 						continue;
 					//THIS IS WHERE QUANTIFICATION IS ANALYZED AND DEATH TIMES ARE IDENTIFIED AND ANNOTATIONS ARE GENERATED
-					groups[i].paths[j].analyze_movement(e, ns_stationary_path_id(i, j, analysis_id), first_observation_made_of_plate(),last_timepoint_in_analysis_);
+					groups[i].paths[j].analyze_movement(e, ns_stationary_path_id(i, j, analysis_id),vigorous_movement_threshold,first_observation_made_of_plate(),last_timepoint_in_analysis_);
 					groups[i].paths[j].calculate_movement_quantification_summary(groups[i].paths[j].movement_analysis_result);
 				}
 			}
@@ -2064,7 +2071,7 @@ bool ns_time_path_image_movement_analyzer<allocator_T>::calculate_optimzation_st
 	return found_worm;
 }
 template<class allocator_T>
-void ns_time_path_image_movement_analyzer<allocator_T>::reanalyze_with_different_movement_estimator(const ns_time_series_denoising_parameters &, const ns_analyzed_image_time_path_death_time_estimator * e) {
+void ns_time_path_image_movement_analyzer<allocator_T>::reanalyze_with_different_movement_estimator(const ns_time_series_denoising_parameters &, const double vigorous_movement_threshold,const ns_analyzed_image_time_path_death_time_estimator * e) {
 	if (region_info_id == 0)
 		throw ns_ex("Attempting to reanalyze an unloaded image!");
 
@@ -2081,7 +2088,7 @@ void ns_time_path_image_movement_analyzer<allocator_T>::reanalyze_with_different
 			if (ns_skip_low_density_paths && groups[g].paths[p].is_low_density_path())
 				continue;
 			try {
-				groups[g].paths[p].analyze_movement(e, ns_stationary_path_id(g, p, analysis_id), first_observation_made_of_plate(),last_timepoint_in_analysis_);
+				groups[g].paths[p].analyze_movement(e,ns_stationary_path_id(g, p, analysis_id), vigorous_movement_threshold, first_observation_made_of_plate(),last_timepoint_in_analysis_);
 				groups[g].paths[p].calculate_movement_quantification_summary(groups[g].paths[p].movement_analysis_result);
 			}
 			catch (ns_ex & ex) {
@@ -2103,6 +2110,8 @@ bool ns_time_path_image_movement_analyzer<allocator_T>::load_image_quantificatio
 	bool found_path_info_in_db = load_movement_image_db_info(region_info_id, sql);
 
 
+	const std::string vig_thresh_str = image_server_const.get_cluster_constant_value("vigorous_movement_distance_threshold", "50", &sql);
+	const double vigorous_movement_threshold = atof(vig_thresh_str.c_str());
 
 	for (unsigned long g = 0; g < groups.size(); g++) {
 		for (unsigned long p = 0; p < groups[g].paths.size(); p++)
@@ -2182,7 +2191,7 @@ bool ns_time_path_image_movement_analyzer<allocator_T>::load_image_quantificatio
 			//ns_region_metadata m;
 			//if (g == 17)
 			//	groups[g].paths[p].write_detailed_movement_quantification_analysis_data(m, g, p, o, false, false);
-			groups[g].paths[p].analyze_movement(e, ns_stationary_path_id(g, p, analysis_id), first_observation_made_of_plate(),last_timepoint_in_analysis_);
+			groups[g].paths[p].analyze_movement(e,ns_stationary_path_id(g, p, analysis_id), vigorous_movement_threshold, first_observation_made_of_plate(),last_timepoint_in_analysis_);
 			groups[g].paths[p].calculate_movement_quantification_summary(groups[g].paths[p].movement_analysis_result);
 		}
 	}
@@ -3674,11 +3683,11 @@ ns_movement_state_time_interval_indicies calc_frame_before_first(const ns_moveme
 //
 //There is no problem handling events that continue past the end of the path;
 //we don't use this information for anything and do not output any annotations about it.
-void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_from_movement_quantification(const ns_stationary_path_id & path_id, const ns_analyzed_image_time_path_death_time_estimator * movement_death_time_estimator, ns_movement_analysis_result & result, const ns_death_time_annotation_time_interval& first_plate_observation_interval, const unsigned long last_time_point_in_analysis) const {
+void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_from_movement_quantification(const ns_stationary_path_id & path_id, const double vigorous_movement_threshold,const ns_analyzed_image_time_path_death_time_estimator * movement_death_time_estimator, ns_movement_analysis_result & result, const ns_death_time_annotation_time_interval& first_plate_observation_interval, const unsigned long last_time_point_in_analysis) const {
 	ns_analyzed_image_time_path_death_time_estimator_reusable_memory mem;
-	detect_death_times_and_generate_annotations_from_movement_quantification(path_id, movement_death_time_estimator, result, first_plate_observation_interval, last_time_point_in_analysis,mem);
+	detect_death_times_and_generate_annotations_from_movement_quantification(path_id, vigorous_movement_threshold, movement_death_time_estimator, result, first_plate_observation_interval, last_time_point_in_analysis,mem);
 }
-void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_from_movement_quantification(const ns_stationary_path_id & path_id, const ns_analyzed_image_time_path_death_time_estimator * movement_death_time_estimator, ns_movement_analysis_result & analysis_result, const ns_death_time_annotation_time_interval& first_plate_observation_interval, const unsigned long last_time_point_in_analysis, ns_analyzed_image_time_path_death_time_estimator_reusable_memory& mem) const {
+void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_from_movement_quantification(const ns_stationary_path_id & path_id, const double vigorous_movement_threshold,const ns_analyzed_image_time_path_death_time_estimator * movement_death_time_estimator, ns_movement_analysis_result & analysis_result, const ns_death_time_annotation_time_interval& first_plate_observation_interval, const unsigned long last_time_point_in_analysis, ns_analyzed_image_time_path_death_time_estimator_reusable_memory& mem) const {
 		
 	analysis_result.state_intervals.clear();
 	analysis_result.state_intervals.resize((int)ns_movement_number_of_states);
@@ -3737,7 +3746,7 @@ void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_fr
 			path_id,true,elements[end_index].inferred_animal_location,elements[end_index].subregion_info, ns_death_time_annotation::ns_explicitly_observed, "low_density"));
 	}
 	
-	analysis_result.machine_movement_state_solution = movement_death_time_estimator->operator()(this,true,mem);
+	analysis_result.machine_movement_state_solution = movement_death_time_estimator->operator()(this, vigorous_movement_threshold, true,mem);
 
 	//Some movement detection algorithms need a significant amount of time after an animal has died
 	//to detect its death.  So, if we are going to censor an animal at the end of the experiment,
@@ -4227,9 +4236,9 @@ void ns_analyzed_image_time_path::convert_movement_solution_to_state_intervals(c
 	list[ns_movement_death_associated_post_expansion_contraction] = post_expansion_contraction_interval;
 }
 
-void ns_analyzed_image_time_path::analyze_movement(const ns_analyzed_image_time_path_death_time_estimator * movement_death_time_estimator,const ns_stationary_path_id & path_id, const ns_death_time_annotation_time_interval& first_plate_observation_interval, const unsigned long last_timepoint_in_analysis){
+void ns_analyzed_image_time_path::analyze_movement(const ns_analyzed_image_time_path_death_time_estimator * movement_death_time_estimator,const ns_stationary_path_id & path_id, const double vigorous_movement_threshold, const ns_death_time_annotation_time_interval& first_plate_observation_interval, const unsigned long last_timepoint_in_analysis){
 	movement_analysis_result.clear();
-	detect_death_times_and_generate_annotations_from_movement_quantification(path_id,movement_death_time_estimator, movement_analysis_result, first_plate_observation_interval,last_timepoint_in_analysis);
+	detect_death_times_and_generate_annotations_from_movement_quantification(path_id, vigorous_movement_threshold,movement_death_time_estimator, movement_analysis_result, first_plate_observation_interval,last_timepoint_in_analysis);
 }
 bool inline ns_state_match(const unsigned long t,const ns_movement_state_observation_boundary_interval & i, const ns_analyzed_image_time_path & p){
 	if (i.skipped)
@@ -8118,6 +8127,8 @@ void ns_time_path_image_movement_analyzer<allocator_T>::reanalyze_stored_aligned
 		throw ns_ex("The specified model was generated using an old model version: \"") << e->model_software_version_number() << "\" but this software uses version \"" << e->current_software_version_number() << "\". You can fix this by using the latest model file version.";
 	
 
+	const std::string vig_thresh_str = image_server_const.get_cluster_constant_value("vigorous_movement_distance_threshold", "50", &sql);
+	const double vigorous_movement_threshold = atof(vig_thresh_str.c_str());
 
 	#ifndef NS_CALCULATE_OPTICAL_FLOW
 	if (recalculate_flow_images)
@@ -8256,7 +8267,7 @@ void ns_time_path_image_movement_analyzer<allocator_T>::reanalyze_stored_aligned
 				if (ns_skip_low_density_paths && groups[i].paths[j].is_low_density_path())
 					continue;
 
-				groups[i].paths[j].analyze_movement(e,generate_stationary_path_id(i,j), first_observation_made_of_plate(),last_timepoint_in_analysis_);
+				groups[i].paths[j].analyze_movement(e,generate_stationary_path_id(i,j), vigorous_movement_threshold,first_observation_made_of_plate(),last_timepoint_in_analysis_);
 				groups[i].paths[j].calculate_movement_quantification_summary(groups[i].paths[j].movement_analysis_result);
 			}
 		}
@@ -9276,10 +9287,10 @@ void ns_time_path_image_movement_analyzer<allocator_T>::load_region_visualizatio
 #include "ns_threshold_movement_posture_analyzer.h"
 #include "ns_hidden_markov_model_posture_analyzer.h"
 #include "ns_threshold_and_hmm_posture_analyzer.h"
-ns_time_path_posture_movement_solution ns_threshold_movement_posture_analyzer::operator() (ns_analyzed_image_time_path * path, const bool fill_in_loglikelihood_timeseries,std::ostream * debug_output)const{
+ns_time_path_posture_movement_solution ns_threshold_movement_posture_analyzer::operator() (ns_analyzed_image_time_path * path, const double vigorous_movement_threshold, const bool fill_in_loglikelihood_timeseries,std::ostream * debug_output)const{
 	return run(path,(std::ostream * )debug_output);
 }
-ns_time_path_posture_movement_solution ns_threshold_movement_posture_analyzer::operator()(const ns_analyzed_image_time_path * path, std::ostream * debug_output) const{
+ns_time_path_posture_movement_solution ns_threshold_movement_posture_analyzer::operator()(const ns_analyzed_image_time_path * path, const double vigorous_movement_threshold, std::ostream * debug_output) const{
 	return run(path,debug_output);
 }
 unsigned long ns_threshold_movement_posture_analyzer::latest_possible_death_time(const ns_analyzed_image_time_path * path,const unsigned long last_observation_time) const{

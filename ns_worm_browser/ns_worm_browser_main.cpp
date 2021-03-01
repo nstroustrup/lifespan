@@ -1044,20 +1044,25 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 	/*****************************
 	Mask Management
 	*****************************/
-	static void masks_generate_composite(const ns_browser_command_subject_set& subject, const std::string & value){
-		for (unsigned int i = 0; i < subject.size(); i++) {
-			const bool subregion_label_mask(value.find("ubregion") != value.npos);
 
+	static void generate_plate_region_mask_composite(const ns_browser_command_subject_set& subject, const std::string& value) {
+		generate_mask_composites(subject, ns_bulk_experiment_mask_manager::ns_plate_region_mask);
+	}
+	static void generate_subregion_mask_composite(const ns_browser_command_subject_set& subject, const std::string& value) {
+		generate_mask_composites(subject, ns_bulk_experiment_mask_manager::ns_subregion_label_mask);
+	}
+	static void generate_mask_composites(const ns_browser_command_subject_set& subject, const ns_bulk_experiment_mask_manager::ns_mask_type & mask_type){
+		for (unsigned int i = 0; i < subject.size(); i++) {
 			ns_browser_command_subject sub(subject[i]);
 			if (worm_learner.running_as_gui) {
 				ns_file_chooser im_cc;
 				im_cc.save_file();
 				im_cc.title = "Save Experiment Region Mask";
-				if (subregion_label_mask)
+				if (mask_type== ns_bulk_experiment_mask_manager::ns_subregion_label_mask)
 					im_cc.title = "Save Subregion Label Mask";
 				im_cc.filters.push_back(ns_file_chooser_file_type("TIF", "tif"));
 				im_cc.default_filename = subject[i].subject.experiment_name;
-				if (subregion_label_mask)
+				if (mask_type == ns_bulk_experiment_mask_manager::ns_subregion_label_mask)
 					im_cc.default_filename += "_subregion_label_mask.tif";
 				else
 					im_cc.default_filename += "_experiment_mask.tif";
@@ -1068,10 +1073,7 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 			}
 			else if (sub.output_file.empty()) throw ns_ex("No output file specified");
 			
-			if (subregion_label_mask)
-				worm_learner.produce_mask_file(sub,ns_bulk_experiment_mask_manager::ns_subregion_label_mask);
-			else
-				worm_learner.produce_mask_file(sub,ns_bulk_experiment_mask_manager::ns_plate_region_mask);
+			worm_learner.produce_mask_file(sub,mask_type);
 
 			
 		}
@@ -1084,11 +1086,11 @@ class ns_worm_terminal_main_menu_organizer : public ns_menu_organizer{
 		ns_run_in_main_thread<ns_file_chooser> run_mt(&im_cc);
 		if (im_cc.chosen) worm_learner.decode_mask_file(im_cc.result,im_cc.result+"_vis.tif");
 	}
-	static void masks_submit_composite(const ns_browser_command_subject_set& subject, const std::string & value){
-		const bool subregion_label_mask(value.find("ubregion") != value.npos); 
-		if (subregion_label_mask)
-			worm_learner.submit_mask_file_to_cluster(ns_bulk_experiment_mask_manager::ns_subregion_label_mask);
-		else worm_learner.submit_mask_file_to_cluster(ns_bulk_experiment_mask_manager::ns_plate_region_mask);
+	static void masks_submit_subregion_composite(const ns_browser_command_subject_set& subject, const std::string & value){
+		worm_learner.submit_mask_file_to_cluster(ns_bulk_experiment_mask_manager::ns_subregion_label_mask);
+	}
+	static void masks_submit_plate_region_composite(const ns_browser_command_subject_set& subject, const std::string& value) {
+		worm_learner.submit_mask_file_to_cluster(ns_bulk_experiment_mask_manager::ns_plate_region_mask);
 	}
 
 	static void open_individual_mask(const ns_browser_command_subject_set& subject, const std::string & value){
@@ -1699,10 +1701,10 @@ public:
 		//add(ns_menu_item_spec(clipboard_copy,"Clipboard/Copy",FL_CTRL+'c'));
 		//add(ns_menu_item_spec(clipboard_paste,"Clipboard/Paste",FL_CTRL+'v'));
 
-		add(ns_menu_item_spec(false, masks_generate_composite,"Image Acquisition/Define Sample Masks/Generate Experiment Mask Composite"));
-		add(ns_menu_item_spec(true,masks_generate_composite,"Image Acquisition/Define Sample Masks/(Draw Plate Locations on Mask using Photoshop)",0,FL_MENU_INACTIVE));
+		add(ns_menu_item_spec(false, generate_plate_region_mask_composite,"Image Acquisition/Define Sample Masks/Generate Experiment Mask Composite"));
+		add(ns_menu_item_spec(true,0,"Image Acquisition/Define Sample Masks/(Draw Plate Locations on Mask using Photoshop)",0,FL_MENU_INACTIVE));
 		add(ns_menu_item_spec(true,masks_process_composite,"Image Acquisition/Define Sample Masks/Analyze Plate Locations Drawn on Experiment Mask Composite"));
-		add(ns_menu_item_spec(true,masks_submit_composite,"Image Acquisition/Define Sample Masks/_Submit Analyzed Experiment Mask Composite to Cluster"));
+		add(ns_menu_item_spec(true, masks_submit_plate_region_composite,"Image Acquisition/Define Sample Masks/_Submit Analyzed Experiment Mask Composite to Cluster"));
 		add(ns_menu_item_spec(true,open_individual_mask,"Image Acquisition/Define Sample Masks/Individual Sample Masks/Analyze Mask"));
 		add(ns_menu_item_spec(true, submit_individual_mask_to_server,"Image Acquisition/Define Sample Masks/Individual Sample Masks/Submit Analyzed Mask to Cluster"));
 		
@@ -1756,10 +1758,10 @@ public:
 		add(ns_menu_item_spec(false, analyze_svm_results, "Calibration/Worm Detection/_Analyze SVM Training Results"));
 		add(ns_menu_item_spec(false, generate_training_set_from_by_hand_annotations, "Calibration/Worm Detection/_Generate Training Set from By Hand Movement Annotations"));
 
-		add(ns_menu_item_spec(false, masks_generate_composite, "Calibration/_Define Subregions/Generate Subregion Mask Composite"));
-		add(ns_menu_item_spec(false, masks_generate_composite, "Calibration/_Define Subregions/(Draw Plate Locations on Subregion Mask using Photoshop)", 0, FL_MENU_INACTIVE));
+		add(ns_menu_item_spec(false, generate_subregion_mask_composite, "Calibration/_Define Subregions/Generate Subregion Mask Composite"));
+		add(ns_menu_item_spec(false, 0, "Calibration/_Define Subregions/(Draw Plate Locations on Subregion Mask using Photoshop)", 0, FL_MENU_INACTIVE));
 		add(ns_menu_item_spec(false, masks_process_composite, "Calibration/_Define Subregions/Analyze Subregion Labels Drawn on Subregion Mask Composite"));
-		add(ns_menu_item_spec(false, masks_submit_composite, "Calibration/_Define Subregions/_Submit Analyzed Subregion Mask Composite to Cluster"));
+		add(ns_menu_item_spec(false, masks_submit_subregion_composite, "Calibration/_Define Subregions/_Submit Analyzed Subregion Mask Composite to Cluster"));
 
 		add(ns_menu_item_spec(false, test_time_path_analysis_parameters, "Calibration/Test various Position Analysis Models"));
 

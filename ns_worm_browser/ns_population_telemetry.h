@@ -570,8 +570,11 @@ public:
 		}
 		else if (graph_selected == ns_movement_vs_posture) {
 			//cout << "Looking at " << res.x << " " << res.y << ": ";
-			res.x = round(res.x * 60 * 60 * 24 + time_at_which_animals_were_age_zero);
-			if (movement_plot == ns_plot_death_times_absolute && regression_plot != ns_death_vs_observation_duration)
+			if (regression_plot != ns_death_vs_observation_duration)
+				res.x = round(res.x * 60 * 60 * 24 + time_at_which_animals_were_age_zero);
+			else
+				res.x = round(res.x * 60 * 60 * 24);
+			if (movement_plot == ns_plot_death_times_absolute )
 				res.y = round(res.y * 60 * 60 * 24 + time_at_which_animals_were_age_zero);	//death associated expansion
 			else res.y = round(res.y * 60 * 60 * 24);
 			double min_d(DBL_MAX);
@@ -1111,22 +1114,22 @@ public:
 					}
 					else if (regression_plot == ns_death_vs_observation_duration) {
 
-						movement_vs_posture_x_axis_label = "Death Time (days)";
-						movement_vs_posture_y_axis_label = "Duration observed (days)";
+						movement_vs_posture_y_axis_label = "Death Time (days)";
+						movement_vs_posture_x_axis_label = "Duration observed (days)";
 
 
 
 						if (death_plot == ns_plot_movement_death) {
 							if (set.descriptions[i].by_hand.movement_based_death_annotation != 0)
-								pair_to_plot.first = set.descriptions[i].by_hand.movement_based_death_annotation;
+								pair_to_plot.second = set.descriptions[i].by_hand.movement_based_death_annotation;
 							else
-								pair_to_plot.first = set.descriptions[i].machine.movement_based_death_annotation;
+								pair_to_plot.second = set.descriptions[i].machine.movement_based_death_annotation;
 						}
 						else if (death_plot == ns_plot_expansion_death) {
 							if (set.descriptions[i].by_hand.death_associated_expansion_start != 0)
-								pair_to_plot.first = set.descriptions[i].by_hand.death_associated_expansion_start;
+								pair_to_plot.second = set.descriptions[i].by_hand.death_associated_expansion_start;
 							else
-								pair_to_plot.first = set.descriptions[i].machine.death_associated_expansion_start;
+								pair_to_plot.second = set.descriptions[i].machine.death_associated_expansion_start;
 						}
 						else if (death_plot == ns_plot_best_guess) {
 							const ns_death_time_annotation* movement,
@@ -1140,19 +1143,23 @@ public:
 								death_associated_expansion = set.descriptions[i].by_hand.death_associated_expansion_start;
 							else
 								death_associated_expansion = set.descriptions[i].machine.death_associated_expansion_start;
-							pair_to_plot.first = ns_dying_animal_description_group<ns_death_time_annotation_time_interval>::calculate_best_guess_death_annotation(movement, death_associated_expansion);
+							if (movement != 0 || death_associated_expansion != 0)
+								pair_to_plot.second = ns_dying_animal_description_group<ns_death_time_annotation_time_interval>::calculate_best_guess_death_annotation(movement, death_associated_expansion);
 						}
 						else throw ns_ex("Unknown death plot type!");
 						double observation_duration = set.descriptions[i].machine.observation_duration();
 						if (observation_duration != -1) {
-							pair_to_plot.second = ns_scatter_plot_coordinate(observation_duration);
+							pair_to_plot.first = ns_scatter_plot_coordinate(observation_duration);
 						}
 						else {
-							auto p = last_measurement_cache.find(r->first);
-							if (p != last_measurement_cache.end() && set.descriptions[i].machine.last_fast_movement_annotation != 0)
-								pair_to_plot.second = ns_scatter_plot_coordinate(
-									p->second -
-									set.descriptions[i].machine.last_fast_movement_annotation->time.best_estimate_event_time_for_possible_partially_unbounded_interval());
+							if (pair_to_plot.second.annotation != 0) {
+								auto p = last_measurement_cache.find(r->first);
+								if (p != last_measurement_cache.end() && set.descriptions[i].machine.last_fast_movement_annotation != 0) {
+									pair_to_plot.first = ns_scatter_plot_coordinate(
+										p->second -
+										set.descriptions[i].machine.last_fast_movement_annotation->time.best_estimate_event_time_for_possible_partially_unbounded_interval());
+								}
+							}
 						}
 					}
 				}
@@ -1291,7 +1298,11 @@ public:
 						fully_specified = false;
 						p->second[j].y_raw = undefined_y_position * rnd_dist(rng);  //add jitter
 					}
-					else p->second[j].y_raw -= p->second[j].x_raw;
+					else {
+						if (regression_plot != ns_death_vs_observation_duration)
+							p->second[j].y_raw -= p->second[j].x_raw;
+						else p->second[j].y_raw -= (p->second[j].x_raw + metadata.time_at_which_animals_had_zero_age);
+					}
 				}
 				else if (!p->second[j].y_specified) {
 					fully_specified = false;
@@ -1321,12 +1332,14 @@ public:
 					graph_to_add = &movement_vs_posture_vals_outliers;
 				if (graph_to_add == 0)
 					continue;
-				if (movement_plot == ns_plot_death_times_residual || regression_plot == ns_death_vs_observation_duration)
+				if (movement_plot == ns_plot_death_times_residual )
 					(*graph_to_add)[p->first].vals.y.push_back(p->second[j].y_raw / 60.0 / 60.0 / 24);
 
 				else(*graph_to_add)[p->first].vals.y.push_back(((double)p->second[j].y_raw - metadata.time_at_which_animals_had_zero_age) / 60.0 / 60.0 / 24);
 
-				(*graph_to_add)[p->first].vals.x.push_back(((double)p->second[j].x_raw - metadata.time_at_which_animals_had_zero_age) / 60.0 / 60.0 / 24);
+				if (regression_plot == ns_death_vs_observation_duration)
+					(*graph_to_add)[p->first].vals.x.push_back(((double)p->second[j].x_raw ) / 60.0 / 60.0 / 24);
+				else (*graph_to_add)[p->first].vals.x.push_back(((double)p->second[j].x_raw - metadata.time_at_which_animals_had_zero_age) / 60.0 / 60.0 / 24);
 
 
 				ns_lookup_index li(p->second[j].x_raw, p->second[j].y_raw);

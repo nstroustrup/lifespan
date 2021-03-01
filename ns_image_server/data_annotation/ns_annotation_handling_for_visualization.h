@@ -107,20 +107,23 @@ public:
 		return a.time.period_end != 0 || a.event_explicitness != ns_death_time_annotation::ns_unknown_explicitness;
 	}
 	void generate_event_timing_data(std::vector<ns_death_time_annotation>& annotations) {
+		const std::size_t t(annotations.size());
 
-		//if (animal_specific_sticky_properties.animal_id_at_position != 0)
-		if (fast_movement_set_by_hand)
-			annotations.push_back(fast_movement_cessation2);
 		if (useful_information_in_annotation(movement_cessation))
 			annotations.push_back(movement_cessation);
 		if (useful_information_in_annotation(death_associated_expansion_stop))
 			annotations.push_back(death_associated_expansion_stop);
 		if (useful_information_in_annotation(death_associated_expansion_start))
 			annotations.push_back(death_associated_expansion_start);
+
+		if (fast_movement_set_by_hand || annotations.size() > t)	//we need to add fast movement default, even if the user doesn't explicitly request it
+			annotations.push_back(fast_movement_cessation2);
+
 		if (useful_information_in_annotation(death_associated_post_expansion_contraction_stop))
 			annotations.push_back(death_associated_post_expansion_contraction_stop);
 		if (useful_information_in_annotation(death_associated_post_expansion_contraction_start))
 			annotations.push_back(death_associated_post_expansion_contraction_start);
+
 	}
 
 

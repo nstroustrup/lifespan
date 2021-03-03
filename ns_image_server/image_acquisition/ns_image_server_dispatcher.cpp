@@ -815,7 +815,8 @@ void ns_image_server_dispatcher::on_timer(){
 		}
 
 		bool shutdown_requested = (h[0][1] == "1");
-		bool hotplug_requested = (h[0][3] == "1");
+		bool hotplug_requested_by_db = (h[0][3] == "1");
+		bool hotplug_requested_after_error = false;
 		if (h[0][3] == "2"){
 			local_cache_cleanup_request = ns_cleanup_clean;
 		}
@@ -905,14 +906,16 @@ void ns_image_server_dispatcher::on_timer(){
 							ev << "," << devices[k].name;
 					}
 					else ev << "This host does not think it has any devices attached";
-
-					ev << ". Refreshing record and checking to see if the scanner state has changed...\n";
-					image_server.register_server_event(ev,timer_sql_connection);
-
+				
 					//stop infinite looping back and forth by confirming that the current scanner list is updated.
 					if (!devices_missing_in_db.empty() || !devices_missing_locally.empty()) {
-						hotplug_requested = true;
+					  	ev << ". Refreshing record and checking to see if the scanner state has changed...\n";
+						hotplug_requested_after_error = true;
 					}
+					
+					
+					image_server.register_server_event(ev,timer_sql_connection);
+
 				}
 
 				for (unsigned int i = 0; i < prev_res.size(); i++){
@@ -1005,8 +1008,11 @@ void ns_image_server_dispatcher::on_timer(){
 				image_server.register_server_event(ex,timer_sql_connection);
 			}
 			try{
-				if (hotplug_requested)
-					hotplug_devices(true,false,true);
+			  if (hotplug_requested_by_db || hotplug_requested_after_error){
+			    hotplug_devices(true,false,hotplug_requested_after_error);
+			      if (hotplug_requested_after_error)
+				image_server.register_devices(false, timer_sql_connection);
+			  }
 			}
 			catch(ns_ex & ex){
 				image_server.register_server_event(ex,timer_sql_connection);

@@ -1064,10 +1064,11 @@ void ns_format_device_address(std::string & str){
 
 bool ns_image_server_device_manager::hotplug_new_devices(const bool rescan_bad_barcodes, const bool verbose,const bool hotplug_is_due_to_confusion){
 	if (hotplug_is_due_to_confusion)
-		this->number_of_confused_hotplugs++;
-	else this->number_of_confused_hotplugs = 0;
+		number_of_confused_hotplugs++;
+	else number_of_confused_hotplugs = 0;
 	if (number_of_confused_hotplugs > 4) {
 		image_server.register_server_event(ns_image_server::ns_register_in_local_db, ns_image_server_event("Too many hotplugs have been automatically triggered by confusion over devices on the cluster.  To update the device list, please manually request a hotplug from the commandline or through the website via the \"Search for New Devices\" button."));
+		return false;;
 	}
 	ns_acquire_lock_for_scope lock(device_list_access_lock,__FILE__,__LINE__);
 	if (hotplug_running){

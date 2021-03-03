@@ -916,9 +916,19 @@ void ns_image_server_dispatcher::on_timer(){
 				}
 
 				for (unsigned int i = 0; i < prev_res.size(); i++){
+					bool device_is_attached(false);
+					for (unsigned int j = 0; j < devices.size(); j++) {
+						if (devices[j].name == prev_res[i][0]) {
+							device_is_attached = true;
+							break;
+						}
+					}
+					if (!device_is_attached)
+						continue;
 					preview_requested[prev_res[i][0]] = (ns_capture_device::ns_device_preview_type)atoi(prev_res[i][1].c_str());
 					try{
 						int pause_requested(atoi(prev_res[i][2].c_str()));
+
 
 						if (image_server.device_manager.set_pause_state(prev_res[i][0],pause_requested)){
 							if (pause_requested)

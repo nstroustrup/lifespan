@@ -180,11 +180,11 @@ public:
 		case ns_plot_best_guess:
 			return "Best Estimate";
 		case ns_plot_movement_death:
-			return "Movement";
+			return "Final Movement";
 		case ns_plot_expansion_death:
-			return "Expansion";
+			return "Expansion Time";
 		case ns_plot_fast_movement_death:
-			return "Quick movement";
+			return "Vigorous movement";
 		default: throw ns_ex("Unknown death type");
 		}
 	}

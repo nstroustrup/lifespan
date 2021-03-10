@@ -93,7 +93,7 @@ public:
 		death_associated_post_expansion_contraction_stop.clear_sticky_properties();
 	}
 	void output_event_times(std::ostream& o) {
-		o << "Fast Movement Cessation: " << fast_movement_cessation2 << "\n"
+		o << "Vigorous Movement Cessation: " << fast_movement_cessation2 << "\n"
 			<< "Movement Cessation " << movement_cessation << "\n"
 			<< "Death-Associated Expansion Start" << death_associated_expansion_start << "\n"
 			<< "Death-Associated Expansion End" << death_associated_expansion_stop << "\n"
@@ -214,9 +214,14 @@ public:
 
 		switch (e.type) {
 		case ns_fast_movement_cessation2:
-			fast_movement_cessation2 = e;
-			if (e.annotation_source == ns_death_time_annotation::ns_storyboard)
-				fast_movement_set_by_hand = true;
+			if (fast_movement_cessation2.time.period_end == 0) {
+				fast_movement_cessation2 = e;
+				if (e.annotation_source == ns_death_time_annotation::ns_storyboard)
+					fast_movement_set_by_hand = true;
+			}
+			else {
+				duplication_events++;
+			}
 			break;
 		case ns_translation_cessation_depreciated:
 			//std::cerr << "Encountered depreciated translation cessation event.\n";
@@ -569,40 +574,27 @@ public:
 			path_id.path_id = 0;
 			by_hand_timing_data[i].stationary_path_id = path_id;
 			machine_timing_data[i].stationary_path_id = path_id;
-
 			by_hand_timing_data[i].animals.resize(1);
-			by_hand_timing_data[i].animals[0].set_fast_movement_cessation_time(
+			/*machine_timing_data[i].animals[0].set_fast_movement_cessation_time(
 				ns_death_timing_data_step_event_specification(
-					movement_analyzer[i].paths[0].cessation_of_fast_movement_interval(),
+					movement_analyzer[i].paths[0].first_stationary_timepiont_interval(),
 					movement_analyzer[i].paths[0].element(movement_analyzer[i].paths[0].first_stationary_timepoint()),
-					region_id, path_id, 0),ns_fast_movement_cessation2,false);
-			by_hand_timing_data[i].animals[0].animal_specific_sticky_properties.animal_id_at_position = 0;
-			machine_timing_data[i].animals.resize(1);
-			machine_timing_data[i].animals[0].set_fast_movement_cessation_time(
-				ns_death_timing_data_step_event_specification(
-					movement_analyzer[i].paths[0].cessation_of_fast_movement_interval(),
-					movement_analyzer[i].paths[0].element(movement_analyzer[i].paths[0].first_stationary_timepoint()),
-					region_id, path_id, 0), ns_fast_movement_cessation2,false);
-			machine_timing_data[i].animals[0].animal_specific_sticky_properties.animal_id_at_position = 0;
+					region_id, path_id, 0), ns_fast_movement_cessation2,false);*/
 			by_hand_timing_data[i].animals[0].position_data.stationary_path_id = path_id;
 
 			by_hand_timing_data[i].animals[0].position_data.worm_in_source_image.position = movement_analyzer[i].paths[0].element(movement_analyzer[i].paths[0].first_stationary_timepoint()).region_offset_in_source_image();
 			by_hand_timing_data[i].animals[0].position_data.worm_in_source_image.size = movement_analyzer[i].paths[0].element(movement_analyzer[i].paths[0].first_stationary_timepoint()).worm_region_size();
-
 			by_hand_timing_data[i].animals[0].animal_specific_sticky_properties.stationary_path_id = by_hand_timing_data[i].animals[0].position_data.stationary_path_id;
-
 			by_hand_timing_data[i].animals[0].region_info_id = region_id;
-			machine_timing_data[i].animals[0] =
-				by_hand_timing_data[i].animals[0];
+			by_hand_timing_data[i].animals[0].animal_specific_sticky_properties.animal_id_at_position = 0;
 
-			//by default specify the beginnnig of the path as the translation cessation time.
-			/*if (by_hand_timing_data[i].animals[0].translation_cessation.time.period_end == 0)
-				//			for (int k = 0; k < 2; k++)
-				by_hand_timing_data[i].animals[0].step_event(
-					ns_death_timing_data_step_event_specification(
-						movement_analyzer[i].paths[0].cessation_of_fast_movement_interval(),
-						movement_analyzer[i].paths[0].element(movement_analyzer[i].paths[0].first_stationary_timepoint()), region_id,
-						by_hand_timing_data[i].animals[0].position_data.stationary_path_id, 0), movement_analyzer[i].paths[0].observation_limits(), false);*/
+			machine_timing_data[i].animals.resize(1,by_hand_timing_data[i].animals[0]);
+			//set default time in case no data is set
+			by_hand_timing_data[i].animals[0].set_fast_movement_cessation_time(
+				ns_death_timing_data_step_event_specification(
+					movement_analyzer[i].paths[0].first_stationary_timepiont_interval(),
+					movement_analyzer[i].paths[0].element(movement_analyzer[i].paths[0].first_stationary_timepoint()),
+					region_id, path_id, 0), ns_fast_movement_cessation2, false);
 		}
 	}
 };

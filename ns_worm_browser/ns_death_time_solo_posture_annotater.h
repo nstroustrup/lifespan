@@ -581,7 +581,7 @@ private:
 			cur_hand_timing->animals[0].clear_annotations();
 
 			cur_hand_timing->animals[0].set_fast_movement_cessation_time(
-				ns_death_timing_data_step_event_specification(cur_worm->cessation_of_fast_movement_interval(),
+				ns_death_timing_data_step_event_specification(cur_worm->first_stationary_timepiont_interval(),
 					cur_worm->element(cur_worm->first_stationary_timepoint()),
 					properties_for_all_animals.region_info_id, properties_for_all_animals.stationary_path_id, 0),ns_fast_movement_cessation2,false);
 			//	}
@@ -1014,7 +1014,7 @@ public:
 					handle().data->by_hand_timing_data[worm.group_id].animals.resize(animal_id + 1);
 					for (unsigned int i = current_number_of_animals; i < animal_id; i++) {
 						handle().data->by_hand_timing_data[worm.group_id].animals[i].set_fast_movement_cessation_time(
-							ns_death_timing_data_step_event_specification(current_worm->cessation_of_fast_movement_interval(),
+							ns_death_timing_data_step_event_specification(current_worm->first_stationary_timepiont_interval(),
 								current_worm->element(current_worm->first_stationary_timepoint()),
 								properties_for_all_animals.region_info_id, properties_for_all_animals.stationary_path_id, i), (i==0)?ns_fast_movement_cessation2:ns_additional_worm_entry,false);
 					}
@@ -1108,7 +1108,7 @@ public:
 
 			if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Setting telemetry zoom"));
 			{
-				unsigned long latest_death_time = 0;
+				ns_64_bit latest_death_time = 0;
 				//make sure the death time is shown on the graph
 				for (unsigned int i = 0; i < handle().data->machine_timing_data[worm.group_id].animals.size(); i++) {
 					if (handle().data->machine_timing_data[worm.group_id].animals[i].movement_cessation.time.period_end > latest_death_time) {

@@ -229,7 +229,7 @@ void ns_worm_detection_set_annotater::load_from_file(const std::string& path_, c
 	ns_worm_training_set_image::decode(loading_temp, objects, false, extra_metadata);
 
 	const int number_of_objects_per_frame = 7;
-	int n(objects.worms.size() + objects.non_worms.size() + objects.censored_worms.size());
+	std::size_t n(objects.worms.size() + objects.non_worms.size() + objects.censored_worms.size());
 	
 	all_objects.resize((n% number_of_objects_per_frame == 0) ? n/number_of_objects_per_frame : (n/number_of_objects_per_frame+1));
 	for (unsigned int i = 0; i < objects.worms.size(); i++)

@@ -2013,7 +2013,7 @@ class ns_worm_terminal_exclusion_menu_organizer : public ns_menu_organizer{
 		::update_exclusion_choice_menu();
 	}
 public:
-	std::string strain_menu_name(){return "File/_Select Current Strain";}
+	std::string strain_menu_name(){return "Exclusion";}
 	void update_exclusion_choice(Fl_Menu_Bar & bar){
 		bar.menu(NULL);
 		clear();

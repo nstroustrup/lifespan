@@ -790,7 +790,7 @@ void ns_lifespan_experiment_set::out_simple_JMP_header(const ns_time_handing_beh
 			"Age at Death (" << time_units << "),"
 			"Age at Final Movement (" << time_units << "),"
 			"Age at Death-Associated Expansion (" << time_units << "),"
-			"Age at Final Quick Movement (" << time_units << "),"
+			"Age at Final Vigorous Movement (" << time_units << "),"
 			"Age at First Plate Observation (" << time_units << "),";
 	}
 	else{
@@ -801,8 +801,8 @@ void ns_lifespan_experiment_set::out_simple_JMP_header(const ns_time_handing_beh
 			"Age at Final Movement(" << time_units << ") End,"
 			"Age at Death-Associated Expansion (" << time_units << ") Start,"
 			"Age at Death-Associated Expansion (" << time_units << ") End,"
-			"Age at Final Quick Movement (" << time_units << ") Start,"
-			"Age at Final Quick Movement (" << time_units << ") End,"
+			"Age at Final Vigorous Movement (" << time_units << ") Start,"
+			"Age at Final Vigorous Movement (" << time_units << ") End,"
 			"Age at First Plate Observation (" << time_units << ") Start,"
 			"Age at First Plate Observation (" << time_units << ") End,";
 	}

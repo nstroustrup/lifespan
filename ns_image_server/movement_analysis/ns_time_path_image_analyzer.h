@@ -419,7 +419,7 @@ class ns_movement_analysis_result {
 public:
 	ns_movement_analysis_result() { state_intervals.resize((int)ns_movement_number_of_states); }
 	
-	ns_movement_state_time_interval_indicies first_valid_element_id, last_valid_element_id;
+	ns_movement_state_time_interval_indicies first_stationary_element_id, last_valid_element_id;
 
 	//the state interval list has the transition times marked in absolute chronological time
 	typedef std::vector<ns_movement_state_observation_boundary_interval> ns_state_interval_list;
@@ -440,7 +440,7 @@ public:
 
 
 	void write_intervals(std::ostream& o) const {
-		first_valid_element_id.write(o);
+		first_stationary_element_id.write(o);
 		o << ",";
 		last_valid_element_id.write(o);
 		o << ",";
@@ -451,7 +451,7 @@ public:
 		}
 	}
 	void read_intervals(std::istream& in) {
-		first_valid_element_id.read(in);
+		first_stationary_element_id.read(in);
 		last_valid_element_id.read(in);
 		int num_intervals = 0;
 		ns_get_int get_int;
@@ -464,7 +464,7 @@ public:
 		}
 	}
 	void clear() {
-		first_valid_element_id.clear();
+		first_stationary_element_id.clear();
 		last_valid_element_id.clear();
 		state_intervals.resize(0);
 		state_intervals.resize((int)ns_movement_number_of_states);
@@ -613,7 +613,7 @@ public:
 	ns_death_time_annotation_time_interval state_exit_interval_time(const ns_movement_state_observation_boundary_interval & e) const;
 
 	unsigned long first_stationary_timepoint() const{return first_stationary_timepoint_;}
-	ns_death_time_annotation_time_interval cessation_of_fast_movement_interval() const{
+	ns_death_time_annotation_time_interval first_stationary_timepiont_interval() const{
 		if (first_stationary_timepoint_== 0)
 			return time_path_limits.interval_before_first_observation;
 		return ns_death_time_annotation_time_interval(elements[first_stationary_timepoint_-1].absolute_time,elements[first_stationary_timepoint_].absolute_time);

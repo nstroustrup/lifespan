@@ -694,17 +694,29 @@ unsigned long ns_analyzed_image_time_path::calculate_denoised_worm_vigorous_move
 		throw ns_ex("ns_analyzed_image_time_path::calculate_denoioperatorsed_worm_vigorous_movement()::Looking for vigorous movement cessation on an empty path");
 	std::vector<double> x_positions(elements.size(), 0), 
 					  y_positions(elements.size(), 0);
+	unsigned int first_stationary = 0;
+	unsigned int first_non_excluded = elements.size();
 	for (unsigned int i = 0; i < elements.size(); i++) {
+		if (elements[i].excluded)
+			continue;
+		if (i < first_non_excluded)
+			first_non_excluded = i;
 		const ns_vector_2d worm_center_in_source_image(elements[i].context_offset_in_source_image() - elements[i].intensity_center_of_mass);
 		const ns_vector_2d e(worm_center_in_source_image - elements[i].registration_offset);
 		x_positions[i] = e.x;
 		y_positions[i] = e.y;
+		if (first_stationary == 0 && !elements[i].inferred_animal_location)
+			first_stationary = first_stationary;
 	}
+	if (first_non_excluded == elements.size())
+		throw ns_ex("calculate_denoised_worm_vigorous_movement()::Found no unexcluded elements!");
 
 	ns_median_smoother(x_positions, 2);
 	ns_median_smoother(y_positions, 2);
 
 	for (unsigned int i = 0; i < elements.size(); i++) {
+		if (elements[i].excluded)
+			continue;
 		elements[i].volatile_denoised_absolute_location.x = x_positions[i];
 		elements[i].volatile_denoised_absolute_location.y = y_positions[i];
 	}
@@ -713,6 +725,8 @@ unsigned long ns_analyzed_image_time_path::calculate_denoised_worm_vigorous_move
 	long death_index = (death_index_ != -1) ? death_index_ : (elements.size() - 1);
 	unsigned long stationary_count = 0;
 	for (long i = elements.size() - 1; i >= 0 && !found_death_time; --i) {
+		if (elements[i].excluded)
+			continue;
 		if (death_time >= elements[i].absolute_time)
 			stationary_count++;
 		else stationary_count = 0;
@@ -726,10 +740,15 @@ unsigned long ns_analyzed_image_time_path::calculate_denoised_worm_vigorous_move
 
 	const double dd(distance_threshold * distance_threshold);
 	for (long i = death_index-1; i >= 0; --i) {
-		if ((elements[death_index].volatile_denoised_absolute_location - elements[i].volatile_denoised_absolute_location).squared() >= dd)
+		if (elements[i].excluded)
+			continue;
+		if ((elements[death_index].volatile_denoised_absolute_location - elements[i].volatile_denoised_absolute_location).squared() >= dd) {
+			//cout << "ST: " << first_stationary << "; vig: " << i << "\n";
 			return i;
+		}
 	}
-	return 0;
+	//cout << "ST: " << first_stationary << "; vig: " << first_non_excluded << "\n";
+	return first_non_excluded;
 }
 
 
@@ -1784,7 +1803,7 @@ bool ns_movement_analysis_result::compare_intervals(const ns_movement_analysis_r
 			cout << "Different interval!";
 			same = false;
 		}
-	if (first_valid_element_id != a.first_valid_element_id){
+	if (first_stationary_element_id != a.first_stationary_element_id){
 		cout << "Different first element";
 		same = false;
 	}
@@ -2013,7 +2032,7 @@ bool ns_time_path_image_movement_analyzer<allocator_T>::calculate_optimzation_st
 			found_worm = true;
 			bool by_hand_modified_to_remove_forbidden_states;
 
-			ns_time_path_posture_movement_solution by_hand_posture_movement_solution_with_forbidden_states_removed(groups[g].paths[p].reconstruct_movement_state_solution_from_annotations(true, groups[g].paths[p].movement_analysis_result.first_valid_element_id.period_start_index, groups[g].paths[p].movement_analysis_result.last_valid_element_id.period_end_index, e, groups[g].paths[p].by_hand_annotation_event_times, by_hand_modified_to_remove_forbidden_states));
+			ns_time_path_posture_movement_solution by_hand_posture_movement_solution_with_forbidden_states_removed(groups[g].paths[p].reconstruct_movement_state_solution_from_annotations(true, groups[g].paths[p].movement_analysis_result.first_stationary_element_id.period_start_index, groups[g].paths[p].movement_analysis_result.last_valid_element_id.period_end_index, e, groups[g].paths[p].by_hand_annotation_event_times, by_hand_modified_to_remove_forbidden_states));
 			if (by_hand_posture_movement_solution_with_forbidden_states_removed.fast.skipped && by_hand_posture_movement_solution_with_forbidden_states_removed.posture_changing.skipped && by_hand_posture_movement_solution_with_forbidden_states_removed.dead.skipped)
 				throw ns_ex("Problematic by hand annotation found for worm id ") << (g);
 
@@ -3588,7 +3607,6 @@ long ns_find_last_valid_observation_index(const long index,const ns_analyzed_ima
 
 
 void calculate_state_transitions_in_the_presence_of_missing_states(
-	const ns_movement_state_time_interval_indicies & frame_before_first,
 	const ns_movement_state_observation_boundary_interval & posture_changing_interval,
 	const ns_movement_state_observation_boundary_interval & dead_interval,
 	const ns_movement_state_observation_boundary_interval & expansion_interval,
@@ -3697,28 +3715,40 @@ void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_fr
 	analysis_result.death_time_annotation_set.clear();
 	if (elements.size() == 0) return;
 
-	analysis_result.first_valid_element_id = ns_movement_state_time_interval_indicies(elements.size(), elements.size());
+	analysis_result.first_stationary_element_id = ns_movement_state_time_interval_indicies(elements.size(), elements.size());
 	analysis_result.last_valid_element_id = ns_movement_state_time_interval_indicies(0,0);
-	for (unsigned int i = 0; i < elements.size(); i++)
-		if (!elements[i].excluded && !elements[i].element_before_fast_movement_cessation){
-			//find first measurment
-			if (analysis_result.first_valid_element_id.period_start_index >= i)
-				analysis_result.first_valid_element_id.period_start_index = i;
+	ns_movement_state_time_interval_indicies first_nonexcluded_element(elements.size(), elements.size());
+	for (unsigned int i = 0; i < elements.size(); i++) {
+		if (elements[i].excluded)
+			continue;
+		//find first measurment
+		if (first_nonexcluded_element.period_start_index >= i)
+			first_nonexcluded_element.period_start_index = i;
+		else
+			//find the second measurement
+			if (first_nonexcluded_element.period_end_index > i)
+				first_nonexcluded_element.period_end_index = i;
+
+		if (!elements[i].element_before_fast_movement_cessation) {
+			//find first stationary measurment
+			if (analysis_result.first_stationary_element_id.period_start_index >= i)
+				analysis_result.first_stationary_element_id.period_start_index = i;
 			else
-				//find the second measurement
-			if (analysis_result.first_valid_element_id.period_end_index > i)
-				analysis_result.first_valid_element_id.period_end_index = i;
+				//find the second stationary measurement
+				if (analysis_result.first_stationary_element_id.period_end_index > i)
+					analysis_result.first_stationary_element_id.period_end_index = i;
 
 			//find the last measurement
-			if (analysis_result.last_valid_element_id.period_end_index < i){
+			if (analysis_result.last_valid_element_id.period_end_index < i) {
 				//set the measurement previous to the last measurement
 				analysis_result.last_valid_element_id.period_start_index =
 					analysis_result.last_valid_element_id.period_end_index;
 				analysis_result.last_valid_element_id.period_end_index = i;
 			}
 		}
-		if (analysis_result.first_valid_element_id.period_start_index+1 >= elements.size())
-		return;
+	}
+	if (analysis_result.first_stationary_element_id.period_start_index+1 >= elements.size())
+	return;
 
 	//if the experiment is cropped before the current path ends, then we don't add a stationary worm is lost event.
 	//unsigned long actual_time_of_first_measurement_after_path_end(time_path_limits.interval_after_last_observation.period_end);
@@ -3728,14 +3758,14 @@ void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_fr
 	//if the path has been declared as not having enough information
 	//for annotation, register it as so.
 	if (this->is_low_density_path()){
-		unsigned long end_index(analysis_result.first_valid_element_id.period_end_index);
+		unsigned long end_index(analysis_result.first_stationary_element_id.period_end_index);
 		if (end_index > elements.size())
 			throw ns_ex("Invalid end index");
 		if (end_index == elements.size())
 			end_index = elements.size()-1;
 		analysis_result.death_time_annotation_set.add(ns_death_time_annotation(ns_no_movement_event,
 			0,region_info_id,
-			ns_death_time_annotation_time_interval(elements[analysis_result.first_valid_element_id.period_start_index].absolute_time,
+			ns_death_time_annotation_time_interval(elements[analysis_result.first_stationary_element_id.period_start_index].absolute_time,
 													elements[end_index].absolute_time),
 			elements[end_index].region_offset_in_source_image(),
 			elements[end_index].worm_region_size(),
@@ -3770,15 +3800,16 @@ void ns_analyzed_image_time_path::detect_death_times_and_generate_annotations_fr
 	
 	{
 
-		ns_movement_state_time_interval_indicies frame_before_first = calc_frame_before_first(analysis_result.first_valid_element_id);
-		convert_movement_solution_to_state_intervals(frame_before_first, analysis_result.machine_movement_state_solution, analysis_result.state_intervals);
+		ns_movement_state_time_interval_indicies frame_before_first_stationary = calc_frame_before_first(analysis_result.first_stationary_element_id);
+		ns_movement_state_time_interval_indicies frame_before_first_unexcluded = calc_frame_before_first(first_nonexcluded_element);
+		
+		convert_movement_solution_to_state_intervals(frame_before_first_unexcluded, analysis_result.machine_movement_state_solution, analysis_result.state_intervals);
 
 		//ok, now we have the correct state intervals.  BUT we need to change them around because we know that animals have to pass through 
 		//fast to slow movement to posture, and posture to death.  If the movement detection algorithms didn't find any states
 		//that's because the animals went through too quickly.  So we make *new* intervals for this purpose
 		//which involves transitioning through the missed state within a single frame
 		calculate_state_transitions_in_the_presence_of_missing_states(
-			frame_before_first,
 			analysis_result.state_intervals[ns_movement_posture],
 			analysis_result.state_intervals[ns_movement_stationary],
 			analysis_result.state_intervals[ns_movement_death_associated_expansion],
@@ -4264,9 +4295,8 @@ ns_movement_state ns_analyzed_image_time_path::best_guess_movement_state(const u
 		post_expansion_contraction_interval_including_missed_states;
 
 	//get the relevant transition times
-	ns_movement_state_time_interval_indicies frame_before_first = calc_frame_before_first(movement_analysis_result.first_valid_element_id);
+	ns_movement_state_time_interval_indicies frame_before_first = calc_frame_before_first(movement_analysis_result.first_stationary_element_id);
 	calculate_state_transitions_in_the_presence_of_missing_states(
-		frame_before_first,
 		movement_analysis_result.state_intervals[ns_movement_posture],
 		movement_analysis_result.state_intervals[ns_movement_stationary],
 		movement_analysis_result.state_intervals[ns_movement_death_associated_expansion],
@@ -4346,7 +4376,7 @@ ns_death_time_annotation_time_interval ns_analyzed_image_time_path::by_hand_deat
 ns_hmm_movement_state ns_analyzed_image_time_path::by_hand_hmm_movement_state(const unsigned long & t) const {
 	//For translation and vigorous movement, users often just accept the machine annotations by default.
 	//so, if the user hasn't specified them, we use the machine annotations
-	ns_death_time_annotation_time_interval translation_end(cessation_of_fast_movement_interval());
+	//ns_death_time_annotation_time_interval translation_end(cessation_of_fast_movement_interval());
 	/*
 	bool translation_skipped(true);
 	if (!by_hand_annotation_event_times[(int)ns_translation_cessation_depreciated].period_end_was_not_observed) {

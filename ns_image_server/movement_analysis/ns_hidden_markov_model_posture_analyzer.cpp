@@ -973,8 +973,23 @@ ns_time_path_posture_movement_solution ns_time_path_movement_markov_solver::esti
 		if (!solver.movement_state_solution.dead.skipped)
 			last_vigorous_movement = path->calculate_denoised_worm_vigorous_movement(vigorous_distance_thresh,0, solver.movement_state_solution.dead.start_index);
 		else last_vigorous_movement = path->calculate_denoised_worm_vigorous_movement(vigorous_distance_thresh);
-		solver.movement_state_solution.fast.start_index = 0;
+		solver.movement_state_solution.fast.start_index = -1;
 		solver.movement_state_solution.fast.end_index = last_vigorous_movement;
+		//if vigorous movement cessation occurs before death
+		if (last_vigorous_movement+1 < solver.movement_state_solution.dead.start_index) {
+			//we update the start of the posture changing period to the period after fast movement cessation.
+			solver.movement_state_solution.posture_changing.start_index = last_vigorous_movement;
+			//the posture-changing period might not have existed before.  If so, we need to make it.
+			if (solver.movement_state_solution.posture_changing.skipped) {
+				solver.movement_state_solution.posture_changing.end_index = solver.movement_state_solution.dead.start_index;
+				solver.movement_state_solution.posture_changing.skipped = false;
+			}
+		}
+		else{
+			//the animal was moving vigorously right up until the time of death.
+			solver.movement_state_solution.posture_changing.start_index = solver.movement_state_solution.posture_changing.end_index = 0;
+			solver.movement_state_solution.posture_changing.skipped = true;
+		}
 	}
 
 	return solver.movement_state_solution;

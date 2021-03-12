@@ -11,6 +11,31 @@ unsigned long ns_connected_component_analyzer::get_new_plabel(){
 }
 
 
+void ns_connected_component_analyzer::expand_bitmap_from_point(const ns_vector_2i& pos, ns_image_bitmap& output) {
+	for (unsigned int y = 0; y < output.properties().height; y++)
+		for (unsigned int x = 0; x < output.properties().width; x++)
+			output[y][x] = 0;
+
+	unsigned long label_at_pos = 0;
+	for (unsigned int r = 0; r < runs.size(); r++) {
+		if (runs[r].row == pos.y && runs[r].start_col <= pos.x && runs[r].end_col >= pos.x) {
+			label_at_pos = runs[r].perm_label;
+		}
+	}
+	if (label_at_pos == 0) {
+		std::cerr << "label is zero\n";
+		return;
+	}
+	for (unsigned int r = 0; r < runs.size(); r++) {
+		if (runs[r].perm_label == label_at_pos) {
+			for (unsigned int x = runs[r].start_col; x <= runs[r].end_col; x++) {
+				output[runs[r].row][x] = 1;
+			}
+		}
+	}
+
+}
+
 void ns_connected_component_analyzer::generate_objects_from_equivalency_table(const ns_image_properties & default_prop, vector<ns_detected_object *> & output){
 	unsigned long number_of_regions(0);
 	//allocate objects and find bounding rectangles
@@ -48,7 +73,6 @@ void ns_connected_component_analyzer::generate_objects_from_equivalency_table(co
 	unsigned long cur_reg(0);
 	for (unsigned long i = 0; i < regs.size(); i++){
 		if (regs[i] == 0) continue;
-	//	regs[i]->offset_in_bitmap = ns_vector_2i(0,0);
 		//copy to output vector
 		output[cur_reg] = regs[i];
 		cur_reg++;
@@ -67,9 +91,6 @@ void ns_connected_component_analyzer::generate_objects_from_equivalency_table(co
 		unsigned int i = runs[r].perm_label;
 		if (regs[i] == 0) continue;
 		for (unsigned int x = runs[r].start_col; x <= runs[r].end_col; x++){
-//			if (runs[r].row - regs[i]->offset_in_source_image.y >= regs[i]->bitmap().properties().height || 
-//				x - regs[i]->offset_in_source_image.x >= regs[i]->bitmap().properties().width)
-//				throw ns_ex("YIKES");
 			regs[i]->bitmap()[runs[r].row - regs[i]->offset_in_source_image.y][x - regs[i]->offset_in_source_image.x] = 1;
 		}
 		regs[i]->area += runs[r].end_col +1 - runs[r].start_col;
@@ -163,6 +184,8 @@ void ns_connected_component_analyzer::calculate_equivalency_table(){
 		}
 	}
 }
+
+
 void ns_connected_component_analyzer::make_equivalent(const unsigned long l1,const unsigned long l2){
 	if (labels[l1].label == 0 && labels[l2].label==0){
 		labels[l1].label = l1;

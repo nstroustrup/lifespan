@@ -179,8 +179,8 @@ private:
 	void check_out(T * t){}
 	void check_in(T * t){}
 	#endif
-	int stack_size_history[ns_stack_history_size];
-	int min_stack_size_in_history;
+	std::size_t stack_size_history[ns_stack_history_size];
+	std::size_t min_stack_size_in_history;
 	inline void trim_stack(){
 		for (int i = 0; i < min_stack_size_in_history && !pool.empty(); i++){
 			T * t(pool.top());

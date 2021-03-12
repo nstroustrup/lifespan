@@ -9,9 +9,21 @@
 struct ns_added_element {
 	ns_added_element() {}
 	ns_added_element(const unsigned long& id_, const ns_vector_2i& shift_) :shift(shift_), id(id_) {}
-	ns_added_element(const unsigned long& id_) :shift(0,0), id(id_) {}
+	ns_added_element(const unsigned long& id_) :shift(0,0), id(id_),lowest_shift(0,0),highest_shift(0,0){}
 	unsigned long id;
+	void record_shift(const ns_vector_2i& s) {
+		shift += s;
+		if (shift.x < lowest_shift.x)
+			lowest_shift.x = shift.x;
+		if (shift.y < lowest_shift.y)
+			lowest_shift.y = shift.y;
+		if (shift.x > highest_shift.x)
+			highest_shift.x = shift.x;
+		if (shift.y > highest_shift.y)
+			highest_shift.y = shift.y;
+	}
 	ns_vector_2i shift;
+	ns_vector_2i lowest_shift, highest_shift;	//images get shifted multiple times.  These record the most upper left and lower right an element has been shifted
 };
 struct ns_alignment_state {
 	ns_alignment_state() :registration_offset_count(0),debug_out(0),registration_offset_sum(0,0), cumulative_recentering_shift(0,0){}

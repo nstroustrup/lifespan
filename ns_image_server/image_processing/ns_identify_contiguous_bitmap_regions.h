@@ -145,6 +145,15 @@ public:
 		generate_objects_from_equivalency_table(im.properties(),output);
 	}
 
+	//find all pixels in the bitmap im belonging to the object at the specified location pos, and highlight them in output/
+	template<class ns_component>
+	void find_object_around_pixel(const ns_image_whole<ns_component>& im, const ns_vector_2i & pos,ns_image_bitmap & output) {
+		populate_rle_table_from_image(im);
+		calculate_equivalency_table();
+		output.prepare_to_recieve_image(im.properties());
+		expand_bitmap_from_point(pos,output);
+	}
+
 private:
 	std::vector<ns_row_boundaries> row_boundaries;
 	std::vector<ns_rle_run> runs;
@@ -198,7 +207,7 @@ private:
 	}
 
 
-
+	void expand_bitmap_from_point(const ns_vector_2i& pos, ns_image_bitmap& output);
 };
 
 

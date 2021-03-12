@@ -34,7 +34,7 @@ struct ns_path_aligned_image_set {
 		worm_region_threshold.resize(p);
 		image.resize(p);
 	}
-	enum { region_mask = 1, worm_mask = 2 };
+	enum { region_mask = 1, worm_mask = 2, expansive_worm_mask = 2};
 	//ns_image_bitmap region_threshold;
 	//ns_image_bitmap worm_threshold;
 	ns_image_standard image;
@@ -48,9 +48,10 @@ struct ns_path_aligned_image_set {
 
 	bool get_region_threshold(const int y, const int x){ return (worm_region_threshold[y][x]&region_mask) != 0;}
 	bool get_worm_threshold(const int y, const int x){ return (worm_region_threshold[y][x]&worm_mask) != 0;}
+	bool get_expansive_worm_threshold(const int y, const int x) { return (worm_region_threshold[y][x] & expansive_worm_mask) != 0; }
 
 	template <class ns_component>
-	void sample_thresholds(const float y, const float x, ns_component & region_threshold, ns_component & worm_threshold){
+	void sample_thresholds(const float y, const float x, ns_component & region_threshold, ns_component & worm_threshold, ns_component & expansive_worm_threshold){
 		const int p0x((int)x),
 					p0y((int)y);
 		const int p1x(p0x+1),
@@ -70,9 +71,37 @@ struct ns_path_aligned_image_set {
 							(worm_region_threshold[p1y][p0x]&worm_mask)*(dy)*(d1x) + 
 							(worm_region_threshold[p1y][p1x]&worm_mask)*(dy)*(dx)
 							> 0.5;
+
+		expansive_worm_threshold = (worm_region_threshold[p0y][p0x] & expansive_worm_mask) * (d1y) * (d1x)+
+							(worm_region_threshold[p0y][p1x] & expansive_worm_mask) * (d1y) * (dx)+
+							(worm_region_threshold[p1y][p0x] & expansive_worm_mask) * (dy) * (d1x)+
+							(worm_region_threshold[p1y][p1x] & expansive_worm_mask) * (dy) * (dx)
+							> 0.5;
 	}
-	void set_thresholds(const int y, const int x, const bool region,const bool worm){ 
-		worm_region_threshold[y][x] = ((ns_8_bit)region) | ((ns_8_bit)worm<<1);
+	template <class ns_component>
+	void sample_thresholds(const float y, const float x, ns_component& region_threshold, ns_component& worm_threshold) {
+		const int p0x((int)x),
+			p0y((int)y);
+		const int p1x(p0x + 1),
+			p1y(p0y + 1);
+		const float dx(x - (float)p0x),
+			dy(y - (float)p0y);
+		const float d1x(1.0 - dx),
+			d1y(1.0 - dy);
+		region_threshold = (worm_region_threshold[p0y][p0x] & region_mask) * (d1y) * (d1x)+
+			(worm_region_threshold[p0y][p1x] & region_mask) * (d1y) * (dx)+
+			(worm_region_threshold[p1y][p0x] & region_mask) * (dy) * (d1x)+
+			(worm_region_threshold[p1y][p1x] & region_mask) * (dy) * (dx)
+							> 0.5;
+
+		worm_threshold = (worm_region_threshold[p0y][p0x] & worm_mask) * (d1y) * (d1x)+
+			(worm_region_threshold[p0y][p1x] & worm_mask) * (d1y) * (dx)+
+			(worm_region_threshold[p1y][p0x] & worm_mask) * (dy) * (d1x)+
+			(worm_region_threshold[p1y][p1x] & worm_mask) * (dy) * (dx)
+							> 0.5;
+	}
+	void set_thresholds(const int y, const int x, const bool region,const bool worm,const bool expansive_worm){ 
+		worm_region_threshold[y][x] = ((ns_8_bit)region) | ((ns_8_bit)worm<<1) | ((ns_8_bit)expansive_worm << 2);
 	}
 };/*
 inline void ns_set_bit(const bool f, //conditional
@@ -172,6 +201,7 @@ struct ns_registered_image_set{
 
 template<class allocator_T> using ns_path_aligned_image_pool = ns_image_pool<ns_path_aligned_image_set, allocator_T, true>;
 template<class allocator_T> using ns_registered_image_pool = ns_image_pool<ns_registered_image_set, allocator_T, true>;
+template<class allocator_T> using ns_bitmap_pool = ns_image_pool<ns_image_bitmap, allocator_T, true>;
 
 class ns_analyzed_image_time_path_element{
 public:
@@ -375,23 +405,16 @@ struct ns_time_path_image_movement_analysis_memory_pool{
 	void set_overallocation_size(const ns_image_properties & p){
 		aligned_image_pool.set_resizer(allocator_T(p));
 		registered_image_pool.set_resizer(allocator_T(p));
+		bitmap_pool.set_resizer(allocator_T(p));
 	}
 	ns_path_aligned_image_pool<allocator_T> aligned_image_pool;
 	ns_registered_image_pool<allocator_T> registered_image_pool;
-	
+	ns_bitmap_pool<allocator_T> bitmap_pool;
 	void clear(){
 		aligned_image_pool.clear();
 		registered_image_pool.clear();
-	//	temporary_images.clear();
+		bitmap_pool.clear();
 	}
-	/*void set_temporary_image_size(unsigned long i){
-		if (i <= temporary_images.size())
-			return;
-		temporary_images.resize(i);
-		for (unsigned int i = 0; i < temporary_images.size(); i++)
-			temporary_images[i].use_more_memory_to_avoid_reallocations();
-	}
-	std::vector<ns_image_standard> temporary_images;*/
 };
 
 class ns_optical_flow_processor;
@@ -782,8 +805,7 @@ public:
 		for (unsigned int i = 0; i < groups.size(); i++)
 			groups[i].clear_images(memory_pool);
 		groups.clear();//do this first, ensuring all memory is returned to the pools
-		memory_pool.aligned_image_pool.clear(); //then empty the pools.
-		memory_pool.registered_image_pool.clear();
+		memory_pool.clear();
 	}
 	std::string analysis_description(const ns_movement_data_source_type::type & type)const{
 		if (type != ns_movement_data_source_type::ns_time_path_image_analysis_data) 
@@ -922,7 +944,7 @@ private:
 	static ns_death_time_annotation_time_interval get_externally_specified_last_measurement(const ns_64_bit region_id, ns_sql & sql);
 	void crop_path_observation_times(const ns_death_time_annotation_time_interval & observation_interval);
 	bool image_db_info_loaded;
-	unsigned long last_timepoint_in_analysis_,
+	std::size_t last_timepoint_in_analysis_,
 				 number_of_timepoints_in_analysis_;
 	void load_movement_data_from_disk(std::istream & i,bool skip_movement_data=false);
 	void save_movement_data_to_disk(std::ostream & o) const;

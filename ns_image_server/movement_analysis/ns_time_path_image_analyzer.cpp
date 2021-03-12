@@ -6816,8 +6816,8 @@ void ns_analyzed_image_time_path::calculate_image_registration(const ns_analyzed
 			ns_vector_2i overshoot_tl(0, 0), overshoot_br(0, 0);
 			if (min_tl.x < 0) overshoot_tl.x = min_tl.x*-1;
 			if (min_tl.y < 0) overshoot_tl.y = min_tl.y*-1;
-			if (max_br.x > prop.width) overshoot_br.x = prop.width - max_br.x;
-			if (max_br.y > prop.height) overshoot_br.y = prop.height - max_br.y;
+			if (max_br.x > prop.width) overshoot_br.x = max_br.x - prop.width ;
+			if (max_br.y > prop.height) overshoot_br.y = max_br.y - prop.height ;
 
 			
 
@@ -6834,7 +6834,7 @@ void ns_analyzed_image_time_path::calculate_image_registration(const ns_analyzed
 			*/
 			if (rem_tl.x < 0 || rem_tl.y < 0 || rem_br.x >= prop.width || rem_br.y >= prop.height) {
 				ns_ex ex("Out of bounds consensus registration cleanup!"); 
-				ex << " crop_tl: " << overshoot_tl << "; crop_br: " << overshoot_tl << "; min_tl: " << min_tl << "; max_br: " << max_br << "\n";
+				ex << " crop_tl: " << overshoot_tl << "; crop_br: " << overshoot_tl << "; min_tl: " << min_tl << "; max_br: " << max_br << "; prop: " << prop.width << " x " << prop.height << "\n";
 				cerr << ex.text();
 				throw ex;
 			}

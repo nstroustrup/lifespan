@@ -51,9 +51,16 @@ public:
 		animal_specific_sticky_properties.animal_id_at_position = worm_id_in_path_;
 	}
 
+	unsigned long estimated_death_time_for_visualization() const {
+		const ns_death_time_annotation *t(ns_dying_animal_description_group<ns_death_time_annotation>::calculate_best_guess_death_annotation(&movement_cessation, &death_associated_expansion_start));
+		if (t->time.fully_unbounded())
+			return 0;
+		return t->time.best_estimate_event_time_for_possible_partially_unbounded_interval();
+	}
+
 	ns_movement_visualization_summary_entry position_data;
-	unsigned long source_region_id;
-	unsigned long region_info_id;
+	ns_64_bit source_region_id;
+	ns_64_bit region_info_id;
 
 	//unsigned long worm_id_in_path;
 

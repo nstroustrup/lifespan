@@ -416,7 +416,8 @@ public:
 class ns_worm_learner;
 class ns_death_time_solo_posture_annotater : public ns_image_series_annotater {
 private:
-
+	double vigorous_movement_visualization_threshold;
+	unsigned long  vigorous_movement_visualization_death_time;
 	ns_death_time_solo_posture_annotater_timepoint::ns_visualization_type current_visualization_type;
 	std::vector<ns_death_time_solo_posture_annotater_timepoint> timepoints;
 	static ns_death_time_posture_solo_annotater_data_cache data_cache;
@@ -650,7 +651,13 @@ private:
 
 public:
 
-	bool draw_position_overlay_to_screen;
+	void set_visualization_vigorous_movement_threshold(const double & thresh) {
+		vigorous_movement_visualization_threshold = thresh;
+	}
+	void set_visualization_vigorous_movement_death_time(const unsigned long & time) {
+		vigorous_movement_visualization_death_time = time;
+	}
+	unsigned long draw_position_overlay_to_screen;
 	enum { default_resize_factor = 1, max_buffer_size = 1, max_zoom_factor = 40 };
 	float telemetry_zoom_factor;
 	ns_vector_2i telemetry_size() { return ns_vector_2i(500, 500) * ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor; }
@@ -711,7 +718,7 @@ public:
 	bool data_needs_saving()const { throw ns_ex("All saving should be done via ns_death_time_posture_annotater!"); }
 	ns_death_time_solo_posture_annotater() :ns_image_series_annotater(default_resize_factor, ns_death_time_posture_annotater_timepoint::ns_bottom_border_height),
 		 graph_contents(ns_animal_telemetry::ns_movement_intensity), worm_image_offset_due_to_telemetry_graph_spacing(0, 0), current_visualization_type(ns_death_time_solo_posture_annotater_timepoint::ns_image), draw_position_overlay_to_screen(false),
-		region_loaded(false), telemetry_zoom_factor(1), current_region_id(0), last_vigorous_movement_element_id(-1){	}
+		region_loaded(false), telemetry_zoom_factor(1), current_region_id(0), vigorous_movement_visualization_threshold(40), vigorous_movement_visualization_death_time(0),last_vigorous_movement_element_id(-1){	}
 	bool region_loaded;
 	typedef enum { ns_time_aligned_images, ns_death_aligned_images } ns_alignment_type;
 
@@ -978,6 +985,7 @@ public:
 			region_loaded = true;
 
 			properties_for_all_animals.region_info_id = region_info_id_;
+			properties_for_all_animals.stationary_path_id = worm;
 			//get movement information for current worm
 
 
@@ -999,10 +1007,18 @@ public:
 			image_server.get_posture_analysis_model_for_region(region_info_id_, model_handle, sql());
 			ns_posture_analysis_model mod(model_handle().model_specification);
 			mod.threshold_parameters.use_v1_movement_score = false;
+						
+			const unsigned long by_hand_death_time(current_by_hand_timing_data(handle)->animals[current_animal_id].estimated_death_time_for_visualization());
+			if (by_hand_death_time != 0)
+				set_visualization_vigorous_movement_death_time(by_hand_death_time);
+			else set_visualization_vigorous_movement_death_time(current_machine_timing_data(handle)->animals[0].estimated_death_time_for_visualization());
+
 			model_handle.release();
 
 			if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Setting animal for telemetry"));
 			telemetry.set_current_animal(worm.group_id, mod, handle().data);
+
+
 
 
 
@@ -1035,10 +1051,9 @@ public:
 			current_animal_id = 0;
 
 			if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Transferring sticky properties"));
-			//current_by_hand_timing_data->animals[current_animal_id].sticky_properties = current_machine_timing_data->animals[0].sticky_properties;
 			e.event_annotation.transfer_sticky_properties(properties_for_all_animals);
-			//current_by_hand_timing_data->animals[current_animal_id].sticky_propertes.annotation_source = ns_death_time_annotation::ns_posture_image;
 			properties_for_all_animals.stationary_path_id = worm;
+
 			bool saved = true;
 			for (unsigned int j = 0; j < handle().data->by_hand_timing_data[worm.group_id].animals.size(); j++) {
 				if (ns_fix_annotation(handle().data->by_hand_timing_data[worm.group_id].animals[j].fast_movement_cessation2, *current_worm))
@@ -1165,6 +1180,7 @@ public:
 				for (unsigned int i = 0; i < max_buffer_size; i++)
 					next_images[i].im->init(current_image.im->properties());
 			}
+			
 
 			if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Drawing Metadata."));
 			draw_metadata(&timepoints[current_timepoint_id], *current_image.im, handle, external_rescale_factor);

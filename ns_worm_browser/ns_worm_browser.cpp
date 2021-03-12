@@ -6686,7 +6686,9 @@ bool ns_worm_learner::register_worm_window_key_press(int key, const bool shift_k
 		return true;
 	}
 	else if (key == 'o') {
-		death_time_solo_annotater.draw_position_overlay_to_screen = !death_time_solo_annotater.draw_position_overlay_to_screen;
+		if (death_time_solo_annotater.draw_position_overlay_to_screen == 3)
+			death_time_solo_annotater.draw_position_overlay_to_screen = 0;
+		else death_time_solo_annotater.draw_position_overlay_to_screen++;
 		death_time_solo_annotater.display_current_frame();
 		return true;
 	}
@@ -7961,6 +7963,9 @@ bool ns_worm_learner::start_death_time_annotation(const ns_behavior_mode m, cons
 				}
 				else storyboard_annotater.population_telemetry.regression_plot = ns_population_telemetry::ns_vigorous_vs_death;
 
+				const std::string vig_thresh_str = image_server_const.get_cluster_constant_value("vigorous_movement_distance_threshold", "50", &get_sql_connection());
+				const double vigorous_movement_threshold = atof(vig_thresh_str.c_str());
+				death_time_solo_annotater.set_visualization_vigorous_movement_threshold(vigorous_movement_threshold);
 
 				storyboard_annotater.rebuild_telemetry_with_by_hand_annotations();
 				draw_stats_window_image();
@@ -9029,6 +9034,60 @@ unsigned long ns_death_time_solo_posture_annotater::last_time_at_current_telemen
 	return current_time + (1.0 / telemetry_zoom_factor)*(path_stop_time - current_time);
 }
 
+template<class image_t>
+class ns_circle_drawer {
+private:
+	template<class ns_bit_type>
+	inline void place_pixel_color(image_t& im, const ns_vector_3<ns_bit_type>& t, const unsigned long& x, const unsigned long& y) {
+		im(x,y)[0] = t.x;
+		im(x,y)[1] = t.y;
+		im(x,y)[2] = t.z;
+	}
+	//draw circle in color
+	template<class ns_bit_type>
+	void draw_circle_point(image_t& im, const ns_vector_3<ns_bit_type>& t, const unsigned long& xc, const unsigned long& yc, const unsigned long& x, const unsigned long& y) {
+		place_pixel_color(im, t, xc + x, yc + y);
+		place_pixel_color(im, t, xc - x, yc + y);
+		place_pixel_color(im, t, xc + x, yc - y);
+		place_pixel_color(im, t, xc - x, yc - y);
+		place_pixel_color(im, t, xc + y, yc + x);
+		place_pixel_color(im, t, xc - y, yc + x);
+		place_pixel_color(im, t, xc + y, yc - x);
+		place_pixel_color(im, t, xc - y, yc - x);
+	}
+	//draw circle in black and white
+	template<class ns_bit_type>
+	void draw_circle_point(image_t& im, const ns_bit_type& t, const unsigned long& xc, const unsigned long& yc, const unsigned long& x, const unsigned long& y) {
+		im(yc + y,xc + x) = t;
+		im(yc + y,xc - x) = t;
+		im(yc - y,xc + x) = t;
+		im(yc - y,xc - x) = t;
+		im(yc - x,xc - y) = t;
+		im(yc + x,xc + y) = t;
+		im(yc + x,xc + y) = t;
+		im(yc + x,xc + y) = t;
+	}
+public:
+	template<class color_type>
+	void draw(image_t& image, const color_type & color, int xc, int yc, double radius) {
+		int x = 0,
+			y = radius,
+			d = 3 - 2 * radius;
+		draw_circle_point(image,color,xc, yc, x, y);
+		while (y >= x) {
+			x++;
+			if (d > 0) {
+				y--;
+				d = d + 4 * (x - y) + 10;
+			}
+			else {
+				d = d + 4 * x + 6;
+			}
+			draw_circle_point(image,color,xc, yc, x, y);
+		}
+
+	}
+};
 void ns_death_time_solo_posture_annotater::draw_position_overlay(const ns_vector_2i& position, const ns_vector_2i& image_size, const float rescale_factor, ns_tiled_gl_image& buffer) {
 	ns_death_time_posture_solo_annotater_data_cache_storage::handle_t handle;
 	try {
@@ -9036,23 +9095,48 @@ void ns_death_time_solo_posture_annotater::draw_position_overlay(const ns_vector
 
 		const int ns_screen_resize_factor(ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor);
 
-		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Loading movement data"));
+		//if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Loading movement data"));
 		data_cache.get_region_movement_data(this->current_region_id, sql(), telemetry.show(), handle);
 		const ns_analyzed_image_time_path* worm = current_worm(handle);
 
-		double cutoff(40);
-		if (last_vigorous_movement_element_id == -1) {
-			last_vigorous_movement_element_id = worm->calculate_denoised_worm_vigorous_movement(cutoff, -1);
-		}
 		const ns_analyzed_image_time_path_element& element = worm->element(this->current_element_id());
+		//draw worm threshold on screen
+		if (draw_position_overlay_to_screen == 3) {
+			const long h(element.registered_image_set().image.properties().height),
+				w(element.registered_image_set().image.properties().width);
+			for (unsigned int y = 0; y < h; y++)
+				for (unsigned int x = 0; x < w; x++) {
+					if (element.registered_image_set().get_worm_threshold(y, x)) {
+						//buffer(position.x + x * ns_screen_resize_factor, image_size.y - 1 - position.y - y * ns_screen_resize_factor)[0] = 0;
+						for (unsigned int c = 0; c < 2; c++)
+							buffer(position.x + x * ns_screen_resize_factor, image_size.y - 1 - position.y - y * ns_screen_resize_factor)[c + 1] = 255;
+					}
+				}
+		}
+
+
+		if (last_vigorous_movement_element_id == -1) {
+			last_vigorous_movement_element_id = worm->calculate_denoised_worm_vigorous_movement(vigorous_movement_visualization_threshold, vigorous_movement_visualization_death_time);
+		}
+
+		const ns_vector_2d worm_center = element.worm_center_in_registered_image() * ns_screen_resize_factor;
+		if (draw_position_overlay_to_screen >= 2) {
+			ns_circle_drawer< ns_tiled_gl_image> circle;
+			if (worm_center.x != -1 &&
+				position.x + worm_center.x - vigorous_movement_visualization_threshold > 0 &&
+				position.x + worm_center.y - vigorous_movement_visualization_threshold > 0 &&
+				position.y + worm_center.x + vigorous_movement_visualization_threshold + 1 < image_size.x &&
+				position.y + worm_center.y + vigorous_movement_visualization_threshold + 1 < image_size.y)
+				circle.draw(buffer, ns_vector_3<ns_8_bit>(255, 255, 255), position.x + worm_center.x, image_size.y - 1 - position.y - worm_center.y, vigorous_movement_visualization_threshold*ns_screen_resize_factor);
+		}
 
 		char color[3];
 		for (unsigned int t = 0; t < worm->element_count(); t++) {
-			const ns_vector_2d diff_from_death(worm->element(t).volatile_denoised_absolute_location - worm->element(worm->element_count()-1).volatile_denoised_absolute_location);
+			//const ns_vector_2d diff_from_death(worm->element(t).volatile_denoised_absolute_location - worm->element(worm->element_count()-1).volatile_denoised_absolute_location);
 			const ns_vector_2d diff_from_cur(worm->element(t).volatile_denoised_absolute_location - element.volatile_denoised_absolute_location);
 
 			const ns_vector_2i pos(ns_vector_2d(diff_from_cur +element.worm_center_in_registered_image())*ns_screen_resize_factor);
-			if (diff_from_death.mag() >= cutoff) {
+			if (t <= last_vigorous_movement_element_id) {
 				color[0] = 255;
 				color[1] = 100;
 				color[2] = 100;
@@ -9082,42 +9166,32 @@ void ns_death_time_solo_posture_annotater::draw_position_overlay(const ns_vector
 			color[1] = 100;
 			color[2] = 255;
 		}
-		ns_vector_2d pos = element.worm_center_in_registered_image()*ns_screen_resize_factor;
-		if (pos.x != -1 &&
-			pos.x >= 3 && pos.x + 3 < image_size.x &&
-			pos.y >= 3 && pos.y + 3 < image_size.y) {
+		
+		if (worm_center.x != -1 &&
+			worm_center.x >= 3 && worm_center.x + 3 < image_size.x &&
+			worm_center.y >= 3 && worm_center.y + 3 < image_size.y) {
 
 			for (long x = -5; x < 5; x++)
 				for (long c = 0; c < 3; c++)
-					buffer(position.x + (pos.x + x) , image_size.y - 1 - position.y - (pos.y -5) )[c] = 0;
+					buffer(position.x + (worm_center.x + x) , image_size.y - 1 - position.y - (worm_center.y -5) )[c] = 0;
 			for (long y = -4; y < 4; y++){
 				for (long c = 0; c < 3; c++)
-					buffer(position.x + (pos.x - 5) , image_size.y - 1 - position.y - (pos.y + y) )[c] = 0;
+					buffer(position.x + (worm_center.x - 5) , image_size.y - 1 - position.y - (worm_center.y + y) )[c] = 0;
 				for (long x = -4; x < 4; x++) {
 					for (long c = 0; c < 3; c++)
-						buffer(position.x + (pos.x + x) , image_size.y - 1 - position.y - (pos.y + y) )[c] = color[c];
+						buffer(position.x + (worm_center.x + x) , image_size.y - 1 - position.y - (worm_center.y + y) )[c] = color[c];
 				}
 				for (long c = 0; c < 3; c++)
-					buffer(position.x + (pos.x + 5) , image_size.y - 1 - position.y - (pos.y + y) )[c] = 0;
+					buffer(position.x + (worm_center.x + 5) , image_size.y - 1 - position.y - (worm_center.y + y) )[c] = 0;
 			}
 			for (long x = -5; x < 5; x++)
 				for (long c = 0; c < 3; c++)
-					buffer(position.x + (pos.x + x) , image_size.y - 1 - position.y - (pos.y +5) )[c] = 0;
+					buffer(position.x + (worm_center.x + x) , image_size.y - 1 - position.y - (worm_center.y +5) )[c] = 0;
 
 		}
 	
-		/*
-		const long h(element.registered_image_set().image.properties().height),
-			w(element.registered_image_set().image.properties().width);
-		for (unsigned int y = 0; y < h; y++)
-			for (unsigned int x = 0; x < w; x++) {
-				if (element.registered_image_set().get_worm_threshold(y, x)) {
-					//buffer(position.x + x * ns_screen_resize_factor, image_size.y - 1 - position.y - y * ns_screen_resize_factor)[0] = 0;
-					for (unsigned int c = 0; c < 2; c++)
-						buffer(position.x + x * ns_screen_resize_factor, image_size.y - 1 - position.y - y * ns_screen_resize_factor)[c + 1] = 255;
-				}
-			}
-			*/
+		
+		
 	}
 	catch (ns_ex & ex) {
 		std::cerr << "Could not draw position overlay: " << ex.text();
@@ -9307,6 +9381,10 @@ void ns_death_time_solo_posture_annotater::register_click(const ns_vector_2i & i
 					ns_death_timing_data_step_event_specification(
 						current_time_interval(handle), cur_worm->element(current_element_id()),
 						properties_for_all_animals.region_info_id, properties_for_all_animals.stationary_path_id, current_animal_id), cur_worm->observation_limits(),current_animal_id!=0, action == ns_cycle_state_alt_key_held);
+				const unsigned long by_hand_death_time(cur_hand_data->animals[current_animal_id].estimated_death_time_for_visualization());
+				if (by_hand_death_time != 0)
+					set_visualization_vigorous_movement_death_time(by_hand_death_time);
+				else set_visualization_vigorous_movement_death_time(cur_machine_timing->animals[0].estimated_death_time_for_visualization());
 			}
 			change_made = true;
 		}

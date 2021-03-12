@@ -4198,11 +4198,11 @@ void ns_run_startup_routines() {
 		//Usefull for debugging
 		if (0) {
 			ns_processing_job job;
-			const unsigned long region_id(53944);
+			const unsigned long region_id(24309);
 			job.region_id = region_id;
 			job.maintenance_task = ns_maintenance_rebuild_movement_data_from_stored_solution;
 			//56
-			analyze_worm_movement_across_frames(job, &image_server, sql(), true);
+			analyze_worm_movement_across_frames(job, &image_server, sql(), true,14);
 			if (0) {
 				ns_image_server_results_subject subject;
 				subject.region_id = region_id;

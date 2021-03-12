@@ -204,7 +204,7 @@ private:
 	
 	unsigned long number_of_valid_elements, first_element;
 	
-	void draw_base_graph(const ns_graph_contents & graph_contents, const long marker_resize_factor, unsigned long start_time = 0, unsigned long stop_time = UINT_MAX) {
+	void draw_base_graph(const ns_graph_contents & graph_contents, const float marker_resize_factor, unsigned long start_time = 0, unsigned long stop_time = UINT_MAX) {
 
 		if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Drawing telemetry base graph."));
 		if (graph_contents == ns_none)

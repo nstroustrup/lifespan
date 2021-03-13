@@ -136,7 +136,7 @@ struct ns_row_boundaries{
 
 class ns_connected_component_analyzer{
 public:
-	ns_connected_component_analyzer():labels(1),eq_classes(1){}//indicies start at 1 to allow 0 to indicate null
+	ns_connected_component_analyzer():labels(1),eq_classes(1,-1){}//indicies start at 1 to allow 0 to indicate null
 
 	template<class ns_component>
 	void detect_objects(const ns_image_whole<ns_component> & im, std::vector<ns_detected_object *> & output){

@@ -4,6 +4,7 @@
 
 using namespace std;
 unsigned long ns_connected_component_analyzer::get_new_plabel(){
+	//labels is initialized with one entry, to allow 0 to indicate null
 	unsigned long s = (unsigned long)labels.size();//indicies start at 1 to allow 0 to indicate null 
 	labels.resize(s+1);
 	eq_classes.resize(s+1);
@@ -20,6 +21,7 @@ void ns_connected_component_analyzer::expand_bitmap_from_point(const ns_vector_2
 	for (unsigned int r = 0; r < runs.size(); r++) {
 		if (runs[r].row == pos.y && runs[r].start_col <= pos.x && runs[r].end_col >= pos.x) {
 			label_at_pos = runs[r].perm_label;
+			break;
 		}
 	}
 	if (label_at_pos == 0) {
@@ -103,33 +105,37 @@ void ns_connected_component_analyzer::calculate_equivalency_table(){
 	if (runs.size() == 0)
 		return;
 	//do a downward pass through the data
-	for (unsigned long l = 0; l < row_boundaries.size(); l++){
+	for (unsigned long l = 0; l < row_boundaries.size(); l++){	//for all runs in row l
 		unsigned long p = row_boundaries[l].start,
 					  p_last =  row_boundaries[l].stop;
 		unsigned long q,q_last;
-		if (l == 0){
+		if (l == 0){		//first row; no runs above.
 			q = 0;
 			q_last = 0;
 		}
-		else{
+		else{	//find the indicies of all runs in the row above the current one
 			q =  row_boundaries[l-1].start;
 			q_last =  row_boundaries[l-1].stop;
 		}
-		if (p == q) continue;
+		if (p == q) {
+			for (unsigned long i = p; i < p_last; i++)
+				runs[i].perm_label = get_new_plabel();	//give each run in first row a label
+		}
 
-		while(p < p_last && q < q_last){
+		while(p < p_last && q < q_last){	//go through and match runs in this row to rows above
 			if (runs[p].end_col < runs[q].start_col){
-				if (runs[q].end_col < runs[p].start_col)q++;
+				if (runs[q].end_col < runs[p].start_col)
+					q++;
 				p++;
 			}
 			else if (runs[q].end_col < runs[p].start_col)
 				q++;
 			else{
 				if (!(runs[p].end_col < runs[q].start_col || runs[q].end_col < runs[p].start_col)){
-					//there is some overlap
-					if(runs[p].perm_label == 0)
+					//the current run in this run overlaps with a run in the row above
+					if(runs[p].perm_label == 0)		//this run doesn't have a label yet; just give it the label of the run above.
 						runs[p].perm_label = runs[q].perm_label;
-					else if (runs[p].perm_label != runs[q].perm_label)
+					else if (runs[p].perm_label != runs[q].perm_label)	//record that this run and the previous run are equivalent
 						make_equivalent(runs[p].perm_label,runs[q].perm_label);
 				}
 				if (runs[p].end_col > runs[q].end_col) q++;
@@ -137,7 +143,7 @@ void ns_connected_component_analyzer::calculate_equivalency_table(){
 				else if (runs[p].end_col == runs[q].end_col){q++; p++;}
 			}
 		}
-		for (p = row_boundaries[l].start; p < p_last; p++){
+		for (p = row_boundaries[l].start; p < p_last; p++){	//go through and assign any runs a label
 			if (runs[p].perm_label == 0)
 				runs[p].perm_label = get_new_plabel();
 			else if (labels[runs[p].perm_label].label !=0)

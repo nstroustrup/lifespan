@@ -6822,8 +6822,10 @@ void ns_analyzed_image_time_path::calculate_image_registration(const ns_analyzed
 			
 
 
-			const ns_vector_2i rem_tl(cur_tl + overshoot_tl),
-				               rem_br(cur_tl + context_pa_size2 - overshoot_br);
+			const ns_vector_2i rem_tl(cur_tl + overshoot_tl);
+			ns_vector_2i rem_br(cur_tl + context_pa_size2 - overshoot_br);
+			if (rem_br.x > prop.width) rem_br.x = prop.width;
+			if (rem_br.y > prop.height) rem_br.x = prop.height;
 
 			/*cout <<"  which was shifted by " << total_shift << " and placed at " << rem_tl << " to " << rem_br << "\n";
 			if (overshoot_tl.x != 0 || overshoot_tl.y != 0)
@@ -6832,7 +6834,7 @@ void ns_analyzed_image_time_path::calculate_image_registration(const ns_analyzed
 			if (overshoot_br.x != 0 || overshoot_br.y != 0)
 				cout << "Recognizing BR cropping of " << this->group_id.group_id << ".im " << element_to_remove << " by " << overshoot_br << "\n";
 			*/
-			if (rem_tl.x < 0 || rem_tl.y < 0 || rem_br.x >= prop.width || rem_br.y >= prop.height) {
+			if (rem_tl.x < 0 || rem_tl.y < 0 || rem_br.x > prop.width || rem_br.y > prop.height) {
 				ns_ex ex("Out of bounds consensus registration cleanup!"); 
 				ex << " crop_tl: " << overshoot_tl << "; crop_br: " << overshoot_tl << "; min_tl: " << min_tl << "; max_br: " << max_br << "; prop: " << prop.width << " x " << prop.height << "\n";
 				cerr << ex.text();

@@ -6606,18 +6606,22 @@ ns_analyzed_time_image_chunk ns_analyzed_image_time_path::initiate_image_registr
 		state.registration_offset_sum += elements[i].registration_offset;
 		state.registration_offset_count++;
 
-		if (tl_worm_context_position_in_pa_.y < elements[i].registration_offset.y ||
-			tl_worm_context_position_in_pa_.x  < elements[i].registration_offset.x ||
-			br_worm_context_position_in_pa.y - elements[i].registration_offset.y >= state.consensus.properties().height ||
-			br_worm_context_position_in_pa.x - elements[i].registration_offset.x >= state.consensus.properties().width) {
-		  cerr << "invalid registration: " << elements[i].registration_offset.x << "," << elements[i].registration_offset.y << ";" << tl_worm_context_position_in_pa_ << ";" << br_worm_context_position_in_pa << "\n";
-		  throw ns_ex("invalid registration: ") << elements[i].registration_offset.x << "," << elements[i].registration_offset.y << ";" << tl_worm_context_position_in_pa_ << ";" << br_worm_context_position_in_pa;
+		const ns_vector_2i consensus_position_tl = tl_worm_context_position_in_pa_ + elements[i].registration_offset;
+		const ns_vector_2i consensus_position_br = consensus_position_tl + context_pa_size;
+		if (consensus_position_tl.y < 0 ||
+			consensus_position_tl.x < 0 ||
+			consensus_position_br.x >= prop.width ||
+			consensus_position_br.y >= prop.height) {
+			ns_ex ex("Registration Overflow on worm ");
+			ex << this->group_id.group_id << ": Reg offset:" << elements[i].registration_offset << "; context bounds: " << consensus_position_tl << " - " << consensus_position_br;
+			std::cerr << ex.text();
+			throw ex;
 		}
 
 		//cout << "Putting " << this->group_id.group_id << ".im " << i << " at " << tl_worm_context_position_in_pa_ << " to " << br_worm_context_position_in_pa << "\n";
 
-		for (long y = tl_worm_context_position_in_pa_.y; y < br_worm_context_position_in_pa.y; y++){
-			for (long x = tl_worm_context_position_in_pa_.x; x < br_worm_context_position_in_pa.x; x++){
+		for (long y = consensus_position_tl.y; y < consensus_position_br.y; y++){
+			for (long x = consensus_position_tl.x; x < consensus_position_br.x; x++){
 				state.consensus[y][x] += elements[i].path_aligned_images->image.sample_f(y-elements[i].registration_offset.y,
 																						 x-elements[i].registration_offset.x);
 				state.consensus_count[y][x]++;
@@ -6782,18 +6786,20 @@ void ns_analyzed_image_time_path::calculate_image_registration(const ns_analyzed
 					align(ns_vector_2i(0, 0), //path aligned images are all centered around their intensity center of mass when loaded into path_aligned_images, and so will the consensus
 						maximum_alignment_offset(), state, elements[i].path_aligned_images->image, elements[i].saturated_offset, tl_worm_context_position_in_pa, elements[i].worm_context_size());
 			}*/
-		if (tl_worm_context_position_in_pa_.y - elements[i].registration_offset.y < 0 ||
-			tl_worm_context_position_in_pa_.x - elements[i].registration_offset.x < 0 ||
-			br_worm_context_position_in_pa.x - elements[i].registration_offset.x >= prop.width ||
-			br_worm_context_position_in_pa.y - elements[i].registration_offset.y >= prop.height) {
+		const ns_vector_2i consensus_position_tl = tl_worm_context_position_in_pa_ + elements[i].registration_offset;
+		const ns_vector_2i consensus_position_br = consensus_position_tl + context_pa_size;
+		if (consensus_position_tl.y  < 0 ||
+			consensus_position_tl.x < 0 ||
+			consensus_position_br.x >= prop.width ||
+			consensus_position_br.y >= prop.height) {
 			ns_ex ex("Registration Overflow on worm ");
-			ex << this->group_id.group_id << ": Reg offset:" << elements[i].registration_offset << "; context bounds: " << tl_worm_context_position_in_pa_ << " - " << br_worm_context_position_in_pa;
+			ex << this->group_id.group_id << ": Reg offset:" << elements[i].registration_offset << "; context bounds: " << consensus_position_tl << " - " << consensus_position_br;
 			std::cerr << ex.text();
 			throw ex;
 		}
 			//cout << "Putting " << this->group_id.group_id << ".im " << i << " at " << tl_worm_context_position_in_pa_ << " to " << br_worm_context_position_in_pa << "\n";
-			for (long y = tl_worm_context_position_in_pa_.y; y < br_worm_context_position_in_pa.y; y++) {
-				for (long x = tl_worm_context_position_in_pa_.x; x < br_worm_context_position_in_pa.x; x++) {
+			for (long y = consensus_position_tl.y; y < consensus_position_br.y; y++) {
+				for (long x = consensus_position_tl.x; x < consensus_position_br.x; x++) {
 					state.consensus[y][x] += elements[i].path_aligned_images->image.sample_f(y - elements[i].registration_offset.y , x - elements[i].registration_offset.x);
 					state.consensus_count[y][x]++;
 					state.consensus_thresh[y][x] += (elements[i].path_aligned_images->get_expansive_worm_threshold(floor(y - elements[i].registration_offset.y),floor(x - elements[i].registration_offset.x)) ||
@@ -6806,12 +6812,14 @@ void ns_analyzed_image_time_path::calculate_image_registration(const ns_analyzed
 			const ns_vector_2i& total_shift(state.element_occupancy_ids.begin()->shift);
 
 			const auto & e2(elements[element_to_remove]);
-			const ns_vector_2i where_the_earlier_element_was_put = e2.offset_in_path_aligned_image,
-							   context_pa_size2 = e2.size_in_path_aligned_image;
+
+			const ns_vector_2i initial_consensus_position_tl = e2.offset_in_path_aligned_image + e2.registration_offset;
+			const ns_vector_2i initial_consensus_position_br = initial_consensus_position_tl + e2.size_in_path_aligned_image;
+
 			//cout << "Removing "<< this->group_id.group_id << ".im " << element_to_remove << " at " << where_the_earlier_element_was_put << " to " << where_the_earlier_element_was_put+context_pa_size2 << "\n";
-			const ns_vector_2i cur_tl(where_the_earlier_element_was_put + total_shift),  //where the earlier element is now 
-				min_tl(where_the_earlier_element_was_put + state.element_occupancy_ids.begin()->lowest_shift),	//lowest
-				max_br(where_the_earlier_element_was_put + context_pa_size2+state.element_occupancy_ids.begin()->highest_shift); //and highest extent to which the element was shifted.
+			const ns_vector_2i cur_tl(initial_consensus_position_tl + total_shift),  //where the earlier element is now 
+				min_tl(initial_consensus_position_tl + state.element_occupancy_ids.begin()->lowest_shift),	//lowest
+				max_br(initial_consensus_position_tl + e2.size_in_path_aligned_image +state.element_occupancy_ids.begin()->highest_shift); //and highest extent to which the element was shifted.
 																												//this might have cropped the figure.
 			ns_vector_2i overshoot_tl(0, 0), overshoot_br(0, 0);
 			if (min_tl.x < 0) overshoot_tl.x = min_tl.x*-1;
@@ -6823,7 +6831,7 @@ void ns_analyzed_image_time_path::calculate_image_registration(const ns_analyzed
 
 
 			const ns_vector_2i rem_tl(cur_tl + overshoot_tl);
-			ns_vector_2i rem_br(cur_tl + context_pa_size2 - overshoot_br);
+			ns_vector_2i rem_br(cur_tl + e2.size_in_path_aligned_image - overshoot_br);
 			if (rem_br.x > prop.width) rem_br.x = prop.width;
 			if (rem_br.y > prop.height) rem_br.x = prop.height;
 

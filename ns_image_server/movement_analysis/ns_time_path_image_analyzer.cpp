@@ -360,7 +360,7 @@ void ns_alignment_state::clear() {
 	registration_offset_sum = ns_vector_2d(0, 0);
 	registration_offset_count = 0;
 	cumulative_recentering_shift = ns_vector_2d(0, 0);
-
+	registration_error_produced = false;
 	element_occupancy_ids.clear();
 }
 
@@ -6673,7 +6673,7 @@ void ns_analyzed_image_time_path::calculate_image_registration(const ns_analyzed
 	//define some constants
 	ns_image_properties prop;
 	set_path_alignment_image_dimensions(prop);
-
+	
 	long step(chunk.forward() ? 1 : -1);
 	for (long i = chunk.start_i; ; i += step) {
 		if (chunk.forward() && i >= chunk.stop_i)
@@ -6850,12 +6850,14 @@ void ns_analyzed_image_time_path::calculate_image_registration(const ns_analyzed
 			}
 			for (long y = rem_tl.y; y < rem_br.y; y++) {
 				for (long x = rem_tl.x; x < rem_br.x; x++) {
-					/*if (state.consensus_count[y][x] == 0) {
-						ns_ex ex("Error removing element from consensus buffer at position ");
-						ex << x << "," << y << "; crop_tl: " << overshoot_tl << "; crop_br: " << overshoot_br << "; min_tl: " << min_tl << "; max_br: " << max_br << "\n";
-						cerr << ex.text();
-						throw ex;
-					}*/
+					if (state.consensus_count[y][x] == 0) {
+						if (!state.registration_error_produced) {
+							ns_ex ex("Warning: empty pixel encountered while removing element from consensus buffer at position ");
+							ex << x << "," << y << "; crop_tl: " << overshoot_tl << "; crop_br: " << overshoot_br << "; min_tl: " << min_tl << "; max_br: " << max_br << "\n";
+							state.registration_error_produced = true;
+						}
+						continue;
+					}
 					state.consensus[y][x] -= e2.path_aligned_images->image.sample_f(y - e2.registration_offset.y - total_shift.y, x - e2.registration_offset.x - total_shift.x);
 					state.consensus_count[y][x]--;
 					state.consensus_thresh[y][x] -= (e2.path_aligned_images->get_expansive_worm_threshold(floor(y - e2.registration_offset.y) - total_shift.y,floor(x - e2.registration_offset.x) - total_shift.x) ||

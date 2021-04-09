@@ -26,7 +26,7 @@ struct ns_added_element {
 	ns_vector_2i lowest_shift, highest_shift;	//images get shifted multiple times.  These record the most upper left and lower right an element has been shifted
 };
 struct ns_alignment_state {
-	ns_alignment_state() :registration_offset_count(0),registration_offset_sum(0,0), cumulative_recentering_shift(0,0){}
+	ns_alignment_state() :registration_offset_count(0),registration_offset_sum(0,0), cumulative_recentering_shift(0,0), registration_error_produced(false){}
 	void clear();
 	ns_image_whole<double> consensus;				//the sum of all pixels at this location in the time-average consensus kernal we're aligning to
 	ns_image_whole<ns_16_bit> consensus_count;		//the number of images contributing to this location
@@ -40,6 +40,7 @@ struct ns_alignment_state {
 	
 	std::deque<ns_added_element> element_occupancy_ids;	//stores info about the images that are already added to the consensus images,
 														//making them easier to remove
+	bool registration_error_produced;
 	//std::ofstream * debug_out;
 	//~ns_alignment_state() { ns_safe_delete(debug_out); }
 };

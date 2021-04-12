@@ -6602,9 +6602,8 @@ ns_analyzed_time_image_chunk ns_analyzed_image_time_path::initiate_image_registr
 			ns_calc_best_alignment align(NS_SUBPIXEL_REGISTRATION_CORSE, NS_SUBPIXEL_REGISTRATION_FINE, maximum_alignment_offset(), maximum_local_alignment_offset(), bottom_offset, top_offset);
 			elements[i].registration_offset_slow = align(state,elements[i].path_aligned_images->image,elements[i].saturated_offset);
 		#endif
+			tl_worm_context_position_in_pa_ + elements[i].registration_offset;
 
-		state.registration_offset_sum += elements[i].registration_offset;
-		state.registration_offset_count++;
 
 		const ns_vector_2i consensus_position_tl = tl_worm_context_position_in_pa_ + elements[i].registration_offset;
 		const ns_vector_2i consensus_position_br = consensus_position_tl + context_pa_size;
@@ -6612,11 +6611,22 @@ ns_analyzed_time_image_chunk ns_analyzed_image_time_path::initiate_image_registr
 			consensus_position_tl.x < 0 ||
 			consensus_position_br.x >= prop.width ||
 			consensus_position_br.y >= prop.height) {
+
 			ns_ex ex("Registration Overflow on worm ");
 			ex << this->group_id.group_id << ": Reg offset:" << elements[i].registration_offset << "; context bounds: " << consensus_position_tl << " - " << consensus_position_br;
-			std::cerr << ex.text();
-			throw ex;
+
+			if (consensus_position_tl.y < 0) elements[i].registration_offset.y = -tl_worm_context_position_in_pa_.y;
+			if (consensus_position_tl.x < 0) elements[i].registration_offset.x = -tl_worm_context_position_in_pa_.x;
+			if (consensus_position_br.y >= prop.height) elements[i].registration_offset.y = prop.height - context_pa_size.y - tl_worm_context_position_in_pa_.y - 1;
+			if (consensus_position_br.x >= prop.width)  elements[i].registration_offset.x = prop.width - context_pa_size.x - tl_worm_context_position_in_pa_.x - 1;
+
+
+			std::cerr << ex.text() << "\n";
 		}
+
+		state.registration_offset_sum += elements[i].registration_offset;
+		state.registration_offset_count++;
+
 
 		//cout << "Putting " << this->group_id.group_id << ".im " << i << " at " << tl_worm_context_position_in_pa_ << " to " << br_worm_context_position_in_pa << "\n";
 
@@ -6794,8 +6804,14 @@ void ns_analyzed_image_time_path::calculate_image_registration(const ns_analyzed
 			consensus_position_br.y >= prop.height) {
 			ns_ex ex("Registration Overflow on worm ");
 			ex << this->group_id.group_id << ": Reg offset:" << elements[i].registration_offset << "; context bounds: " << consensus_position_tl << " - " << consensus_position_br;
-			std::cerr << ex.text();
-			throw ex;
+
+			if (consensus_position_tl.y < 0) elements[i].registration_offset.y = -tl_worm_context_position_in_pa_.y;
+			if (consensus_position_tl.x < 0) elements[i].registration_offset.x = -tl_worm_context_position_in_pa_.x;
+			if (consensus_position_br.y >= prop.height) elements[i].registration_offset.y = prop.height - context_pa_size.y - tl_worm_context_position_in_pa_.y - 1;
+			if (consensus_position_br.x >= prop.width)  elements[i].registration_offset.x = prop.width - context_pa_size.x - tl_worm_context_position_in_pa_.x - 1;
+
+
+			std::cerr << ex.text() << "\n";
 		}
 			//cout << "Putting " << this->group_id.group_id << ".im " << i << " at " << tl_worm_context_position_in_pa_ << " to " << br_worm_context_position_in_pa << "\n";
 			for (long y = consensus_position_tl.y; y < consensus_position_br.y; y++) {
@@ -6854,6 +6870,7 @@ void ns_analyzed_image_time_path::calculate_image_registration(const ns_analyzed
 						if (!state.registration_error_produced) {
 							ns_ex ex("Warning: empty pixel encountered while removing element from consensus buffer at position ");
 							ex << x << "," << y << "; crop_tl: " << overshoot_tl << "; crop_br: " << overshoot_br << "; min_tl: " << min_tl << "; max_br: " << max_br << "\n";
+							std::cout << ex.text() << "\n";
 							state.registration_error_produced = true;
 						}
 						continue;

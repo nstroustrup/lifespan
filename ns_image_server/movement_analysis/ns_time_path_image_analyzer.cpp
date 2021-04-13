@@ -6605,8 +6605,8 @@ ns_analyzed_time_image_chunk ns_analyzed_image_time_path::initiate_image_registr
 			tl_worm_context_position_in_pa_ + elements[i].registration_offset;
 
 
-		const ns_vector_2i consensus_position_tl = tl_worm_context_position_in_pa_ + elements[i].registration_offset;
-		const ns_vector_2i consensus_position_br = consensus_position_tl + context_pa_size;
+		ns_vector_2i consensus_position_tl = tl_worm_context_position_in_pa_ + elements[i].registration_offset;
+		ns_vector_2i consensus_position_br = consensus_position_tl + context_pa_size;
 		if (consensus_position_tl.y < 0 ||
 			consensus_position_tl.x < 0 ||
 			consensus_position_br.x >= prop.width ||
@@ -6619,7 +6619,8 @@ ns_analyzed_time_image_chunk ns_analyzed_image_time_path::initiate_image_registr
 			if (consensus_position_tl.x < 0) elements[i].registration_offset.x = -tl_worm_context_position_in_pa_.x;
 			if (consensus_position_br.y >= prop.height) elements[i].registration_offset.y = prop.height - context_pa_size.y - tl_worm_context_position_in_pa_.y - 1;
 			if (consensus_position_br.x >= prop.width)  elements[i].registration_offset.x = prop.width - context_pa_size.x - tl_worm_context_position_in_pa_.x - 1;
-
+			consensus_position_tl = tl_worm_context_position_in_pa_ + elements[i].registration_offset;
+			consensus_position_br = consensus_position_tl + context_pa_size;
 
 			std::cerr << ex.text() << "\n";
 		}
@@ -6796,8 +6797,8 @@ void ns_analyzed_image_time_path::calculate_image_registration(const ns_analyzed
 					align(ns_vector_2i(0, 0), //path aligned images are all centered around their intensity center of mass when loaded into path_aligned_images, and so will the consensus
 						maximum_alignment_offset(), state, elements[i].path_aligned_images->image, elements[i].saturated_offset, tl_worm_context_position_in_pa, elements[i].worm_context_size());
 			}*/
-		const ns_vector_2i consensus_position_tl = tl_worm_context_position_in_pa_ + elements[i].registration_offset;
-		const ns_vector_2i consensus_position_br = consensus_position_tl + context_pa_size;
+		ns_vector_2i consensus_position_tl = tl_worm_context_position_in_pa_ + elements[i].registration_offset;
+		ns_vector_2i consensus_position_br = consensus_position_tl + context_pa_size;
 		if (consensus_position_tl.y  < 0 ||
 			consensus_position_tl.x < 0 ||
 			consensus_position_br.x >= prop.width ||
@@ -6810,6 +6811,8 @@ void ns_analyzed_image_time_path::calculate_image_registration(const ns_analyzed
 			if (consensus_position_br.y >= prop.height) elements[i].registration_offset.y = prop.height - context_pa_size.y - tl_worm_context_position_in_pa_.y - 1;
 			if (consensus_position_br.x >= prop.width)  elements[i].registration_offset.x = prop.width - context_pa_size.x - tl_worm_context_position_in_pa_.x - 1;
 
+			consensus_position_tl = tl_worm_context_position_in_pa_ + elements[i].registration_offset;
+			consensus_position_br = consensus_position_tl + context_pa_size;
 
 			std::cerr << ex.text() << "\n";
 		}

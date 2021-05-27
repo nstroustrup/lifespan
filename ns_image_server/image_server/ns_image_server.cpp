@@ -32,7 +32,7 @@ void ns_image_server_global_debug_handler(const ns_text_stream_t & t);
 
 ns_image_server::ns_image_server() : exit_has_been_requested(false), exit_happening_now(false), handling_exit_request(false), ready_to_exit(true), update_software(false),
 sql_lock("ns_is::sql"), server_event_lock("ns_is::server_event"), performance_stats_lock("ns_pfl"), simulator_scan_lock("ns_is::sim_scan"), local_buffer_sql_lock("ns_is::lb"), processing_run_counter_lock("ns_pcl"),
-_act_as_processing_node(true), exit_lock("ns_is::el"), cleared(false), do_not_run_multithreaded_jobs(false),
+_act_as_processing_node(true), exit_lock("ns_is::el"), cleared(false), do_not_run_multithreaded_jobs(false), remember_barcodes_across_sessions_(true),
 #ifndef NS_ONLY_IMAGE_ACQUISITION
 image_registration_profile_cache(1024 * 4), //allocate 4 gigabytes of disk space in which to store reference images for capture sample registration
 storyboard_cache(0), worm_detection_model_cache(0), posture_analysis_model_cache(0), survival_data_cache(0),
@@ -2759,6 +2759,7 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 	constants.add_field("log_filename","image_server_log.txt","Image acquisition and image processing servers keep a log file in the central SQL database.  However, to help diagnose crashes, a text file containing the same log information is stored on the local machine.  The log file is stored in the directory specified by the volatile_storage_directory option (described above), and its filename is specified by here.");
 	constants.add_field("maximum_memory_allocation_in_mb","3840","Movement analaysis benefits from access to multiple gigabytes of RAM.  This value should be set to approximately the size of system memory.  Larger values will cause sporadic crashes during movement analysis.");
 	constants.add_field("verbose_local_storage_space_reporting", "false", "Regularly report the disk space available currently available to the host");
+	constants.add_field("remember_devices_across_sessions", "true", "Maintain a list of scanners to reduce barcode reading");
 
 	ns_ini terminal_constants;
 	terminal_constants.reject_incorrect_fields(reject_incorrect_fields);
@@ -2872,6 +2873,10 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 		local_buffer_ip = constants["local_buffer_sql_hostname"];
 		local_buffer_pwd = constants["local_buffer_sql_password"];
 		local_buffer_user = constants["local_buffer_sql_username"];
+		if (constants.field_specified("remember_devices_across_sessions")) {
+			remember_barcodes_across_sessions_ = ns_to_bool(constants["remember_devices_across_sessions"]);
+		}
+		else remember_barcodes_across_sessions_ = true;
 
 		if (constants.field_specified("verbose_local_storage_space_reporting")) {
 			verbose_disk_storage_reporting = ns_to_bool(constants["verbose_local_storage_space_reporting"]);

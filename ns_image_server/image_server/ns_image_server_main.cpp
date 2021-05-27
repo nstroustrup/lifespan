@@ -1452,13 +1452,16 @@ int main(int argc, char ** argv){
 		//search for devices
 		if (image_server.act_as_an_image_capture_server()){
 			image_server.set_up_local_buffer();
-			if (image_server.device_manager.load_last_known_device_configuration()){
+			if (image_server.remember_barcodes_across_sessions() && image_server.device_manager.load_last_known_device_configuration()){
 				cerr << "Last known configuration:\n";
 				image_server.device_manager.output_connected_devices(cerr);
 				cerr << "\n";
 				image_server.device_manager.hotplug_new_devices(true,true,false);
 			}
-			else image_server.device_manager.clear_device_list_and_identify_all_hardware();
+			else {
+				if (!image_server.remember_barcodes_across_sessions()) cerr << "No previous device information was loaded because remember_barcodes_across_sessions is set to false.\n";
+				image_server.device_manager.clear_device_list_and_identify_all_hardware();
+			}
 		}
 		else image_server.register_server_event(ns_image_server_event("Not searching for attached devices."),&sql());
 

@@ -311,7 +311,7 @@ public:
 		lock.release();
 		double sum_of_weights = 0;
 		for (unsigned int i = 0; i < number_of_gaussians; i++) {
-			if (isnan(gmm->Prior(i))) {
+		  if (std::isnan(gmm->Prior(i))) {
 				estimation_succeeded = false;
 				break;
 			}

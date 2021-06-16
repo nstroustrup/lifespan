@@ -2,11 +2,10 @@ The Lifespan Machine Source Code
 Nicholas Stroustrup
 Harvard Systems Biology
 
-Important!  V2.0 of the lifespan machine software is in beta,
-and is strongly recommended over v1 for all new installations.
-For more information, please refer to git repository branch "flow"
+This branch of the source code contains the final release of the lifespan machine software v1.0 .
+V2.0, located on another branch, is strongly recommended over v1 for new projects.
 
-V1.0 has now been released under GPLv3.  We are currently looking into V2.0 .
+V1.0 has now been released under GPLv3. 
 
 Major Revisions
 10.17.2006: Dawn of history

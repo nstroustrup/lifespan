@@ -2566,6 +2566,43 @@ void ns_add_normal_death_to_set(const ns_annotation_generation_type & requested_
 		}
 		default: throw ns_ex("Unknown death time generation request!");
 	}
+	bool found_STILL_ALIVE_flag(false);
+	ns_death_time_annotation still_alive_extra_annotation_movement,
+		still_alive_extra_annotation_expansion;
+
+	//special case for animals being flagged as still alive at the end of the experiment.
+	//death times do not necissarily exist, so we must add additional events for this.
+	if (properties_to_transfer.flag.event_should_be_censored_at_last_measurement())
+		cout << "WHA";
+	if (properties_to_transfer.flag.specified()) {
+		cout << properties_to_transfer.flag.label_short;
+		cout << "\n";
+	}
+	if (properties_to_transfer.flag.specified() &&
+		properties_to_transfer.flag.event_should_be_censored_at_last_measurement()) {
+		for (unsigned int i = 0; i < number_of_different_events; i++) {
+			if (i == 8) continue;	//first observation on plate events arnen't included as their own standalone event.
+			if (a[i] != 0) {
+				if (i < 5) {//use movement, slow, fast, or expansion annotations to replace missing events to generate censoring info
+					still_alive_extra_annotation_movement = *a[i];
+					still_alive_extra_annotation_movement.type = ns_movement_cessation;
+					still_alive_extra_annotation_expansion = *a[i];
+					still_alive_extra_annotation_expansion.type = ns_death_associated_expansion_start;
+				}
+				found_STILL_ALIVE_flag = true;
+			}
+		}
+	}
+	
+	//if death time is not marked for animal alive at the end of the experiment, we must make these events to transmit the censored annotation.
+	if (found_STILL_ALIVE_flag && a[movement] == 0)
+		a[movement] = &still_alive_extra_annotation_movement;
+	if (found_STILL_ALIVE_flag && a[exp_start] == 0)
+		a[exp_start] = &still_alive_extra_annotation_expansion;
+	if (found_STILL_ALIVE_flag) 
+		a[best] = &still_alive_extra_annotation_movement;
+
+
 	for (unsigned int i = 0; i < number_of_different_events; i++) {
 		if (i == 8) continue;	//first observation on plate events arnen't included as their own standalone event.
 		if (a[i] != 0) {
@@ -2575,7 +2612,7 @@ void ns_add_normal_death_to_set(const ns_annotation_generation_type & requested_
 			//1) the lifespan machine notices a worm that is slow moving or changing posture
 			//   at the end of an experiment, and generates a censoring event for it
 			//2) A human annotates the animal as dying using the storyboard or other means.
-			//In this case, the original lifespan machine censoring event needs to be excluded.
+			//In this case, the original lifespan machine censoring event needs to be countermanded.
 			//This is the only location in the code where this issue an be identified and handled!
 			if (b.type == ns_movement_cessation &&
 				b.annotation_source != ns_death_time_annotation::ns_lifespan_machine &&
@@ -2583,25 +2620,31 @@ void ns_add_normal_death_to_set(const ns_annotation_generation_type & requested_
 				properties_to_transfer.excluded = ns_death_time_annotation::ns_not_excluded;
 
 			//another special case occurs when
-			//1) the lifespan machine delcares a worm as dead
-			//2) the user flags the worms as still alive at the end of the experiment with the STILL_ALIVE flag
-			//Then we need to register the animal as being a censoring event at the end of the experiment.
-			//ideally, we would to this at the final measurement time for the plate
-			//but this data is not available at this point in the code, so we do the second best thing, which is to
-			//put it at the time of the latest interval of any annotation (machine or by hand) registered for the plate.
+			//1) the user flags the worms as still alive at the end of the experiment with the STILL_ALIVE flag
+			
 
-			if (b.type == ns_movement_cessation &&
-				properties_to_transfer.flag.specified()) {
-				if (properties_to_transfer.flag.event_should_be_censored_at_last_measurement()) {
-					b.time = latest_interval;
-					properties_to_transfer.excluded = ns_death_time_annotation::ns_censored_at_end_of_experiment;
-					b.annotation_source = ns_death_time_annotation::ns_storyboard;
-					b.annotation_source_details = "By-hand annotated as remainig alive at end of observarion period";
-				}
-				if (properties_to_transfer.flag.event_should_be_censored_at_death()) {
-					properties_to_transfer.excluded = ns_death_time_annotation::ns_censored;
-					b.annotation_source = ns_death_time_annotation::ns_storyboard;
-					b.annotation_source_details = "By-hand annotated as censored";
+
+			//if the user flags the worms as still alive at the end of the experiment with the STILL_ALIVE flag
+			if (found_STILL_ALIVE_flag) {
+				//All events up until death should be recorded normally
+				if (b.type != ns_movement_cessation && b.type != ns_death_associated_expansion_start) 
+					properties_to_transfer.excluded = ns_death_time_annotation::ns_not_excluded;
+				//Death events should be marked as a censoring event at the end of the experiment.
+				//ideally, we would to this at the final measurement time for the plate
+				//but this data is not available at this point in the code, so we do the second best thing, which is to
+				//put it at the time of the latest interval of any annotation (machine or by hand) registered for the plate.
+				else if (properties_to_transfer.flag.specified()) {
+					if (properties_to_transfer.flag.event_should_be_censored_at_last_measurement()) {
+						b.time = latest_interval;
+						properties_to_transfer.excluded = ns_death_time_annotation::ns_censored_at_end_of_experiment;
+						b.annotation_source = ns_death_time_annotation::ns_storyboard;
+						b.annotation_source_details = "By-hand annotated as remainig alive at end of observarion period";
+					}
+					if (properties_to_transfer.flag.event_should_be_censored_at_death()) {
+						properties_to_transfer.excluded = ns_death_time_annotation::ns_censored;
+						b.annotation_source = ns_death_time_annotation::ns_storyboard;
+						b.annotation_source_details = "By-hand annotated as censored";
+					}
 				}
 			}
 			properties_to_transfer.transfer_sticky_properties(b);

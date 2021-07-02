@@ -58,7 +58,7 @@ ns_sql & ns_worm_learner::get_sql_connection() {
 		std::cerr << ex.text() << "\n";
 		try_to_reestablish_connection = true;
 	}
-	
+
 
 	if (try_to_reestablish_connection) {
 		//if we've lost the connection, try to reconnect via conventional means
@@ -73,7 +73,7 @@ ns_sql & ns_worm_learner::get_sql_connection() {
 }
 
 void ns_worm_learner::produce_mask_file(const ns_browser_command_subject& subject, const ns_bulk_experiment_mask_manager::ns_mask_type mask_type){
-	
+
 		int long experiment_id = subject.subject.experiment_id;
 		ns_image_standard mask_file;
 
@@ -101,7 +101,7 @@ void ns_worm_learner::decode_mask_file(const std::string & filename, const std::
 
 	ns_image_buffered_random_access_input_image<ns_8_bit, ns_image_stream_file_source<ns_8_bit> > mask_file(1024);
 	mask_file.assign_buffer_source(source);
-	
+
 	ifstream metadata_file(ns_bulk_experiment_mask_manager::metadata_filename(filename).c_str());
 	ifstream * metadata_file_ref = 0;
 	if (!metadata_file.fail())
@@ -115,7 +115,7 @@ void ns_worm_learner::decode_mask_file(const std::string & filename, const std::
 	ns_image_properties prop(vis.properties());
 	prop.width = 1200;
 	prop.height =(unsigned long)(((1.0*prop.width)/vis.properties().width)*prop.height);
-	
+
 	ns_acquire_lock_for_scope lock(current_image_lock,__FILE__,__LINE__);
 	vis.resample(prop,current_image);
 	lock.release();
@@ -145,7 +145,7 @@ void ns_worm_learner::submit_mask_file_to_cluster(const ns_bulk_experiment_mask_
 		mask_already_exists = !mask_manager.submit_plate_region_masks_to_cluster(false, sql);
 	else mask_already_exists = !mask_manager.submit_subregion_label_masks_to_cluster(false, sql);
 	image_server.register_server_event(ns_image_server_event("Mask submitted."), &sql);
-	
+
 }
 
 void ns_worm_learner::resize_image(){
@@ -170,7 +170,7 @@ void ns_worm_learner::zhang_thinning(){
 
 void ns_worm_learner::compress_dark_noise(){
 
-	ns_image_standard 
+	ns_image_standard
 		out;
 	ns_spatial_median_calculator<ns_8_bit,false> sp(128,65);
 
@@ -199,7 +199,7 @@ void ns_worm_learner::two_stage_threshold(const bool & make_vis){
 		 out.pump(thresholded_image,512);
 	//if (!make_vis)
 	//	stretch_levels();
-	
+
 //		else
 		draw_image(-1,-1,current_image);
 }
@@ -242,7 +242,7 @@ void ns_worm_learner::output_lots_of_worms(const std::string & path){
 			ns_sql_result regions;
 			*sql << "SELECT sample_region_image_info.id, sample_region_image_info.name FROM sample_region_image_info "
 				 << "WHERE sample_region_image_info.sample_id = " << samples[s][0];
-			sql->get_rows(regions);	
+			sql->get_rows(regions);
 			std::vector<ns_image_standard> graphs(regions.size());
 
 			for (unsigned int i = 0; i < regions.size(); i++){
@@ -434,12 +434,12 @@ bool ns_warn_user_about_out_of_date_analyses(const unsigned long region_id, cons
 	}
 	return true;
 }
-void ns_worm_learner::load_current_experiment_movement_results(const ns_death_time_annotation_set::ns_annotation_type_to_load & annotations_to_load, const unsigned long experiment_id, ns_sql & sql){		
+void ns_worm_learner::load_current_experiment_movement_results(const ns_death_time_annotation_set::ns_annotation_type_to_load & annotations_to_load, const unsigned long experiment_id, ns_sql & sql){
 
 	//if we haven't loaded any data yet, load it
 //	if (movement_results.experiment_id() != experiment_id || annotations_to_load != last_annotation_type_loaded){
 		movement_results.clear();
-		
+
 		movement_results.load(annotations_to_load,0,0,experiment_id,sql);
 		last_annotation_type_loaded = annotations_to_load;
 		movement_data_is_strictly_decreasing_ = false;
@@ -449,10 +449,10 @@ void ns_worm_learner::load_current_experiment_movement_results(const ns_death_ti
 		for (unsigned int i = 0; i < movement_results.samples.size(); i++){
 			for (unsigned int j = 0; j < movement_results.samples[i].regions.size(); j++)
 				movement_results.samples[i].regions[j].metadata.load_from_db(movement_results.samples[i].regions[j].metadata.region_id,"",sql);
-		
+
 		}
 	}*/
-	
+
 }
 
 inline double ns_calc_gaussian_neighboorhood(const ns_image_standard & im, const long khr, const long x, const long y, double (*gk)[50]){
@@ -462,10 +462,10 @@ inline double ns_calc_gaussian_neighboorhood(const ns_image_standard & im, const
 			lp+=im[y+y_][x+x_]*gk[y_][x_];
 	for (long y_ = 1; y_ <= khr; y_++)
 		for (long x_ = 0; x_ <= khr; x_++)
-			lp+=im[y-y_][x+x_]*gk[y_][x_];			
+			lp+=im[y-y_][x+x_]*gk[y_][x_];
 	for (long y_ = 0; y_ <= khr; y_++)
 		for (long x_ = 1; x_ <= khr; x_++)
-			lp+=im[y+y_][x-x_]*gk[y_][x_];		
+			lp+=im[y+y_][x-x_]*gk[y_][x_];
 	for (long y_ = 1; y_ <= khr; y_++)
 		for (long x_ = 1; x_ <= khr; x_++)
 			lp+=im[y-y_][x-x_]*gk[y_][x_];
@@ -478,10 +478,10 @@ inline double ns_calc_val_gaussian_neighboorhood(const ns_8_bit &val, const long
 			lp+=val*gk[y_][x_];
 	for (long y_ = 1; y_ <= khr; y_++)
 		for (long x_ = 0; x_ <= khr; x_++)
-			lp+=val*gk[y_][x_];			
+			lp+=val*gk[y_][x_];
 	for (long y_ = 0; y_ <= khr; y_++)
 		for (long x_ = 1; x_ <= khr; x_++)
-			lp+=val*gk[y_][x_];		
+			lp+=val*gk[y_][x_];
 	for (long y_ = 1; y_ <= khr; y_++)
 		for (long x_ = 1; x_ <= khr; x_++)
 			lp+=val*gk[y_][x_];
@@ -537,7 +537,7 @@ void ns_worm_learner::sharpen(){
 }
 
 void ns_worm_learner::concatenate_time_series(const std::string & path,const float resize_factor){
-	
+
 	std::vector<std::string> subdirs;
 	std::vector<ns_dir> dirs(subdirs.size());
 	unsigned long min_size(0);
@@ -597,7 +597,7 @@ void ns_worm_learner::concatenate_time_series(const std::string & path,const flo
 				for (unsigned int x = 0; x < ims[j].properties().components*ims[j].properties().width; x++){
 					out[y][ims[j].properties().components*im_lefts[j]+x] = 0;
 				}
-		
+
 			}
 		}
 		std::string out_fname = out_dir + DIR_CHAR_STR + dirs[0].files[i];
@@ -618,7 +618,7 @@ class ns_experiment_error_data{
 public:
 	vector<ns_sample_region_error_data> regions;
 	bool has_an_error_specified() const{
-		for (unsigned int i = 0; i < regions.size(); i++) 
+		for (unsigned int i = 0; i < regions.size(); i++)
 			if (regions[i].is_censored) return true;
 		return false;
 	}
@@ -651,14 +651,14 @@ void ns_worm_learner::generate_scanner_report(unsigned long first_experiment_tim
 	ns_sql& sql(get_sql_connection());
 	map<string,ns_device_history> devices;
 	vector<ns_experiment_error_data> experiments;
-	
+
 	//get devices
-	
+
 	{
 		sql << "SELECT name,id FROM devices";
 		ns_sql_result res;
 		sql.get_rows(res);
-		for (unsigned int i = 0; i < res.size(); i++) 
+		for (unsigned int i = 0; i < res.size(); i++)
 			devices[res[i][0]] = ns_device_history(atol(res[i][1].c_str()),res[i][0]);
 	}
 
@@ -667,13 +667,13 @@ void ns_worm_learner::generate_scanner_report(unsigned long first_experiment_tim
 		ns_sql_result res;
 		sql << "SELECT id, name FROM experiments WHERE first_time_point >= " << first_experiment_time << " AND first_time_point <= " << last_experiment_time;
 		sql.get_rows(res);
-		
+
 		experiments.resize(res.size());
 		for (unsigned int i = 0; i < res.size(); i++){
 			sql << "SELECT id,name, censored,description,device_name FROM capture_samples WHERE experiment_id = " << res[i][0];
 			ns_sql_result res2;
 			sql.get_rows(res2);
-			for (unsigned int j = 0; j < res2.size(); j++){	
+			for (unsigned int j = 0; j < res2.size(); j++){
 				sql << "SELECT id,name, censored, details,strain,strain_condition_1,strain_condition_2 FROM sample_region_image_info WHERE sample_id = " << res2[j][0];
 				ns_sql_result res3;
 				sql.get_rows(res3);
@@ -710,7 +710,7 @@ void ns_worm_learner::generate_scanner_report(unsigned long first_experiment_tim
 	sub.start_time = first_experiment_time;
 	sub.stop_time = last_experiment_time;
 	ns_image_server_results_file f(image_server.results_storage.device_history(sub,sql));
-	
+
 	ns_acquire_for_scope<ns_ostream> o(f.output());
 	ns_device_history::write_header(o()());
 	for (map<string,ns_device_history>::const_iterator p = devices.begin(); p != devices.end(); p++)
@@ -720,7 +720,7 @@ void ns_worm_learner::generate_scanner_report(unsigned long first_experiment_tim
 
 
 void ns_worm_learner::export_experiment_data(const unsigned long experiment_id){
-	
+
 	ns_sql & sql(get_sql_connection());
 	ns_image_server_results_subject sub;
 	sub.experiment_id = experiment_id;
@@ -747,10 +747,10 @@ void ns_worm_learner::analyze_time_path(const unsigned long region_id){
 	tp_solver.solve(solver_parameters,time_path_solution,&sql);
 	time_path_solution.fill_gaps_and_add_path_prefixes(ns_time_path_solution::default_length_of_fast_moving_prefix());
 	time_path_solution.save_to_db(region_id,sql);
-				
+
 	ns_image_server_results_subject results_subject;
 	results_subject.region_id = region_id;
-			
+
 
 	ns_acquire_for_scope<ns_ostream> position_3d_file_output(
 	image_server.results_storage.animal_position_timeseries_3d(
@@ -820,7 +820,7 @@ void ns_worm_learner::output_region_statistics(const unsigned long experiment_id
 	else{
 		if (experiment_group_id == 0)
 			throw ns_ex("ns_worm_learner::output_region_statistics()::No experiment group id provided!");
-		
+
 		sql << "SELECT id,name FROM experiments WHERE group_id = " << experiment_group_id << " AND hidden = 0 ";
 		ns_sql_result res;
 		sql.get_rows(res);
@@ -831,14 +831,14 @@ void ns_worm_learner::output_region_statistics(const unsigned long experiment_id
 			experiment_names[i] = res[i][1];
 		}
 	}
-	
+
 	ns_image_server_results_subject sub;
 	sub.experiment_id = experiment_id;
 	ns_image_server_results_file f(image_server.results_storage.capture_region_image_statistics(sub,sql,multi_experiment));
-	
+
 	ns_acquire_for_scope<ns_ostream> o(f.output());
 	ns_capture_sample_region_data::output_region_data_in_jmp_format_header("",o()());
-	
+
 	for (unsigned int i = 0; i < experiment_ids.size(); i++){
 		if (experiment_names.size() > 0)
 			cout << "Processing " << experiment_names[i] << "...\n";
@@ -849,9 +849,9 @@ void ns_worm_learner::output_region_statistics(const unsigned long experiment_id
 			set.regions[j].output_region_data_in_jmp_format(o()());
 
 	}
-	
+
 	o.release();
-	
+
 }
 
 
@@ -880,20 +880,20 @@ void ns_worm_learner::output_device_timing_data(const unsigned long experiment_i
 	ns_image_server_results_subject sub;
 	if (!multiple_experiments_requested)
 		sub.experiment_id = experiment_id;
-	
+
 	ns_image_server_results_file f(image_server.results_storage.capture_sample_image_statistics(sub,sql,multiple_experiments_requested));
 
 	ns_acquire_for_scope<ns_ostream> o(f.output());
 
 
 	std::string filename;
-	
+
 	ns_sql_result res;
 	ns_capture_sample_image_statistics::output_jmp_header(o()());
 	for (unsigned int i = 0 ; i < experiment_ids.size(); i++){
 		ns_capture_sample_statistics_set set;
 		set.load_whole_experiment(experiment_ids[i],sql);
-		
+
 		for (unsigned int j = 0; j < set.samples.size(); j++){
 			cout << (100 * j) / set.samples.size() << "%...";
 			set.samples[j].output_jmp_format(o()());
@@ -901,7 +901,7 @@ void ns_worm_learner::output_device_timing_data(const unsigned long experiment_i
 		}
 	}
 	o.release();
-	
+
 }
 
 
@@ -909,7 +909,7 @@ void ns_worm_learner::output_device_timing_data(const unsigned long experiment_i
 	/*
 	ns_sql * sql = image_server.new_sql_connection(__FILE__,__LINE__);
 	try{
-		
+
 	/*	ns_time_path_image_movement_analyzer a;
 		 ns_time_path_solution s;
 
@@ -919,7 +919,7 @@ void ns_worm_learner::output_device_timing_data(const unsigned long experiment_i
 		//1056 ->group index 10 (file name 11) has a good head moving worm
 		 long group_to_process = -1;//17;
 		{
-			
+
 			ns_time_path_solver tp_solver;
 			tp_solver.load(region_id,*sql);
 			unsigned long t(ns_current_time());
@@ -939,9 +939,9 @@ void ns_worm_learner::output_device_timing_data(const unsigned long experiment_i
 		}
 
 		out.close();
-		
+
 		for (unsigned int i = 0; i < a.size(); i++){
-			
+
 //			if (group_to_process != -1 && i != group_to_process) continue;
 			std::string f("c:\\region_ex_");
 			f+=ns_to_string(i+1);
@@ -1067,16 +1067,16 @@ void ns_worm_learner::count_by_hand_annotations(const ns_browser_command_subject
 			throw ns_ex("When multiple experiments are specified, an output file must also be specified.");
 		else spec.experiment_name = subject[0].output_file;
 	}
-	
+
 	ns_image_server_results_file results((image_server.results_storage.time_path_image_analysis_quantification(spec, "annotation_counts", true, sql, false, false, ns_csv)));
 
 	ns_acquire_for_scope<ns_ostream>  o(results.output());
-	if (o()().fail()) 
+	if (o()().fail())
 		throw ns_ex("Could not open ") << results.output_filename() << " for output";
 	o()() << "database,";
 	ns_region_metadata::out_JMP_plate_identity_header(o()());
 	o()() << ",Total individuals,Movement Cessation Annotations,Death-Associated expansion annotations, Death-Associated Contraction Annotations,Complete HMM Annotations\n";
-	
+
 	for (auto db = annotation_counts.begin(); db != annotation_counts.end(); ++db) {
 		ns_select_database_for_scope scope(db->first, sql);
 		for (auto p = db->second.begin(); p != db->second.end(); ++p) {
@@ -1171,7 +1171,7 @@ void ns_worm_learner::generate_survival_curve_from_hand_annotations(const ns_bro
 		set.output_JMP_file(ns_death_time_annotation::ns_only_by_hand_annotations, ns_lifespan_experiment_set::ns_output_single_event_times, ns_lifespan_experiment_set::ns_days, survival_jmp_file2()(), ns_lifespan_experiment_set::ns_simple);
 		survival_jmp_file2.release();
 	}
-	
+
 }
 
 
@@ -1232,10 +1232,10 @@ void ns_worm_learner::generate_training_set_from_by_hand_annotation(const ns_bro
 void ns_worm_learner::generate_worm_storyboard(const std::string & filename,const bool use_by_hand_timings,const ns_movement_event & event_to_mark,
 											   unsigned long region_id, unsigned long sample_id, unsigned long experiment_id,ns_sql & sql, const ns_region_metadata & strain_to_use,bool use_absolute_time){
 
-	
+
 	/*ns_experiment_storyboard board;
 	board.load_events_from_db(use_by_hand_timings,event_to_mark,region_id,sample_id,experiment_id,sql,strain_to_use,use_absolute_time);
-	
+
 	ns_image_standard im;
 	board.draw(im,sql);
 	ns_save_image(filename,im);*/
@@ -1243,7 +1243,7 @@ void ns_worm_learner::generate_worm_storyboard(const std::string & filename,cons
 }
 
 void ns_worm_learner::generate_detailed_animal_data_file(){
-	
+
 }
 template<class T>
 class ns_draw_element{
@@ -1266,7 +1266,7 @@ struct ns_death_time_compiler_random_picker{
 	typedef std::vector<ns_draw_element_group<T, metadata_t> > ns_element_group_list;
 	typedef std::pair<T,metadata_t> return_type;
 	ns_element_group_list element_groups;
-		
+
 	const return_type get_random_event_with_replacement(){
 		typename ns_element_group_list::iterator element_group;
 		typename ns_draw_element_group<T,metadata_t>::ns_element_list::iterator element;
@@ -1291,7 +1291,7 @@ struct ns_death_time_compiler_random_picker{
 	void initialize_for_picking(){
 		total_count = 0;
 		for (typename ns_element_group_list::iterator p = element_groups.begin(); p != element_groups.end(); p++){
-			
+
 		for (typename ns_draw_element_group<T,metadata_t>::ns_element_list::iterator q = p->elements.begin(); q != p->elements.end(); q++){
 				q->excluded = false;
 			}
@@ -1313,10 +1313,10 @@ private:
 		unsigned long r((unsigned long)((rand()/(double)RAND_MAX)*(total_count-1)));
 		unsigned long c(0);
 		for (group = element_groups.begin(); group != element_groups.end(); group++){
-			
+
 			if (c + group->unexcluded_count > r){
 				const unsigned long location_number(r-c);
-				
+
 				unsigned long f(0);
 				for (unsigned int i = 0; i < group->elements.size(); i++){
 					if (!group->elements[i].excluded){
@@ -1334,7 +1334,7 @@ private:
 
 		throw ns_ex("Hit the end of the region list!");
 	}
-	
+
 	unsigned long total_count;
 };
 
@@ -1389,7 +1389,7 @@ struct ns_death_time_annotation_compiler_multiworm_simulation{
 
 void ns_handle_pair(const ns_random_picker_type::return_type & d1, const ns_random_picker_type::return_type & d2,bool use_waiting_time_cropping, unsigned long wait_time,const unsigned long rround,
 	ns_death_time_annotation_compiler_multiworm_simulation & worms){
-	
+
 	const ns_random_picker_type::return_type * mmax, * mmin;
 	if (d1.first.machine.movement_based_death_annotation->time.period_end > d2.first.machine.movement_based_death_annotation->time.period_end){
 		mmax = &d1;
@@ -1403,7 +1403,7 @@ void ns_handle_pair(const ns_random_picker_type::return_type & d1, const ns_rand
 	if (mmin->first.machine.stationary_worm_dissapearance->time.period_end < mmax->first.machine.last_fast_movement_annotation->time.period_end){
 		ns_death_time_annotation a(*mmin->first.machine.movement_based_death_annotation),
 									b(*mmax->first.machine.movement_based_death_annotation);
-		a.loglikelihood = b.loglikelihood = rround; 
+		a.loglikelihood = b.loglikelihood = rround;
 
 		worms.maximums.add(a,mmin->second);
 		worms.minimums.add(a,mmin->second);
@@ -1413,7 +1413,7 @@ void ns_handle_pair(const ns_random_picker_type::return_type & d1, const ns_rand
 		worms.means.add(b,mmin->second);
 		return;
 	}
-				
+
 	unsigned long mean_death_time(d1.first.machine.movement_based_death_annotation->time.period_end/2.0 + d2.first.machine.movement_based_death_annotation->time.period_end/2.0);
 	bool cropped_by_wait(false);
 	if (use_waiting_time_cropping){
@@ -1429,14 +1429,14 @@ void ns_handle_pair(const ns_random_picker_type::return_type & d1, const ns_rand
 								mmean_a(*d1.first.machine.movement_based_death_annotation);
 
 	mmean_a.time.period_end = mmean_a.time.period_end = mean_death_time;
-				
+
 	//encoding to allow extraction of this information from compiler later
 	mmax_a.number_of_worms_at_location_marked_by_machine = mmax_a.number_of_worms_at_location_marked_by_hand = 2;
 	mmin_a.number_of_worms_at_location_marked_by_machine = mmin_a.number_of_worms_at_location_marked_by_hand  = 2;
-	mmean_a.number_of_worms_at_location_marked_by_machine = mmean_a.number_of_worms_at_location_marked_by_hand = 2;	
-	mmax_a.annotation_source_details = mmin_a.annotation_source_details = mmean_a.annotation_source_details = 
+	mmean_a.number_of_worms_at_location_marked_by_machine = mmean_a.number_of_worms_at_location_marked_by_hand = 2;
+	mmax_a.annotation_source_details = mmin_a.annotation_source_details = mmean_a.annotation_source_details =
 		cropped_by_wait?"Cropped by permanance time":"Not Cropped";
-				
+
 	mmax_a.loglikelihood = mmin_a.loglikelihood = mmean_a.loglikelihood = rround; //carry this through for posterity, so we can look
 																		//at variation
 	worms.maximums.add(mmax_a,mmax->second);
@@ -1824,7 +1824,7 @@ struct ns_machine_by_hand_comp {
 	ns_death_time_annotation_compiler death_time_annotation_compiler;
 };
 void ns_worm_learner::compare_machine_and_by_hand_annotations(const ns_browser_command_subject_set& subject){
-	
+
 	for (unsigned int k = 0; k < subject.size(); k++) {
 		ns_sql& sql(get_sql_connection());
 
@@ -1925,11 +1925,11 @@ void ns_worm_learner::generate_scanner_lifespan_statistics(bool use_by_hand_cens
 
 	for (unsigned int e = 0; e < experiment_ids.size(); e++){
 
-		
+
 		ns_image_server_results_subject results_subject;
 		results_subject.experiment_id = experiment_ids[e];
 		ns_image_server_results_file results_file(image_server.results_storage.survival_data(results_subject,"summary","machine_summary_xml","xml",sql));
-		
+
 		ns_lifespan_experiment_set set;
 
 		//attempt to load cached info from disk
@@ -1939,14 +1939,14 @@ void ns_worm_learner::generate_scanner_lifespan_statistics(bool use_by_hand_cens
 
 		}
 		else{
-			//load from database 
+			//load from database
 			load_current_experiment_movement_results(ns_death_time_annotation_set::ns_censoring_and_movement_transitions,experiment_ids[e],sql);
 			results_subject.experiment_id = experiment_ids[e];
 			results_subject.experiment_name = movement_results.experiment_name();
 
 			ns_death_time_annotation_compiler survival_curve_compiler;
 			for (unsigned int i = 0; i < movement_results.samples.size(); i++){
-			
+
 				results_subject.sample_name = movement_results.samples[i].name();
 				results_subject.sample_id = movement_results.samples[i].id();
 
@@ -1955,7 +1955,7 @@ void ns_worm_learner::generate_scanner_lifespan_statistics(bool use_by_hand_cens
 					results_subject.region_name = movement_results.samples[i].regions[j]->metadata.region_name;
 					results_subject.region_id = movement_results.samples[i].regions[j]->metadata.region_id;
 					survival_curve_compiler.add(movement_results.samples[i].regions[j]->death_time_annotation_set,movement_results.samples[i].regions[j]->metadata);
-				
+
 				}
 			}
 			if (use_by_hand_censoring){
@@ -1972,16 +1972,16 @@ void ns_worm_learner::generate_scanner_lifespan_statistics(bool use_by_hand_cens
 			//cache for later
 //			set.output_xml_summary_file(out());
 
-			
+
 			//out.release();
 		}
-		
+
 //		for (unsigned int i = 0; i < set.curves.size(); i++)
-//			compiler.add_data(set.curves[i].produce_summary());	
+//			compiler.add_data(set.curves[i].produce_summary());
 
 
 	}
-	
+
 
 	compiler.save_to_disk(o);
 	o.close();
@@ -2184,7 +2184,7 @@ void ns_set_up_hmm_model_specs_to_test(std::vector<ns_model_building_specificati
 	mod.state_transition_type = ns_model_building_specification::ns_empirical_without_weights;
 	mod.name = "strict_3DS_pure_empiric";
 	s.push_back(mod);
-	
+
 	/*
 	ns_model_building_specification strict_spec_3D_i1;
 	strict_spec_3D_i1.cross_replicate_estimator_type = ns_model_building_specification::ns_strict_ordering;
@@ -2237,7 +2237,7 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 	const std::string start_db(sql.database());
 
 	//when generating an HMM data set, first we need to load all the worms with by hand annotations
-	//and generate an output set with the measurements corresponding to each HMM state.  
+	//and generate an output set with the measurements corresponding to each HMM state.
 	//We do that here.  Later, we will then use this set to build an HMM model.
 
 	//hmm_observation_storage_and_model_generators are calculated for each type of plate in the experiment.
@@ -2413,7 +2413,7 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 				unsigned long regions_processed(0);
 
 				//when generating an HMM data set, first we need to load all the worms with by hand annotations
-				//and generate an output set with the measurements corresponding to each HMM state.  
+				//and generate an output set with the measurements corresponding to each HMM state.
 				//We do that here.  Later, we will then use this set to build an HMM model.
 				for (unsigned int i = 0; i < movement_results.samples.size(); i++) {
 					if (!device_name.empty() && movement_results.samples[i].device_name() != device_name)
@@ -2675,7 +2675,7 @@ void ns_worm_learner::generate_experiment_movement_image_quantification_analysis
 	std::string results_text, fail_text;
 	if (!errors.empty())
 		fail_text = "==Some problems were encountered loading data from disk==\n";
-	for (unsigned int i = 0; i < errors.size(); ++i) 
+	for (unsigned int i = 0; i < errors.size(); ++i)
 		fail_text += errors[i].text() + "\n";
 	fail_text += "\n";
 
@@ -2773,10 +2773,10 @@ void ns_worm_learner::calculate_hmm_from_files(const std::string & path) {
 }
 
 void ns_find_new_paths(const ns_time_path_solution & baseline, const ns_time_path_solution & target, vector<char> & target_path_is_new_this_round){
-	
+
 	target_path_is_new_this_round.resize(0);
 	target_path_is_new_this_round.resize(target.paths.size(),0);
-	
+
 	hungarian_problem_t matching_problem;
 	int ** cost_matrix = new int *[baseline.paths.size()];
 	for (unsigned int i = 0; i < baseline.paths.size(); i++)
@@ -2795,7 +2795,7 @@ void ns_find_new_paths(const ns_time_path_solution & baseline, const ns_time_pat
 			HUNGARIAN_MODE_MINIMIZE_COST);
 
 		hungarian_solve(&matching_problem);
-		
+
 		int k = 0;
 		for (unsigned int j = 0; j < target.paths.size(); j++){
 			bool found(false);
@@ -2838,7 +2838,7 @@ void ns_calculate_running_extrema(const ns_extrema_plot_type & plot_type, const 
 			ns_sliding_window_max(source[j].y, minmax_kernel_half_width, temp1);
 			ns_sliding_window_min(source[j].y, minmax_kernel_half_width, temp2);
 		}
-		else 
+		else
 			too_short = true;
 		//calulate new x and y
 		ns_bspline bspline;
@@ -2889,7 +2889,7 @@ void ns_calculate_running_extrema(const ns_extrema_plot_type & plot_type, const 
 				dest[j].y_min[i] = 0;
 			}
 		}
-		
+
 	}
 }
 
@@ -2902,7 +2902,7 @@ void ns_gaussian_kernel_smoother(const unsigned long time_step_resample_factor, 
 		const double  min_time(*source[j].x.begin());
 		const double max_time(*source[j].x.rbegin());
 
-		const double average_kernel_std = (max_time - min_time) / (double)(source[j].x.size() / kernel_width_in_fraction_of_all_points); 
+		const double average_kernel_std = (max_time - min_time) / (double)(source[j].x.size() / kernel_width_in_fraction_of_all_points);
 		const unsigned long num_steps(source[j].x.size()*time_step_resample_factor);
 		for (unsigned int i = 0; i < num_steps; i++) {
 			double cur_t = ((double)i*(max_time - min_time)) / num_steps + min_time;
@@ -2922,10 +2922,10 @@ void ns_gaussian_kernel_smoother(const unsigned long time_step_resample_factor, 
 
 const unsigned long ns_location_not_matched(99999);
 void ns_match_locations(const std::vector<ns_vector_2i> baseline, const std::vector<ns_vector_2i> & target, vector<unsigned long> & target_match){
-	
+
 	target_match.resize(0);
 	target_match.resize(target.size(),ns_location_not_matched);
-	
+
 	hungarian_problem_t matching_problem;
 	int ** cost_matrix = new int *[baseline.size()];
 	for (unsigned int i = 0; i < baseline.size(); i++)
@@ -2943,7 +2943,7 @@ void ns_match_locations(const std::vector<ns_vector_2i> baseline, const std::vec
 			HUNGARIAN_MODE_MINIMIZE_COST);
 
 		hungarian_solve(&matching_problem);
-		
+
 		int k = 0;
 		for (unsigned int j = 0; j < target.size(); j++){
 			bool found(false);
@@ -2974,7 +2974,7 @@ void ns_match_locations(const std::vector<ns_vector_2i> baseline, const std::vec
 void ns_worm_learner::save_current_area_selections(){
 		string device_name = ns_extract_scanner_name_from_filename(get_current_clipboard_filename());
 		string default_filename = ns_format_time_string(ns_current_time()) + "=" + device_name + "=sample_regions.txt";
-		
+
 		ns_image_file_chooser im_cc;
 		im_cc.save_file();
 		im_cc.default_filename = default_filename;
@@ -3023,7 +3023,7 @@ struct ns_deduced_sample{
 
 		sql << "INSERT INTO image_masks SET image_id = " << mask_image_id << ", processed='0',resize_factor=" << (sample_width_in_pixels/mask_width_in_pixels);
 		mask_id = sql.send_query_get_id();
-		
+
 		sql << "UPDATE capture_samples SET mask_id=" << mask_id << " WHERE id=" << id;
 		sql.send_query();
 		if (schedule_job){
@@ -3075,13 +3075,13 @@ ns_64_bit ns_worm_learner::create_experiment_from_directory_structure(const std:
 
 	if (pos == dname.npos)
 		throw ns_ex("The specified directory does not seem to be a subdirectory of the long term storage directory");
-	
+
 	std::string experiment_name_and_partition = directory_name.substr(lname.size()+1);
 	if (experiment_name_and_partition.size() == 0)
 		throw ns_ex("The specified directory does not seem to be a subdirectory of the long term storage directory");
 	std::vector<std::string> name_split;
 	ns_explode_slist(experiment_name_and_partition,name_split);
-	
+
 	std::string experiment_name,experiment_partition;
 
 	if (name_split.size() > 2){
@@ -3129,7 +3129,7 @@ ns_64_bit ns_worm_learner::create_experiment_from_directory_structure(const std:
 	if(res.size() != 0)
 		throw ns_ex("An experiment with the name ") << experiment_name << " already exists!";
 
-	sql << "INSERT INTO experiments SET name='" << sql.escape_string(experiment_name) << "',description='',`partition`='" 
+	sql << "INSERT INTO experiments SET name='" << sql.escape_string(experiment_name) << "',description='',`partition`='"
 		  << sql.escape_string(experiment_partition) << "', time_stamp=0";
 
 	const ns_64_bit experiment_id = sql.send_query_get_id();
@@ -3140,7 +3140,7 @@ ns_64_bit ns_worm_learner::create_experiment_from_directory_structure(const std:
 				<< ",device_name='" << sql.escape_string(samples[i].device) << "',parameters=''"
 				<< ",position_x=0 ,position_y=0"
 				<< ",size_x=0,size_y=0"
-				<< ",incubator_name='" << sql.escape_string(samples[i].incubator_name) 
+				<< ",incubator_name='" << sql.escape_string(samples[i].incubator_name)
 				<< "',incubator_location='" <<  sql.escape_string(samples[i].incubator_location)
 				<< "',desired_capture_duration_in_seconds=0"
 				<< ",description='',model_filename='',reason_censored='',image_resolution_dpi='3200'"
@@ -3149,7 +3149,7 @@ ns_64_bit ns_worm_learner::create_experiment_from_directory_structure(const std:
 				<< ", time_stamp=0";
 		samples[i].id = sql.send_query_get_id();
 	}
-	
+
 	for (unsigned long i = 0; i < samples.size(); i++){
 		cerr << "Obtaining image width and processing mask for sample " << samples[i].name << "\n";
 		//get image size
@@ -3201,7 +3201,7 @@ ns_64_bit ns_worm_learner::create_experiment_from_directory_structure(const std:
 		else if (sample_interval > 30*60*60)
 			cerr <<("Unusual sample interval: ")<< sample_interval << "\n";
 		else{
-			sql << "UPDATE capture_samples SET number_of_consecutive_captures_per_sample = " << number_of_consecutive_sample_captures 
+			sql << "UPDATE capture_samples SET number_of_consecutive_captures_per_sample = " << number_of_consecutive_sample_captures
 				  << ", device_capture_period_in_seconds= " << sample_interval
 				  << " WHERE id = " << samples[i].id;
 			sql.send_query();
@@ -3209,7 +3209,7 @@ ns_64_bit ns_worm_learner::create_experiment_from_directory_structure(const std:
 		if (files.empty())
 			continue;
 		std::sort(files.rbegin(),files.rend());
-		
+
 		for (unsigned long j =0; j < files.size(); j++){
 			try{
 				ns_tiff_image_input_file<ns_8_bit> tiff_in;
@@ -3229,7 +3229,7 @@ ns_64_bit ns_worm_learner::create_experiment_from_directory_structure(const std:
 		std::string mask_filename = "mask_" + samples[i].name + ".tif";
 		std::string mask_relative_path = experiment_name + DIR_CHAR_STR + "region_masks";
 		std::string mask_path(experiment_base_path + DIR_CHAR_STR + mask_relative_path + DIR_CHAR_STR + mask_filename);
-		
+
 		if (!ns_dir::file_exists(mask_path)){
 			cerr << "The mask file didn't seem to exist\n";
 			continue;
@@ -3346,7 +3346,7 @@ void ns_worm_learner::rebuild_experiment_samples_from_disk(const ns_64_bit exper
 			cout << "No database entries were identified as missing.\n";
 	}
 
-	
+
 }
 
 struct ns_region_processed_image_disk_info{
@@ -3386,9 +3386,9 @@ void ns_worm_learner::repair_missing_captured_images(const ns_64_bit experiment_
 		}
 	}
 	of.close();
-	
+
 }
-		
+
 void to_lower(string& a) {
 	for (unsigned int i = 0; i < a.size(); i++)
 		a[i] = tolower(a[i]);
@@ -3412,7 +3412,7 @@ void ns_worm_learner::rebuild_experiment_regions_from_disk(const ns_64_bit exper
 	sql << "SELECT id,name FROM capture_samples WHERE experiment_id = " << experiment_id;
 	ns_sql_result sample_res;
 	sql.get_rows(sample_res);
-	
+
 	std::vector<ns_processing_task> additional_tasks_to_load;
 	//additional_tasks_to_load.push_back(ns_unprocessed);
 	additional_tasks_to_load.push_back(ns_process_spatial);
@@ -3461,7 +3461,7 @@ void ns_worm_learner::rebuild_experiment_regions_from_disk(const ns_64_bit exper
 						filenames.push_back(dir.files[k]);
 				}
 
-			
+
 				std::string::size_type pos = absolute_path.find(partition);
 				if (pos==absolute_path.npos)
 					throw ns_ex("Incorrect path identified: Images are not in a partition of the long term storage directory");
@@ -3524,7 +3524,7 @@ void ns_worm_learner::rebuild_experiment_regions_from_disk(const ns_64_bit exper
 
 			for (unsigned long k = 0; k < res2.size(); k++)
 				region_images_in_db.insert(region_images_in_db.end(), ns_existing_region_image_record(ns_atoi64(res2[k][1].c_str()), ns_atoi64(res2[k][0].c_str())));
-		
+
 			sql << "SELECT id, capture_time FROM captured_images WHERE sample_id = " << sample_id;
 			sql.get_rows(res2);
 			std::map<unsigned long,ns_64_bit> existing_captured_images;
@@ -3532,7 +3532,7 @@ void ns_worm_learner::rebuild_experiment_regions_from_disk(const ns_64_bit exper
 				const ns_64_bit id(ns_atoi64(res2[k][0].c_str()));
 				existing_captured_images[atol(res2[k][1].c_str())] = id;
 			}
-		
+
 			bool missing_metadata_found_for_analyzed_images(false);
 			for (unsigned long k = 0; k < region_image_filenames.size(); k++){
 				ns_image_server_captured_image_region region_image;
@@ -3572,7 +3572,7 @@ void ns_worm_learner::rebuild_experiment_regions_from_disk(const ns_64_bit exper
 				else {
 					region_image.load_from_db(region_image_db_record->region_image_id,&sql);
 				}
-				
+
 				bool additional_tasks_found_on_disk = false;
 				for (unsigned long m=0; m < additional_tasks_to_load.size();m++){
 
@@ -3596,11 +3596,11 @@ void ns_worm_learner::rebuild_experiment_regions_from_disk(const ns_64_bit exper
 						cout << "Creating record for lost metadata.\n";
 						missing_metadata_found_for_analyzed_images = true;
 					}
-					additional_tasks_found_on_disk = true; 
+					additional_tasks_found_on_disk = true;
 					if (region_image_record_already_exists)
 						number_of_additions++;
 				}
-				
+
 	//			region_image.captured_images_id = cap_im.captured_images_id;
 				if (!region_image_record_already_exists) {
 					region_image.specified_16_bit = false;
@@ -3614,7 +3614,7 @@ void ns_worm_learner::rebuild_experiment_regions_from_disk(const ns_64_bit exper
 					region_image.region_images_id = 0;
 					region_image.save(&sql);
 				}
-				if (additional_tasks_found_on_disk)	
+				if (additional_tasks_found_on_disk)
 					region_image.update_all_processed_image_records(sql);
 
 				/*std::string new_filename = im.filename(&sql) + "." + ns_dir::extract_extension(image.filename);
@@ -3631,7 +3631,7 @@ void ns_worm_learner::rebuild_experiment_regions_from_disk(const ns_64_bit exper
 				cout << "No database entries were identified as missing.\n";
 		}
 	}
-	
+
 }
 
 void ns_worm_learner::repair_captured_image_transfer_errors(unsigned long experiment_id) {
@@ -3700,7 +3700,7 @@ void ns_worm_learner::test_time_path_analysis_parameters(unsigned long region_id
 
 	ns_hand_annotation_loader by_hand_region_annotations;
 	by_hand_region_annotations.load_region_annotations(
-			ns_death_time_annotation_set::ns_censoring_and_movement_transitions,region_id,sql);					
+			ns_death_time_annotation_set::ns_censoring_and_movement_transitions,region_id,sql);
 
 	parameters.resize(5);
 	for (unsigned int i = 0; i < 5; i++){
@@ -3727,7 +3727,7 @@ void ns_worm_learner::test_time_path_analysis_parameters(unsigned long region_id
 			//get the solutions
 			ns_time_path_solver tp(tp_solver);
 			tp.solve(parameters[i][j],solutions[i][j],&sql);
-	
+
 			//find which paths are new relative to the refence
 			vector<char> path_is_new_this_round(solutions[i][j].paths.size(),0);
 			if (j > 0)
@@ -3738,7 +3738,7 @@ void ns_worm_learner::test_time_path_analysis_parameters(unsigned long region_id
 			sub.region_id = region_id;
 			std::string type = "OPFD=" + ns_to_string(parameters[i][j].min_stationary_object_path_fragment_duration_in_seconds) + "&"
 								"SPD=" + ns_to_string(parameters[i][j].min_final_stationary_path_duration_in_minutes);
-		 
+
 			ns_acquire_for_scope<ns_ostream> position_3d_file_output(
 			image_server.results_storage.animal_position_timeseries_3d(
 				sub,sql,ns_image_server_results_storage::ns_3d_plot,type
@@ -3748,7 +3748,7 @@ void ns_worm_learner::test_time_path_analysis_parameters(unsigned long region_id
 			position_3d_file_output.release();
 
 			image_server.results_storage.write_animal_position_timeseries_3d_launcher(sub,ns_image_server_results_storage::ns_3d_plot,sql,type);
-			
+
 			//find which elements are censored
 			ns_time_path_solution & s(solutions[i][j]);
 			vector<char> censored(s.path_groups.size(),0);
@@ -3756,16 +3756,16 @@ void ns_worm_learner::test_time_path_analysis_parameters(unsigned long region_id
 			unsigned long num_censored(0), num_low_density(0),not_annotated(0);
 			std::vector<ns_vector_2i> location_centers(s.path_groups.size());
 			std::vector<ns_vector_2i> excluded_object_positions(by_hand_region_annotations.annotations.regions[region_id].locations.size());
-			
+
 			for (unsigned int k = 0; k < s.path_groups.size(); k++)
 				location_centers[k] = s.paths[s.path_groups[k].path_ids[0]].center / s.paths[s.path_groups[k].path_ids[0]].stationary_elements.size();
 			for (unsigned int k = 0; k < by_hand_region_annotations.annotations.regions[region_id].locations.size(); k++)
 				excluded_object_positions[k] = by_hand_region_annotations.annotations.regions[region_id].locations[k].properties.position;
-		
+
 			std::vector<unsigned long> matched;
 			ns_match_locations(excluded_object_positions,location_centers,matched);
 
-			
+
 			for (unsigned int k = 0; k <s.path_groups.size(); k++){
 				if (matched[k] != ns_location_not_matched){
 
@@ -3778,7 +3778,7 @@ void ns_worm_learner::test_time_path_analysis_parameters(unsigned long region_id
 				 if (s.paths[s.path_groups[k].path_ids[0]].is_low_density_path)
 						num_low_density++;
 			}
-			
+
 			//output metadata for each path in this solution
 			for (unsigned int k = 0; k < s.path_groups.size(); k++){
 				ns_vector_2i center(s.paths[s.path_groups[k].path_ids[0]].center / s.paths[s.path_groups[k].path_ids[0]].stationary_elements.size());
@@ -3793,7 +3793,7 @@ void ns_worm_learner::test_time_path_analysis_parameters(unsigned long region_id
 						<< center.y << ","
 						<< s.time(*s.paths[s.path_groups[k].path_ids[0]].stationary_elements.begin()) << ","
 						<< s.time(*s.paths[s.path_groups[k].path_ids[0]].stationary_elements.rbegin()) << ","
-						<< (s.time(*s.paths[s.path_groups[k].path_ids[0]].stationary_elements.begin()) - 
+						<< (s.time(*s.paths[s.path_groups[k].path_ids[0]].stationary_elements.begin()) -
 							s.time(*s.paths[s.path_groups[k].path_ids[0]].stationary_elements.rbegin()))/(60.0*60.0) << ","
 						<< s.paths[s.path_groups[k].path_ids[0]].stationary_elements.size() << ","
 						<< (s.paths[s.path_groups[k].path_ids[0]].is_low_density_path?"1":"0") << ","
@@ -3818,7 +3818,7 @@ void ns_worm_learner::load_strain_metadata_into_database(const std::string filen
 	getline(i,v2,'\n');
 	if (i.fail() || ns_tolower(v) != "strain" || ns_tolower(v2) != "genotype")
 		throw ns_ex("The metadata file must have a header line \"strain,genotype\\n\" and the data must follow in that format.");
-	
+
 	std::vector<ns_genotype_db_info> data;
 	long l(0);
 	while(true){
@@ -3829,7 +3829,7 @@ void ns_worm_learner::load_strain_metadata_into_database(const std::string filen
 			if (!isdigit(v[j]) && !(isalpha(v[j])))
 				throw ns_ex("Encountered a weird strain name on line ") << l << ": " << v;
 		}
-		getline(i,v2,'\n');	
+		getline(i,v2,'\n');
 		if (!v2.empty() && v2[0] != '"' && v2[v2.size()-1] != '"'){
 			for (unsigned int j =0; j < v2.size(); j++){
 				if (v2[j] == ',')
@@ -4023,7 +4023,7 @@ void ns_worm_learner::generate_single_frame_posture_image_pixel_data(const bool 
 							eq_hist[m] = 0;
 							eq_cropped_hist[m]=0;
 						}
-					
+
 						const ns_image_standard & im(movement_results.samples[i].regions[j]->time_path_image_analyzer->group(w).paths[0].element(k).image());
 						unsigned long count(0);
 						for (unsigned int y = 0; y < im.properties().height; y++){
@@ -4061,7 +4061,7 @@ void ns_worm_learner::generate_single_frame_posture_image_pixel_data(const bool 
 								if (m == 0)
 									cdf[m] = num;
 								else cdf[m] = num + cdf[m-1];
-								
+
 								if (percentile_90th_i == -1 && c>percentile_90th_i)
 									percentile_90th = m;
 
@@ -4099,12 +4099,12 @@ void ns_worm_learner::generate_single_frame_posture_image_pixel_data(const bool 
 							}
 
 						const double stdev(sqrt(var));
-						unsigned long diff_count(0);	
+						unsigned long diff_count(0);
 						double diff_zscore(0),diff_shift(0),diff_scale(0),diff_raw(0),diff_equalized(0),diff_equalized_cropped(0),diff_var;
 						if (k > start_i && k > 0){
-							
+
 							const ns_image_standard & im_prev(movement_results.samples[i].regions[j]->time_path_image_analyzer->group(w).paths[0].element(k-1).image());
-						
+
 							for (unsigned int y = 0; y < im.properties().height; y++){
 								for (unsigned int x = 0; x < im.properties().width; x++){
 									if (movement_results.samples[i].regions[j]->time_path_image_analyzer->group(w).paths[0].element(k).worm_threshold(y,x) ||
@@ -4135,7 +4135,7 @@ void ns_worm_learner::generate_single_frame_posture_image_pixel_data(const bool 
 																							ns_crop(im_prev[y][x],equalized_prev[y][x],equalized_crop_value),d_eq_c);
 										images_scaled.register_difference_values(im[y][x]/avg,im_prev[y][x]/avg_prev,d_m);
 										images_var.   register_difference_values(im[y][x]/stdev,im_prev[y][x]/stdev_prev,d_v);
-																				
+
 									}
 								}
 							}
@@ -4147,13 +4147,13 @@ void ns_worm_learner::generate_single_frame_posture_image_pixel_data(const bool 
 								for (unsigned int x = 0; x < im.properties().width; x++){
 									if (movement_results.samples[i].regions[j]->time_path_image_analyzer->group(w).paths[0].element(k).worm_threshold(y,x) ||
 										movement_results.samples[i].regions[j]->time_path_image_analyzer->group(w).paths[0].element(k-1).worm_threshold(y,x)){
-									
+
 										double d_z(fabs((im[y][x]-avg)/stdev - (im_prev[y][x]-avg_prev)/stdev_prev)),
 											d_o(fabs((im[y][x]-avg) - (im_prev[y][x]-avg_prev))),
 											d_m(fabs((im[y][x]/avg) - (im_prev[y][x]/avg_prev))),
 											d_r(abs((long)im[y][x] - (long)im_prev[y][x])),
 											d_eq(abs((long)equalized[y][x] - (long)equalized_prev[y][x])),
-											 d_eq_c(abs((long)ns_crop(im[y][x],equalized[y][x],equalized_crop_value)- 
+											 d_eq_c(abs((long)ns_crop(im[y][x],equalized[y][x],equalized_crop_value)-
 											 (long)ns_crop(im_prev[y][x],equalized_prev[y][x],equalized_crop_value))),
 											d_v(fabs((im[y][x]/stdev) - (im_prev[y][x]/stdev_prev)));
 
@@ -4169,7 +4169,7 @@ void ns_worm_learner::generate_single_frame_posture_image_pixel_data(const bool 
 								}
 
 							}
-							
+
 							unsigned long t((movement_results.samples[i].regions[j]->time_path_image_analyzer->group(w).paths[0].element(k).absolute_time - movement_results.samples[i].regions[j]->metadata.time_at_which_animals_had_zero_age));
 							ns_movement_quantification_visualization::concatenate(all_images,labels,output_vis);
 							ns_movement_quantification_visualization::output(image_output_base_dir,w,t/60,output_vis);
@@ -4189,17 +4189,17 @@ void ns_worm_learner::generate_single_frame_posture_image_pixel_data(const bool 
 
 						unsigned long t((movement_results.samples[i].regions[j]->time_path_image_analyzer->group(w).paths[0].element(k).absolute_time - movement_results.samples[i].regions[j]->metadata.time_at_which_animals_had_zero_age));
 
-						o_stats << region_id << "," << w << "," 
+						o_stats << region_id << "," << w << ","
 							<< t/60 <<","<< count << "," << avg << "," << stdev << "," ;
 						if (diff_count > 0)
-							o_stats << diff_count << "," << diff_raw << "," <<diff_shift << "," << diff_scale << ","  << diff_var << "," << diff_zscore << "," << diff_zscore*(stdev+stdev_prev)/2 << 
+							o_stats << diff_count << "," << diff_raw << "," <<diff_shift << "," << diff_scale << ","  << diff_var << "," << diff_zscore << "," << diff_zscore*(stdev+stdev_prev)/2 <<
 							"," << diff_equalized << "," << (int)equalized_crop_value << "," << diff_equalized_cropped << "\n";
 						else o_stats << ",,,,\n";
-							
-				
+
+
 
 						for (unsigned int m = 0; m < 255; m++){
-							o_data << region_id << "," << w << "," 
+							o_data << region_id << "," << w << ","
 							<< t/60 << ","
 							<< m << ","
 							<< m - avg << ",";
@@ -4213,7 +4213,7 @@ void ns_worm_learner::generate_single_frame_posture_image_pixel_data(const bool 
 							o_data << "," << hist[m] << "," << eq_hist[m] << "," << eq_cropped_hist[m] << "\n";
 						}
 					}
-			
+
 
 				}
 			}
@@ -4244,7 +4244,7 @@ struct ns_immediately_recalc_censoring_job {
 	ns_immediately_recalc_censoring_job_common_data* common_data;
 
 	void operator()(ns_immediately_recalc_censoring_job_persistant_data& p) {
-		
+
 		if (p.sql == 0)
 			p.sql = image_server.new_sql_connection(__FILE__, __LINE__);
 		std::string region_name;
@@ -4264,9 +4264,9 @@ struct ns_immediately_recalc_censoring_job {
 			analyze_worm_movement_across_frames(job, &image_server, *p.sql, false);
 		}
 		catch (ns_ex & ex) {
-			*p.sql << "SELECT s.name, r.name FROM capture_samples as s, sample_region_image_info as r WHERE r.id = " << region_id << " AND s.id = r.sample_id"; 
+			*p.sql << "SELECT s.name, r.name FROM capture_samples as s, sample_region_image_info as r WHERE r.id = " << region_id << " AND s.id = r.sample_id";
 			ns_sql_result res;
-			p.sql->get_rows(res); 
+			p.sql->get_rows(res);
 			if (res.size() != 0)
 				region_name = res[0][0] + "_" + res[0][1];
 			image_server.add_subtext_to_current_event("Region " + region_name + ": " + ex.text(), p.sql);
@@ -4281,9 +4281,9 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(const ns_bro
 	std::vector<ns_ex> errors;
 	ns_sql& sql(get_sql_connection());
 	std::set < ns_64_bit > experiments_specified;
-	for (unsigned int experiment_i = 0; experiment_i < subject.size(); experiment_i++) 
+	for (unsigned int experiment_i = 0; experiment_i < subject.size(); experiment_i++)
 		experiments_specified.insert(experiments_specified.end(), subject[experiment_i].subject.experiment_id);
-	
+
 
 	ns_acquire_for_scope<ns_ostream> censoring_diagnostics_by_plate_machine,
 		censoring_diagnostics_by_plate_by_hand;
@@ -4461,7 +4461,7 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(const ns_bro
 			vector<map<ns_death_time_annotation::ns_by_hand_annotation_integration_strategy, ns_acquire_for_scope<ns_ostream> > > movement_data_plate_file_without_incomplete(ns_death_time_annotation::ns_number_of_multiworm_censoring_strategies);
 			ns_acquire_for_scope<ns_ostream> movement_data_plate_file_with_alternate_missing_return_strategy_1,
 				movement_data_plate_file_with_alternate_missing_return_strategy_2;
-		
+
 
 			const ns_death_time_annotation::ns_missing_worm_return_strategy default_missing_return_strategy(ns_death_time_annotation::ns_censoring_minimize_missing_times),
 				alternate_missing_return_strategy_1(ns_death_time_annotation::ns_censoring_assume_uniform_distribution_of_missing_times),
@@ -4702,9 +4702,9 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(const ns_bro
 				survival_curve_compiler.generate_survival_curve_set(machine_set, ns_death_time_annotation::ns_only_machine_annotations, false, false, sql);
 				survival_curve_compiler.generate_survival_curve_set(machine_hand_set, ns_death_time_annotation::ns_machine_annotations_if_no_by_hand, false, false, sql);
 
-				//don't use death times annotated by hand but missing a corresponding machine-detected event.  
+				//don't use death times annotated by hand but missing a corresponding machine-detected event.
 				//This is done to exclude by hand annotations that correspond to events identified in previous anaysis of the plate but not in the most recent one.
-				//All by hand annotations have to match up to a /current/ machine annotation.  
+				//All by hand annotations have to match up to a /current/ machine annotation.
 				machine_set.include_only_events_detected_by_machine();
 				machine_hand_set.include_only_events_detected_by_machine();
 				if (machine_set.size() == 0)
@@ -4716,17 +4716,17 @@ void ns_worm_learner::compile_experiment_survival_and_movement_data(const ns_bro
 				cerr << "Writing Files...\n";
 				//STEP 5 in generating death times: write everything out to disk
 				machine_set.output_JMP_file(ns_death_time_annotation::ns_only_machine_annotations, ns_lifespan_experiment_set::ns_output_single_event_times, ns_lifespan_experiment_set::ns_days, survival_jmp_file_machine_simple_days()(), ns_lifespan_experiment_set::ns_simple, output_header);
-				
+
 				machine_hand_set.output_JMP_file(ns_death_time_annotation::ns_machine_annotations_if_no_by_hand, ns_lifespan_experiment_set::ns_output_single_event_times, ns_lifespan_experiment_set::ns_days, survival_jmp_file_machine_hand_simple_days()(), ns_lifespan_experiment_set::ns_simple, output_header);
-				
+
 				machine_set.output_JMP_file(ns_death_time_annotation::ns_machine_annotations_if_no_by_hand, ns_lifespan_experiment_set::ns_output_single_event_times, ns_lifespan_experiment_set::ns_days, survival_jmp_file_simple_with_control_groups_days()(), ns_lifespan_experiment_set::ns_simple_with_control_groups, output_header);
-				
+
 				machine_set.output_JMP_file(ns_death_time_annotation::ns_machine_annotations_if_no_by_hand, ns_lifespan_experiment_set::ns_output_single_event_times, ns_lifespan_experiment_set::ns_days, survival_jmp_file_detailed_days()(), ns_lifespan_experiment_set::ns_detailed_compact, output_header);
-				
+
 				machine_set.output_JMP_file(ns_death_time_annotation::ns_only_machine_annotations, ns_lifespan_experiment_set::ns_output_event_intervals, ns_lifespan_experiment_set::ns_days, survival_jmp_file_time_machine_interval_simple_days()(), ns_lifespan_experiment_set::ns_simple, output_header);
-			
+
 				machine_set.output_JMP_file(ns_death_time_annotation::ns_machine_annotations_if_no_by_hand, ns_lifespan_experiment_set::ns_output_event_intervals, ns_lifespan_experiment_set::ns_days, survival_jmp_file_time_by_hand_interval_simple_days()(), ns_lifespan_experiment_set::ns_simple, output_header);
-				
+
 
 				cerr << "Writing Detailed Animal Files\n";
 				//generate detailed animal data
@@ -5006,7 +5006,7 @@ void ns_worm_learner::upgrade_tables() {
 	else
 		d.text = "No update was needed.";
 
-	
+
 
 	//d.act();
 	ns_run_in_main_thread<ns_alert_dialog> dd(&d);
@@ -5032,7 +5032,7 @@ void ns_worm_learner::handle_file_request(const string & fname) {
 		cerr << "Processing video " << filename << ": ";
 		ns_sql& sql(get_sql_connection());
 		ns_image_processing_pipeline::wrap_m4v_stream(filename, output_basename, 25, !generate_mp4_, sql);
-		
+
 		cerr << " Done.\n";
 	}
 	else if (ext == "jpg" || ext == "tif" || ext == "jp2") {
@@ -5079,7 +5079,7 @@ void ns_worm_learner::handle_file_request(const string & fname) {
 			}
 		}
 	}
-	
+
 	else throw ns_ex("Unknown file type:") << ext;
 
 }
@@ -5101,10 +5101,10 @@ void ns_worm_learner::paste_from_clipboard(){
 		while(clipboard_format = EnumClipboardFormats(clipboard_format)){
 			if (CF_GDIOBJFIRST <= clipboard_format && clipboard_format <= CF_GDIOBJLAST)
 				unknown_formats.push_back( std::string("CF_GDIOBJ #") + ns_to_string(clipboard_format - CF_GDIOBJFIRST));
-			else 
+			else
 			if (CF_PRIVATEFIRST <= clipboard_format && clipboard_format <= CF_PRIVATELAST)
 				unknown_formats.push_back( std::string("CF_PRIVATE #") + ns_to_string(clipboard_format - CF_PRIVATEFIRST));
-			else		
+			else
 			switch(clipboard_format){
 				case CF_BITMAP:{
 					hbmp = (HBITMAP)GetClipboardData(CF_BITMAP);
@@ -5113,7 +5113,7 @@ void ns_worm_learner::paste_from_clipboard(){
 					if (hbmp == 0)
 						throw ns_ex("Cannot load image from bitmap.");
 					BITMAP bmp;
-					if (!GetObject(hbmp, sizeof(BITMAP), (LPSTR)&bmp)) 
+					if (!GetObject(hbmp, sizeof(BITMAP), (LPSTR)&bmp))
 						throw ns_ex("Could not read from bitmap handle");
 
 					ns_image_properties p;
@@ -5128,13 +5128,13 @@ void ns_worm_learner::paste_from_clipboard(){
 					char * buff = new char[sizeof(BITMAPINFOHEADER) + 256 * sizeof(RGBQUAD)];
 					LPBITMAPINFO bmpinfo = (LPBITMAPINFO)buff;
 					bmpinfo->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-					bmpinfo->bmiHeader.biWidth = p.width; 
+					bmpinfo->bmiHeader.biWidth = p.width;
 					bmpinfo->bmiHeader.biHeight = p.height;
-					bmpinfo->bmiHeader.biPlanes = 1; 
+					bmpinfo->bmiHeader.biPlanes = 1;
 					bmpinfo->bmiHeader.biBitCount = p.components*8;
 					bmpinfo->bmiHeader.biCompression = BI_RGB;
 					bmpinfo->bmiHeader.biSizeImage = ((p.width * p.components*8 +31) & ~31) /8
-										  * p.height; 
+										  * p.height;
 
 					bmpinfo->bmiHeader.biXPelsPerMeter = 0;
 					bmpinfo->bmiHeader.biYPelsPerMeter = 0;
@@ -5163,7 +5163,7 @@ void ns_worm_learner::paste_from_clipboard(){
 					break;
 				}
 				case CF_HDROP	:{
-		
+
 					HDROP h = (HDROP)GetClipboardData(CF_HDROP);
 					unsigned long num = DragQueryFile(h,0xFFFFFFFF,NULL,0);
 					if (num == 0)
@@ -5191,21 +5191,21 @@ void ns_worm_learner::paste_from_clipboard(){
 				case CF_DIBV5:{unknown_formats.push_back("CF_DIBV5");break;}
 				case CF_DIF	:{unknown_formats.push_back("CF_DIF");break;}
 				case CF_DSPBITMAP:{unknown_formats.push_back("CF_DSPBITMAP");	break;}
-				case CF_DSPENHMETAFILE:{unknown_formats.push_back("CF_DSPENHMETAFILE");break;}	
+				case CF_DSPENHMETAFILE:{unknown_formats.push_back("CF_DSPENHMETAFILE");break;}
 				case CF_DSPMETAFILEPICT:{unknown_formats.push_back("CF_DSPMETAFILEPICT");break;}
 				case CF_DSPTEXT	:{unknown_formats.push_back("CF_DSPTEXT");break;}
 				case CF_ENHMETAFILE	:{unknown_formats.push_back("CF_ENHMETAFILE");break;}
 				case CF_LOCALE	:{unknown_formats.push_back("CF_LOCALE");break;}
-				case CF_METAFILEPICT:{unknown_formats.push_back("CF_METAFILEPICT");break;}	
+				case CF_METAFILEPICT:{unknown_formats.push_back("CF_METAFILEPICT");break;}
 				case CF_OEMTEXT	:{unknown_formats.push_back("CF_OEMTEXT");break;}
 				case CF_OWNERDISPLAY:{unknown_formats.push_back("CF_OWNERDISPLAY");break;}
-				case CF_PALETTE	:{unknown_formats.push_back("CF_PALETTE");break;} 	
+				case CF_PALETTE	:{unknown_formats.push_back("CF_PALETTE");break;}
 				case CF_PENDATA	:{unknown_formats.push_back("CF_PENDATA");break;}
 				case CF_RIFF:{unknown_formats.push_back("CF_RIFF");break;}
-				case CF_SYLK:{unknown_formats.push_back("CF_SYLK");break;}	
-				case CF_TEXT:{unknown_formats.push_back("CF_TEXT");break;}	
+				case CF_SYLK:{unknown_formats.push_back("CF_SYLK");break;}
+				case CF_TEXT:{unknown_formats.push_back("CF_TEXT");break;}
 				case CF_WAVE:{unknown_formats.push_back("CF_WAVE");break;}
-				case CF_TIFF:{unknown_formats.push_back("CF_TIFF");break;}	
+				case CF_TIFF:{unknown_formats.push_back("CF_TIFF");break;}
 				case CF_UNICODETEXT:{unknown_formats.push_back("CF_UNICODETEXT");break;}*/
 				default:
 					char a[100];
@@ -5334,7 +5334,7 @@ void ns_worm_learner::output_subregion_as_test_set(const std::string & old_info)
 				temp_out[y_][x_] = temp[si.y+y_][prop.components*si.x+x_];
 		std::string dir = ns_dir::extract_path(old_info);
 		std::string fname = dir + DIR_CHAR_STR + region_name + "=" + ns_format_time_string(capture_time) + "=" + ns_to_string(capture_time) + ".tif";
-		cerr << "Outputting " << fname << "\n";		
+		cerr << "Outputting " << fname << "\n";
 		ns_save_image(fname,temp_out);
 	}
 }
@@ -5453,10 +5453,10 @@ void ns_worm_learner::input_subregion_as_new_experiment(const std::string &new_i
 		sql->send_query();
 		*sql << "INSERT INTO capture_samples SET experiment_id = " << experiment_id << ", name = '" << region_name << "', device_name='" << device_name << "', short_capture_interval=" << max_short_capture_interval << ", long_capture_interval = " << min_long_capture_interval;
 		unsigned long sample_id = sql->send_query_get_id();
-		
+
 		*sql << "INSERT INTO sample_region_image_info SET sample_id = " << sample_id << ", name='" << region_name << "'";
 		unsigned long region_info_id = sql->send_query_get_id();
-		
+
 		for (unsigned int i = 0; i < frames.size(); i++){
 			ns_image_server_captured_image captured_image;
 			captured_image.experiment_id = experiment_id;
@@ -5489,7 +5489,7 @@ void ns_worm_learner::input_subregion_as_new_experiment(const std::string &new_i
 		delete sql;
 		throw;
 	}
-	*/	
+	*/
 }
 
 
@@ -5558,7 +5558,7 @@ void make_experiment_from_dir(const std::string & filename){
 	dir.load_masked(path,".tif",filenames);
 	if (filenames.size() == 0)
 		throw ns_ex("No files found in directory ") << path;
-	
+
 	std::string experiment_name = ns_dir::extract_filename_without_extension(filename);
 	if (experiment_name.size() == 0)
 		experiment_name = "processing_experiment";
@@ -5592,7 +5592,7 @@ void ns_worm_learner::make_object_collage(){
 	draw_image(-1,-1,current_image);
 }
 void ns_output_svgs(std::vector<ns_svg> & objects,const std::string & path, const bool reject=false){
-	
+
 		ns_dir::create_directory_recursive(path);
 		for (unsigned int i = 0; i < objects.size(); i++){
 			std::string f(path + DIR_CHAR_STR);
@@ -5810,9 +5810,9 @@ void ns_worm_learner::apply_threshold(){
 	//ns_region_growing_segmenter(current_image, thresholded_image,1, 1,.5);
 	//ns_difference_thresholder(current_image, thresholded_image,70,3);
 	//thresholded_image.pump(current_image,128);
-	
+
 	ns_8_bit thresh = 1;//find_adaptive_threshold<ns_8_bit,ns_image_standard>(current_image);
-	
+
 	//ns_8_bit thresh = find_adaptive_threshold_gradient<ns_8_bit,ns_image_standard>(current_image);
 	//cout << "Final Threshold = " << (int)thresh << "\n";
 
@@ -5827,7 +5827,7 @@ void ns_worm_learner::apply_threshold(){
 	current_image.pump(bound_threshold,128);
 
 	draw_image(-1,-1,current_image);
-    
+
 }
 void ns_worm_learner::view_current_mask(){
 	if (!mask_loaded())
@@ -5847,7 +5847,7 @@ void ns_worm_learner::apply_mask_on_current_image(){
 
 	*region_splitter.mask_info() = mask_analyzer.mask_info();
 	region_splitter.specify_mask(current_mask);
-	
+
 	current_image.pump(region_splitter,4096);
 
 }
@@ -5867,7 +5867,7 @@ void ns_worm_learner::apply_spatial_average(){
 		spatial_averager_bound(spatial_averager, current_indirect,1024);
 
 	current_image.pump(spatial_averager_bound,1024);
-	
+
 	ns_crop_lower_intensity<ns_8_bit>(current_image,(ns_8_bit)ns_worm_detection_constants::get(ns_worm_detection_constant::tiff_compression_intensity_crop_value,current_image.properties().resolution));
 	//store for worm detection
 	current_image.pump(detection_spatial_median,512);
@@ -5881,13 +5881,13 @@ void ns_worm_learner::remove_large_objects(){
 	ns_close<5>(current_image,opened);
 
 	ns_detected_object_manager manager;
-	
+
 	ns_identify_contiguous_bitmap_regions(opened,manager.objects);
 	manager.constrain_region_area(ns_worm_detection_constants::get(ns_worm_detection_constant::connected_object_area_cutoff,current_image.properties().resolution),
 										opened.properties().width*opened.properties().height,
 										(unsigned int)sqrt((float)(opened.properties().width*opened.properties().width + opened.properties().height*opened.properties().height)+1));
 
-	for (unsigned int i = 0; i < manager.objects.size(); i++){		
+	for (unsigned int i = 0; i < manager.objects.size(); i++){
 		unsigned int w = manager.objects[i]->bitmap().properties().width,
 					 h = manager.objects[i]->bitmap().properties().height;
 		ns_image_bitmap & bitmap(manager.objects[i]->bitmap());
@@ -5919,11 +5919,11 @@ void ns_worm_learner::detect_and_output_objects(){
 	std::vector<ns_image_bitmap *> bmps(object_manager.objects.size());
 	for (unsigned int i = 0; i < object_manager.objects.size(); i++){
 		bmps[i] = &object_manager.objects[i]->bitmap();
-	
+
 	}
 	ns_make_collage(bmps,current_image,1024);
 	stretch_levels();
-	
+
 	draw_image(-1,-1,current_image);
 
 }
@@ -5939,7 +5939,7 @@ void ns_worm_learner::process_contiguous_regions(){
 		return;
 	}
 	if (worm_detection_results != 0)
-		delete worm_detection_results;	
+		delete worm_detection_results;
 	unsigned long start_time = ns_current_time();
 
 	if (detection_brightfield.properties().height == 0)
@@ -5950,7 +5950,7 @@ void ns_worm_learner::process_contiguous_regions(){
 	plate_image_stats.absolute_intensity_stats.calculate(detection_brightfield, false);
 	plate_image_stats.relative_intensity_stats.calculate(detection_spatial_median, true);
 
-	std::string debug_file("");		
+	std::string debug_file("");
 	worm_detection_results = worm_detector.run(0,0,detection_brightfield,thresholded_image,
 		detection_spatial_median,
 		static_mask,
@@ -5959,9 +5959,9 @@ void ns_worm_learner::process_contiguous_regions(){
 		ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_region_diagonal,current_image.properties().resolution),
 		(*model_specification)().model_specification,1000,0,debug_file,ns_detected_worm_info::ns_vis_both, plate_image_stats);
 
-	cerr << "min object size: " << 
-	ns_worm_detection_constants::get(ns_worm_detection_constant::minimum_worm_region_area,current_image.properties().resolution) << "; max object size: " << 
-		ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_worm_region_area,current_image.properties().resolution)<< "; max object diagonal: " << 
+	cerr << "min object size: " <<
+	ns_worm_detection_constants::get(ns_worm_detection_constant::minimum_worm_region_area,current_image.properties().resolution) << "; max object size: " <<
+		ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_worm_region_area,current_image.properties().resolution)<< "; max object diagonal: " <<
 		ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_region_diagonal,current_image.properties().resolution) << " model file: " << (*model_specification)().model_specification.model_name << "\n";
 
 
@@ -5978,7 +5978,7 @@ void ns_worm_learner::process_contiguous_regions(){
 	detection_spatial_median.pump(current_image,128);
 	to_color();
 	cerr << "Creating Visualization.\n";
-	
+
 	worm_detection_results->create_visualization(30,3,current_image,"", true);
 	cerr << "Drawing Image.\n";
 	draw_image(-1,-1,current_image);
@@ -5987,7 +5987,7 @@ void ns_worm_learner::process_contiguous_regions(){
 
 void ns_worm_learner::characterize_precomputed_movement(const unsigned long short_1_id, const unsigned long short_2_id, const unsigned long long_id){
 	/*ns_worm_movement_measurement_analysis_set movement_analysis;
-	
+
 	ns_sql * sql = image_server.new_sql_connection(__FILE__,__LINE__);
 	try{
 		ns_image_server_captured_image_region s1,s2,l;
@@ -6013,7 +6013,7 @@ void ns_worm_learner::characterize_precomputed_movement(const unsigned long shor
 		movement_analysis.classifier.draw_movement_map(images[0],images[1],images[2],current_image);
 		draw();
 		ns_image_standard out;
-		movement_analysis.classifier.draw_movement_shading(images[0],out,s1.display_label(),true);	
+		movement_analysis.classifier.draw_movement_shading(images[0],out,s1.display_label(),true);
 		ns_save_image("c:\\tt\\cur.jpg",out);
 		ns_save_image("c:\\tt\\posture.tif",movement_analysis.posture_visualization);
 		delete sql;
@@ -6025,7 +6025,7 @@ void ns_worm_learner::characterize_precomputed_movement(const unsigned long shor
 }
 
 void ns_worm_learner::test_image_metatadata(){
-	std::string tst; 
+	std::string tst;
 	tst.resize(256*1024);
 	for (unsigned int i = 0; i < tst.size(); i++){
 		tst[i] ='a'+i%24;
@@ -6062,7 +6062,7 @@ void ns_worm_learner::translate_f_score_file(const std::string & filename){
 		int feature;
 		in >> feature;
 		in.get();
-	
+
 	//	std::string feature;
 	//	char a;
 	//	while(true){
@@ -6098,7 +6098,7 @@ void ns_worm_learner::characterize_movement(const std::string & filename, const 
 		ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_worm_region_area,second_gray.properties().resolution),
 		ns_worm_detection_constants::get(ns_worm_detection_constant::maximum_region_diagonal,second_gray.properties().resolution),
 		*model_specification);
-	
+
 	std::vector<ns_movement_object *> first,
 								 second,
 								 third;
@@ -6111,13 +6111,13 @@ void ns_worm_learner::characterize_movement(const std::string & filename, const 
 
 		if (filename_2 ==""){
 			ns_nearest_neighbor_map nn_map;
-			
+
 			nn_map.calculate(first,second,true);
 			nn_map.draw_neighbor_map(detection_spatial_median,second_gray,current_image);
 			draw_image(-1,-1,current_image);
 		}
 		else{
-			
+
 
 			ns_image_standard third_gray;
 			load_file(filename_2,third_gray);
@@ -6133,7 +6133,7 @@ void ns_worm_learner::characterize_movement(const std::string & filename, const 
 			try{
 				for (unsigned int i = 0; i < third_results->actual_worm_list().size(); i++)
 					third.push_back(new ns_movement_worm_object(third_results->actual_worm_list()[i]));
-				
+
 				ns_worm_movement_classifier classifier;
 				classifier.calculate(first,second,third,true,&current_image);
 				classifier.draw_movement_map(detection_spatial_median,second_gray,third_gray,current_image);
@@ -6141,7 +6141,7 @@ void ns_worm_learner::characterize_movement(const std::string & filename, const 
 				classifier.draw_movement_shading(detection_spatial_median,out);
 				ns_save_image("c:\\tt\\cur.jpg",out);
 				draw_image(-1,-1,current_image);
-				
+
 			}
 			catch(...){
 				delete third_results;
@@ -6227,8 +6227,8 @@ bool ns_worm_learner::load_threshold_if_possible(const std::string & filename){
 	if (thresh.size() == 0 || !ns_dir::file_exists(thresh_full))
 		return false;
 
-	load_file(thresh_full,current_image); 
-	
+	load_file(thresh_full,current_image);
+
 	return true;
 }
 /*
@@ -6242,7 +6242,7 @@ void ns_worm_learner::get_ip_and_port_for_mask_upload(std::string & ip_address,u
 	if (res.size() == 0)
 		throw ns_ex("Could not locate remote mask server with host name ") << image_server.mask_upload_hostname;
 	if (res[0][2] != image_server.mask_upload_database)
-			throw ns_ex("To upload experiments to the mask file cluster, the mask server must be set to access the database ") 
+			throw ns_ex("To upload experiments to the mask file cluster, the mask server must be set to access the database ")
 			<< image_server.mask_upload_database << ".  Currently it is set to " << res[0][2];
 	ip_address = res[0][0];
 	port = atol(res[0][1].c_str());
@@ -6261,7 +6261,7 @@ ns_mask_info ns_worm_learner::send_mask_to_server(const ns_64_bit & sample_id){
 	mask_info.image_id = sql.send_query_get_id();
 	sql << "INSERT INTO image_masks SET image_id = " << mask_info.image_id << ", processed='0'";
 	mask_info.mask_id = sql.send_query_get_id();
-	
+
 	ns_image_server_image image;
 	image.load_from_db(mask_info.image_id, &sql);
 	bool had_to_use_local_storage;
@@ -6279,10 +6279,10 @@ ns_mask_info ns_worm_learner::send_mask_to_server(const ns_64_bit & sample_id){
 		<< "op" << (unsigned int)ns_process_analyze_mask << " = 1, time_submitted=" << ns_current_time() << ", urgent=1";
 	sql.send_query();
 	sql.send_query("COMMIT");
-	
+
 	cerr << "\nDone.\n";
 	return mask_info;
-     
+
 }
 
 void ns_worm_learner::diff_encode(const std::string & f1, const std::string & f2){
@@ -6366,16 +6366,16 @@ void ns_worm_learner::generate_training_set_image(){
 	if (!load_threshold_if_possible(current_filename))
 		two_stage_threshold();
 	process_contiguous_regions();
-	
+
 	ns_worm_training_set_image::generate(*worm_detection_results,current_image);
 	draw();
 }
 void ns_worm_learner::process_training_set_image(){
-	
+
 	ns_annotated_training_set training_set;
 	ns_worm_training_set_image::decode(current_image,training_set,false,"");
 	cerr << "Found " << training_set.worms.size() << " worms and " << training_set.non_worms.size() << " non-worms out of " << training_set.objects.size() << " objects.\n";
-	
+
 	std::vector<ns_image_standard *> worms(training_set.worms.size()),
 								non_worms(training_set.non_worms.size());
 	for (unsigned int i = 0; i < worms.size(); i++) worms[i] = &training_set.worms[i]->object.absolute_grayscale();
@@ -6395,7 +6395,7 @@ void ns_worm_learner::process_training_set_image(){
 }
 
 void ns_worm_learner::output_learning_set(const std::string & directory, const bool & process){
-		
+
 	if (process && current_filename != ""){
 		if (!load_threshold_if_possible(current_filename))
 			two_stage_threshold();
@@ -6474,7 +6474,7 @@ void ns_worm_learner::load_mask(const std::string & filename,bool draw_to_screen
 			ns_image_standard,
 			ns_image_mask_analyzer<ns_8_bit > >
 		splitter(4096);
-	
+
 	splitter.bind(current_mask, mask_analyzer);
 
 	file_source.pump(splitter,4096);
@@ -6496,7 +6496,7 @@ void ns_worm_learner::load_file(const std::string & filename){
 		current_image_lock.release();
 	}
 }
-void ns_worm_learner::save_current_image(const std::string & filename){		
+void ns_worm_learner::save_current_image(const std::string & filename){
 
 	std::string extension = ns_dir::extract_extension(filename);
 	//open jpeg
@@ -6517,7 +6517,7 @@ void ns_worm_learner::save_current_image(const std::string & filename){
 		current_image.pump(file_sink,1024);
 	}
 
-}	
+}
 
 void ns_worm_learner::draw(){
 	bool animation_state(ns_set_animation_state(false));
@@ -6542,19 +6542,19 @@ void ns_worm_learner::draw(){
 				default:
 					throw ns_ex("Unkown mode");
 			}
-		
+
 			current_image_lock.release();
 		}
 		catch(...){
-			
+
 			current_image_lock.release();
 			ns_set_animation_state(animation_state);
 			throw;
 
 		}
-		
+
 	ns_set_animation_state(animation_state);
-		
+
 //	else{
 	//	cerr << "Skipping Draw.\n";
 	//}
@@ -6576,7 +6576,7 @@ std::string ns_extract_scanner_name_from_filename(const std::string & filename){
 	unsigned int i;
 	for (i = 0; i < filename.size(); i++)
 		if (filename[i]=='=') break;
-	i++;	
+	i++;
 	//find second equals sign
 	for (; i < filename.size(); i++)
 		if (filename[i]=='=') break;
@@ -6600,9 +6600,9 @@ void ns_worm_learner::output_area_info(const std::string & filename){
 
 		out << ns_format_time_string_for_human(ns_current_time()) << ": Sample boundary specifications for the device \"" << device_name << "\" were generated from the source image " << current_clipboard_filename;
 		if (image_resolution != 0) {
-			out << "@ " << image_resolution << " dpi\n\n";	
+			out << "@ " << image_resolution << " dpi\n\n";
 		}
-		else 
+		else
 		if (image_resolution == 0){
 			out << "\n\n";
 			cerr << "Could not deduce source image resolution; assuming it is 300 dpi\n\n";
@@ -6872,7 +6872,7 @@ bool ns_worm_learner::prompt_to_save_death_time_annotations(){
 	return false;
 }
 void ns_worm_learner::save_death_time_annotations(ns_sql & sql){
-	
+
 	ns_death_time_annotation_set set;
 
 	/*if (current_behavior_mode() == ns_worm_learner::ns_annotate_storyboard_experiment ||
@@ -6889,7 +6889,7 @@ void ns_worm_learner::save_death_time_annotations(ns_sql & sql){
 			cerr << "No regions were altered.\n";
 			return;
 		}
-		
+
 		std::set<ns_64_bit>::const_iterator p = regions_altered.begin();
 		sql << "UPDATE sample_region_image_info SET "
 			<< "latest_by_hand_annotation_timestamp = UNIX_TIMESTAMP(NOW()) WHERE id = " << *p;
@@ -6928,7 +6928,7 @@ void ns_worm_learner::touch_main_window_pixel_internal(const ns_button_press & p
 				//Handle out of bounds locations
 				if (press.image_position.x < (unsigned int)c || press.image_position.x + (unsigned int)c >= w) return;
 				if (press.image_position.y < (unsigned int)c || press.image_position.y +(unsigned int)c>= h) return;
-			
+
 				switch(press.click_type){
 					case ns_button_press::ns_up:
 							area_handler.click(ns_area_handler::ns_deselect_handle,press, last_button_press,main_window.gl_buffer ,current_image,main_window.pre_gl_downsample, 1.0 / main_window.display_rescale_factor); break;
@@ -6955,12 +6955,12 @@ void ns_worm_learner::touch_main_window_pixel_internal(const ns_button_press & p
 					current_annotater->register_click(ns_vector_2i(press.image_position.x,press.image_position.y),ns_image_series_annotater::ns_censor, main_window.display_rescale_factor);
 				else
 					current_annotater->register_click(ns_vector_2i(press.image_position.x,press.image_position.y),ns_image_series_annotater::ns_load_worm_details, main_window.display_rescale_factor);
-			
+
 			}
 			break;
-		}					
-																
-			
+		}
+
+
 		case ns_worm_learner::ns_annotate_death_times_in_time_aligned_posture:
 		case ns_worm_learner::ns_annotate_death_times_in_death_aligned_posture:{
 			if (press.click_type == ns_button_press::ns_up){
@@ -6972,7 +6972,7 @@ void ns_worm_learner::touch_main_window_pixel_internal(const ns_button_press & p
 					current_annotater->register_click(ns_vector_2i(press.image_position.x,press.image_position.y),ns_image_series_annotater::ns_cycle_state, main_window.display_rescale_factor);
 			}
 			break;
-		}								
+		}
 	}
 	current_image_lock.release();
 }
@@ -7015,7 +7015,7 @@ inline ns_8_bit ns_rescale(const ns_8_bit & val,const float & f){
 void ns_worm_learner::draw_image(const double x, const double y, ns_image_standard & image){
 	float	dynamic_stretch_factor = main_window.dynamic_range_rescale_factor;
 	ns_acquire_lock_for_scope lock(main_window.display_lock,__FILE__,__LINE__);
-	
+
 	ns_image_properties new_image_size = image.properties();
 
 
@@ -7025,13 +7025,13 @@ void ns_worm_learner::draw_image(const double x, const double y, ns_image_standa
 	//it should be downsampled before being sent to the video card.
 	int resize_x = (int)floor((1.0*new_image_size.width)/maximum_window_size.x);
 	int resize_y = (int)floor((1.0*new_image_size.height)/maximum_window_size.y);
-	
+
 	if (resize_x >= resize_y)
 		main_window.pre_gl_downsample = resize_x;
 	else main_window.pre_gl_downsample = resize_y;
 	if (main_window.pre_gl_downsample < 1)
 		main_window.pre_gl_downsample = 1;
-	
+
 	new_image_size.width/=main_window.pre_gl_downsample;
 	new_image_size.height/=main_window.pre_gl_downsample;
 
@@ -7049,8 +7049,8 @@ void ns_worm_learner::draw_image(const double x, const double y, ns_image_standa
 	//cout << "gl" << 	main_window.gl_image_size.x << "," << 	main_window.gl_image_size.y << "\n ";
 
 	if (main_window.gl_buffer.properties().width != new_image_size.width || main_window.gl_buffer.properties().height != new_image_size.height){
-		
-		
+
+
 		main_window.gl_buffer.resize(ns_image_properties(new_image_size.height, new_image_size.width, 4));
 		area_handler.register_size_change(new_image_size);
 	}
@@ -7072,18 +7072,18 @@ void ns_worm_learner::draw_image(const double x, const double y, ns_image_standa
 					main_window.gl_buffer(_x, _y)[2] = ns_rescale(image[image.properties().height-1 - _y*main_window.pre_gl_downsample ][_x*main_window.pre_gl_downsample],dynamic_stretch_factor);
 				main_window.gl_buffer(_x, _y)[3] = 255;
 			}
-		}		
+		}
 	}
 	area_handler.draw_boxes(main_window.gl_buffer ,image.properties(),main_window.pre_gl_downsample,1.0/main_window.display_rescale_factor);
 
 	//now we handle the gl scaling
-	if (main_window.display_rescale_factor <= 1 && 
+	if (main_window.display_rescale_factor <= 1 &&
 		(main_window.gl_image_size.x*main_window.display_rescale_factor > this->maximum_window_size.x ||
 		main_window.gl_image_size.y*main_window.display_rescale_factor > this->maximum_window_size.y)){
 		cerr << "Cannot resize, as the current window has hit the maximum size specified in the ns_worm_browser.ini file\n";
 		main_window.display_rescale_factor = floor(min(maximum_window_size.x/(double)main_window.gl_image_size.x,
 												maximum_window_size.y/(double)main_window.gl_image_size.y)*10)/10;
-	
+
 	}
 
 	lock.release();
@@ -7111,7 +7111,7 @@ void ns_worm_learner::draw_worm_window_image(ns_image_standard & image){
 
 	new_image_size.width/=worm_window.pre_gl_downsample;
 	new_image_size.height/=worm_window.pre_gl_downsample;
-	
+
 
 	ns_vector_2i buffer_size(new_image_size.width + telemetry_size.x,
 				 (new_image_size.height > telemetry_size.y) ?
@@ -7142,7 +7142,7 @@ void ns_worm_learner::draw_worm_window_image(ns_image_standard & image){
 		worm_window.telemetry_size = ns_vector_2i(
 		(unsigned int)floor(telemetry_size.x*gl_resize),
 		(unsigned int)floor(telemetry_size.y*gl_resize));
-	
+
 	worm_window.worm_image_size = ns_vector_2i(
 		(unsigned int)floor(new_image_size.width*gl_resize),
 		(unsigned int)floor(new_image_size.height*gl_resize));
@@ -7152,7 +7152,7 @@ void ns_worm_learner::draw_worm_window_image(ns_image_standard & image){
 	//cerr << "Draw requests a worm window size of " << worm_window.image_size << "\n";
 
 	if (worm_window.gl_buffer.properties().width != buffer_size.x || worm_window.gl_buffer.properties().height != buffer_size.y){
-			
+
 		worm_window.gl_buffer.resize(ns_image_properties(buffer_size.y, buffer_size.x, 3));
 
 	}
@@ -7169,7 +7169,7 @@ void ns_worm_learner::draw_worm_window_image(ns_image_standard & image){
 					image[(image.properties().height - 1 - _y*worm_window.pre_gl_downsample)][3 * _x*worm_window.pre_gl_downsample+c];
 				worm_window.gl_buffer(_x,_y)[3] = 255;
 			}
-	
+
 		}
 		//copy over the bottom area of the image (which contains the image of the worm)
 	for (int _y = worm_image_height; _y < new_image_size.height; _y++) {
@@ -7187,12 +7187,12 @@ void ns_worm_learner::draw_worm_window_image(ns_image_standard & image){
 			worm_window.gl_buffer(_x,_y)[0] = worm_window.gl_buffer(_x, _y)[1] = worm_window.gl_buffer(_x, _y)[2] = 0;
 			worm_window.gl_buffer(_x, _y)[3] = 255;
 		}
-	
+
 	//	cout << "("<< image.properties().height << "," << image.properties().width << ")\n";
 	}
 	//b&w images
 	else if (image.properties().components == 1){
-		throw ns_ex("Err!");
+		throw ns_ex("ns_worm_learner::draw_worm_window_image()::Encountered a black and white image");
 	}
 
 
@@ -7209,14 +7209,14 @@ void ns_worm_learner::draw_worm_window_image(ns_image_standard & image){
 
 	if (death_time_solo_annotater.telemetry.show()) {
 		try {
-		 
+
 			death_time_solo_annotater.load_movement_quantification_if_needed(0);
 
 			const unsigned long side_border(ns_death_time_solo_posture_annotater_timepoint::ns_side_border_width * ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor);
 			if (death_time_solo_annotater.draw_position_overlay_to_screen)
 			death_time_solo_annotater.draw_position_overlay(ns_vector_2i(side_border,side_border),ns_vector_2i(image.properties().width,image.properties().height),
 				worm_window.display_rescale_factor, worm_window.gl_buffer);
-		
+
 			death_time_solo_annotater.draw_telemetry(ns_vector_2i(new_image_size.width, 0),
 				death_time_solo_annotater.telemetry_size(), worm_window.display_rescale_factor,worm_window.gl_buffer);
 
@@ -7227,15 +7227,15 @@ void ns_worm_learner::draw_worm_window_image(ns_image_standard & image){
 						worm_window.gl_buffer(_x, worm_window.gl_buffer.properties().height-1-_y)[c] = 0;
 					worm_window.gl_buffer(_x, worm_window.gl_buffer.properties().height - 1 - _y)[3] = 255;
 				}
-		
+
 	//		death_time_solo_annotater.draw_registration_debug(ns_vector_2i(new_prop.width, death_time_solo_annotater.telemetry.image_size().y),
 		//		ns_vector_2i(worm_window.gl_buffer_properties.width,
 			//		worm_window.gl_buffer_properties.height),
 				//worm_window.gl_buffer);
-		
+
 		}
 		catch (ns_ex & ex) {
-			for (int _y = 0; _y < worm_window.gl_buffer.properties().height; _y++) 
+			for (int _y = 0; _y < worm_window.gl_buffer.properties().height; _y++)
 				for (unsigned int _x = new_image_size.width; _x < worm_window.gl_buffer.properties().width; _x++) {
 					for (int c = 0; c < 3; c++)
 						worm_window.gl_buffer(_x, _y)[c] = 0;
@@ -7243,7 +7243,7 @@ void ns_worm_learner::draw_worm_window_image(ns_image_standard & image){
 				}
 			cout << "Error while drawing telemetry: " << ex.text();
 		}
-		
+
 	}
 
 	lock.release();
@@ -7296,8 +7296,8 @@ void ns_worm_learner::draw_stats_window_image() {
 
 	}
 	const unsigned long worm_image_height = (new_image_size.height - 1) / stats_window.pre_gl_downsample;
-	
-	
+
+
 	try {
 
 		storyboard_annotater.population_telemetry.draw(ns_population_telemetry::ns_movement_vs_posture,ns_vector_2i(0, 0),
@@ -7310,10 +7310,10 @@ void ns_worm_learner::draw_stats_window_image() {
 	}
 	catch (ns_ex& ex) {
 		for (int _y = 0; _y < stats_window.gl_buffer.properties().height; _y++)
-			for (unsigned int _x = 0; _x < stats_window.gl_buffer.properties().width; _x++) 
+			for (unsigned int _x = 0; _x < stats_window.gl_buffer.properties().width; _x++)
 				for (unsigned int c = 0; c < 3; c++)
 					stats_window.gl_buffer(_x,_y)[c] = 0;
-			
+
 		cout << "Error while drawing population telemetry: " << ex.text();
 	}
 
@@ -7365,8 +7365,8 @@ struct ns_thermometer_measurement_data{
 class ns_thermometer_image_processor{
 public:
 	void specificy_masked_image(const ns_image_standard & im){
-		temperature_region_position = 
-			normalization_region_position = 
+		temperature_region_position =
+			normalization_region_position =
 				ns_vector_2i(im.properties().width,im.properties().height);
 		ns_vector_2i temperature_t(0,0),
 					 normalization_t(0,0);
@@ -7395,7 +7395,7 @@ public:
 		temperature_region_size = temperature_t - temperature_region_position +ns_vector_2i(1,1);
 		normalization_region_size = normalization_t - normalization_region_position +ns_vector_2i(1,1);
 	}
-	void specificy_reference_temperature_image(const double absolute_temperature,ns_image_standard & im){		
+	void specificy_reference_temperature_image(const double absolute_temperature,ns_image_standard & im){
 		calibration_point = calculate_thermometer_measurement_data(im);
 		calibration_point_temperature = absolute_temperature;
 	}
@@ -7436,7 +7436,7 @@ private:
 									differential_point_high;
 	double calibration_point_temperature,
 		   differential_temperature;
-	
+
 	ns_vector_2i temperature_region_position,
 				 temperature_region_size;
 	ns_vector_2i normalization_region_position,
@@ -7532,7 +7532,7 @@ public:
 			measurement.set_problem(ex);
 		}
 		return measurement.temperature;
-	
+
 	}
 	void estimate_temperatures(ns_sql & sql){
 		cerr << "Estimating Temperature...";
@@ -7560,7 +7560,7 @@ void ns_worm_learner::draw_animation(const double &t){
 
 			//	ns_vector_2i pos(main_window.gl_buffer_properties.width-animation.properties().width-1 - offset*(1.0+sin(4*t)),
 			//					main_window.gl_buffer_properties.height-animation.properties().height - 2*offset - 1 + offset*(1.0+cos(4*t)));
-								
+
 				for (unsigned int y = 1; y < animation.properties().height-1; y++){
 					for (unsigned x = 1; x < animation.properties().width-1; x++){
 						for (unsigned c = 0; c < 3; c++)
@@ -7597,7 +7597,7 @@ void check_gl_err() {
 	{
 		switch (err) {
 		case GL_INVALID_ENUM: cerr << "OpenGL error: Invalid enum"; break;
-		case GL_INVALID_VALUE: 
+		case GL_INVALID_VALUE:
 			cerr << "OpenGL error: Invalid value"; break;
 		case GL_INVALID_OPERATION: cerr << "OpenGL error: Invalid operation"; break;
 		case GL_STACK_OVERFLOW: cerr << "OpenGL error: Stack Overflow"; break;
@@ -7665,8 +7665,8 @@ void ns_gl_window_data::update_display(long x, long y) {
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		//glPixelZoom(image_zoom * display_rescale_factor, image_zoom * display_rescale_factor);
 		//glColor3f(0.5f, 0.0f, 1.0f);
-		glBegin(GL_QUADS);           
-		glTexCoord2f(0.0f, 0.0f);		glVertex3f(0.0f, 0.0f,0);  
+		glBegin(GL_QUADS);
+		glTexCoord2f(0.0f, 0.0f);		glVertex3f(0.0f, 0.0f,0);
 		glTexCoord2f(1, 0.0f);	glVertex3f(x, 0,0);
 		glTexCoord2f(1, 1);	glVertex3f(x, y,0);
 		glTexCoord2f(0.0f, 1);	glVertex3f(0.0f, y,0);
@@ -7675,7 +7675,7 @@ void ns_gl_window_data::update_display(long x, long y) {
 		cerr << "Done.";
 		*/
 
-		
+
 		//glDeleteTextures(1, &texture[0]);
 		/*
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -7685,7 +7685,7 @@ void ns_gl_window_data::update_display(long x, long y) {
 	//glPixelStorei(GL_PACK_ALIGNMENT, 1);
 
 	glDrawPixels(gl_buffer_properties.width, gl_buffer_properties.height, GL_RGBA, GL_UNSIGNED_BYTE, gl_buffer);
-	
+
 	#ifndef MESA
 	glDrawBuffer(GL_BACK);
 	#endif */
@@ -7775,7 +7775,7 @@ void ns_experiment_storyboard_annotater::load_from_storyboard(const ns_region_me
 		sql().get_rows(res);
 		if (res.size() == 0)
 			throw ns_ex("ns_experiment_storyboard_annotater::load_from_storyboard()::Could not find region");
-		
+
 		excluded_regions[spec.region_id] = res[0][0] != "0";
 		strain_to_display.region_id = spec.region_id;
 		if (strain_to_display.experiment_id == 0)
@@ -7880,14 +7880,14 @@ bool ns_worm_learner::start_death_time_annotation(const ns_behavior_mode m, cons
 	//if (this->behavior_mode ==	ns_annotate_storyboard_region ||
 	//	this->behavior_mode == ns_annotate_storyboard_sample ||
 	//	this->behavior_mode == ns_annotate_storyboard_experiment){
-	
+
 	current_storyboard_flavor = f;
 	current_annotater = &storyboard_annotater;
 	area_handler.clear_boxes();
 	try{
 	  ns_acquire_lock_for_scope lock(storyboard_lock,__FILE__,__LINE__);
-		if (m == ns_worm_learner::ns_annotate_storyboard_region || 
-			m == ns_worm_learner::ns_annotate_storyboard_sample || 
+		if (m == ns_worm_learner::ns_annotate_storyboard_region ||
+			m == ns_worm_learner::ns_annotate_storyboard_sample ||
 			m == ns_worm_learner::ns_annotate_storyboard_experiment){
 				storyboard_annotater.clear();
 
@@ -7921,7 +7921,7 @@ bool ns_worm_learner::start_death_time_annotation(const ns_behavior_mode m, cons
 				ns_experiment_storyboard_annotater::ns_censor_masking c2;
 
 				c2 = (ns_experiment_storyboard_annotater::ns_censor_masking)((int)c);
-				
+
 				storyboard_annotater.load_from_storyboard(metadata,c2,subject,this, main_window.display_rescale_factor);
 				if (image_server.verbose_debug_output())
 					image_server_const.register_server_event_no_db(ns_image_server_event("Finished Loading"));
@@ -8129,11 +8129,11 @@ void ns_worm_learner::navigate_solo_worm_annotation(ns_death_time_solo_posture_a
 			else
 				ns_update_worm_information_bar(ns_to_string_short(death_time_solo_annotater.telemetry_zoom_factor, 1) + "x zoom");
 			break;
-		case ns_death_time_solo_posture_annotater::ns_forward: 
+		case ns_death_time_solo_posture_annotater::ns_forward:
 			if(death_time_solo_annotater.step_forward(ns_hide_worm_window, worm_window.display_rescale_factor,asynch))
 				death_time_solo_annotater.request_refresh();// report_changes_made_to_screen();
 			break;
-		case ns_death_time_solo_posture_annotater::ns_back:	
+		case ns_death_time_solo_posture_annotater::ns_back:
 			if(death_time_solo_annotater.step_back(&ns_hide_worm_window, worm_window.display_rescale_factor,asynch))
 				death_time_solo_annotater.request_refresh();// report_changes_made_to_screen();
 			break;
@@ -8141,7 +8141,7 @@ void ns_worm_learner::navigate_solo_worm_annotation(ns_death_time_solo_posture_a
 		case ns_death_time_solo_posture_annotater::ns_fast_back:	death_time_solo_annotater.fast_back();break;
 		case ns_death_time_solo_posture_annotater::ns_stop: death_time_solo_annotater.stop_fast_movement();break;
 		case ns_death_time_solo_posture_annotater::ns_rewind_to_zero: break;
-		case ns_death_time_solo_posture_annotater::ns_step_visualization: 
+		case ns_death_time_solo_posture_annotater::ns_step_visualization:
 			solo_annotation_visualization_type = death_time_solo_annotater.step_visualization_type(0,worm_window.display_rescale_factor);
 
 			ns_update_worm_information_bar(string("Rendering ") + ns_death_time_solo_posture_annotater_timepoint::visulazation_type_string(solo_annotation_visualization_type));
@@ -8158,7 +8158,7 @@ void ns_worm_learner::navigate_solo_worm_annotation(ns_death_time_solo_posture_a
 			//death_time_solo_annotater.display_current_frame();
 			//death_time_solo_annotater.request_refresh(); //report_changes_made_to_screen();
 			break;
-		case ns_death_time_solo_posture_annotater::ns_write_quantification_to_disk: 
+		case ns_death_time_solo_posture_annotater::ns_write_quantification_to_disk:
 			death_time_solo_annotater.register_click(ns_vector_2i(0,0),ns_death_time_solo_posture_annotater::ns_output_images, worm_window.display_rescale_factor);
 			break;
 
@@ -8174,7 +8174,7 @@ void ns_worm_learner::navigate_solo_worm_annotation(ns_death_time_solo_posture_a
 			subject.region_id = region_id;
 
 			ns_image_server_results_file results((image_server.results_storage.time_path_image_analysis_quantification(subject, std::string("hmm_path=") + "_animal_" + ns_to_string(death_time_solo_annotater.current_worm_id.group_id), true, sql,false,false,ns_csv)));
-			
+
 			ns_acquire_for_scope<ns_ostream>  path_stats_output(results.output());
 			if (path_stats_output()().fail()) {
 				std::cout << "Could not open " << results.output_filename() << " for output\n";
@@ -8222,15 +8222,15 @@ void ns_throw_error(){
 }
 
 void ns_worm_learner::navigate_death_time_annotation(ns_image_series_annotater::ns_image_series_annotater_action action, bool asynch){
-	
+
 	switch(action){
 		case ns_image_series_annotater::ns_none: break;
-		case ns_image_series_annotater::ns_forward: 
+		case ns_image_series_annotater::ns_forward:
 			if (current_annotater->step_forward(ns_throw_error, worm_window.display_rescale_factor, asynch)) {
 				current_annotater->request_refresh(); //report_changes_made_to_screen();
 			}
 			break;
-		case ns_image_series_annotater::ns_back:	
+		case ns_image_series_annotater::ns_back:
 			if (current_annotater->step_back(ns_throw_error, worm_window.display_rescale_factor, asynch)) {
 				current_annotater->request_refresh(); //report_changes_made_to_screen();
 			}
@@ -8253,15 +8253,15 @@ void ns_worm_learner::navigate_death_time_annotation(ns_image_series_annotater::
 void ns_worm_learner::output_distributions_of_detected_objects(const std::string &directory){
 	if (worm_detection_results == 0)
 		throw ns_ex("No results have been calculated");
-	
 
-	
+
+
 
 	 const std::vector<const ns_detected_worm_info *> &worms(worm_detection_results->actual_worm_list());
 
 	 const std::vector<const ns_detected_worm_info *> &non_worms(worm_detection_results->non_worm_list());
 
-	 
+
 	 std::vector<ns_detected_worm_stats> worm_stats(worms.size());
 	 std::vector<ns_detected_worm_stats> non_worm_stats(non_worms.size());
 
@@ -8274,7 +8274,7 @@ void ns_worm_learner::output_distributions_of_detected_objects(const std::string
 	out << "absolute," << plate_image_stats.absolute_intensity_stats.minimum_intensity << "," << plate_image_stats.absolute_intensity_stats.average_intensity << "," << plate_image_stats.absolute_intensity_stats.maximum_intensity << "\n";
 	out << "relative," << plate_image_stats.relative_intensity_stats.minimum_intensity << "," << plate_image_stats.relative_intensity_stats.average_intensity << "," << plate_image_stats.relative_intensity_stats.maximum_intensity << "\n";
 	out.close();
-	
+
 	ns_detected_worm_stats::draw_feature_frequency_distributions(worm_stats, non_worm_stats,current_filename,directory);
 }
 
@@ -8288,7 +8288,7 @@ bool ns_a_is_above_or_left_of_b(const ns_vector_2i &a,const ns_vector_2i & b,int
 }
 
 ns_worm_learner::~ns_worm_learner(){
-  
+
   ns_safe_delete(worm_detection_results);
   model_specifications.resize(0);
 	ns_acquire_lock_for_scope lock(persistant_sql_lock, __FILE__, __LINE__);
@@ -8303,23 +8303,23 @@ void ns_worm_learner::train_from_data(const std::string & base_dir){
 	}
 	ns_sql& sql(get_sql_connection());
 	training_file_generator.generate_from_curated_set(base_dir,true,&sql);
-	
+
 }
 const ns_svm_model_specification & ns_worm_learner::get_svm_model_specification(){
-	if (model_specification == 0 || !model_specification->is_valid() || *model_specification == this->default_model) 
+	if (model_specification == 0 || !model_specification->is_valid() || *model_specification == this->default_model)
 		throw ns_ex("Error: No worm detection model specified");
-	
+
 	return (*model_specification)().model_specification;
 }
 
 extern ns_worm_learner worm_learner;
 
 void ns_area_handler::undraw_all_boxes(ns_tiled_gl_image & buffer, const ns_image_standard & background, const unsigned long image_scaling, const double pixel_scaling) const {
-	for (std::vector<ns_area_box>::const_iterator b = boxes.begin(); b != boxes.end(); b++) 
+	for (std::vector<ns_area_box>::const_iterator b = boxes.begin(); b != boxes.end(); b++)
 		remove_box_from_screen_buffer(b, buffer, background, image_scaling, pixel_scaling);
 }
 void ns_area_handler::click(const ns_handle_action & action, const ns_button_press & current_locations, ns_button_press & drag_start_locations, ns_tiled_gl_image & screen_buffer, const ns_image_standard & background,const unsigned long image_scaling, const double pixel_scaling){
-	
+
 	if (last_pixel_scaling != pixel_scaling) {
 		undraw_all_boxes(screen_buffer, background, image_scaling, last_pixel_scaling);
 		for (std::vector<ns_area_box>::iterator b = boxes.begin(); b != boxes.end(); b++) {
@@ -8327,7 +8327,7 @@ void ns_area_handler::click(const ns_handle_action & action, const ns_button_pre
 			b->screen_coords.bottom_right = (b->screen_coords.bottom_right*last_pixel_scaling)/pixel_scaling;
 		}
 		draw_boxes(screen_buffer, background.properties(), image_scaling, pixel_scaling);
-	}	
+	}
 	last_pixel_scaling = pixel_scaling;
 	switch(action){
 		case ns_deselect_handle:{
@@ -8348,7 +8348,7 @@ void ns_area_handler::click(const ns_handle_action & action, const ns_button_pre
 						return;
 					}
 					else if ( !(b->screen_coords.bottom_right == ns_vector_2i(-1,-1)) && (b->screen_coords.bottom_right - current_locations.screen_position).mag() <  pixel_scaling * 4){
-						
+
 					//	cerr << "Removing Top Corner " << "\n";
 						remove_box_from_screen_buffer(b,screen_buffer,background,image_scaling,pixel_scaling);
 						b->image_coords.bottom_right = ns_vector_2i(-1,-1);
@@ -8400,7 +8400,7 @@ void ns_area_handler::click(const ns_handle_action & action, const ns_button_pre
 				cur_box_handle = contact_location;
 				return;
 			}
-							  
+
 			//If we haven't selected an existing point, make a new one.
 			if (!selected_box_exists){
 				//if we have an unfinished box, finish it
@@ -8433,9 +8433,9 @@ void ns_area_handler::click(const ns_handle_action & action, const ns_button_pre
 					selected_box_exists = true;
 					unfinished_box_exists = true;
 				}
-			}			
+			}
 			draw_boxes(screen_buffer,background.properties(),image_scaling,pixel_scaling);
-			
+
 			worm_learner.main_window.redraw_screen();
 			return;
 		 }
@@ -8445,9 +8445,9 @@ void ns_area_handler::click(const ns_handle_action & action, const ns_button_pre
 			moved_since_last_click = true;
 			remove_box_from_screen_buffer(selected_box,screen_buffer,background,image_scaling,pixel_scaling);
 			selected_box->assign_and_correct_inversions(cur_box_handle, current_locations.screen_position, current_locations.image_position);
-		
+
 			draw_boxes(screen_buffer,background.properties(),image_scaling,pixel_scaling);
-			
+
 			worm_learner.main_window.redraw_screen();
 			break;
 		}
@@ -8484,7 +8484,7 @@ void ns_area_handler::click(const ns_handle_action & action, const ns_button_pre
 		}
 
 	}
-	
+
 }
 void ns_area_handler::output_boxes(ostream & out, const string &device_name, const float & resolution, const string & units){
 	for (unsigned int i = 0; i < boxes.size(); i++){
@@ -8552,7 +8552,7 @@ void ns_area_handler::draw_boxes(ns_tiled_gl_image & screen_buffer,const ns_imag
 	const unsigned int h(properties.height),
 		w(properties.width),
 		c(properties.components);
-		
+
 	const int px(2*ceil(pixel_scaling));
 	const long yo(properties.height - 1);
 	for (unsigned int i = 0; i < boxes.size(); i++){
@@ -8566,7 +8566,7 @@ void ns_area_handler::draw_boxes(ns_tiled_gl_image & screen_buffer,const ns_imag
 		}
 
 		if (boxes[i].image_coords.bottom_right == ns_vector_2i(-1,-1)){
-			
+
 			for (unsigned int y = a.y; y + px < h; y+=2*px){
 				for (unsigned int y_ = 0; y_ < px; y_++){
 					for (unsigned int x = 0; x < px; x++){
@@ -8613,7 +8613,7 @@ void ns_area_handler::draw_boxes(ns_tiled_gl_image & screen_buffer,const ns_imag
 					}
 				}
 			}
-		
+
 		}
 	}
 }
@@ -8621,7 +8621,7 @@ void ns_area_handler::draw_boxes(ns_tiled_gl_image & screen_buffer,const ns_imag
 void ns_gl_tile::upload() {
 	//duplicate first row
 	for (unsigned int y = 0; y < border; y++)
-		for (unsigned int x = 4; x < 4 * tile_x - 4; x++) 
+		for (unsigned int x = 4; x < 4 * tile_x - 4; x++)
 			buffer[4*y*tile_x+x] = buffer[4 * border*tile_x + x];
 
 	//duplate left and right rows
@@ -8679,7 +8679,7 @@ void ns_tiled_gl_image::draw(long image_w, long image_h) const {
 		glTexCoord2f(1, 1);			glVertex3f(t_pos_x + t_w, t_pos_y + t_h, i / (float)buffers.size());
 		glTexCoord2f(0.0f, 1);		glVertex3f(t_pos_x - t_overlap_x, t_pos_y+ t_h, i / (float)buffers.size());
 		*/
-		
+
 		glBindTexture(GL_TEXTURE_2D, buffers[i].texture);
 		glBegin(GL_QUADS);
 		glTexCoord2f(t_dx, t_dy);	glVertex3f((t_pos_x), (t_pos_y), 0);
@@ -8691,12 +8691,12 @@ void ns_tiled_gl_image::draw(long image_w, long image_h) const {
 }
 
 void ns_area_handler::remove_box_from_screen_buffer(const std::vector<ns_area_box>::const_iterator cur_box,ns_tiled_gl_image & screen_buffer, const ns_image_standard & background,const unsigned long image_scaling,const double pixel_scaling) const{
-	
+
 	ns_vector_2i a(cur_box->image_coords.top_left/image_scaling),
 				 b(cur_box->image_coords.bottom_right/image_scaling);
 
 
-	ns_image_properties properties(background.properties());	
+	ns_image_properties properties(background.properties());
 	properties.width/=image_scaling;
 	properties.height/=image_scaling;
 	const unsigned int h(properties.height),
@@ -8734,7 +8734,7 @@ void ns_area_handler::remove_box_from_screen_buffer(const std::vector<ns_area_bo
 				screen_buffer(a.x + x, yo - y)[0] =background[image_scaling*y][3*image_scaling*a.x];
 				screen_buffer(a.x + x, yo - y)[1] = background[image_scaling*y][3*image_scaling*a.x+1];
 				screen_buffer(a.x + x, yo - y)[2] = background[image_scaling*y][3*image_scaling*a.x+2];
-						
+
 				screen_buffer(b.x + x, yo - y)[0] = background[image_scaling*y][3*image_scaling*b.x];
 				screen_buffer(b.x + x, yo - y)[1] = background[image_scaling*y][3*image_scaling*b.x+1];
 				screen_buffer(b.x + x, yo - y)[2] = background[image_scaling*y][3*image_scaling*b.x+2];
@@ -8745,7 +8745,7 @@ void ns_area_handler::remove_box_from_screen_buffer(const std::vector<ns_area_bo
 					screen_buffer(x, yo - (a.y+y))[0] = background[image_scaling*a.y][3*image_scaling*x];
 					screen_buffer(x, yo - (a.y + y))[1] = background[image_scaling*a.y][3*image_scaling*x+1];
 					screen_buffer(x, yo - (a.y + y))[2] = background[image_scaling*a.y][3*image_scaling*x+2];
-						
+
 					screen_buffer(x, yo - (b.y + y))[0] = background[image_scaling*b.y][3*image_scaling*x];
 					screen_buffer(x, yo - (b.y + y))[1] = background[image_scaling*b.y][3*image_scaling*x+1];
 					screen_buffer(x, yo - (b.y + y))[2] = background[image_scaling*b.y][3*image_scaling*x+2];
@@ -8776,7 +8776,7 @@ void ns_area_handler::remove_box_from_screen_buffer(const std::vector<ns_area_bo
 					screen_buffer(a.x + x, yo - y)[0] = background[image_scaling*y][image_scaling*a.x];
 					screen_buffer(a.x + x, yo - y)[1] = background[image_scaling*y][image_scaling*a.x];
 					screen_buffer(a.x + x, yo - y)[2] = background[image_scaling*y][image_scaling*a.x];
-								
+
 					screen_buffer(b.x + x, yo - y)[0] = background[image_scaling*y][image_scaling*b.x];
 					screen_buffer(b.x + x, yo - y)[1] = background[image_scaling*y][image_scaling*b.x];
 					screen_buffer(b.x + x, yo - y)[2] = background[image_scaling*y][image_scaling*b.x];
@@ -8796,7 +8796,7 @@ void ns_area_handler::remove_box_from_screen_buffer(const std::vector<ns_area_bo
 	}
 }
 void ns_region_growing_segmenter(const ns_image_standard & input, ns_image_standard & output, const unsigned int weak_edge_threshold, const double common_edge_threshold1, const double common_edge_threshold2){
-	
+
 	const unsigned long w(input.properties().width);
 	const unsigned long h(input.properties().height);
 
@@ -8814,7 +8814,7 @@ void ns_region_growing_segmenter(const ns_image_standard & input, ns_image_stand
 	for (unsigned int x = 0; x < w/2; x++){
 		regions[x].outside_image_edge_perimeter+=2;
 		regions[regions.size()-1-x].outside_image_edge_perimeter+=2;
-	}	
+	}
 	//add left and right image edge sizes
 	for (unsigned int y = 0; y < h/2; y++){
 		regions[y*init_regions_per_row].outside_image_edge_perimeter+=2;
@@ -8844,7 +8844,7 @@ void ns_region_growing_segmenter(const ns_image_standard & input, ns_image_stand
 				(*neighbor)[s]->push_back(ns_pixel_coord(x,y+1,ns_vertical));
 				//set left edge as neighbor's right edge
 				regions[region_id-1].edges[region_id].pixels.push_back((*neighbor)[s]);
-			}		
+			}
 			if (y != 0){
 				//add top neighbor edge to current region
 				std::vector<ns_pixel_set *> * neighbor = &regions[region_id].edges[region_id-init_regions_per_row].pixels;
@@ -8863,7 +8863,7 @@ void ns_region_growing_segmenter(const ns_image_standard & input, ns_image_stand
 	if (w%2 == 1){
 		for (unsigned int y = 0; y < h; y++)
 			regions[init_regions_per_row*(y/2+1)-1].pixels[0]->push_back(ns_pixel_coord(w-1,y));
-	}	
+	}
 	//make bottom columns 3x3 if needed
 	if (h%2 == 1){
 		for (unsigned int x = 0; x < w; x++)
@@ -8903,7 +8903,7 @@ void ns_region_growing_segmenter(const ns_image_standard & input, ns_image_stand
 							min_perim = neighbor_perim;
 						//if (i == 13+init_regions_per_row*14)
 						//	cerr << "p->second.length(): " << p->second.length() << " min_perim: " << min_perim << "\n";
-					
+
 						//if ((double)p->second.number_of_weak_pixels / (double)min_perim >= common_edge_threshold1){
 						//if ((double)p->second.number_of_weak_pixels / (double)p->second.length() >= common_edge_threshold1){
 							if (abs((int)((int)regions[p->first].total_intensity/regions[p->first].area - (int)regions[i].total_intensity/regions[i].area)) < 40){
@@ -8917,7 +8917,7 @@ void ns_region_growing_segmenter(const ns_image_standard & input, ns_image_stand
 						}
 						else p++;
 						edge++;
-					//}	
+					//}
 				}
 			if (count == 1000){
 				count = 0;
@@ -8925,7 +8925,7 @@ void ns_region_growing_segmenter(const ns_image_standard & input, ns_image_stand
 			}
 			count++;
 		}
-		
+
 		unsigned long reg_left = 0;
 		for (unsigned int i = 0; i < regions.size(); i++)
 			if (!regions[i].deleted)
@@ -8933,7 +8933,7 @@ void ns_region_growing_segmenter(const ns_image_standard & input, ns_image_stand
 
 		cout << "Regions left after round " << round_number << " merging: " << reg_left << "\n";
 		round_number++;
-		
+
 	}
 
 	std::vector<ns_region *> non_zero_regions;
@@ -9149,13 +9149,13 @@ void ns_death_time_solo_posture_annotater::draw_position_overlay(const ns_vector
 			if (pos.x == -1 ||
 				pos.x < 1 || pos.x+1 >= image_size.x ||
 				pos.y < 1 || pos.y+1 >= image_size.y)
-				continue; 
+				continue;
 			for (long y = -2; y < 2; y++)
 				for (long x = -2; x < 2; x++)
 					for (unsigned int c = 0; c < 3; c++)
 						buffer(position.x + (pos.x+x) , image_size.y - 1 - position.y - (pos.y+y) )[c] = color[c];
 		}
-	
+
 		if (current_element_id() <= last_vigorous_movement_element_id) {
 			color[0] = 255;
 			color[1] = 100;
@@ -9166,7 +9166,7 @@ void ns_death_time_solo_posture_annotater::draw_position_overlay(const ns_vector
 			color[1] = 100;
 			color[2] = 255;
 		}
-		
+
 		if (worm_center.x != -1 &&
 			worm_center.x >= 3 && worm_center.x + 3 < image_size.x &&
 			worm_center.y >= 3 && worm_center.y + 3 < image_size.y) {
@@ -9189,9 +9189,9 @@ void ns_death_time_solo_posture_annotater::draw_position_overlay(const ns_vector
 					buffer(position.x + (worm_center.x + x) , image_size.y - 1 - position.y - (worm_center.y +5) )[c] = 0;
 
 		}
-	
-		
-		
+
+
+
 	}
 	catch (ns_ex & ex) {
 		std::cerr << "Could not draw position overlay: " << ex.text();
@@ -9208,9 +9208,9 @@ void ns_death_time_solo_posture_annotater::draw_telemetry(const ns_vector_2i & p
 		cerr << "Weird telemetry zoom factor: " << telemetry_zoom_factor << "\n";
 		telemetry_zoom_factor = max_zoom_factor;
 	}
-	const unsigned long path_start_time = timepoints.begin()->path_timepoint_element->absolute_time, 
+	const unsigned long path_start_time = timepoints.begin()->path_timepoint_element->absolute_time,
 					    path_stop_time = timepoints.rbegin()->path_timepoint_element->absolute_time;
-	
+
 
 	const unsigned long time_block_resolution = (path_stop_time - path_start_time) / 25;
 	ns_death_time_posture_solo_annotater_data_cache_storage::handle_t handle;
@@ -9237,7 +9237,7 @@ void ns_death_time_solo_posture_annotater::draw_telemetry(const ns_vector_2i & p
 	if (stop_time > path_stop_time)stop_time = path_stop_time;
 	if (start_time < path_start_time)start_time = path_start_time;
 	telemetry.draw(graph_contents, current_timepoint_id, position, graph_size, ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor/ rescale_factor,buffer,start_time,stop_time);
-	
+
 	if (image_server.verbose_debug_output()) image_server.register_server_event_no_db(ns_image_server_event("Done with telemetry."));
 }
 
@@ -9278,7 +9278,7 @@ void ns_death_time_solo_posture_annotater::register_click(const ns_vector_2i & i
 
 	const unsigned long hand_bar_height(
 		(cur_hand_data->animals.size() + 1)*ns_death_time_solo_posture_annotater_timepoint::ns_movement_bar_height*ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor);
-	
+
 	ns_vector_2i graph_tl(worm_learner->worm_window.worm_image_size.x, 0);
 	ns_vector_2i graph_br = graph_tl + telemetry_size();
 
@@ -9287,7 +9287,7 @@ void ns_death_time_solo_posture_annotater::register_click(const ns_vector_2i & i
 
 	const bool click_in_bar_area(image_position.y  >= hand_bar_group_bottom &&
 		image_position.y  < hand_bar_group_bottom + hand_bar_height);
-	
+
 	bool change_made = false;
 	bool click_handled_by_hand_bar_choice(false);
 
@@ -9355,7 +9355,7 @@ void ns_death_time_solo_posture_annotater::register_click(const ns_vector_2i & i
 		case ns_time_zoom_out:
 				telemetry_zoom_factor /= 1.2;
 				if (telemetry_zoom_factor < 1){
-					telemetry_zoom_factor = 1;	
+					telemetry_zoom_factor = 1;
 					ns_update_worm_information_bar(string("Can't zoom in any more than 1x "));
 					}
 				else
@@ -9371,7 +9371,7 @@ void ns_death_time_solo_posture_annotater::register_click(const ns_vector_2i & i
 					ns_vector_2i(cur_worm->element(current_element_id()).image().properties().width*ns_death_time_solo_posture_annotater_timepoint::ns_resolution_increase_factor, movement_vis_bar_height),
 					observation_limit, clicked_on_expansion_button);
 			}
-			
+
 			if (clicked_on_expansion_button)
 				cur_hand_data->animals[current_animal_id].step_death_associated_expansion_explicitness(ns_death_timing_data_step_event_specification(
 					current_time_interval(handle), cur_worm->element(current_element_id()),
@@ -9424,7 +9424,7 @@ void ns_death_time_solo_posture_annotater::register_click(const ns_vector_2i & i
 				properties_for_all_animals.number_of_worms_at_location_marked_by_hand = new_sticky_label;
 
 			}
-			//current_by_hand_timing_data->animals[current_animal_id].annotate_extra_worm(); 
+			//current_by_hand_timing_data->animals[current_animal_id].annotate_extra_worm();
 			change_made = true;
 			break;
 		}
@@ -9638,7 +9638,7 @@ void ns_experiment_storyboard_annotater::register_click(const ns_vector_2i & ima
 					worms[i]->event_annotation.excluded = ns_death_time_annotation::ns_not_excluded;
 					worms[i]->event_annotation.flag = ns_death_time_annotation_flag::none();
 				}
-				//w->annotation.excluded = w->annotation.is_excluded()?ns_death_time_annotation::ns_not_excluded: 
+				//w->annotation.excluded = w->annotation.is_excluded()?ns_death_time_annotation::ns_not_excluded:
 				//	w->annotation.flag = ns_death_time_annotation_flag::none();
 				break;
 			case ns_annotate_extra_worm:

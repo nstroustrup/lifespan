@@ -2184,7 +2184,7 @@ bool ns_lifespan_curve_cache_entry_data::check_to_see_if_cached_is_most_recent(c
 	ns_sql_result res;
 	sql.get_rows(res);
 	if (res.empty())
-		throw ns_ex("ns_lifespan_curve_cache_entry::get_region_data()::Could not find region ") << id << " in db";
+		throw ns_ex("ns_lifespan_curve_cache_entry::get_region_data()::Could not find region ") << id << " in db.  Has movement analysis been run for this region?";
 	const unsigned long rebuild_timestamp(atol(res[0][0].c_str()));
 	const unsigned long annotation_timestamp(atol(res[0][1].c_str()));
 	const unsigned long region_timestamp = (rebuild_timestamp > annotation_timestamp) ? rebuild_timestamp : annotation_timestamp;
@@ -2198,7 +2198,7 @@ void ns_lifespan_curve_cache_entry_data::load(const ns_annotation_region_data_id
 	ns_sql_result res;
 	sql.get_rows(res);
 	if (res.empty())
-		throw ns_ex("ns_lifespan_curve_cache_entry::get_region_data()::Could not find region ") << id.id << " in db";
+		throw ns_ex("ns_lifespan_curve_cache_entry::get_region_data()::Could not find region ") << id.id << " in db.  Has movement analysis been run for this region?";
 	const unsigned long rebuild_timestamp(atol(res[0][0].c_str()));
 	const unsigned long annotation_timestamp(atol(res[0][1].c_str()));
 	const unsigned long region_timestamp = (rebuild_timestamp > annotation_timestamp) ? rebuild_timestamp : annotation_timestamp;

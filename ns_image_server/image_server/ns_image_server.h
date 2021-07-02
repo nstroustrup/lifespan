@@ -588,6 +588,7 @@ public:
 	bool currently_experiencing_a_disk_storage_emergency;
 	bool verbose_disk_storage_reporting;
 	unsigned long last_verbose_disk_storage_reporting_time;
+	bool remember_barcodes_across_sessions() const { return remember_barcodes_across_sessions_; }
 private:
 	ns_64_bit _main_thread_internal_id;
 	static void open_log_file(const ns_image_server::ns_image_server_exec_type & exec_type, ns_64_bit thread_id, const std::string & volatile_directory, const std::string & file_name, std::ofstream & out);
@@ -644,7 +645,7 @@ private:
 		_cache_subdirectory,
 		_mail_from;
 	bool _allow_multiple_processes_per_system;
-
+	bool remember_barcodes_across_sessions_; 
 
 	unsigned long _maximum_memory_allocation_in_mb;
 

@@ -9795,8 +9795,13 @@ ns_time_path_posture_movement_solution ns_threshold_movement_posture_analyzer::r
 
 	if (solution.dead.skipped &&
 		solution.posture_changing.skipped &&
-		solution.fast.skipped)
-		throw ns_ex("Producing an all-skipped estimate!");
+		solution.fast.skipped){
+		solution.fast.skipped = false;
+		cout << "Producing an all-skipped estimate!" << "\n";
+		solution.fast.end_index = first_valid_event_index;
+		if (!found_posture_change_cessation)
+			solution.fast.end_index = last_valid_event_index;
+	}
 	if (!solution.fast.skipped && solution.fast.start_index == solution.fast.end_index)
 		throw ns_ex("Unskipped 0-measurement movement period!");
 	if (!solution.posture_changing.skipped && solution.posture_changing.start_index == solution.posture_changing.end_index)

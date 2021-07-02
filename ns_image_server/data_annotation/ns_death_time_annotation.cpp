@@ -2572,16 +2572,11 @@ void ns_add_normal_death_to_set(const ns_annotation_generation_type & requested_
 
 	//special case for animals being flagged as still alive at the end of the experiment.
 	//death times do not necissarily exist, so we must add additional events for this.
-	if (properties_to_transfer.flag.event_should_be_censored_at_last_measurement())
-		cout << "WHA";
-	if (properties_to_transfer.flag.specified()) {
-		cout << properties_to_transfer.flag.label_short;
-		cout << "\n";
-	}
+	
 	if (properties_to_transfer.flag.specified() &&
 		properties_to_transfer.flag.event_should_be_censored_at_last_measurement()) {
 		for (unsigned int i = 0; i < number_of_different_events; i++) {
-			if (i == 8) continue;	//first observation on plate events arnen't included as their own standalone event.
+			if (i == 8) continue;	//first observation on plate events aren't included as their own standalone event.
 			if (a[i] != 0) {
 				if (i < 5) {//use movement, slow, fast, or expansion annotations to replace missing events to generate censoring info
 					still_alive_extra_annotation_movement = *a[i];
@@ -2640,12 +2635,17 @@ void ns_add_normal_death_to_set(const ns_annotation_generation_type & requested_
 						b.annotation_source = ns_death_time_annotation::ns_storyboard;
 						b.annotation_source_details = "By-hand annotated as remainig alive at end of observarion period";
 					}
-					if (properties_to_transfer.flag.event_should_be_censored_at_death()) {
-						properties_to_transfer.excluded = ns_death_time_annotation::ns_censored;
-						b.annotation_source = ns_death_time_annotation::ns_storyboard;
-						b.annotation_source_details = "By-hand annotated as censored";
-					}
+				
 				}
+			}	
+			//animals death times should be used as a censoring time
+			if (properties_to_transfer.flag.event_should_be_censored_at_death()) {
+				if (b.type == ns_movement_cessation || b.type == ns_death_associated_post_expansion_contraction_start) {
+					properties_to_transfer.excluded = ns_death_time_annotation::ns_censored;
+					b.annotation_source = ns_death_time_annotation::ns_storyboard;
+					b.annotation_source_details = "By-hand annotated as censored";
+				} 
+				else properties_to_transfer.excluded = ns_death_time_annotation::ns_not_excluded;
 			}
 			properties_to_transfer.transfer_sticky_properties(b);
 

@@ -1,4 +1,4 @@
-## The Lifespan Machine v2
+The Lifespan Machine v2
 
 Nicholas Stroustrup
 Centre for Genomic Regulation
@@ -9,6 +9,18 @@ This repository contains v2 of the lifespan machine software, comprised of
 1. Scanner control software ( *ns_image_server* ) for the distributed high-throughput microscope system first described in Stroustrup et al. "The C. elegans Lifespan Machine". Nature Methods 2013
 2. Image analysis software ( *ns_image_server* ) that extracts survival data from lifespan machine data sets
 3. Visualization software ( *ns_worm_browser* ) for inspecting and annotating images and automated analysis.
+
+For additional documentation, please take a look at:
+
+- The software installation guide: *doc/lifespan_machine_software_installation.pdf*
+- The software tutorial: *doc/lifespan_machine_software_tutorial.pdf*
+- The 2013 methods paper: *doc/nmeth.2475.pd*
+- The 2013 methods paper supplement: *nmeth.2475-S1.pdf*
+- The 2021 methods update paper: *https://doi.org/10.1101/2021.03.31.437415* 
+
+Copyright 2022
+Reservation of Rights
+All Rights Reserved
 
 **Major Revisions**
 

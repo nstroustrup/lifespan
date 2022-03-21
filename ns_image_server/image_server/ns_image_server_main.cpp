@@ -989,9 +989,13 @@ int main(int argc, char ** argv){
 		//update table formats to newest version, if requested
 		image_server.os_signal_handler.set_signal_handler(ns_interrupt, exit_signal_handler);
 		if (schema_installation_requested) {
-			if (image_server.act_as_an_image_capture_server())
-				image_server.create_and_configure_sql_database(true, "");
-			std::cout << "Do you also want to configure the central (remote) mysql database?  This is not needed if you are adding a server to an existing cluster.\n(y/n):";
+		  if (image_server.act_as_an_image_capture_server()){
+		    std::cout << "Configuring local db...\n";
+		    image_server.create_and_configure_sql_database(true, "");
+		  }
+		  else std::cout << "No local db needed as the server is not configured as an image capture server.  To change this, edit the ns_image_server.ini file.\n";
+		  
+		  std::cout << "Do you want to configure the central (remote) mysql database?  This is not needed if you are adding a server to an existing cluster.\n(y/n):";
 			bool set_up_central(false);
 			while (true) {
 			  string b;

@@ -1535,7 +1535,7 @@ std::string ns_image_server::create_and_configure_sql_database(bool local, const
 		std::cout << "local db buffer ";
 	else std::cout << "central sql database ";
 	std::cout << db << " on server " << hostname << "**\n";
-	std::cout << "To modify schema, please provide a username with administrative privileges on your sql server: ";
+	std::cout << "To modify schema, please provide a username with administrative privileges on your sql server (usualy root): ";
 	std::string root_username;
 	getline(cin, root_username);
 	std::cout << "Please enter the password for this account: ";
@@ -1618,12 +1618,12 @@ std::string ns_image_server::create_and_configure_sql_database(bool local, const
 	sql.send_query();
 	sql << "GRANT ALL on *.* TO '" << username << "'@'localhost'";
 	sql.send_query();
-	sql << "GRANT ALL on *.* TO '" << username << "'@'localhost' identified by '" << password << "'";
-	sql.send_query();
+	//sql << "GRANT ALL on *.* TO '" << username << "'@'localhost' identified by '" << password << "'";
+	//sql.send_query();
 	sql << "GRANT ALL on *.* TO '" << username << "'@'%'";
 	sql.send_query();
-	sql << "GRANT ALL on *.* TO '" << username << "'@'%' identified by '" << password << "'";
-	sql.send_query();
+	//sql << "GRANT ALL on *.* TO '" << username << "'@'%' identified by '" << password << "'";
+	//sql.send_query();
 	sql << "USE " << db;
 	sql.send_query();
 
@@ -2727,8 +2727,8 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 
 	constants.start_specification_group(ns_ini_specification_group("Image Acquisition Server Settings ","These settings control the behavior of image acquisition servers"));
 	constants.add_field("act_as_image_capture_server","no","Should the server try to control attached scanners? (yes / no)");
-	constants.add_field("device_capture_command","/usr/local/bin/scanimage","the path to the SANE component scanimage, with which scans can be started");
-	constants.add_field("device_list_command","/usr/local/bin/sane-find-scanner","the path to the SANE component sane-find-scanners, with which scanners can be identified");
+	constants.add_field("device_capture_command","/usr/bin/scanimage","the path to the SANE component scanimage, with which scans can be started");
+	constants.add_field("device_list_command","/usr/bin/sane-find-scanner","the path to the SANE component sane-find-scanners, with which scanners can be identified");
 	constants.add_field("device_barcode_coordinates","-l 0in -t 10.3in -x 8in -y 2in", "The coordinates of the barcode adhered to the surface of each scanner");
 	constants.add_field("simulated_device_name", ".","For software debugging, an image acquisition server can simulate an attached device");
 	constants.add_field("device_names", "", "This can be used to explicitly specify scanner names on an image acquisition server.  These should be detected just fine automatically, and so in most cases this field can be left blank");

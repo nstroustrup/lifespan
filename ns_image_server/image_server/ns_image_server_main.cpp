@@ -25,6 +25,7 @@
 #include <shellapi.h>
 #include "resource_server.h"
 #else
+#include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #endif
@@ -653,6 +654,11 @@ int main(int argc, char ** argv){
 	unsigned long max_run_time(0), max_job_num(0), number_of_processing_cores(-1), idle_queue_check_limit(-1), memory_allocation_limit(-1);
 
 	try {
+
+#ifndef _WIN32
+        if (getuid() != 0)
+            cerr << "WARNING: not running as root user\n"
+#endif
 
 		ns_sql::load_sql_library();
 		

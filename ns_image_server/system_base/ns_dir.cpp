@@ -691,7 +691,7 @@ void ns_dir::set_permissions(const std::string& path, ns_output_file_permissions
 		chmod(path.c_str(), S_IRWXU | S_IRGRP | S_IROTH);
 		break;
 	case ns_output_file_permissions::ns_group_readwrite:
-		chmod(path.c_str(), S_IRWXU | S_IRWXGRP | S_IROTH);
+		chmod(path.c_str(), S_IRWXU | S_IRWXG | S_IROTH);
 		break;
 	case ns_output_file_permissions::ns_no_special_permissions:
 		chmod(path.c_str(), S_IRWXU);

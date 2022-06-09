@@ -2903,7 +2903,7 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 		//now implement the permissions settings specificied in the ini file
 		#ifndef _WIN32
 		switch (output_file_group_permissions) {
-			switch (output_file_group_permissions) {
+			
 			case ns_fp_none: umask(0700); break;
 			case ns_fp_read: umask(0755); break;
 			case ns_fp_readwrite: umask(0775); break;
@@ -2911,7 +2911,7 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 			}
 		#endif
 		switch (output_file_group_permissions) {
-			switch (output_file_group_permissions) {
+		      
 			case ns_fp_none:
 				image_storage.set_file_permissions_readable_by_other(ns_dir::ns_no_special_permissions); break;
 			case ns_fp_read:
@@ -2919,7 +2919,7 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 			case ns_fp_readwrite:
 				image_storage.set_file_permissions_readable_by_other(ns_dir::ns_group_readwrite); break;
 			default: throw ns_ex("Unknown value for output_file_group_permissions: ") << (int)output_file_group_permissions;
-			}
+			
 		}
 
 		number_of_times_to_check_empty_job_queue_before_stopping = atol(constants["number_of_times_to_check_empty_processing_job_queue_before_stopping"].c_str());

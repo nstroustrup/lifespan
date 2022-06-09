@@ -670,17 +670,34 @@ const bool ns_dir::delete_folder_recursive(const string & d){
 	#endif
 }
 
-void ns_dir::set_permissions(const std::string & path, ns_output_file_permissions permision_setting) {
+void ns_dir::set_permissions(const std::string& path, ns_output_file_permissions permision_setting) {
 #ifdef _WIN32
-if (permision_setting == ns_output_file_permissions::ns_group_read)
-	ns_fs::permissions(path.c_str(), ns_fs::perms::owner_all | ns_fs::perms::group_read | ns_fs::perms::others_read);
-else
-	ns_fs::permissions(path.c_str(), ns_fs::perms::owner_all);
+	switch (permision_setting){
+		case ns_output_file_permissions::ns_group_read:
+		ns_fs::permissions(path.c_str(), ns_fs::perms::owner_all | ns_fs::perms::group_read | ns_fs::perms::others_read);
+		break;
+		case ns_output_file_permissions::ns_group_readwrite:
+		ns_fs::permissions(path.c_str(), ns_fs::perms::owner_all | ns_fs::perms::group_all | ns_fs::perms::others_read);
+		break;
+
+		case ns_output_file_permissions::ns_no_special_permissions:
+		ns_fs::permissions(path.c_str(), ns_fs::perms::owner_all);
+		break;
+		default: throw ns_ex("ns_dir::set_permissions()::Unknown permission: ") << (int)permision_setting;
+	}
 #else
-	if (permision_setting == ns_output_file_permissions::ns_group_read)
+	switch (permision_setting) {
+	case ns_output_file_permissions::ns_group_read:
 		chmod(path.c_str(), S_IRWXU | S_IRGRP | S_IROTH);
-	else
+		break;
+	case ns_output_file_permissions::ns_group_readwrite:
+		chmod(path.c_str(), S_IRWXU | S_IRWXGRP | S_IROTH);
+		break;
+	case ns_output_file_permissions::ns_no_special_permissions:
 		chmod(path.c_str(), S_IRWXU);
+		break;
+	default: throw ns_ex("ns_dir::set_permissions()::Unknown permission: ") << (int)permision_setting;
+	}
 #endif
 }
 

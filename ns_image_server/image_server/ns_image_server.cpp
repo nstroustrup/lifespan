@@ -45,7 +45,7 @@ alert_handler_lock("ahl"), max_external_thread_id(1), currently_experiencing_a_d
 	ns_worm_detection_constants::init();
 	#endif
 	ns_set_global_debug_output_handler(ns_image_server_global_debug_handler);
-	_software_version_compile = 2;
+	_software_version_compile = 3;
 	image_storage.cache.set_memory_allocation_limit_in_kb(maximum_image_cache_memory_size());
 	system_host_name = ns_get_system_hostname();
 	//by default, run indefinately
@@ -2732,7 +2732,8 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 	constants.add_field("device_barcode_coordinates","-l 0in -t 10.3in -x 8in -y 2in", "The coordinates of the barcode adhered to the surface of each scanner");
 	constants.add_field("simulated_device_name", ".","For software debugging, an image acquisition server can simulate an attached device");
 	constants.add_field("device_names", "", "This can be used to explicitly specify scanner names on an image acquisition server.  These should be detected just fine automatically, and so in most cases this field can be left blank");
-	constants.add_field("output_files_with_all_read_permissions", "yes", "Generate files with 755 access permissions");
+	constants.add_field("output_files_with_all_read_permissions", "yes", "Generate files with 755 access permissions",true);
+	constants.add_field("output_file_group_permissions", "ns_readwrite", "The default file permissions for all files written by the lifespan machine.  Set to none, read, or readwrite.");
 
 	constants.start_specification_group(ns_ini_specification_group("Image Analysis Server Settings ","These settings control the behavior of image processing servers"));
 	constants.add_field("allow_multiple_processes_per_system", "no", "By default, only one ns_image_server process can run on each system.  If allow_multiple_process_per_system is set to yes then this constraint is removed.  In that case, be certain to specify a unique value of additional_host_description at the commandline for each ns_image_server process run on the same system, to prevent cache, image, and database corruption.");
@@ -2772,7 +2773,7 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 	terminal_constants.add_field("verbose_debug_output","false","If this option is set to true, the image server and worm browser will generate detailed debug information while running various steps of image acquisition and image processing.  An file containing this output will be written to the volatile_storage directory.");
 	terminal_constants.add_field("window_scale_factor","1","On high resolution screens, set this to a value greater than one to rescale all imagery.");
 	string ini_directory,ini_filename;
-	try{
+	try {
 		//look for the ini file in the current directory
 		if (!ini_file_path.empty()) {
 			if (!ns_dir::file_exists(ini_file_path))
@@ -2787,7 +2788,7 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 			ini_directory = "./";
 		}
 		//if not found, look for a forwarding file
-		else if (ns_dir::file_exists("./ns_image_server_ini.forward")){
+		else if (ns_dir::file_exists("./ns_image_server_ini.forward")) {
 			ifstream in("./ns_image_server_ini.forward");
 			std::string ini_filename;
 			in >> ini_filename;
@@ -2795,7 +2796,7 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 			ini_directory = ns_dir::extract_path(ini_filename);
 			constants.load(ini_filename);
 		}
-		else if (ns_dir::file_exists("c:\\ns_image_server_ini.forward")){
+		else if (ns_dir::file_exists("c:\\ns_image_server_ini.forward")) {
 			ifstream in("c:\\ns_image_server_ini.forward");
 			std::string ini_filename;
 			in >> ini_filename;
@@ -2804,13 +2805,13 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 			constants.load(ini_filename);
 		}
 		//if not found, look in the default directory location
-		else{
+		else {
 			ini_filename = NS_INI_PATH;
 			constants.load(NS_INI_PATH);
 			ini_directory = ns_dir::extract_path(NS_INI_PATH);
 		}
 
-		if (exec_type == ns_worm_terminal_type){
+		if (exec_type == ns_worm_terminal_type) {
 			ini_filename = ini_directory + DIR_CHAR_STR + "ns_worm_browser.ini";
 			terminal_constants.load(ini_filename);
 			max_terminal_window_size.x = atol(terminal_constants["max_width"].c_str());
@@ -2818,14 +2819,14 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 			terminal_hand_annotation_resize_factor = atol(terminal_constants["hand_annotation_resize_factor"].c_str());
 			//mask_upload_database = terminal_constants["mask_upload_database"];
 			//mask_upload_hostname = terminal_constants["mask_upload_hostname"];
-			if (terminal_constants.field_specified("verbose_debug_output") && terminal_constants["verbose_debug_output"] == "true" ){
+			if (terminal_constants.field_specified("verbose_debug_output") && terminal_constants["verbose_debug_output"] == "true") {
 				_verbose_debug_output = true;
 			}
-			if (terminal_constants.field_specified("window_scale_factor")){
+			if (terminal_constants.field_specified("window_scale_factor")) {
 				_terminal_window_scale_factor = atof(terminal_constants["window_scale_factor"].c_str());
 			}
 		}
-		else{
+		else {
 			if (constants.field_specified("verbose_debug_output") && ns_to_bool(constants["verbose_debug_output"]))
 				_verbose_debug_output = true;
 		}
@@ -2836,12 +2837,12 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 			sql_server_addresses.resize(0);
 			//split the server names into an ordered list.
 			//the earliest addresses will be tried first.
-			if (sql_server_tmp.size() != 0){
+			if (sql_server_tmp.size() != 0) {
 				sql_server_addresses.resize(1);
-				for (unsigned int i = 0; i < sql_server_tmp.size(); i++){
+				for (unsigned int i = 0; i < sql_server_tmp.size(); i++) {
 
 					if (sql_server_tmp[i] == ';' || isspace(sql_server_tmp[i]))
-						sql_server_addresses.resize(sql_server_addresses.size()+1);
+						sql_server_addresses.resize(sql_server_addresses.size() + 1);
 					else
 						(*sql_server_addresses.rbegin()) += sql_server_tmp[i];
 				}
@@ -2852,12 +2853,12 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 			//split the server database options into an ordered list.
 			//the earliest addresses will be tried first.
 			possible_sql_databases.resize(0);
-			if (sql_db_tmp.size() != 0){
+			if (sql_db_tmp.size() != 0) {
 				possible_sql_databases.resize(1);
-				for (unsigned int i = 0; i < sql_db_tmp.size(); i++){
+				for (unsigned int i = 0; i < sql_db_tmp.size(); i++) {
 
 					if (sql_db_tmp[i] == ';' || isspace(sql_db_tmp[i]))
-						possible_sql_databases.resize(possible_sql_databases.size()+1);
+						possible_sql_databases.resize(possible_sql_databases.size() + 1);
 					else
 						(*possible_sql_databases.rbegin()) += sql_db_tmp[i];
 				}
@@ -2866,8 +2867,8 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 		//set default database
 		switch_to_default_db();
 
-		sql_user				= constants["central_sql_username"];
-		sql_pwd					= constants["central_sql_password"];
+		sql_user = constants["central_sql_username"];
+		sql_pwd = constants["central_sql_password"];
 
 		local_buffer_db = constants["local_buffer_sql_database"];
 		local_buffer_ip = constants["local_buffer_sql_hostname"];
@@ -2881,15 +2882,43 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 		if (constants.field_specified("verbose_local_storage_space_reporting")) {
 			verbose_disk_storage_reporting = ns_to_bool(constants["verbose_local_storage_space_reporting"]);
 		}
+		if (constants.field_specified("output_files_with_all_read_permissions") && constants.field_specified("output_file_group_permissions"))
+			throw ns_ex("In ns_image_server.ini, either output_files_with_all_read_permissions or output_file_group_permissions can be specified but not both.");
 
-		if (constants.field_specified("output_files_with_all_read_permissions")){
+		if (constants.field_specified("output_files_with_all_read_permissions")) {
+			output_file_group_permissions = ns_fp_read;
+		}
+		else output_file_group_permissions = ns_fp_none;
 
-			_output_group_readable_files = ns_to_bool(constants["output_files_with_all_read_permissions"]);
-			if (_output_group_readable_files) {
-				#ifndef _WIN32
-				umask(0755);
-				#endif
-				image_storage.set_file_permissions_readable_by_other(true);
+		if (constants.field_specified("output_file_group_permissions")) {
+			const std::string& fp_spec = constants["output_file_group_permissions"];
+			if (fp_spec == "none")
+				output_file_group_permissions = ns_fp_none;
+			else if (fp_spec == "read")
+				output_file_group_permissions = ns_fp_read;
+			else if (fp_spec == "readwrite")
+				output_file_group_permissions = ns_fp_readwrite;
+			else throw ns_ex("output_file_group_permissions must be set to one of three values: none, read, or readwrite.");
+		}
+		//now implement the permissions settings specificied in the ini file
+		#ifndef _WIN32
+		switch (output_file_group_permissions) {
+			switch (output_file_group_permissions) {
+			case ns_fp_none: umask(0700); break;
+			case ns_fp_read: umask(0755); break;
+			case ns_fp_readwrite: umask(0775); break;
+			default: throw ns_ex("Unknown value for output_file_group_permissions: ") << (int)output_file_group_permissions;
+			}
+		#endif
+		switch (output_file_group_permissions) {
+			switch (output_file_group_permissions) {
+			case ns_fp_none:
+				image_storage.set_file_permissions_readable_by_other(ns_dir::ns_no_special_permissions); break;
+			case ns_fp_read:
+				image_storage.set_file_permissions_readable_by_other(ns_dir::ns_group_read); break;
+			case ns_fp_readwrite:
+				image_storage.set_file_permissions_readable_by_other(ns_dir::ns_group_readwrite); break;
+			default: throw ns_ex("Unknown value for output_file_group_permissions: ") << (int)output_file_group_permissions;
 			}
 		}
 

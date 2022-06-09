@@ -29,9 +29,10 @@ int ns_ini::get_integer_value(const string & field) {
 	return atoi(get_value(field).c_str());
 }
 
-void ns_ini::add_field(const string & field, const string & default_value, const string & comment){
+void ns_ini::add_field(const string & field, const string & default_value, const string & comment,const bool depreciated){
 	data[field] = default_value;
 	data[field].comment = comment;
+	data[field].depreciated = depreciated;
 	if (specification_groups.size() > 0)
 		specification_groups.rbegin()->names_in_order.push_back(field);
 }
@@ -195,6 +196,7 @@ void ns_ini::save(const string & file_name){
 				map<string,ns_ini_entry>::iterator p(data.find(s.names_in_order[j]));
 				if (p == data.end())
 					throw ns_ex("Could not find ") << s.names_in_order[j] << " in names in order list!";
+				if (p->second.depreciated) continue;
 				output_comment_wrapped( p->first + ": " + p->second.comment,out);
 				out << "\n" << p->first << " = " << p->second.value << "\n\n";
 			}

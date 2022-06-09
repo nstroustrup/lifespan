@@ -36,7 +36,7 @@ class ns_dir{
     public:
 
 
-	typedef enum { ns_no_special_permissions, ns_group_read } ns_output_file_permissions;
+	typedef enum { ns_no_special_permissions, ns_group_read,ns_group_readwrite } ns_output_file_permissions;
 
 	//the constructor, which creates the dir_info object for the specified directory
 	ns_dir(const std::string & dir){load(dir);}

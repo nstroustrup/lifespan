@@ -9,9 +9,10 @@
 #include <fstream>
 
 struct ns_ini_entry{
-	ns_ini_entry(const std::string & val = "", const bool ld = false):value(val),loaded(ld){}
+	ns_ini_entry(const std::string & val = "", const bool ld = false):value(val),loaded(ld),depreciated(false){}
 	std::string value;
 	std::string comment;
+	bool depreciated;
 	bool loaded;
 };
 struct ns_ini_specification_group{
@@ -24,7 +25,7 @@ struct ns_ini_specification_group{
 
 class ns_ini{
 public:
-	void add_field(const std::string & field, const std::string & default_value="", const std::string & comment="");
+	void add_field(const std::string & field, const std::string & default_value="", const std::string & comment="", const bool depreciated = false);
 	void start_specification_group(const ns_ini_specification_group & group);
 	void load(const std::string & fname);
 	void load(std::istream & in);

@@ -61,8 +61,8 @@ class ns_image_storage_handler{
 public:
 	typedef ns_8_bit ns_component;
 
-	void set_file_permissions_readable_by_other(const bool readable) {
-	  output_file_permissions = readable ?ns_dir::ns_group_read: ns_dir::ns_no_special_permissions;
+	void set_file_permissions_readable_by_other(const ns_dir::ns_output_file_permissions & permissions) {
+		output_file_permissions = permissions;
 	}
 
 	ns_image_storage_handler() :network_lock("ns_ish::network"),currently_sending_over_network(false),output_file_permissions(ns_dir::ns_no_special_permissions),

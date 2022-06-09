@@ -584,7 +584,8 @@ public:
 	const std::string & mail_from_address() const{return _mail_from;}
 
 	bool do_not_run_multithreaded_jobs;
-	bool output_group_readable_files() const{return _output_group_readable_files;}
+	typedef enum { ns_fp_none, ns_fp_read, ns_fp_readwrite } ns_file_permissions;
+	ns_file_permissions  get_output_file_group_permissions() const{return output_file_group_permissions;}
 	bool currently_experiencing_a_disk_storage_emergency;
 	bool verbose_disk_storage_reporting;
 	unsigned long last_verbose_disk_storage_reporting_time;
@@ -666,7 +667,7 @@ private:
 	bool _act_as_an_image_capture_server,
 		 _act_as_processing_node,
 		 _halt_on_new_software_release;
-	bool _output_group_readable_files;
+	ns_file_permissions output_file_group_permissions;
 	bool _compile_videos;
 	bool server_pause_status;
 

@@ -2733,7 +2733,7 @@ void ns_image_server::load_constants(const ns_image_server::ns_image_server_exec
 	constants.add_field("simulated_device_name", ".","For software debugging, an image acquisition server can simulate an attached device");
 	constants.add_field("device_names", "", "This can be used to explicitly specify scanner names on an image acquisition server.  These should be detected just fine automatically, and so in most cases this field can be left blank");
 	constants.add_field("output_files_with_all_read_permissions", "yes", "Generate files with 755 access permissions",true);
-	constants.add_field("output_file_group_permissions", "ns_readwrite", "The default file permissions for all files written by the lifespan machine.  Set to none, read, or readwrite.");
+	constants.add_field("output_file_group_permissions", "readwrite", "The default file permissions for all files written by the lifespan machine.  Set to none, read, or readwrite.");
 
 	constants.start_specification_group(ns_ini_specification_group("Image Analysis Server Settings ","These settings control the behavior of image processing servers"));
 	constants.add_field("allow_multiple_processes_per_system", "no", "By default, only one ns_image_server process can run on each system.  If allow_multiple_process_per_system is set to yes then this constraint is removed.  In that case, be certain to specify a unique value of additional_host_description at the commandline for each ns_image_server process run on the same system, to prevent cache, image, and database corruption.");

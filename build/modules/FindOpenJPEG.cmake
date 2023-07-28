@@ -12,16 +12,17 @@
 # - Find OpenJPEG
 # Find the OpenJPEG includes and library
 # This module defines
-#  OPENJPEG_INCLUDE_DIR, where to find openjpeg.h, etc.
+#  OPENJPEG_INCLUDE_DIRS, where to find openjpeg.h, etc.
 #  OPENJPEG_LIBRARIES, the libraries needed to use OpenJPEG.
 #  OPENJPEG_FOUND, If false, do not try to use OpenJPEG.
 # also defined, but not for general use are
 #  OPENJPEG_LIBRARY, where to find the OpenJPEG library.
 
-FIND_PATH(OPENJPEG_INCLUDE_DIR openjpeg.h
+FIND_PATH(OPENJPEG_INCLUDE_DIRS openjpeg.h
   PATHS
   /usr/local/include/openjpeg
-  /usr/local/include/openjpeg-2.3
+    /usr/local/include/openjpeg-2.3
+    /usr/local/include/openjpeg-2.5
     /usr/local/include
     /usr/include/openjpeg
     /usr/include
@@ -29,7 +30,8 @@ FIND_PATH(OPENJPEG_INCLUDE_DIR openjpeg.h
         ../../libs/include
         ../../include
   PATH_SUFFIXES
-    openjpeg-2.1
+  openjpeg-2.1
+  openjpeg-2.5
   DOC "Location of OpenJPEG Headers"
 )
 
@@ -42,17 +44,17 @@ FIND_LIBRARY(OPENJPEG_LIBRARY
       ../../lib
   )
 
-IF (OPENJPEG_LIBRARY AND OPENJPEG_INCLUDE_DIR)
+IF (OPENJPEG_LIBRARY AND OPENJPEG_INCLUDE_DIRS)
     SET(OPENJPEG_LIBRARIES ${OPENJPEG_LIBRARY})
     SET(OPENJPEG_FOUND "YES")
-ELSE (OPENJPEG_LIBRARY AND OPENJPEG_INCLUDE_DIR)
+ELSE (OPENJPEG_LIBRARY AND OPENJPEG_INCLUDE_DIRS)
   SET(OPENJPEG_FOUND "NO")
-ENDIF (OPENJPEG_LIBRARY AND OPENJPEG_INCLUDE_DIR)
+ENDIF (OPENJPEG_LIBRARY AND OPENJPEG_INCLUDE_DIRS)
 
 
 IF (OPENJPEG_FOUND)
    IF (NOT OPENJPEG_FIND_QUIETLY)
-      MESSAGE(STATUS "Found OpenJPEG: ${OPENJPEG_LIBRARIES} ${OPENJPEG_INCLUDE_DIR}")
+      MESSAGE(STATUS "Found OpenJPEG: ${OPENJPEG_LIBRARIES} ${OPENJPEG_INCLUDE_DIRS}")
    ENDIF (NOT OPENJPEG_FIND_QUIETLY)
 ELSE (OPENJPEG_FOUND)
    IF (OPENJPEG_FIND_REQUIRED)
@@ -60,4 +62,4 @@ ELSE (OPENJPEG_FOUND)
    ENDIF (OPENJPEG_FIND_REQUIRED)
 ENDIF (OPENJPEG_FOUND)
 
-MARK_AS_ADVANCED(OPENJPEG_LIBRARY OPENJPEG_INCLUDE_DIR)
+MARK_AS_ADVANCED(OPENJPEG_LIBRARY OPENJPEG_INCLUDE_DIRS)

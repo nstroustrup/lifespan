@@ -696,7 +696,7 @@ class ns_processing_job{
 	  }
 	  $order = 1;
 	  $a = floor($number_of_operations/2)+1;
-	  if(sizeof($this->operations > 0)){
+	  if(sizeof($this->operations)>0){
 		$res.="<tr><td>\n<font size=\"-1\">";
 		//$res.=var_dump($this->operations);
 		for ($i = 0; $i < sizeof($this->operations); $i++){

@@ -1,4 +1,5 @@
 <?php
+error_reporting(E_ALL & ~E_NOTICE & ~E_STRICT);
 require_once('worm_environment.php');
 require_once('ns_experiment.php');
 require_once('ns_processing_job.php');
@@ -11,8 +12,7 @@ else return "";
 }
 
 try{
-
-
+	
   $db_name_set = @$_POST['db_name_set'];
   if ($db_name_set==1){
 
@@ -22,6 +22,7 @@ try{
     if ($db_ref != '')
 	$forward = $db_ref;
     else $forward = "view_experiments.php";
+    
     ns_set_database_name($db_req_name);
     header("Location: $forward\n\n");
     die("");
@@ -363,10 +364,14 @@ $total_data_rate = 0;
  $current_time = ns_current_time();
 }
 catch(ns_exception $e){
-	die("Error: ". $e->text);
+	echo("Error: ". $e->text);
+	die();
 }
+
 display_worm_page_header("Home", "",TRUE);
+
 ?>
+
 <span class="style1">Welcome to the Lifespan Machine!</span><br><br>
 Forward any questions to <?php echo $contact_name . " at <a href=\"mailto:" . $contact_email . "\">$contact_email</a>";  if ($contact_phone != '') echo ", " . $contact_phone?><br>
 <table width="100%"><TR><TD valign="top">

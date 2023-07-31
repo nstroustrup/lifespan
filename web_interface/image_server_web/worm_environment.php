@@ -100,7 +100,8 @@ function ns_set_database_name($name){
 try{
 
   require_once('ns_sql.php');
-  $sql = new ns_sql;
+ 
+$sql = new ns_sql;
   $sql->connect($central_sql_hostname,$central_sql_username,$central_sql_password,"");
   $query = "SHOW DATABASES";
   $sql->get_row($query,$dbs);
@@ -152,6 +153,8 @@ try{
 
 }
 catch(ns_exception $e){
+echo $e;
+		   echo $e->text;
 	die($e->text);
 
 }
@@ -422,7 +425,7 @@ function display_worm_page_footer(){
     <td bgcolor="#dbdbdb"><div align="right"><span class="style2"><?php echo format_time(time())?>
 <br>
 <br>
-				    Lifespan Machine web interface v.<?php echo $website_version?> <br> Nicholas Stroustrup (2018)<br>CRG Barcelona</span></div></td>
+				    Lifespan Machine web interface v.<?php echo $website_version?> <br> Nicholas Stroustrup (2023)<br>CRG Barcelona</span></div></td>
     <td bgcolor="#dbdbdb">&nbsp;</td>
   </tr>
 </table>

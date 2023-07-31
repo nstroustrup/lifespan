@@ -85,7 +85,8 @@ try{
     header("Location: manage_samples.php?experiment_id=$experiment_id\n\n");
     die("");
   }
-
+  #var_dump($sql);
+ 
   $experiment = new ns_experiment($experiment_id,'',$sql,false);
 #if ($hide_censored)die("HIDE");
 # else die("NO HIDE");
@@ -98,6 +99,7 @@ try{
 
   $uncensored = array();
   $censored = array();
+  #var_dump($experiment);
   for ($i=0; $i < sizeof($experiment->samples); $i++){
     if ($experiment->samples[$i]->censored)
       array_push($censored,$experiment->samples[$i]);

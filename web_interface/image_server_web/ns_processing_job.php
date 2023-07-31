@@ -246,7 +246,7 @@ class ns_processing_job{
 	  $maintenance_flag,
 	  $generate_video_at_high_res;
 
-	function ns_processing_job(){
+	function __construct(){
 		$this->operations = array();
 		$this->currently_under_processing = 0;
 		$this->problem = 0;

@@ -6,7 +6,7 @@ require_once('ns_dir.php');
 
 
 class ns_device{
-  function ns_device($name,&$sql,$allow_non_existant_devices=FALSE){
+  function __construct($name,&$sql,$allow_non_existant_devices=FALSE){
 		$this->name_p = $name;
 		if (!$allow_non_existant_devices){
 		  $query = "SELECT name FROM devices WHERE name='" . $name . "'";
@@ -29,7 +29,7 @@ class ns_device{
 class ns_capture_sample{
 	public function id(){return $this->id_p;}
 	
-	function ns_capture_sample(ns_experiment &$experiment, ns_device &$device, $id = -1,&$sql = ""){
+	function __construct(ns_experiment &$experiment, ns_device &$device, $id = -1,&$sql = ""){
 		$this->experiment_id_p = $experiment->id();
 		$this->id_p = $id;
 		$this->mask_id = 0;
@@ -131,7 +131,7 @@ class ns_schedule_event{
 	public $sample,
 	    $scheduled_time,
 		$device_id;
-	function ns_schedule_event($sched_time,ns_capture_sample &$samp){
+	function __construct($sched_time,ns_capture_sample &$samp){
 		$samp->id(); //confirm that a correct object has been passed.
 		$this->sample = $samp;
 		$this->device_name = $device_name;
@@ -171,8 +171,10 @@ class ns_experiment{
 		$sql->send_query($query);
 	}
 	
-	function ns_experiment($id, $name,&$sql, $create_new = false){
-		if (($id == '' || $id == 0) && $name=='')
+	function __construct($id, $name,&$sql, $create_new = false){
+		 #echo "WHA\n\n\n";
+		 
+		 if (($id == '' || $id == 0) && $name=='')
 			return;
 
 		//try to load information from the db
@@ -182,7 +184,8 @@ class ns_experiment{
 			$query = "INSERT into experiments SET name = '$name'";
 			$this->id_p = $sql->send_query_get_id($query);
 			$this->name = $name;
-		}
+			
+			}
 	}
 
 	//load information from the db.  If a name is specified, use it, otherwise
@@ -233,7 +236,8 @@ class ns_experiment{
 		
 		for ($i = 0; $i < sizeof($sample_ids); $i++){
 		 // echo $sample_ids[$i][0] . ",";
-		  $this->samples[$i] = new ns_capture_sample($this,new ns_device("",$sql,TRUE),$sample_ids[$i][0],$sql);
+		    $dev = new ns_device("",$sql,TRUE);
+		  $this->samples[$i] = new ns_capture_sample($this,$dev,$sample_ids[$i][0],$sql);
 		}	
 	}
 	
@@ -244,7 +248,7 @@ class ns_experiment{
 }
 
 
-function ns_generate_sample_hash($experiment_id = 0, &$sample_hash, &$sql){
+function ns_generate_sample_hash($experiment_id , &$sample_hash, &$sql){
 	//get sample hash
 	$query = "SELECT experiment_id, id, name FROM capture_samples ";
 	if ($experiment_id != 0 && $experiment_id != '')

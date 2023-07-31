@@ -561,6 +561,7 @@ class ns_processing_job{
 	    $vals[$i] = floor(10000*$complete[$display[$i]]/$denom)/100 . "%";
 	    if ($vals[$i] != 0)
 	      $number_of_operations++;
+	      
 	  }
 	  $number_of_operations+=3;//censored, problem and busy information is last items in list
 	  $number_of_operations++;//movement path calculation
@@ -576,7 +577,7 @@ class ns_processing_job{
 	  // $res .= "XXX" . sizeof($display);
 	  for ($i = 0; $i < sizeof($display); $i++){
 
-	     if ($vals[$i] == 0)
+	     if ($vals[$i] == 0 || $vals[$i] == "0%")
 	       continue;
 	     $images_present = TRUE;
 	    if ($number_of_columns > 1 && $j == $a)

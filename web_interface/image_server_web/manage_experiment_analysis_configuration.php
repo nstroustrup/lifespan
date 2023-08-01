@@ -98,7 +98,7 @@ else $set_as_default = FALSE;
     	$end_day = (int)$_POST['end_day'];
     	$end_month = (int)$_POST['end_month'];
     	$end_year = (int)$_POST['end_year'];
-  $mask_date = mktime($end_hour, $end_minute, 0, $end_month, $end_day, $end_year);
+  $mask_date = mktime(intval($end_hour), intval($end_minute), 0, intval($end_month), intval($end_day), intval($end_year));
    if ($end_month == 0 || $end_day==0 || $end_year == 0){
       $mask_date = 0;
       }

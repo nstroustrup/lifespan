@@ -616,8 +616,8 @@ $region_strain_condition_2 = array();
 
 
 	//	die( "$end_hour:$end_minute $end_month/$end_day/$end_year");
-    $start_time = mktime($start_hour, $start_minute, 0, $start_month,$start_day,$start_year);
-    $end_time_date = mktime($end_hour, $end_minute, 0, $end_month, $end_day, $end_year);
+    $start_time = mktime(intval($start_hour), intval($start_minute), 0, intval($start_month),intval($start_day),intval($start_year));
+    $end_time_date = mktime(intval($end_hour), intval($end_minute), 0, intval($end_month), intval($end_day), intval($end_year));
     $end_time_age = $_POST['end_age'];
 
 

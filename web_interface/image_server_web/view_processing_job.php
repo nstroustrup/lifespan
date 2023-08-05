@@ -1100,7 +1100,7 @@ for ($i = 0; $i < sizeof($jobs); $i++){
     $out_first_region = TRUE;
     $target_text = '';
     for ($i = 0; $i < sizeof($jobs); $i++){
-      if ($jobs[$i]->experiment_id != $last_experiment_id){
+      if ($jobs[$i]->experiment_id!= 0 && $jobs[$i]->experiment_id != $last_experiment_id){
 
 	if (!$out_first_experiment){
 	  if ($jobs[$i]->sample_id != 0) $target_text .= "<font size=\"+1\"> ]</font>";
@@ -1116,7 +1116,8 @@ for ($i = 0; $i < sizeof($jobs); $i++){
 	$out_first_sample = TRUE;
 
       }
-      if ($jobs[$i]->sample_id != $last_sample_id ){
+      if ($jobs[$i]->sample_id != 0 && $jobs[$i]->sample_id != $last_sample_id ){
+      
 	if (!$out_first_sample && $jobs[$i]->region_id != 0) $target_text .= "] ";
 	else $out_first_sample =  $jobs[$i]->region_id == 0;
 	//XXX

@@ -582,6 +582,7 @@ int main(int argc, char ** argv){
 
 	command_line_usage << "\nOptions:\n"
 		<< "**Basic server control functions**\n"
+		<< "create_and_configure_sql_db [schema filename]: Configure sql databases for first time use.\n"
 		<< "start:  start an instance of the image server on the local machine (default)\n"
 		<< "status: check to see if an instance of the image server is running on the local machine\n"
 		<< "stop:   request that the currently running local instance of the image server terminate\n"
@@ -627,8 +628,7 @@ int main(int argc, char ** argv){
 		<< "update_sql [optional database]: update the sql database schema to match the most recent version. \n"
 		"       No changes are made if the schema is already up-to-data. A database name can be specified\n"
 		<< "override_sql_db [database]: explictly specify the database to use, overriding the \n"
-		"        central_sql_databases value in the ns_image_server.ini file"
-		<< "create_and_configure_sql_db [schema filename]: Configure sql databases for first time use.\n"
+		"        central_sql_databases value in the ns_image_server.ini file\n"
 
 		<< "\n**Redundant, test, or debug functions**\n"
 		<< "submit_experiment: Test and submit an experiment specification XML file to the cluster\n"

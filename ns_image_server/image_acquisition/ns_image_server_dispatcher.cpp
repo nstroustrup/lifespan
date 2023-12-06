@@ -815,6 +815,11 @@ void ns_image_server_dispatcher::on_timer(){
 		}
 
 		bool shutdown_requested = (h[0][1] == "1");
+		if (shutdown_requested)
+			image_server.register_server_event(
+			ns_image_server_event("A request to shut down was found in the central database.\n"), timer_sql_connection);
+
+
 		bool hotplug_requested_by_db = (h[0][3] == "1");
 		bool hotplug_requested_after_error = false;
 		if (h[0][3] == "2"){

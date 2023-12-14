@@ -1691,7 +1691,16 @@ ns_thread_return_type ns_scan_for_problems(void * d){
 	}
 
 	try{
-			unsigned long current_time = ns_current_time();
+		sql() << "SELECT UNIX_TIMESTAMP(NOW())";
+		std::string current_time_string = sql().get_value();
+		const unsigned long current_time(atol(current_time_string.c_str()));
+		const unsigned long local_clock_time(ns_current_time());
+		if ((current_time > local_clock_time && (current_time - local_clock_time) > 60) ||
+			(current_time < local_clock_time && (local_clock_time - current_time) > 60)) {
+			ns_image_server_event ev;
+			ev << "This server's local clock time has diverged more than a minute from the central SQL server's time.  Please fix.";
+			image_server.register_server_event(ev, &sql());
+		}
 			//image_server.register_server_event(ns_image_server::ns_register_in_central_db_with_fallback,ns_image_server_event("Checking for missed scans on cluster."));
 
 			std::vector<std::string> devices_to_suppress,

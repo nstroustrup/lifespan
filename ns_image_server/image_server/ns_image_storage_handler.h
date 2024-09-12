@@ -326,6 +326,7 @@ public:
 	}
 	std::string movement_file_directory(ns_64_bit region_info_id,ns_image_server_sql * sql, std::string & absolute_directory_prefix) const;
 	mutable bool simulate_long_term_storage_errors;
+	ns_dir::ns_output_file_permissions get_current_file_permissions() const { return output_file_permissions; }
 private:
 	std::string get_storage_to_open(ns_image_server_image & image, const ns_image_type & image_type, const unsigned long max_line_length, ns_image_server_sql * sql, bool & had_to_use_local_storage, const bool report_to_db, const ns_volatile_storage_behavior volatile_storage_behavior) const;
 

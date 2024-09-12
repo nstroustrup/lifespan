@@ -495,23 +495,33 @@ bool ns_bulk_experiment_mask_manager::submit_subregion_label_masks_to_cluster(bo
 		sql << "INSERT INTO image_masks SET image_id = " << mask_image.id << ", processed='0',resize_factor=" << resize_factor;
 		ns_64_bit mask_id = sql.send_query_get_id();
 
-		bool had_to_use_local_storage;
-		ns_image_storage_reciever_handle<ns_8_bit> image_storage = image_server.image_storage.request_storage(mask_image, ns_tiff, 1.0, 512, &sql, had_to_use_local_storage, false, ns_image_storage_handler::ns_forbid_volatile);
+		ns_dir::ns_output_file_permissions f = image_server.image_storage.get_current_file_permissions();
+		//std::cout << f << "\n";
+		try {
+			image_server.image_storage.set_file_permissions_readable_by_other(ns_dir::ns_group_readwrite);
+			bool had_to_use_local_storage;
+			ns_image_storage_reciever_handle<ns_8_bit> image_storage = image_server.image_storage.request_storage(mask_image, ns_tiff, 1.0, 512, &sql, had_to_use_local_storage, false, ns_image_storage_handler::ns_forbid_volatile);
 
-		//ns_image_standard decoded_image;
-		ns_image_storage_source_handle<ns_8_bit> in(image_server.image_storage.request_from_local_cache(scratch_filenames[i]));
-		in.input_stream().pump(image_storage.output_stream(), 512);
-		//decoded_image.pump(sender,512);
-		//c.close();
+			//ns_image_standard decoded_image;
+			ns_image_storage_source_handle<ns_8_bit> in(image_server.image_storage.request_from_local_cache(scratch_filenames[i]));
+			in.input_stream().pump(image_storage.output_stream(), 512);
+			//decoded_image.pump(sender,512);
+			//c.close();
 
-		sql << "UPDATE sample_region_image_info SET subregion_mask_id = " << mask_id << " WHERE id = " << region_image.region_info_id;
-		sql.send_query();
-		sql << "INSERT INTO processing_jobs SET image_id=" << mask_image.id << ", mask_id=" << mask_id << ", "
-			<< "op" << (unsigned int)ns_process_analyze_mask << " = 1, time_submitted=" << ns_current_time() << ", urgent=1";
-		sql.send_query();
-		sql.send_query("COMMIT");
+			sql << "UPDATE sample_region_image_info SET subregion_mask_id = " << mask_id << " WHERE id = " << region_image.region_info_id;
+			sql.send_query();
+			sql << "INSERT INTO processing_jobs SET image_id=" << mask_image.id << ", mask_id=" << mask_id << ", "
+				<< "op" << (unsigned int)ns_process_analyze_mask << " = 1, time_submitted=" << ns_current_time() << ", urgent=1";
+			sql.send_query();
+			sql.send_query("COMMIT");
 
-		//		cerr << "\nDone.\n";
+			//		cerr << "\nDone.\n";
+			image_server.image_storage.set_file_permissions_readable_by_other(f);
+		}
+		catch (...) {
+			image_server.image_storage.set_file_permissions_readable_by_other(f);
+			throw;
+		}
 	}
 	ns_image_server_push_job_scheduler::request_job_queue_discovery(sql);
 	return true;

@@ -1833,7 +1833,7 @@ public:
 			add(ns_menu_item_spec(true, analyze_worm_position, "Testing/Movement Analysis/Analyze worm positions for current region"));
 		}
 		string version("Worm Browser v");
-		version = version + ns_to_string(image_server.software_version_major()) + "." + ns_to_string(image_server.software_version_minor()) + "." + ns_to_string(image_server.software_version_compile()) + " (2019)";
+		version = version + ns_to_string(image_server.software_version_major()) + "." + ns_to_string(image_server.software_version_minor()) + "." + ns_to_string(image_server.software_version_compile()) + " (2024)";
 		add(ns_menu_item_spec(true, set_database,string("&Config/") + version,0,FL_MENU_INACTIVE));
 		add(ns_menu_item_spec(true, set_database,string("Config/_Nicholas Stroustrup, CRG"),0,FL_MENU_INACTIVE));
 		//add(ns_menu_item_spec(set_database,string("Config/_ "),0,FL_MENU_INACTIVE));
